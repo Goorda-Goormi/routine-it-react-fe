@@ -16,9 +16,9 @@ import { CreateGroupScreen } from "./components/CreateGroupScreen";
 import { SettingsScreen } from "./components/SettingsScreen";
 import { HelpScreen } from "./components/HelpScreen";
 import { UserHomeScreen } from "./components/UserHomeScreen";
-import "./App.css";
-import "./index.css"
-import "./styles/globals.css"
+//import "./App.css";
+//import "./index.css"
+//import "./styles/globals.css"
 
 interface NavigationState {
   screen: string;
