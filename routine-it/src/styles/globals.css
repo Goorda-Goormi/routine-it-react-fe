@@ -1,0 +1,1207 @@
+@custom-variant dark (&:is(.dark *));
+
+:root {
+  --font-size: 14px;
+  /* 라이트모드 - 옅은 파스텔 톤 */
+  --background: #f8fffe;
+  --foreground: #374151; /* 일반 텍스트 - 진한 회색 */
+  --card: #ffffff;
+  --card-foreground: #374151;
+  --popover: #ffffff;
+  --popover-foreground: #374151;
+  --primary: #059669; /* 주요 요소 - 밝은 초록 */
+  --primary-foreground: #ffffff;
+  --secondary: #f1f8f4;
+  --secondary-foreground: #059669;
+  --muted: #f1f8f4;
+  --muted-foreground: #6b7280;
+  --accent: #f1f8f4;
+  --accent-foreground: #059669;
+  --destructive: #dc2626;
+  --destructive-foreground: #ffffff;
+  --border: #e5e7eb;
+  --input: transparent;
+  --input-background: #f8fffe;
+  --switch-background: #e5e7eb;
+  --font-weight-medium: 500;
+  --font-weight-normal: 400;
+  --ring: #059669;
+  --chart-1: #059669;
+  --chart-2: #10b981;
+  --chart-3: #34d399;
+  --chart-4: #6ee7b7;
+  --chart-5: #a7f3d0;
+  --radius: 0.625rem;
+  --sidebar: #ffffff;
+  --sidebar-foreground: #374151;
+  --sidebar-primary: #059669;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #f1f8f4;
+  --sidebar-accent-foreground: #059669;
+  --sidebar-border: #e5e7eb;
+  --sidebar-ring: #059669;
+  --icon-primary: #ffffff;
+  --icon-secondary: #059669;
+  --icon-muted: #6b7280;
+  --icon-accent: #059669;
+  
+  /* 라이트모드 파스텔 카드 색상 - 옅은 톤 */
+  --card-yellow-bg: #fef3c7;
+  --card-yellow-border: #fde68a;
+  --card-yellow-text: #92400e;
+  --card-ivory-bg: #fffbeb;
+  --card-ivory-border: #fed7aa;
+  --card-ivory-text: #9a3412;
+  --card-cream-bg: #fffffb;
+  --card-cream-border: #fde68a;
+  --card-cream-text: #92400e;
+  --card-peach-bg: #fef3e2;
+  --card-peach-border: #fed7aa;
+  --card-peach-text: #c2410c;
+  --card-lavender-bg: #f3f0ff;
+  --card-lavender-border: #c4b5fd;
+  --card-lavender-text: #6d28d9;
+  --card-mint-bg: #f0fdfa;
+  --card-mint-border: #a7f3d0;
+  --card-mint-text: #065f46;
+}
+
+.dark {
+  /* 다크모드 - 초록 배경, 모든 텍스트 하얀색, 매우 진한 아이콘 배경 */
+  --background: #0d4a28; /* 초록 배경색 */
+  --foreground: #ffffff; /* 기본 텍스트를 완전한 흰색으로 */
+  --card: #0f3a20; /* 더 진한 초록 계열 카드 배경 */
+  --card-foreground: #ffffff; /* 카드 텍스트도 완전한 흰색 */
+  --popover: #0f3a20;
+  --popover-foreground: #ffffff;
+  --primary: #ffffff; /* 제목과 주요 요소를 하얀색으로 변경 */
+  --primary-foreground: #000000;
+  --secondary: #0a2e18; /* 더 진한 배경색 */
+  --secondary-foreground: #ffffff;
+  --muted: #0a2e18; /* 더 진한 배경색 */
+  --muted-foreground: #ffffff; /* muted 텍스트도 하얀색 */
+  --accent: #0a2e18; /* 더 진한 배경색 */
+  --accent-foreground: #ffffff;
+  --destructive: #ef4444;
+  --destructive-foreground: #ffffff;
+  --border: #1a4a2e; /* 더 진한 보더 색상 */
+  --input: #0a2e18;
+  --ring: #10b981;
+  --font-weight-medium: 600; /* 다크모드에서 글자 굵기 증가 */
+  --font-weight-normal: 500; /* 일반 글자도 조금 더 굵게 */
+  --chart-1: #34d399;
+  --chart-2: #10b981;
+  --chart-3: #059669;
+  --chart-4: #047857;
+  --chart-5: #065f46;
+  --sidebar: #0f3a20;
+  --sidebar-foreground: #ffffff;
+  --sidebar-primary: #ffffff;
+  --sidebar-primary-foreground: #000000;
+  --sidebar-accent: #0a2e18;
+  --sidebar-accent-foreground: #ffffff;
+  --sidebar-border: #1a4a2e;
+  --sidebar-ring: #10b981;
+  --icon-primary: #ffffff;
+  --icon-secondary: #ffffff;
+  --icon-muted: #ffffff;
+  --icon-accent: #ffffff;
+  
+  /* 다크모드 카드 색상 - 매우 진한 어두운 배경, 하얀 텍스트, opacity 1 적용 */
+  --card-yellow-bg: #b45309; /* 더 진한 주황색 배경 (완료/새싹 카드) */
+  --card-yellow-border: transparent;
+  --card-yellow-text: #ffffff;
+  --card-ivory-bg: #dc2626; /* 더 진한 빨간색 배경 (성장 카드) */
+  --card-ivory-border: transparent;
+  --card-ivory-text: #ffffff;
+  --card-cream-bg: #ca8a04; /* 더 진한 노란색 배경 (전설 카드) */
+  --card-cream-border: transparent;
+  --card-cream-text: #ffffff;
+  --card-peach-bg: #ea580c; /* 더 진한 오렌지색 배경 (열매 카드) */
+  --card-peach-border: transparent;
+  --card-peach-text: #ffffff;
+  --card-lavender-bg: #7c3aed; /* 더 진한 보라색 배경 (누적점수/개화 카드) */
+  --card-lavender-border: transparent;
+  --card-lavender-text: #ffffff;
+  --card-mint-bg: #059669; /* 더 진한 민트색 배경 (거목 카드) */
+  --card-mint-border: transparent;
+  --card-mint-text: #ffffff;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-input-background: var(--input-background);
+  --color-switch-background: var(--switch-background);
+  --color-ring: var(--ring);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+  --color-icon-primary: var(--icon-primary);
+  --color-icon-secondary: var(--icon-secondary);
+  --color-icon-muted: var(--icon-muted);
+  --color-icon-accent: var(--icon-accent);
+  
+  /* 카드 색상 변수 */
+  --color-card-yellow-bg: var(--card-yellow-bg);
+  --color-card-yellow-border: var(--card-yellow-border);
+  --color-card-yellow-text: var(--card-yellow-text);
+  --color-card-ivory-bg: var(--card-ivory-bg);
+  --color-card-ivory-border: var(--card-ivory-border);
+  --color-card-ivory-text: var(--card-ivory-text);
+  --color-card-cream-bg: var(--card-cream-bg);
+  --color-card-cream-border: var(--card-cream-border);
+  --color-card-cream-text: var(--card-cream-text);
+  --color-card-peach-bg: var(--card-peach-bg);
+  --color-card-peach-border: var(--card-peach-border);
+  --color-card-peach-text: var(--card-peach-text);
+  --color-card-lavender-bg: var(--card-lavender-bg);
+  --color-card-lavender-border: var(--card-lavender-border);
+  --color-card-lavender-text: var(--card-lavender-text);
+  --color-card-mint-bg: var(--card-mint-bg);
+  --color-card-mint-border: var(--card-mint-border);
+  --color-card-mint-text: var(--card-mint-text);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+  }
+
+  /* 아이콘 색상 클래스 */
+  .icon-primary {
+    color: var(--color-icon-primary) !important;
+    fill: var(--color-icon-primary) !important;
+  }
+  
+  .icon-secondary {
+    color: var(--color-icon-secondary) !important;
+    fill: var(--color-icon-secondary) !important;
+  }
+  
+  .icon-muted {
+    color: var(--color-icon-muted) !important;
+    fill: var(--color-icon-muted) !important;
+  }
+  
+  .icon-accent {
+    color: var(--color-icon-accent) !important;
+    fill: var(--color-icon-accent) !important;
+  }
+
+  /* SVG 아이콘 스타일링 */
+  svg.icon-primary {
+    color: var(--color-icon-primary) !important;
+    fill: currentColor !important;
+  }
+  
+  svg.icon-secondary {
+    color: var(--color-icon-secondary) !important;
+    fill: currentColor !important;
+  }
+  
+  svg.icon-muted {
+    color: var(--color-icon-muted) !important;
+    fill: currentColor !important;
+  }
+  
+  svg.icon-accent {
+    color: var(--color-icon-accent) !important;
+    fill: currentColor !important;
+  }
+
+  /* ================================================= */
+  /* 프로그레스바 다크모드 스타일링 - 강화된 대비 */
+  /* ================================================= */
+
+  /* Progress 컴포넌트 다크모드 배경 - 매우 진한 배경으로 설정 */
+  .dark *[data-slot="progress"] {
+    background: #0a1f0f !important; /* 매우 진한 어두운 초록 배경 */
+    background-image: none !important;
+    border: 1px solid #1a4a2e !important; /* 보더 추가로 윤곽 강화 */
+    opacity: 1 !important;
+  }
+
+  /* Progress Indicator 다크모드 색상 - 매우 밝은 형광 초록 */
+  .dark *[data-slot="progress-indicator"] {
+    background: linear-gradient(to right, #22c55e, #16a34a) !important; /* 매우 밝은 초록 그라디언트 */
+    background-image: linear-gradient(to right, #22c55e, #16a34a) !important;
+    opacity: 1 !important;
+    box-shadow: 0 0 8px rgba(34, 197, 94, 0.5) !important; /* 발광 효과 추가 */
+  }
+
+  /* Progress 투명도 제거 - 모든 관련 클래스 */
+  .dark .bg-yellow-100\\/80,
+  .dark .bg-orange-100\\/80 {
+    background-color: #0a1f0f !important; /* 매우 진한 배경 */
+    background-image: none !important;
+    opacity: 1 !important;
+  }
+
+  .dark .border-yellow-200\\/50 {
+    border-color: #1a4a2e !important;
+  }
+
+  .dark .bg-gray-700 {
+    background-color: #0a1f0f !important; /* 매우 진한 배경 */
+    opacity: 1 !important;
+  }
+
+  .dark .border-gray-600 {
+    border-color: #1a4a2e !important;
+  }
+
+  /* Progress 관련 모든 그라디언트 다크모드 강화 */
+  .dark .bg-gradient-to-r.from-yellow-400.to-orange-400,
+  .dark .bg-gradient-to-r.from-emerald-400.to-green-400 {
+    background: linear-gradient(to right, #22c55e, #16a34a) !important;
+    background-image: linear-gradient(to right, #22c55e, #16a34a) !important;
+    opacity: 1 !important;
+    box-shadow: 0 0 8px rgba(34, 197, 94, 0.5) !important;
+  }
+
+  .dark .from-yellow-400,
+  .dark .to-orange-400,
+  .dark .from-emerald-400,
+  .dark .to-green-400 {
+    background: linear-gradient(to right, #22c55e, #16a34a) !important;
+    background-image: linear-gradient(to right, #22c55e, #16a34a) !important;
+    opacity: 1 !important;
+  }
+
+  /* ================================================= */
+  /* Tabs 컴포넌트 다크모드 활성 상태 스타일링 */
+  /* ================================================= */
+
+  /* TabsTrigger 활성 상태 다크모드 배경색 */
+  .dark *[data-slot="tabs-trigger"][data-state="active"] {
+    background-color: #22c55e !important; /* 밝은 초록색 배경 */
+    color: #ffffff !important; /* 하얀색 텍스트 */
+    opacity: 1 !important;
+    border-color: transparent !important;
+    box-shadow: 0 2px 4px rgba(34, 197, 94, 0.3) !important;
+  }
+
+  .dark *[data-slot="tabs-trigger"]:not([data-state="active"]) {
+    background-color: var(--color-muted) !important;
+    color: var(--color-muted-foreground) !important;
+    opacity: 1 !important;
+  }
+
+  .dark *[data-slot="tabs-trigger"]:not([data-state="active"]):hover {
+    background-color: rgba(34, 197, 94, 0.2) !important;
+    color: #ffffff !important;
+    opacity: 1 !important;
+  }
+
+  /* TabsList 다크모드 배경 */
+  .dark *[data-slot="tabs-list"] {
+    background-color: var(--color-card) !important;
+    border-color: var(--color-border) !important;
+    opacity: 1 !important;
+  }
+
+  /* ================================================= */
+  /* 루틴 상세 화면 월간 통계 다크모드 스타일링 */
+  /* ================================================= */
+
+  /* 루틴 상세 헤더 백드롭 다크모드 처리 */
+  .dark .bg-background\\/95 {
+    background-color: rgba(13, 74, 40, 0.98) !important; /* 거의 불투명한 다크 배경 */
+    backdrop-filter: blur(8px) !important;
+    opacity: 1 !important;
+  }
+
+  /* 월간 통계 카드들 - 진한 배경과 강한 대비 */
+  
+  /* 완료일 카드 - 노란색 계열 */
+  .dark .bg-yellow-100 {
+    background-color: var(--color-card-yellow-bg) !important; /* 진한 주황색 */
+    opacity: 1 !important;
+  }
+
+  .dark .border-yellow-200\\/60 {
+    border-color: transparent !important;
+  }
+
+  .dark .text-yellow-800,
+  .dark .text-yellow-600,
+  .dark .text-yellow-300,
+  .dark .text-yellow-400 {
+    color: #ffffff !important;
+    opacity: 1 !important;
+  }
+
+  /* 달성률 카드 - 초록색 계열 */
+  .dark .bg-green-100 {
+    background-color: var(--color-card-mint-bg) !important; /* 진한 민트색 */
+    opacity: 1 !important;
+  }
+
+  .dark .border-green-200\\/60,
+  .dark .border-green-500\\/30 {
+    border-color: transparent !important;
+  }
+
+  .dark .text-green-800,
+  .dark .text-green-600,
+  .dark .text-green-300,
+  .dark .text-green-400 {
+    color: #ffffff !important;
+    opacity: 1 !important;
+  }
+
+  /* 최장 연속 카드 - 오렌지색 계열 */
+  .dark .bg-orange-100 {
+    background-color: var(--color-card-peach-bg) !important; /* 진한 오렌지색 */
+    opacity: 1 !important;
+  }
+
+  .dark .border-orange-200\\/60,
+  .dark .border-orange-500\\/30 {
+    border-color: transparent !important;
+  }
+
+  .dark .text-orange-800,
+  .dark .text-orange-600,
+  .dark .text-orange-300,
+  .dark .text-orange-400 {
+    color: #ffffff !important;
+    opacity: 1 !important;
+  }
+
+  /* 현재 연속 카드 - 보라색 계열 */
+  .dark .bg-purple-100 {
+    background-color: var(--color-card-lavender-bg) !important; /* 진한 보라색 */
+    opacity: 1 !important;
+  }
+
+  .dark .border-purple-200\\/60,
+  .dark .border-purple-500\\/30 {
+    border-color: transparent !important;
+  }
+
+  .dark .text-purple-800,
+  .dark .text-purple-600,
+  .dark .text-purple-300,
+  .dark .text-purple-400 {
+    color: #ffffff !important;
+    opacity: 1 !important;
+  }
+
+  /* 다크모드에서 gray-800 배경 제거 */
+  .dark .bg-gray-800 {
+    background-color: transparent !important;
+  }
+
+  /* 주간 진행률 원형 완료 표시 */
+  .dark .bg-green-500 {
+    background-color: #22c55e !important; /* 밝은 초록으로 완료 표시 강화 */
+    opacity: 1 !important;
+  }
+
+  /* 루틴 완료 버튼 다크모드 강화 */
+  .dark .bg-green-600 {
+    background-color: #059669 !important;
+    opacity: 1 !important;
+  }
+
+  .dark .hover\\:bg-green-700:hover {
+    background-color: #047857 !important;
+    opacity: 1 !important;
+  }
+
+  /* 배지 다크모드 처리 */
+  .dark .text-green-600 {
+    color: #22c55e !important;
+    opacity: 1 !important;
+  }
+
+  .dark .text-green-400 {
+    color: #22c55e !important;
+    opacity: 1 !important;
+  }
+
+  /* ================================================= */
+  /* 로그인 화면 다크모드 스타일링 - 완전 불투명 처리 */
+  /* ================================================= */
+
+  /* 로그인 화면 배경 그라디언트 다크모드 처리 */
+  .dark .bg-gradient-to-br.from-green-400.via-green-500.to-green-600 {
+    background: linear-gradient(135deg, #0d4a28, #0a2e18, #0d3d22) !important;
+    background-image: linear-gradient(135deg, #0d4a28, #0a2e18, #0d3d22) !important;
+    opacity: 1 !important;
+  }
+
+  /* 로그인 화면 모든 텍스트를 하얀색으로 */
+  .dark .text-white,
+  .dark .text-white\\/90,
+  .dark .text-white\\/80,
+  .dark .text-white\\/70,
+  .dark .text-white\\/60,
+  .dark .text-white\\/50 {
+    color: #ffffff !important;
+    opacity: 1 !important;
+  }
+
+  /* 로그인 화면 카드 다크모드 - 완전 불투명 처리 */
+  .dark .bg-white\\/95 {
+    background-color: var(--color-card) !important;
+    background-image: none !important;
+    backdrop-filter: none !important;
+    opacity: 1 !important;
+  }
+
+  /* 백드롭 필터 완전 제거 */
+  .dark .backdrop-blur {
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+  }
+
+  /* 로그인 화면 모든 반투명 배경 제거 */
+  .dark *[class*="bg-white/"] {
+    background-color: var(--color-card) !important;
+    background-image: none !important;
+    opacity: 1 !important;
+  }
+
+  /* 로그인 화면 버튼 다크모드 - 초록색 글자로 변경 */
+  .dark .bg-white.hover\\:bg-gray-50 {
+    background-color: var(--color-card) !important;
+    color: #22c55e !important; /* 초록색 글자 */
+    opacity: 1 !important;
+  }
+
+  .dark .bg-white.hover\\:bg-gray-50:hover {
+    background-color: var(--color-accent) !important;
+    color: #22c55e !important; /* 호버 시에도 초록색 유지 */
+    opacity: 1 !important;
+  }
+
+  /* 로그인 버튼 내 기존 텍스트 색상 재정의 */
+  .dark .text-green-700 {
+    color: #22c55e !important; /* 밝은 초록색으로 변경 */
+    opacity: 1 !important;
+  }
+
+  /* 로그인 화면 작은 아이콘 배경들 다크모드 처리 */
+  .dark .bg-green-100,
+  .dark .bg-emerald-100,
+  .dark .bg-teal-100,
+  .dark .bg-lime-100 {
+    background-color: var(--color-accent) !important;
+    opacity: 1 !important;
+  }
+
+  .dark .text-green-600,
+  .dark .text-emerald-600,
+  .dark .text-teal-600,
+  .dark .text-lime-600 {
+    color: var(--color-accent-foreground) !important;
+    opacity: 1 !important;
+  }
+
+  .dark .text-gray-700 {
+    color: var(--color-card-foreground) !important;
+    opacity: 1 !important;
+  }
+
+  /* 카카오 버튼 아이콘 */
+  .dark .bg-yellow-400 {
+    background-color: #eab308 !important;
+    opacity: 1 !important;
+  }
+
+  .dark .text-gray-900 {
+    color: #000000 !important;
+    opacity: 1 !important;
+  }
+
+  /* ================================================= */
+  /* 다크모드 아이콘 상위 컨테이너 배경색 OPACITY 1 강제 적용 */
+  /* ================================================= */
+
+  /* 다크모드에서 모든 카드 컨테이너들의 배경색과 투명도 강제 설정 */
+  .dark *[data-slot="card"] {
+    background-image: none !important; /* 모든 그라디언트 제거 */
+    opacity: 1 !important;
+  }
+
+  .dark *[class*="Card"] {
+    background-image: none !important;
+    opacity: 1 !important;
+  }
+
+  .dark .Card {
+    background-image: none !important;
+    opacity: 1 !important;
+  }
+
+  /* 그라디언트 배경을 가진 모든 요소들 다크모드에서 제거 */
+  .dark *[class*="bg-gradient"] {
+    background-image: none !important;
+    opacity: 1 !important;
+  }
+
+  .dark .bg-gradient-to-br {
+    background-image: none !important;
+    opacity: 1 !important;
+  }
+
+  .dark .bg-gradient-to-r {
+    background-image: none !important;
+    opacity: 1 !important;
+  }
+
+  .dark .bg-gradient-to-l {
+    background-image: none !important;
+    opacity: 1 !important;
+  }
+
+  .dark .bg-gradient-to-t {
+    background-image: none !important;
+    opacity: 1 !important;
+  }
+
+  .dark .bg-gradient-to-b {
+    background-image: none !important;
+    opacity: 1 !important;
+  }
+
+  /* 다크모드에서 아이콘을 포함하는 모든 div 컨테이너 */
+  .dark div:has(svg) {
+    opacity: 1 !important;
+  }
+
+  .dark div:has(.CheckCircle) {
+    opacity: 1 !important;
+  }
+
+  .dark div:has(.TrendingUp) {
+    opacity: 1 !important;
+  }
+
+  .dark div:has(.Target) {
+    opacity: 1 !important;
+  }
+
+  .dark div:has(.Users) {
+    opacity: 1 !important;
+  }
+
+  .dark div:has(.Camera) {
+    opacity: 1 !important;
+  }
+
+  /* 특정 패턴의 카드들 배경색 강제 적용 */
+  .dark *[class*="from-orange"][class*="to-amber"] {
+    background: var(--color-card-yellow-bg) !important;
+    background-image: none !important;
+    opacity: 1 !important;
+  }
+
+  .dark *[class*="from-purple"][class*="to-pink"] {
+    background: var(--color-card-lavender-bg) !important;
+    background-image: none !important;
+    opacity: 1 !important;
+  }
+
+  .dark *[class*="from-lime"][class*="to-green"] {
+    background: var(--color-card-ivory-bg) !important;
+    background-image: none !important;
+    opacity: 1 !important;
+  }
+
+  .dark *[class*="from-green"][class*="to-lime"] {
+    background: var(--color-card-yellow-bg) !important;
+    background-image: none !important;
+    opacity: 1 !important;
+  }
+
+  .dark *[class*="from-yellow"][class*="to-amber"] {
+    background: var(--color-card-cream-bg) !important;
+    background-image: none !important;
+    opacity: 1 !important;
+  }
+
+  .dark *[class*="from-orange"][class*="to-red"] {
+    background: var(--color-card-peach-bg) !important;
+    background-image: none !important;
+    opacity: 1 !important;
+  }
+
+  .dark *[class*="from-pink"][class*="to-rose"] {
+    background: var(--color-card-lavender-bg) !important;
+    background-image: none !important;
+    opacity: 1 !important;
+  }
+
+  .dark *[class*="from-emerald"][class*="to-teal"] {
+    background: var(--color-card-mint-bg) !important;
+    background-image: none !important;
+    opacity: 1 !important;
+  }
+
+  /* 랭킹화면 그라디언트 패턴 처리 */
+  .dark *[class*="from-amber"][class*="to-yellow"] {
+    background: var(--color-card-yellow-bg) !important;
+    background-image: none !important;
+    opacity: 1 !important;
+  }
+
+  .dark *[class*="from-amber"][class*="to-orange"] {
+    background: var(--color-card-peach-bg) !important;
+    background-image: none !important;
+    opacity: 1 !important;
+  }
+
+  /* 모든 아이콘 배경색과 관련된 opacity를 1로 설정 */
+  .dark *[class*="bg-"] {
+    opacity: 1 !important;
+  }
+
+  .dark *[style*="background"] {
+    opacity: 1 !important;
+  }
+
+  /* 다크모드에서 모든 opacity 관련 클래스 재정의 */
+  .dark .opacity-90,
+  .dark .opacity-75,
+  .dark .opacity-60,
+  .dark .opacity-50,
+  .dark .opacity-40,
+  .dark .opacity-30,
+  .dark .opacity-25,
+  .dark .opacity-20,
+  .dark .opacity-10,
+  .dark .opacity-5 {
+    opacity: 1 !important;
+  }
+
+  .dark .dark\\:opacity-90,
+  .dark .dark\\:opacity-75,
+  .dark .dark\\:opacity-60,
+  .dark .dark\\:opacity-50,
+  .dark .dark\\:opacity-40,
+  .dark .dark\\:opacity-30,
+  .dark .dark\\:opacity-25,
+  .dark .dark\\:opacity-20,
+  .dark .dark\\:opacity-10,
+  .dark .dark\\:opacity-5 {
+    opacity: 1 !important;
+  }
+
+  /* MyPageScreen 활동통계와 성취배지의 투명도 배경 처리 */
+  .dark .bg-purple-500\\/70,
+  .dark .bg-emerald-500\\/70,
+  .dark .bg-blue-500\\/70,
+  .dark .bg-orange-500\\/70,
+  .dark .bg-amber-500\\/70,
+  .dark .bg-green-500\\/70,
+  .dark .bg-gray-300\\/70 {
+    background-color: var(--color-muted) !important;
+    opacity: 1 !important;
+  }
+
+  /* MyPageScreen 보더 투명도 처리 */
+  .dark .border-purple-200\\/50,
+  .dark .border-emerald-200\\/50,
+  .dark .border-blue-200\\/50,
+  .dark .border-orange-200\\/50,
+  .dark .border-amber-200\\/50,
+  .dark .border-green-200\\/50,
+  .dark .border-gray-300\\/50 {
+    border-color: transparent !important;
+  }
+
+  /* 모든 투명도가 적용된 배경색들 재정의 */
+  .dark .bg-black\\/5,
+  .dark .bg-black\\/10,
+  .dark .bg-black\\/20,
+  .dark .bg-black\\/30,
+  .dark .bg-black\\/40,
+  .dark .bg-black\\/50,
+  .dark .bg-black\\/60,
+  .dark .bg-black\\/70,
+  .dark .bg-black\\/80,
+  .dark .bg-black\\/90 {
+    background-color: var(--color-muted) !important;
+    opacity: 1 !important;
+  }
+
+  .dark .bg-white\\/5,
+  .dark .bg-white\\/10,
+  .dark .bg-white\\/20,
+  .dark .bg-white\\/30,
+  .dark .bg-white\\/40,
+  .dark .bg-white\\/50,
+  .dark .bg-white\\/60,
+  .dark .bg-white\\/70,
+  .dark .bg-white\\/80,
+  .dark .bg-white\\/90 {
+    background-color: var(--color-secondary) !important;
+    opacity: 1 !important;
+  }
+
+  /* 컬러 배경들의 투명도 제거 */
+  .dark .bg-gray-100\\/50,
+  .dark .bg-gray-200\\/50,
+  .dark .bg-gray-300\\/50,
+  .dark .bg-gray-50\\/50 {
+    background-color: var(--color-muted) !important;
+    opacity: 1 !important;
+  }
+
+  .dark .bg-green-50\\/50,
+  .dark .bg-green-100\\/50,
+  .dark .bg-green-200\\/50,
+  .dark .bg-green-900\\/20,
+  .dark .bg-green-900\\/30 {
+    background-color: rgba(5, 150, 105, 1) !important; /* 진한 초록색 */
+    opacity: 1 !important;
+  }
+
+  .dark .bg-blue-50\\/50,
+  .dark .bg-blue-100\\/50,
+  .dark .bg-blue-200\\/50 {
+    background-color: #1e40af !important; /* 진한 파란색 */
+    opacity: 1 !important;
+  }
+
+  .dark .bg-red-50\\/50,
+  .dark .bg-red-100\\/50,
+  .dark .bg-red-200\\/50 {
+    background-color: #dc2626 !important; /* 진한 빨간색 */
+    opacity: 1 !important;
+  }
+
+  .dark .bg-yellow-50\\/50,
+  .dark .bg-yellow-100\\/50,
+  .dark .bg-yellow-200\\/50 {
+    background-color: #ca8a04 !important; /* 진한 노란색 */
+    opacity: 1 !important;
+  }
+
+  .dark .bg-purple-50\\/50,
+  .dark .bg-purple-100\\/50,
+  .dark .bg-purple-200\\/50 {
+    background-color: #7c3aed !important; /* 진한 보라색 */
+    opacity: 1 !important;
+  }
+
+  /* 활동 통계 카드 배경색 강제 적용 - opacity 1로 설정 */
+  .dark .bg-card-yellow-bg {
+    background-color: var(--color-card-yellow-bg) !important;
+    background-image: none !important;
+    opacity: 1 !important;
+  }
+
+  .dark .bg-card-ivory-bg {
+    background-color: var(--color-card-ivory-bg) !important;
+    background-image: none !important;
+    opacity: 1 !important;
+  }
+
+  .dark .bg-card-cream-bg {
+    background-color: var(--color-card-cream-bg) !important;
+    background-image: none !important;
+    opacity: 1 !important;
+  }
+
+  .dark .bg-card-peach-bg {
+    background-color: var(--color-card-peach-bg) !important;
+    background-image: none !important;
+    opacity: 1 !important;
+  }
+
+  .dark .bg-card-lavender-bg {
+    background-color: var(--color-card-lavender-bg) !important;
+    background-image: none !important;
+    opacity: 1 !important;
+  }
+
+  .dark .bg-card-mint-bg {
+    background-color: var(--color-card-mint-bg) !important;
+    background-image: none !important;
+    opacity: 1 !important;
+  }
+
+  /* 카드 스타일 클래스 - opacity 1 적용 */
+  .card-yellow {
+    background-color: var(--color-card-yellow-bg) !important;
+    border-color: var(--color-card-yellow-border) !important;
+    color: var(--color-card-yellow-text) !important;
+    opacity: 1 !important;
+  }
+
+  .card-ivory {
+    background-color: var(--color-card-ivory-bg) !important;
+    border-color: var(--color-card-ivory-border) !important;
+    color: var(--color-card-ivory-text) !important;
+    opacity: 1 !important;
+  }
+
+  .card-cream {
+    background-color: var(--color-card-cream-bg) !important;
+    border-color: var(--color-card-cream-border) !important;
+    color: var(--color-card-cream-text) !important;
+    opacity: 1 !important;
+  }
+
+  .card-peach {
+    background-color: var(--color-card-peach-bg) !important;
+    border-color: var(--color-card-peach-border) !important;
+    color: var(--color-card-peach-text) !important;
+    opacity: 1 !important;
+  }
+
+  .card-lavender {
+    background-color: var(--color-card-lavender-bg) !important;
+    border-color: var(--color-card-lavender-border) !important;
+    color: var(--color-card-lavender-text) !important;
+    opacity: 1 !important;
+  }
+
+  .card-mint {
+    background-color: var(--color-card-mint-bg) !important;
+    border-color: var(--color-card-mint-border) !important;
+    color: var(--color-card-mint-text) !important;
+    opacity: 1 !important;
+  }
+
+  /* 다크모드에서 아이콘이 들어간 둥근 배경들 */
+  .dark .rounded-full[class*="bg-"] {
+    opacity: 1 !important;
+  }
+
+  .dark .bg-orange-500,
+  .dark .bg-orange-600,
+  .dark .bg-orange-700 {
+    background-color: #ea580c !important; /* 진한 오렌지색 */
+    opacity: 1 !important;
+  }
+
+  .dark .bg-purple-500,
+  .dark .bg-purple-600,
+  .dark .bg-purple-700,
+  .dark .bg-purple-800 {
+    background-color: #7c3aed !important; /* 진한 보라색 */
+    opacity: 1 !important;
+  }
+
+  .dark .bg-green-600,
+  .dark .bg-green-700 {
+    background-color: #059669 !important; /* 진한 초록색 */
+    opacity: 1 !important;
+  }
+
+  .dark .bg-blue-500,
+  .dark .bg-blue-600,
+  .dark .bg-blue-700 {
+    background-color: #1e40af !important; /* 진한 파란색 */
+    opacity: 1 !important;
+  }
+
+  .dark .bg-red-500,
+  .dark .bg-red-600,
+  .dark .bg-red-700 {
+    background-color: #dc2626 !important; /* 진한 빨간색 */
+    opacity: 1 !important;
+  }
+
+  .dark .bg-yellow-500,
+  .dark .bg-yellow-600,
+  .dark .bg-yellow-700 {
+    background-color: #ca8a04 !important; /* 진한 노란색 */
+    opacity: 1 !important;
+  }
+
+  .dark .bg-amber-500,
+  .dark .bg-amber-600,
+  .dark .bg-amber-700 {
+    background-color: #ca8a04 !important; /* 진한 앰버/노란색 */
+    opacity: 1 !important;
+  }
+
+  .dark .bg-emerald-500,
+  .dark .bg-emerald-600,
+  .dark .bg-emerald-700 {
+    background-color: #059669 !important; /* 진한 에메랄드색 */
+    opacity: 1 !important;
+  }
+
+  .dark .bg-gray-400,
+  .dark .bg-gray-500,
+  .dark .bg-gray-600 {
+    background-color: var(--color-muted) !important; /* 진한 회색 */
+    opacity: 1 !important;
+  }
+
+  /* 달력 출석 관련 배경색 */
+  .dark .bg-gray-200 {
+    background-color: var(--color-muted) !important;
+    opacity: 1 !important;
+  }
+
+  /* 다크모드에서 카드 그림자 스타일 */
+  .dark .card-shadow {
+    box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.8), 0 6px 8px -2px rgba(0, 0, 0, 0.6) !important;
+    border: none !important;
+  }
+
+  /* 다크모드에서 호버 상태도 더 진하게 - opacity 1 적용 */
+  .dark .hover\\:bg-accent\\/50:hover,
+  .dark .hover\\:bg-accent\\/40:hover,
+  .dark .hover\\:bg-accent\\/30:hover,
+  .dark .hover\\:bg-accent\\/20:hover,
+  .dark .hover\\:bg-accent\\/10:hover {
+    background-color: var(--color-accent) !important;
+    opacity: 1 !important;
+  }
+
+  .dark .hover\\:bg-secondary\\/50:hover,
+  .dark .hover\\:bg-secondary\\/40:hover,
+  .dark .hover\\:bg-secondary\\/30:hover,
+  .dark .hover\\:bg-secondary\\/20:hover,
+  .dark .hover\\:bg-secondary\\/10:hover {
+    background-color: var(--color-secondary) !important;
+    opacity: 1 !important;
+  }
+
+  .dark .hover\\:bg-muted\\/50:hover,
+  .dark .hover\\:bg-muted\\/40:hover,
+  .dark .hover\\:bg-muted\\/30:hover,
+  .dark .hover\\:bg-muted\\/20:hover,
+  .dark .hover\\:bg-muted\\/10:hover {
+    background-color: var(--color-muted) !important;
+    opacity: 1 !important;
+  }
+
+  /* 다크모드에서 배지와 버튼 배경도 더 진하게 */
+  .dark .bg-secondary {
+    background-color: var(--color-secondary) !important;
+    opacity: 1 !important;
+  }
+
+  .dark .bg-muted {
+    background-color: var(--color-muted) !important;
+    opacity: 1 !important;
+  }
+
+  .dark .bg-accent {
+    background-color: var(--color-accent) !important;
+    opacity: 1 !important;
+  }
+
+  /* 다크모드에서 텍스트 색상 강화 */
+  .dark .text-white {
+    color: #ffffff !important;
+    opacity: 1 !important;
+  }
+
+  .dark .dark\\:text-white {
+    color: #ffffff !important;
+    opacity: 1 !important;
+  }
+
+  /* 다크모드에서 텍스트 색상 통일 - 활동통계와 성취배지 모든 글자 흰색 */
+  .dark .text-purple-800,
+  .dark .text-purple-700,
+  .dark .text-emerald-800,
+  .dark .text-emerald-700,
+  .dark .text-blue-800,
+  .dark .text-blue-700,
+  .dark .text-orange-800,
+  .dark .text-orange-700,
+  .dark .text-amber-800,
+  .dark .text-amber-700,
+  .dark .text-green-800,
+  .dark .text-green-700,
+  .dark .text-gray-700,
+  .dark .text-gray-600,
+  .dark .text-red-800,
+  .dark .text-red-700,
+  .dark .text-red-600 {
+    color: #ffffff !important;
+    opacity: 1 !important;
+  }
+
+  /* 루틴 화면 완료 상태 텍스트 다크모드 */
+  .dark .text-green-700 {
+    color: #22c55e !important;
+    opacity: 1 !important;
+  }
+
+  /* 라이트모드/다크모드 구분 텍스트 클래스 */
+  .text-primary-bright {
+    color: #059669; /* 라이트모드: 일반 초록 */
+  }
+
+  .dark .text-primary-bright {
+    color: #ffffff !important; /* 다크모드: 하얀색 */
+    opacity: 1 !important;
+  }
+
+  .text-content {
+    color: #374151; /* 라이트모드: 진한 회색 */
+  }
+
+  .dark .text-content {
+    color: #ffffff !important; /* 다크모드: 완전한 흰색 */
+    font-weight: 500 !important; /* 다크모드에서 글자 굵기 증가 */
+    opacity: 1 !important;
+  }
+
+  /* 제목과 주요 요소 색상 */
+  .title-primary {
+    color: var(--color-primary) !important;
+    opacity: 1 !important;
+  }
+
+  .text-primary-custom {
+    color: var(--color-primary) !important;
+    opacity: 1 !important;
+  }
+
+  /* 다크모드 전용 텍스트 굵기 클래스 */
+  .dark .text-white-medium {
+    color: #ffffff !important;
+    font-weight: 500 !important;
+    opacity: 1 !important;
+  }
+
+  .dark .text-white-bold {
+    color: #ffffff !important;
+    font-weight: 600 !important;
+    opacity: 1 !important;
+  }
+
+  .dark .text-white-light {
+    color: #ffffff !important;
+    font-weight: 400 !important;
+    opacity: 1 !important;
+  }
+
+  /* 다크모드에서 모든 텍스트 요소 opacity 1 */
+  .dark * {
+    color: inherit;
+  }
+
+  .dark *[class*="text-"] {
+    opacity: 1 !important;
+  }
+
+  /* 다크모드에서 CardContent와 CardHeader opacity 1 */
+  .dark *[data-slot="card-content"] {
+    opacity: 1 !important;
+  }
+
+  .dark *[data-slot="card-header"] {
+    opacity: 1 !important;
+  }
+
+  /* 다크모드에서 모든 div 컨테이너 opacity 1 (극강화) */
+  .dark div {
+    opacity: 1 !important;
+  }
+}
+
+/**
+ * Base typography
+ */
+@layer base {
+  :where(:not(:has([class*=" text-"]), :not(:has([class^="text-"])))) {
+    h1 {
+      font-size: var(--text-2xl);
+      font-weight: var(--font-weight-medium);
+      line-height: 1.5;
+      color: var(--color-primary); /* 제목 - 라이트모드: 초록, 다크모드: 하얀색 */
+    }
+
+    h2 {
+      font-size: var(--text-xl);
+      font-weight: var(--font-weight-medium);
+      line-height: 1.5;
+      color: var(--color-primary); /* 제목 - 라이트모드: 초록, 다크모드: 하얀색 */
+    }
+
+    h3 {
+      font-size: var(--text-lg);
+      font-weight: var(--font-weight-medium);
+      line-height: 1.5;
+      color: var(--color-primary); /* 제목 - 라이트모드: 초록, 다크모드: 하얀색 */
+    }
+
+    h4 {
+      font-size: var(--text-base);
+      font-weight: var(--font-weight-medium);
+      line-height: 1.5;
+      color: var(--color-primary); /* 제목 - 라이트모드: 초록, 다크모드: 하얀색 */
+    }
+
+    p {
+      font-size: var(--text-base);
+      font-weight: var(--font-weight-normal);
+      line-height: 1.5;
+      color: var(--color-foreground); /* 일반 텍스트 */
+    }
+
+    label {
+      font-size: var(--text-base);
+      font-weight: var(--font-weight-medium);
+      line-height: 1.5;
+      color: var(--color-primary); /* 레이블 - 라이트모드: 초록, 다크모드: 하얀색 */
+    }
+
+    button {
+      font-size: var(--text-base);
+      font-weight: var(--font-weight-medium);
+      line-height: 1.5;
+    }
+
+    input {
+      font-size: var(--text-base);
+      font-weight: var(--font-weight-normal);
+      line-height: 1.5;
+      color: var(--color-foreground);
+    }
+  }
+
+  html {
+    font-size: var(--font-size);
+  }
+}
