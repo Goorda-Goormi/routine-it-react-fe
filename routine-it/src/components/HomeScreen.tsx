@@ -146,7 +146,7 @@ export function HomeScreen({ onNavigate }: HomeScreenProps) {
   };
 
   return (
-    <div className="space-y-6 h-full">
+    <div className="space-y-6 h-full p-4 ">
       {/* 오늘 날짜 및 완료 현황 */}
       <div className="space-y-4">
         <div className="flex items-center justify-between">
@@ -160,7 +160,7 @@ export function HomeScreen({ onNavigate }: HomeScreenProps) {
             variant="outline" 
             size="sm"
             onClick={() => onNavigate('create-routine')}
-            className="text-foreground border-border hover:bg-accent hover:text-foreground"
+            className="text-foreground border-border/60 hover:bg-accent hover:text-foreground"
           >
             <Plus className="h-4 w-4 mr-1 icon-secondary" />
             루틴 추가
@@ -249,7 +249,7 @@ export function HomeScreen({ onNavigate }: HomeScreenProps) {
                     routine.completed 
                       ? 'bg-green-50/50 dark:bg-green-900/20' 
                       : 'hover:bg-accent/50'
-                  } ${index < personalRoutines.length - 1 ? 'border-b border-border/30' : ''}`}
+                  } ${index < personalRoutines.length - 1 ? 'mb-1' : ''}`}
                 >
                   <div className="flex items-center space-x-3 flex-1 cursor-pointer" onClick={() => handleRoutineClick(routine)}>
                     <div className="flex items-center space-x-3">
@@ -275,7 +275,7 @@ export function HomeScreen({ onNavigate }: HomeScreenProps) {
                       className={`w-6 h-6 rounded-full flex items-center justify-center transition-colors ${
                         routine.completed 
                           ? 'bg-green-500 hover:bg-green-600' 
-                          : 'border-2 border-muted-foreground hover:border-green-500'
+                          : 'border-2 border-border/60 hover:border-green-500'
                       }`}
                     >
                       {routine.completed && <CheckCircle className="h-4 w-4 text-white" />}
@@ -285,7 +285,7 @@ export function HomeScreen({ onNavigate }: HomeScreenProps) {
                       <Button 
                         size="sm" 
                         variant="outline"
-                        className="text-foreground border-border hover:bg-accent hover:text-foreground"
+                        className="text-foreground border-border/60 hover:bg-accent hover:text-foreground"
                         onClick={(e) => {
                           e.stopPropagation();
                           // 인증 로직
@@ -317,7 +317,7 @@ export function HomeScreen({ onNavigate }: HomeScreenProps) {
               <div key={group.id}>
                 <div 
                   className={`flex items-center justify-between p-3 cursor-pointer hover:bg-accent/50 transition-colors ${
-                    index < participatingGroups.length - 1 ? 'border-b border-border/30' : ''
+                    index < participatingGroups.length - 1 ? 'border-b border-border/60' : ''
                   }`}
                   onClick={() => handleGroupClick(group)}
                 >
