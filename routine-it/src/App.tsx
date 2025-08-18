@@ -16,9 +16,6 @@ import { CreateGroupScreen } from "./components/CreateGroupScreen";
 import { SettingsScreen } from "./components/SettingsScreen";
 import { HelpScreen } from "./components/HelpScreen";
 import { UserHomeScreen } from "./components/UserHomeScreen";
-//import "./App.css";
-//import "./index.css"
-//import "./styles/globals.css"
 
 interface NavigationState {
   screen: string;
@@ -195,11 +192,13 @@ export default function App() {
   };
 
   return (
+    
     <div
-      className={`min-h-screen w-full ${isDarkMode ? "bg-slate-900" : "bg-slate-50"} flex items-center justify-center p-4`}
+      className={`min-h-screen w-full ${isDarkMode ? "bg-slate-900" : "bg-slate-50"} flex items-center justify-center `}
     >
+  
       {/* 모바일 앱 컨테이너 */}
-      <div className="w-full max-w-sm h-screen bg-background flex flex-col overflow-hidden rounded-lg shadow-2xl border border-border/50">
+      <div className="w-full h-screen bg-background flex flex-col overflow-hidden rounded-lg shadow-2xl border border-border/50">
         {/* 로그인 상태가 아닐 때는 전체 화면 사용 */}
         {!isLoggedIn ? (
           <div className="w-full h-full">{renderScreen()}</div>
@@ -217,7 +216,7 @@ export default function App() {
             {/* 본문 영역 */}
             <main className="flex-1 bg-background flex flex-col overflow-hidden">
               {/* 콘텐츠 영역 */}
-              <div className="flex-1 overflow-auto px-4 py-4">
+              <div className="flex-1 overflow-auto ">
                 {renderScreen()}
               </div>
 
