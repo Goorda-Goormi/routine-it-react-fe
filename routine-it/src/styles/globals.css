@@ -1,6 +1,10 @@
+@import url("https://fonts.googleapis.com/css2?family=Pretendard:wght@400;500;600;700&family=Noto+Sans+KR:wght@400;500;700&display=swap");
+@tailwind utilities;
+
 @custom-variant dark (&:is(.dark *));
 
 :root {
+  --font-kr: "Pretendard", "Noto Sans KR", system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
   --font-size: 14px;
   /* 라이트모드 - 옅은 파스텔 톤 */
   --background: #f8fffe;
@@ -200,6 +204,8 @@
 
   body {
     @apply bg-background text-foreground;
+    min-height: 100svh;
+    height: auto;
   }
 
   /* 아이콘 색상 클래스 */
@@ -265,14 +271,14 @@
   }
 
   /* Progress 투명도 제거 - 모든 관련 클래스 */
-  .dark .bg-yellow-100\\/80,
-  .dark .bg-orange-100\\/80 {
+  .dark .bg-yellow-100\/80,
+  .dark .bg-orange-100\/80 {
     background-color: #0a1f0f !important; /* 매우 진한 배경 */
     background-image: none !important;
     opacity: 1 !important;
   }
 
-  .dark .border-yellow-200\\/50 {
+  .dark .border-yellow-200\/50 {
     border-color: #1a4a2e !important;
   }
 
@@ -340,7 +346,7 @@
   /* ================================================= */
 
   /* 루틴 상세 헤더 백드롭 다크모드 처리 */
-  .dark .bg-background\\/95 {
+  .dark .bg-background\/95 {
     background-color: rgba(13, 74, 40, 0.98) !important; /* 거의 불투명한 다크 배경 */
     backdrop-filter: blur(8px) !important;
     opacity: 1 !important;
@@ -354,7 +360,7 @@
     opacity: 1 !important;
   }
 
-  .dark .border-yellow-200\\/60 {
+  .dark .border-yellow-200\/60 {
     border-color: transparent !important;
   }
 
@@ -372,8 +378,8 @@
     opacity: 1 !important;
   }
 
-  .dark .border-green-200\\/60,
-  .dark .border-green-500\\/30 {
+  .dark .border-green-200\/60,
+  .dark .border-green-500\/30 {
     border-color: transparent !important;
   }
 
@@ -391,8 +397,8 @@
     opacity: 1 !important;
   }
 
-  .dark .border-orange-200\\/60,
-  .dark .border-orange-500\\/30 {
+  .dark .border-orange-200\/60,
+  .dark .border-orange-500\/30 {
     border-color: transparent !important;
   }
 
@@ -410,8 +416,8 @@
     opacity: 1 !important;
   }
 
-  .dark .border-purple-200\\/60,
-  .dark .border-purple-500\\/30 {
+  .dark .border-purple-200\/60,
+  .dark .border-purple-500\/30 {
     border-color: transparent !important;
   }
 
@@ -469,17 +475,17 @@
 
   /* 로그인 화면 모든 텍스트를 하얀색으로 */
   .dark .text-white,
-  .dark .text-white\\/90,
-  .dark .text-white\\/80,
-  .dark .text-white\\/70,
-  .dark .text-white\\/60,
-  .dark .text-white\\/50 {
+  .dark .text-white\/90,
+  .dark .text-white\/80,
+  .dark .text-white\/70,
+  .dark .text-white\/60,
+  .dark .text-white\/50 {
     color: #ffffff !important;
     opacity: 1 !important;
   }
 
   /* 로그인 화면 카드 다크모드 - 완전 불투명 처리 */
-  .dark .bg-white\\/95 {
+  .dark .bg-white\/95 {
     background-color: var(--color-card) !important;
     background-image: none !important;
     backdrop-filter: none !important;
@@ -575,7 +581,7 @@
   .dark *[class*="bg-gradient"] {
     background-image: none !important;
     opacity: 1 !important;
-  }
+  } 
 
   .dark .bg-gradient-to-br {
     background-image: none !important;
@@ -726,99 +732,99 @@
   }
 
   /* MyPageScreen 활동통계와 성취배지의 투명도 배경 처리 */
-  .dark .bg-purple-500\\/70,
-  .dark .bg-emerald-500\\/70,
-  .dark .bg-blue-500\\/70,
-  .dark .bg-orange-500\\/70,
-  .dark .bg-amber-500\\/70,
-  .dark .bg-green-500\\/70,
-  .dark .bg-gray-300\\/70 {
+  .dark .bg-purple-500\/70,
+  .dark .bg-emerald-500\/70,
+  .dark .bg-blue-500\/70,
+  .dark .bg-orange-500\/70,
+  .dark .bg-amber-500\/70,
+  .dark .bg-green-500\/70,
+  .dark .bg-gray-300\/70 {
     background-color: var(--color-muted) !important;
     opacity: 1 !important;
   }
 
   /* MyPageScreen 보더 투명도 처리 */
-  .dark .border-purple-200\\/50,
-  .dark .border-emerald-200\\/50,
-  .dark .border-blue-200\\/50,
-  .dark .border-orange-200\\/50,
-  .dark .border-amber-200\\/50,
-  .dark .border-green-200\\/50,
-  .dark .border-gray-300\\/50 {
+  .dark .border-purple-200\/50,
+  .dark .border-emerald-200\/50,
+  .dark .border-blue-200\/50,
+  .dark .border-orange-200\/50,
+  .dark .border-amber-200\/50,
+  .dark .border-green-200\/50,
+  .dark .border-gray-300\/50 {
     border-color: transparent !important;
   }
 
   /* 모든 투명도가 적용된 배경색들 재정의 */
-  .dark .bg-black\\/5,
-  .dark .bg-black\\/10,
-  .dark .bg-black\\/20,
-  .dark .bg-black\\/30,
-  .dark .bg-black\\/40,
-  .dark .bg-black\\/50,
-  .dark .bg-black\\/60,
-  .dark .bg-black\\/70,
-  .dark .bg-black\\/80,
-  .dark .bg-black\\/90 {
+  .dark .bg-black\/5,
+  .dark .bg-black\/10,
+  .dark .bg-black\/20,
+  .dark .bg-black\/30,
+  .dark .bg-black\/40,
+  .dark .bg-black\/50,
+  .dark .bg-black\/60,
+  .dark .bg-black\/70,
+  .dark .bg-black\/80,
+  .dark .bg-black\/90 {
     background-color: var(--color-muted) !important;
     opacity: 1 !important;
   }
 
-  .dark .bg-white\\/5,
-  .dark .bg-white\\/10,
-  .dark .bg-white\\/20,
-  .dark .bg-white\\/30,
-  .dark .bg-white\\/40,
-  .dark .bg-white\\/50,
-  .dark .bg-white\\/60,
-  .dark .bg-white\\/70,
-  .dark .bg-white\\/80,
-  .dark .bg-white\\/90 {
+  .dark .bg-white\/5,
+  .dark .bg-white\/10,
+  .dark .bg-white\/20,
+  .dark .bg-white\/30,
+  .dark .bg-white\/40,
+  .dark .bg-white\/50,
+  .dark .bg-white\/60,
+  .dark .bg-white\/70,
+  .dark .bg-white\/80,
+  .dark .bg-white\/90 {
     background-color: var(--color-secondary) !important;
     opacity: 1 !important;
   }
 
   /* 컬러 배경들의 투명도 제거 */
-  .dark .bg-gray-100\\/50,
-  .dark .bg-gray-200\\/50,
-  .dark .bg-gray-300\\/50,
-  .dark .bg-gray-50\\/50 {
+  .dark .bg-gray-100\/50,
+  .dark .bg-gray-200\/50,
+  .dark .bg-gray-300\/50,
+  .dark .bg-gray-50\/50 {
     background-color: var(--color-muted) !important;
     opacity: 1 !important;
   }
 
-  .dark .bg-green-50\\/50,
-  .dark .bg-green-100\\/50,
-  .dark .bg-green-200\\/50,
-  .dark .bg-green-900\\/20,
-  .dark .bg-green-900\\/30 {
+  .dark .bg-green-50\/50,
+  .dark .bg-green-100\/50,
+  .dark .bg-green-200\/50,
+  .dark .bg-green-900\/20,
+  .dark .bg-green-900\/30 {
     background-color: rgba(5, 150, 105, 1) !important; /* 진한 초록색 */
     opacity: 1 !important;
   }
 
-  .dark .bg-blue-50\\/50,
-  .dark .bg-blue-100\\/50,
-  .dark .bg-blue-200\\/50 {
+  .dark .bg-blue-50\/50,
+  .dark .bg-blue-100\/50,
+  .dark .bg-blue-200\/50 {
     background-color: #1e40af !important; /* 진한 파란색 */
     opacity: 1 !important;
   }
 
-  .dark .bg-red-50\\/50,
-  .dark .bg-red-100\\/50,
-  .dark .bg-red-200\\/50 {
+  .dark .bg-red-50\/50,
+  .dark .bg-red-100\/50,
+  .dark .bg-red-200\/50 {
     background-color: #dc2626 !important; /* 진한 빨간색 */
     opacity: 1 !important;
   }
 
-  .dark .bg-yellow-50\\/50,
-  .dark .bg-yellow-100\\/50,
-  .dark .bg-yellow-200\\/50 {
+  .dark .bg-yellow-50\/50,
+  .dark .bg-yellow-100\/50,
+  .dark .bg-yellow-200\/50 {
     background-color: #ca8a04 !important; /* 진한 노란색 */
     opacity: 1 !important;
   }
 
-  .dark .bg-purple-50\\/50,
-  .dark .bg-purple-100\\/50,
-  .dark .bg-purple-200\\/50 {
+  .dark .bg-purple-50\/50,
+  .dark .bg-purple-100\/50,
+  .dark .bg-purple-200\/50 {
     background-color: #7c3aed !important; /* 진한 보라색 */
     opacity: 1 !important;
   }
@@ -984,29 +990,29 @@
   }
 
   /* 다크모드에서 호버 상태도 더 진하게 - opacity 1 적용 */
-  .dark .hover\\:bg-accent\\/50:hover,
-  .dark .hover\\:bg-accent\\/40:hover,
-  .dark .hover\\:bg-accent\\/30:hover,
-  .dark .hover\\:bg-accent\\/20:hover,
-  .dark .hover\\:bg-accent\\/10:hover {
+  .dark .hover\\:bg-accent\/50:hover,
+  .dark .hover\\:bg-accent\/40:hover,
+  .dark .hover\\:bg-accent\/30:hover,
+  .dark .hover\\:bg-accent\/20:hover,
+  .dark .hover\\:bg-accent\/10:hover {
     background-color: var(--color-accent) !important;
     opacity: 1 !important;
   }
 
-  .dark .hover\\:bg-secondary\\/50:hover,
-  .dark .hover\\:bg-secondary\\/40:hover,
-  .dark .hover\\:bg-secondary\\/30:hover,
-  .dark .hover\\:bg-secondary\\/20:hover,
-  .dark .hover\\:bg-secondary\\/10:hover {
+  .dark .hover\\:bg-secondary\/50:hover,
+  .dark .hover\\:bg-secondary\/40:hover,
+  .dark .hover\\:bg-secondary\/30:hover,
+  .dark .hover\\:bg-secondary\/20:hover,
+  .dark .hover\\:bg-secondary\/10:hover {
     background-color: var(--color-secondary) !important;
     opacity: 1 !important;
   }
 
-  .dark .hover\\:bg-muted\\/50:hover,
-  .dark .hover\\:bg-muted\\/40:hover,
-  .dark .hover\\:bg-muted\\/30:hover,
-  .dark .hover\\:bg-muted\\/20:hover,
-  .dark .hover\\:bg-muted\\/10:hover {
+  .dark .hover\\:bg-muted\/50:hover,
+  .dark .hover\\:bg-muted\/40:hover,
+  .dark .hover\\:bg-muted\/30:hover,
+  .dark .hover\\:bg-muted\/20:hover,
+  .dark .hover\\:bg-muted\/10:hover {
     background-color: var(--color-muted) !important;
     opacity: 1 !important;
   }
@@ -1138,12 +1144,12 @@
   .dark div {
     opacity: 1 !important;
   }
-}
+
 
 /**
  * Base typography
  */
-@layer base {
+
   :where(:not(:has([class*=" text-"]), :not(:has([class^="text-"])))) {
     h1 {
       font-size: var(--text-2xl);
