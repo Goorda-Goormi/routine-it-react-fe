@@ -1,4 +1,4 @@
-@import "tailwindcss/preflight";
+
 @tailwind utilities;
 
 @custom-variant dark (&:is(.dark *));
@@ -204,6 +204,8 @@
 
   body {
     @apply bg-background text-foreground;
+    min-height: 100svh;
+    height: auto;
   }
 
   /* 아이콘 색상 클래스 */
