@@ -195,9 +195,13 @@ export default function App() {
   };
 
   return (
+    /*
     <div
       className={`min-h-screen w-full ${isDarkMode ? "bg-slate-900" : "bg-slate-50"} flex items-center justify-center p-4`}
-    >
+    >*/
+   <div
+  className="min-h-screen w-full bg-background flex items-center justify-center p-4"
+>
       {/* 모바일 앱 컨테이너 */}
       <div className="w-full max-w-sm h-screen bg-background flex flex-col overflow-hidden rounded-lg shadow-2xl border border-border/50">
         {/* 로그인 상태가 아닐 때는 전체 화면 사용 */}
