@@ -207,8 +207,6 @@
     @apply bg-background text-foreground;
     min-height: 100svh;
     height: auto;
-    min-height: 100svh;
-    height: auto;
   }
 
   /* 아이콘 색상 클래스 */
