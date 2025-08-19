@@ -37,7 +37,7 @@ export function HelpScreen({ onBack }: HelpScreenProps) {
   ];
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background p-4">
       {/* 헤더 */}
       <div className="sticky top-0 z-10 bg-background/95 backdrop-blur border-b p-4">
         <div className="max-w-md mx-auto">

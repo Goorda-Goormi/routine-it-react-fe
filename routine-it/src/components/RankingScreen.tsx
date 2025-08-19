@@ -150,7 +150,7 @@ export function RankingScreen() {
   };
 
   return (
-    <div className="h-full">
+    <div className="h-full p-4">
       <Tabs defaultValue="personal" className="space-y-4">
         <TabsList className="grid w-full grid-cols-2">
           <TabsTrigger value="personal">개인별</TabsTrigger>

@@ -156,7 +156,7 @@ export function RoutineScreen({ onNavigate }: RoutineScreenProps) {
   };
 
   return (
-    <div className="space-y-6 h-full">
+    <div className="space-y-6 h-full p-4">
       {/* 헤더 및 진행률 */}
       <div className="space-y-4">
         <div className="flex items-center justify-between">

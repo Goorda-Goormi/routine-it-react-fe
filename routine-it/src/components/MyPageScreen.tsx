@@ -145,7 +145,7 @@ export function MyPageScreen({ onNavigate, isDarkMode, onToggleDarkMode }: MyPag
   const expProgress = Math.round((user.exp / user.maxExp) * 100);
 
   return (
-    <div className="space-y-6 h-full">
+    <div className="space-y-6 h-full p-4">
       {/* 프로필 헤더 */}
       <Card>
         <CardContent className="p-6">

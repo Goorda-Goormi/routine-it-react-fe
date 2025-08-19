@@ -169,15 +169,20 @@ export function GroupScreen({ onNavigate }: GroupScreenProps) {
   };
 
   const handleJoinGroup = (groupId: number) => {
-    console.log('그룹 참여:', groupId);
+    // 그룹 참여 로직
+    console.log(`${groupId} 그룹에 참여합니다.`);
+    const groupToNavigate = allGroups.find(group => group.id === groupId);
+    if (groupToNavigate) {
+      onNavigate('group-detail', groupToNavigate);
+    }
   };
 
   const createNewGroup = () => {
     onNavigate('create-group');
   };
 
-  return (
-    <div className="space-y-4 h-full">
+return (
+    <div className="space-y-4 h-full p-4">
       {/* 검색 바 */}
       <div className="relative">
         <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 icon-muted" />
@@ -255,7 +260,7 @@ export function GroupScreen({ onNavigate }: GroupScreenProps) {
               <Users className="h-12 w-12 icon-muted mx-auto mb-4" />
               <p className="text-sm text-muted-foreground mb-4">참여 중인 그룹이 없습니다</p>
               <Button onClick={createNewGroup} size="sm">
-                <Plus className="h-4 w-4 mr-2 icon-primary" />
+                <Plus className="h-4 w-4 mr-2 icon-secondary" />
                 첫 그룹 만들기
               </Button>
             </div>
@@ -313,7 +318,10 @@ export function GroupScreen({ onNavigate }: GroupScreenProps) {
                         <Button 
                           size="sm" 
                           variant="outline"
-                          onClick={() => handleJoinGroup(group.id)}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleJoinGroup(group.id);
+                          }}
                           className="text-card-foreground border-border hover:bg-accent hover:text-card-foreground text-xs px-2 py-1"
                         >
                           참여하기
@@ -348,7 +356,10 @@ export function GroupScreen({ onNavigate }: GroupScreenProps) {
                         <Button 
                           size="sm" 
                           variant="outline"
-                          onClick={() => handleJoinGroup(group.id)}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleJoinGroup(group.id);
+                          }}
                           className="text-card-foreground border-border hover:bg-accent hover:text-card-foreground text-xs px-2 py-1"
                         >
                           참여하기
@@ -383,7 +394,10 @@ export function GroupScreen({ onNavigate }: GroupScreenProps) {
                         <Button 
                           size="sm" 
                           variant="outline"
-                          onClick={() => handleJoinGroup(group.id)}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleJoinGroup(group.id);
+                          }}
                           className="text-card-foreground border-border hover:bg-accent hover:text-card-foreground text-xs px-2 py-1"
                         >
                           참여하기
