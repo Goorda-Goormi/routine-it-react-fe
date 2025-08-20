@@ -245,15 +245,15 @@ export function HomeScreen({ onNavigate }: HomeScreenProps) {
             {personalRoutines.map((routine, index) => (
               <div key={routine.id}>
                 <div 
-                  className={`flex items-center justify-between p-3 transition-colors ${
+                  className={`flex items-center justify-between rounded-lg p-3 transition-colors ${
                     routine.completed 
                       ? 'bg-green-50/50 dark:bg-green-900/20' 
                       : 'hover:bg-accent/50'
                   } ${index < personalRoutines.length - 1 ? 'mb-1' : ''}`}
                 >
-                  <div className="flex items-center space-x-3 flex-1 cursor-pointer" onClick={() => handleRoutineClick(routine)}>
+                  <div className="flex items-center space-x-3 flex-1 cursor-pointer " onClick={() => handleRoutineClick(routine)}>
                     <div className="flex items-center space-x-3">
-                      <div>
+                      <div className='flex flex-col items-start ml-2'>
                         <div className={`text-sm font-medium ${
                           routine.completed 
                             ? 'text-green-700 dark:text-green-400 line-through' 
@@ -322,7 +322,7 @@ export function HomeScreen({ onNavigate }: HomeScreenProps) {
                   onClick={() => handleGroupClick(group)}
                 >
                   <div className="flex items-center space-x-3 flex-1">
-                    <div className="flex -space-x-2">
+                    <div className="flex -space-x-2 w-20">
                       {group.recentMembers.slice(0, 3).map((member, memberIndex) => (
                         <Avatar 
                           key={member.id} 
@@ -337,7 +337,7 @@ export function HomeScreen({ onNavigate }: HomeScreenProps) {
                         </Avatar>
                       ))}
                     </div>
-                    <div>
+                    <div className='flex flex-col items-start ml-2'>
                       <div className="text-sm font-medium text-foreground">{group.name}</div>
                       <div className="text-xs text-foreground dark:opacity-75">{group.members}명 참여</div>
                     </div>

@@ -160,7 +160,7 @@ export function RoutineScreen({ onNavigate }: RoutineScreenProps) {
       {/* 헤더 및 진행률 */}
       <div className="space-y-4">
         <div className="flex items-center justify-between">
-          <div>
+          <div className='flex flex-col items-start ml-6'>
             <h2 className="text-lg font-semibold text-foreground">나의 루틴</h2>
             <p className="text-sm text-foreground dark:opacity-75">꾸준한 습관으로 더 나은 내일을 만들어보세요</p>
           </div>
@@ -168,7 +168,7 @@ export function RoutineScreen({ onNavigate }: RoutineScreenProps) {
             variant="outline" 
             size="sm"
             onClick={handleAddRoutine}
-            className="text-foreground border-border hover:bg-accent hover:text-foreground"
+            className="text-foreground border-border hover:bg-accent hover:text-foreground mr-6"
           >
             <Plus className="h-4 w-4 mr-1 icon-secondary" />
             루틴 추가
@@ -176,8 +176,8 @@ export function RoutineScreen({ onNavigate }: RoutineScreenProps) {
         </div>
 
         {/* 오늘의 진행률 카드 - 다크모드에서 찐한 주황색 배경 */}
-        <Card className="bg-gradient-to-br from-amber-100 to-yellow-100 border-amber-200/60 dark:bg-card-yellow-bg dark:border-none dark:card-shadow">
-          <CardContent className="p-4">
+        <Card className="m-5 bg-gradient-to-br from-amber-100 to-yellow-100 border-amber-200/60 dark:bg-card-yellow-bg dark:border-none dark:card-shadow">
+          <CardContent className="p-6">
             <div className="flex items-center space-x-3 mb-3">
               <div className="flex items-center justify-center w-10 h-10 rounded-full bg-amber-500 dark:bg-orange-700">
                 <Target className="h-5 w-5 text-white" />
@@ -200,8 +200,8 @@ export function RoutineScreen({ onNavigate }: RoutineScreenProps) {
       </div>
 
       {/* 탭 메뉴 */}
-      <Tabs value={activeFilter} onValueChange={setActiveFilter} className="space-y-4">
-        <TabsList className="grid w-full grid-cols-3">
+      <Tabs value={activeFilter} onValueChange={setActiveFilter} className="space-y-4 flex flex-col items-center">
+        <TabsList className="grid w-[413px] h-[40px] grid-cols-3">
           <TabsTrigger value="today">
             오늘
           </TabsTrigger>
@@ -214,20 +214,20 @@ export function RoutineScreen({ onNavigate }: RoutineScreenProps) {
         </TabsList>
 
         {/* 오늘의 루틴 */}
-        <TabsContent value="today" className="space-y-4">
+        <TabsContent value="today" className="space-y-4 w-[413px]">
           <Card className="dark:card-shadow">
-            <CardHeader className="pb-4">
-              <CardTitle className="text-base text-foreground flex items-center space-x-2">
+            <CardHeader>
+              <CardTitle className="text-base text-foreground flex items-center space-x-2 mt-1 mb-3">
                 <Calendar className="h-4 w-4 icon-accent" />
                 <span>오늘의 루틴</span>
               </CardTitle>
             </CardHeader>
-            <CardContent className="pt-0">
-              <div className="space-y-0">
+            <CardContent>
+              <div className="space-y-3">
                 {todayRoutines.map((routine, index) => (
                   <div key={routine.id}>
                     <div 
-                      className={`p-3 transition-colors ${
+                      className={`p-3 transition-colors rounded-lg ${
                         routine.completed 
                           ? 'bg-green-50/50 dark:bg-green-900/20' 
                           : 'hover:bg-accent/50'
@@ -235,8 +235,8 @@ export function RoutineScreen({ onNavigate }: RoutineScreenProps) {
                     >
                       <div className="flex items-center justify-between">
                         {/* 왼쪽: 루틴 정보 (2줄 레이아웃) */}
-                        <div className="flex-1 cursor-pointer" onClick={() => handleRoutineClick(routine)}>
-                          <div className="flex items-center space-x-2 mb-1">
+                        <div className="flex flex-col items-start cursor-pointer ml-2" onClick={() => handleRoutineClick(routine)}>
+                          <div className="flex items-start space-x-2 mb-1">
                             <span className={`text-sm font-medium ${
                               routine.completed 
                                 ? 'text-green-700 dark:text-green-400 line-through' 
@@ -296,20 +296,20 @@ export function RoutineScreen({ onNavigate }: RoutineScreenProps) {
         </TabsContent>
 
         {/* 전체 루틴 */}
-        <TabsContent value="all" className="space-y-4">
+        <TabsContent value="all" className="space-y-4 w-[413px]">
           <Card className="dark:card-shadow">
-            <CardHeader className="pb-4">
-              <CardTitle className="text-base text-foreground flex items-center space-x-2">
+            <CardHeader>
+              <CardTitle className="text-base text-foreground flex items-center space-x-2 mt-1">
                 <Target className="h-4 w-4 icon-accent" />
                 <span>전체 루틴</span>
               </CardTitle>
             </CardHeader>
             <CardContent className="pt-0">
-              <div className="space-y-0">
+              <div className="space-y-2">
                 {allRoutines.map((routine, index) => (
                   <div key={routine.id}>
                     <div 
-                      className={`flex items-center justify-between p-3 cursor-pointer hover:bg-accent/50 transition-colors ${
+                      className={`flex items-center justify-between p-3 cursor-pointer hover:bg-accent/50 transition-colors rounded-lg ${
                         index < allRoutines.length - 1 ? 'border-b border-border/30' : ''
                       }`}
                       onClick={() => handleRoutineClick(routine)}
@@ -323,7 +323,7 @@ export function RoutineScreen({ onNavigate }: RoutineScreenProps) {
                           {routine.completed && <CheckCircle className="h-4 w-4 text-white" />}
                         </div>
                         <div>
-                          <div className="flex items-center space-x-2">
+                          <div className="flex items-center space-x-2 mb-2">
                             <span className="text-sm font-medium text-foreground">
                               {getCategoryEmoji(routine.category)} {routine.name}
                             </span>
@@ -334,7 +334,7 @@ export function RoutineScreen({ onNavigate }: RoutineScreenProps) {
                               {routine.difficulty}
                             </Badge>
                           </div>
-                          <div className="text-xs text-foreground dark:opacity-75">
+                          <div className="text-xs text-left text-foreground dark:opacity-75 ml-1">
                             <Clock className="h-3 w-3 inline mr-1 icon-muted" />
                             {routine.time} • {routine.streak}일 연속
                           </div>
@@ -356,9 +356,9 @@ export function RoutineScreen({ onNavigate }: RoutineScreenProps) {
         </TabsContent>
 
         {/* 추천 루틴 */}
-        <TabsContent value="recommended" className="space-y-4">
+        <TabsContent value="recommended" className="space-y-4 w-[413px]">
           <Card className="dark:card-shadow">
-            <CardHeader className="pb-4">
+            <CardHeader>
               <CardTitle className="text-base text-foreground flex items-center space-x-2">
                 <TrendingUp className="h-4 w-4 icon-accent" />
                 <span>추천 루틴</span>
@@ -369,14 +369,14 @@ export function RoutineScreen({ onNavigate }: RoutineScreenProps) {
                 {recommendedRoutines.map((routine, index) => (
                   <div key={routine.id}>
                     <div 
-                      className={`p-3 hover:bg-accent/50 transition-colors cursor-pointer ${
+                      className={`p-3 hover:bg-accent/50 transition-colors rounded-lg cursor-pointer ${
                         index < recommendedRoutines.length - 1 ? 'border-b border-border/30' : ''
                       }`}
                       onClick={() => handleRoutineClick(routine)}
                     >
                       <div className="flex items-start justify-between mb-2">
-                        <div className="flex-1">
-                          <div className="flex items-center space-x-2 mb-1">
+                        <div className="flex flex-col items-start">
+                          <div className="flex items-center space-x-2 mb-2.5">
                             <span className="text-sm font-medium text-foreground">
                               {getCategoryEmoji(routine.category)} {routine.name}
                             </span>
@@ -387,7 +387,7 @@ export function RoutineScreen({ onNavigate }: RoutineScreenProps) {
                               {routine.difficulty}
                             </Badge>
                           </div>
-                          <p className="text-xs text-foreground dark:opacity-75 mb-2">
+                          <p className="text-xs text-foreground dark:opacity-75 mb-2 ml-1">
                             {routine.description}
                           </p>
                           <div className="flex items-center space-x-3 text-xs text-foreground dark:opacity-75">
