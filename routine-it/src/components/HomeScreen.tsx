@@ -150,7 +150,7 @@ export function HomeScreen({ onNavigate }: HomeScreenProps) {
       {/* 오늘 날짜 및 완료 현황 */}
       <div className="space-y-4">
         <div className="flex items-center justify-between">
-          <div>
+          <div className="flex flex-col items-start m-2">
             <h2 className="text-xl font-semibold text-foreground">안녕하세요, 김민수님!</h2>
             <p className="text-sm text-foreground">
               {todayString} • 오늘도 화이팅!

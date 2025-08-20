@@ -1,5 +1,4 @@
 @import "tailwindcss";
-
 /* 전역 폰트 & 색상 */
 :root {
   font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
@@ -37,19 +36,20 @@ body {
 
 /* 제목 */
 h1 {
-  font-size: 3.2em;
+  font-size: 1.5em;
+  font-weight: 800;
   line-height: 1.1;
+  color:var(--foreground);
 }
 
 /* 버튼 */
 button {
   border-radius: 8px;
   border: 1px solid transparent;
-  padding: 0.6em 1.2em;
+  padding: 0.6em 0.6em;
   font-size: 1em;
   font-weight: 500;
   font-family: inherit;
-  background-color: #1a1a1a;
   cursor: pointer;
   transition: border-color 0.25s;
 }
@@ -68,7 +68,6 @@ button:focus-visible {
   padding: 2rem;
   text-align: center;
   width:1080px;
-  
 }
 
 /* 로고 (필요 시만 사용) */
@@ -112,12 +111,8 @@ button:focus-visible {
 @media (prefers-color-scheme: light) {
   :root {
     color: #213547;
-    background-color: #ffffff;
   }
   a:hover {
     color: #747bff;
-  }
-  button {
-    background-color: #f9f9f9;
   }
 }
