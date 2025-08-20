@@ -227,7 +227,7 @@ export function GroupChatScreen({ group, onBack }: GroupChatScreenProps) {
             <div className="flex-1" />
             <Dialog open={isMembersDialogOpen} onOpenChange={setIsMembersDialogOpen}>
               <DialogTrigger asChild>
-                <Button variant="ghost" size="sm" className="text-card-foreground hover:text-card-foreground">
+                <Button variant="ghost" size="sm" className="text-card-foreground hover:text-card-foreground ">
                   <Users className="h-4 w-4 icon-secondary" />
                 </Button>
               </DialogTrigger>
@@ -266,7 +266,7 @@ export function GroupChatScreen({ group, onBack }: GroupChatScreenProps) {
                   인증하기
                 </Button>
               </DialogTrigger>
-              <DialogContent className="max-w-sm mx-auto">
+              <DialogContent className="max-w-sm mx-auto dark:text-white">
                 <DialogHeader>
                   <DialogTitle className="text-card-foreground">루틴 인증하기</DialogTitle>
                   <DialogDescription>오늘의 루틴 수행 내용을 그룹 멤버들과 공유해주세요.</DialogDescription>
@@ -348,7 +348,7 @@ export function GroupChatScreen({ group, onBack }: GroupChatScreenProps) {
                         msg.type === 'auth' 
                           ? 'bg-green-50/80 border border-green-200/50 dark:bg-green-900/20 dark:border-green-700/50'
                           : isMyMessage
-                          ? 'bg-chart-5 text-primary-foreground'
+                          ? 'bg-chart-5 text-primary'
                           : 'bg-muted text-foreground'
                       }`}
                     >

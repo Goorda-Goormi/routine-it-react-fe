@@ -202,7 +202,7 @@ export function HomeScreen({ onNavigate }: HomeScreenProps) {
             </Card>
 
             {/* 연속 출석 */}
-            <Card className={`${streakInfo.bgColor} dark:card-shadow`}>
+            <Card className="bg-card-mint-bg border border-card-mint-border dark:border-none dark:card-shadow">
               <CardContent className="p-4">
                 <div className="flex flex-col items-center space-y-2">
                   <div className="text-2xl">{streakInfo.icon}</div>
@@ -220,7 +220,7 @@ export function HomeScreen({ onNavigate }: HomeScreenProps) {
           </div>
 
           {/* 연속 출석 메시지 */}
-          <div className={`p-3 rounded-lg ${streakInfo.bgColor} dark:card-shadow`}>
+          <div className="bg-card-mint-bg border border-card-mint-border rounded-lg dark:border-none dark:card-shadow">
             <div className="flex items-center space-x-2">
               <span className="text-lg">{streakInfo.icon}</span>
               <span className={`text-sm ${streakInfo.textColor}`}>
