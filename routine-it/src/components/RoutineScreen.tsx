@@ -156,7 +156,7 @@ export function RoutineScreen({ onNavigate }: RoutineScreenProps) {
   };
 
   return (
-    <div className="space-y-6 h-full">
+    <div className="space-y-6 h-full p-4">
       {/* 헤더 및 진행률 */}
       <div className="space-y-4">
         <div className="flex items-center justify-between">
@@ -176,8 +176,8 @@ export function RoutineScreen({ onNavigate }: RoutineScreenProps) {
         </div>
 
         {/* 오늘의 진행률 카드 - 다크모드에서 찐한 주황색 배경 */}
-        <Card className="m-5 bg-gradient-to-br from-amber-100 to-yellow-100 border-amber-200/60 dark:bg-card-yellow-bg dark:border-none dark:card-shadow">
-          <CardContent className="p-6">
+        <Card className="m-5 bg-gradient-to-br bg-card-yellow-bg dark:bg-card-yellow-bg dark:border-none dark:card-shadow">
+          <CardContent className="p-4">
             <div className="flex items-center space-x-3 mb-3">
               <div className="flex items-center justify-center w-10 h-10 rounded-full bg-amber-500 dark:bg-orange-700">
                 <Target className="h-5 w-5 text-white" />

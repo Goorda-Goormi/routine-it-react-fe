@@ -168,62 +168,67 @@ export function HomeScreen({ onNavigate }: HomeScreenProps) {
         </div>
 
         {/* 완료 현황 및 연속 출석 카드 - 다크모드에서 찐한 배경색 */}
-        <div className="grid grid-cols-3 gap-3">
-          {/* 완료일수 - 라이트모드: 피치 파스텔, 다크모드: 찐한 주황색 배경 */}
-          <Card className="bg-gradient-to-br from-orange-100 to-amber-100 border-orange-200/60 dark:bg-card-yellow-bg dark:border-none dark:card-shadow">
-            <CardContent className="p-4">
-              <div className="flex flex-col items-center space-y-2">
-                <div className="flex items-center justify-center w-8 h-8 rounded-full bg-orange-500 dark:bg-orange-700">
-                  <CheckCircle className="h-4 w-4 text-white" />
+          <div className="grid grid-cols-3 gap-3">
+            {/* 완료일수 */}
+            <Card className="bg-card-yellow-bg border border-card-yellow-border dark:border-none dark:card-shadow">
+              <CardContent className="p-4">
+                <div className="flex flex-col items-center space-y-2">
+                  <div className="flex items-center justify-center w-8 h-8 rounded-full bg-orange-500 dark:bg-orange-700">
+                    <CheckCircle className="h-4 w-4 text-white" />
+                  </div>
+                  <div className="text-center">
+                    <div className="text-xl font-bold text-card-yellow-text">
+                      {completedRoutines}
+                    </div>
+                    <div className="text-xs text-card-yellow-text/80">완료</div>
+                  </div>
                 </div>
-                <div className="text-center">
-                  <div className="text-xl font-bold text-orange-800 dark:text-white">{completedRoutines}</div>
-                  <div className="text-xs text-orange-600 dark:text-white dark:opacity-90">완료</div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+              </CardContent>
+            </Card>
 
-          {/* 누적점수 - 라이트모드: 라벤더 파스텔, 다크모드: 찐한 보라색 배경 */}
-          <Card className="bg-gradient-to-br from-purple-100 to-pink-100 border-purple-200/60 dark:bg-card-lavender-bg dark:border-none dark:card-shadow">
-            <CardContent className="p-4">
-              <div className="flex flex-col items-center space-y-2">
-                <div className="flex items-center justify-center w-8 h-8 rounded-full bg-purple-500 dark:bg-purple-800">
-                  <TrendingUp className="h-4 w-4 text-white" />
+            {/* 누적점수 */}
+            <Card className="bg-card-lavender-bg border border-card-lavender-border dark:border-none dark:card-shadow">
+              <CardContent className="p-4">
+                <div className="flex flex-col items-center space-y-2">
+                  <div className="flex items-center justify-center w-8 h-8 rounded-full bg-purple-500 dark:bg-purple-800">
+                    <TrendingUp className="h-4 w-4 text-white" />
+                  </div>
+                  <div className="text-center">
+                    <div className="text-xl font-bold text-card-lavender-text">2,450</div>
+                    <div className="text-xs text-card-lavender-text/80">누적점수</div>
+                  </div>
                 </div>
-                <div className="text-center">
-                  <div className="text-xl font-bold text-purple-800 dark:text-white">2,450</div>
-                  <div className="text-xs text-purple-600 dark:text-white dark:opacity-90">누적점수</div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+              </CardContent>
+            </Card>
 
-          {/* 동적 연속 출석 - 다크모드에서 더 진한 배경색 */}
-          <Card className={`${streakInfo.bgColor} dark:card-shadow`}>
-            <CardContent className="p-4">
-              <div className="flex flex-col items-center space-y-2">
-                <div className="text-2xl">
-                  {streakInfo.icon}
+            {/* 연속 출석 */}
+            <Card className="bg-card-mint-bg border border-card-mint-border dark:border-none dark:card-shadow">
+              <CardContent className="p-4">
+                <div className="flex flex-col items-center space-y-2">
+                  <div className="text-2xl">{streakInfo.icon}</div>
+                  <div className="text-center">
+                    <div className={`text-xl font-bold ${streakInfo.textColor}`}>
+                      {currentStreak}
+                    </div>
+                    <div className={`text-xs ${streakInfo.subTextColor}`}>
+                      {streakInfo.stage}
+                    </div>
+                  </div>
                 </div>
-                <div className="text-center">
-                  <div className={`text-xl font-bold ${streakInfo.textColor}`}>{currentStreak}</div>
-                  <div className={`text-xs ${streakInfo.subTextColor}`}>{streakInfo.stage}</div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* 연속 출석 메시지 - 다크모드에서 더 진한 배경색 */}
-        <div className={`p-3 rounded-lg ${streakInfo.bgColor} dark:card-shadow`}>
-          <div className="flex items-center space-x-2">
-            <span className="text-lg">{streakInfo.icon}</span>
-            <span className={`text-sm ${streakInfo.textColor}`}>
-              {getStreakMessage(currentStreak)}
-            </span>
+              </CardContent>
+            </Card>
           </div>
-        </div>
+
+          {/* 연속 출석 메시지 */}
+          <div className="bg-card-mint-bg border border-card-mint-border rounded-lg dark:border-none dark:card-shadow">
+            <div className="flex items-center space-x-2">
+              <span className="text-lg">{streakInfo.icon}</span>
+              <span className={`text-sm ${streakInfo.textColor}`}>
+                {getStreakMessage(currentStreak)}
+              </span>
+            </div>
+          </div>
+
       </div>
 
       {/* 오늘의 루틴 */}

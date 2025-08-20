@@ -150,7 +150,7 @@ export function RankingScreen() {
   };
 
   return (
-    <div className="h-full">
+    <div className="h-full p-4">
       <Tabs defaultValue="personal" className="space-y-4">
         <TabsList className="grid w-full grid-cols-2">
           <TabsTrigger value="personal">개인별</TabsTrigger>
@@ -161,7 +161,7 @@ export function RankingScreen() {
           {/* 이번 달 리셋 안내 - 다크모드에서 찐한 주황색 배경 */}
           <Card className="dark:card-shadow">
             <CardContent className="p-4">
-              <div className="flex items-center space-x-3 p-3 rounded-lg bg-gradient-to-br from-amber-100 to-yellow-100 border border-amber-200/60 dark:bg-card-yellow-bg dark:border-none">
+              <div className="flex items-center space-x-3 p-3 rounded-lg bg-gradient-to-br bg-card-yellow-bg dark:bg-card-yellow-bg dark:border-none">
                 <div className="flex items-center justify-center w-10 h-10 rounded-full bg-amber-500 dark:bg-orange-700">
                   <Star className="h-5 w-5 text-white" />
                 </div>
@@ -220,7 +220,7 @@ export function RankingScreen() {
           {/* 이번 달 리셋 안내 - 다크모드에서 찐한 오렌지색 배경 */}
           <Card className="dark:card-shadow">
             <CardContent className="p-4">
-              <div className="flex items-center space-x-3 p-3 rounded-lg bg-gradient-to-br from-amber-100 to-orange-100 border border-amber-200/60 dark:bg-card-peach-bg dark:border-none">
+              <div className="flex items-center space-x-3 p-3 rounded-lg bg-gradient-to-br bg-card-peach-bg dark:bg-card-peach-bg dark:border-none">
                 <div className="flex items-center justify-center w-10 h-10 rounded-full bg-orange-500 dark:bg-red-700">
                   <Users className="h-5 w-5 text-white" />
                 </div>

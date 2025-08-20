@@ -147,7 +147,7 @@ export function UserHomeScreen({ user, onBack }: UserHomeScreenProps) {
   };
 
   return (
-    <div className="h-full flex flex-col">
+    <div className="h-full flex flex-col p-4">
       {/* 헤더 */}
       <div className="flex items-center space-x-3 mb-6">
         <Button 

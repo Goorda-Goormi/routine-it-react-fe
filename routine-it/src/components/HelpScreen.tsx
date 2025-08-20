@@ -37,13 +37,13 @@ export function HelpScreen({ onBack }: HelpScreenProps) {
   ];
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background p-4">
       {/* 헤더 */}
       <div className="sticky top-0 z-10 bg-background/95 backdrop-blur border-b p-4">
         <div className="max-w-md mx-auto">
           <div className="flex items-center space-x-3">
             <Button variant="ghost" size="sm" onClick={onBack} className="p-1">
-              <ArrowLeft className="h-5 w-5" />
+              <ArrowLeft className="h-5 w-5 text-icon-secondary dark:text-white" />
             </Button>
             <h1 className="font-bold text-lg">도움말</h1>
           </div>

@@ -90,6 +90,7 @@
   --destructive: #ef4444;
   --destructive-foreground: #ffffff;
   --border: #1a4a2e;
+  /*--border: #ffffff;*/
   --input: #0a2e18;
   --ring: #10b981;
   --font-weight-medium: 600;

@@ -41,7 +41,7 @@ export function RoutineDetailScreen({ routine, onBack }: RoutineDetailScreenProp
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-3">
             <Button variant="ghost" size="sm" onClick={onBack} className="p-1">
-              <ArrowLeft className="h-5 w-5 icon-secondary" />
+              <ArrowLeft className="h-5 w-5 text-icon-secondary dark:text-white" />
             </Button>
             <h1 className="font-bold text-primary">루틴 상세</h1>
           </div>
