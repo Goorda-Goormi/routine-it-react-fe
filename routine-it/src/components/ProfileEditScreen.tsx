@@ -36,7 +36,7 @@ export function ProfileEditScreen({ onBack }: ProfileEditScreenProps) {
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-3">
             <Button variant="ghost" size="sm" onClick={onBack} className="p-1">
-              <ArrowLeft className="h-5 w-5" />
+              <ArrowLeft className="h-5 w-5 text-icon-secondary dark:text-white" />
             </Button>
             <h1 className="font-bold">프로필 편집</h1>
           </div>

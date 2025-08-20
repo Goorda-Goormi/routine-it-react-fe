@@ -211,7 +211,7 @@ export function GroupChatScreen({ group, onBack }: GroupChatScreenProps) {
   return (
     <div className="flex flex-col h-screen bg-background">
       {/* 헤더 */}
-      <div className="sticky top-0 z-10 bg-background/95 backdrop-blur border-b p-4">
+      <div className="sticky top-0 z-10 bg-background/95 backdrop-blur border-b p-4 ">
         <div className="mx-auto flex items-center justify-between">
           <div className="flex-1 flex items-center space-x-3">
             <Button variant="ghost" size="sm" onClick={onBack} className="p-1 text-card-foreground hover:text-card-foreground">
@@ -261,8 +261,8 @@ export function GroupChatScreen({ group, onBack }: GroupChatScreenProps) {
             </Dialog>
             <Dialog open={isAuthDialogOpen} onOpenChange={setIsAuthDialogOpen}>
               <DialogTrigger asChild>
-                <Button size="sm" className="bg-green-600 hover:bg-green-700 text-black">
-                  <CheckCircle className="h-4 w-4 mr-1 icon-secondary" />
+                <Button size="sm" className="bg-green-400 hover:bg-green-500 text-icon-secondary dark:text-white">
+                  <CheckCircle className="h-4 w-4 mr-1 text-icon-secondary dark:text-white " />
                   인증하기
                 </Button>
               </DialogTrigger>
@@ -415,7 +415,7 @@ export function GroupChatScreen({ group, onBack }: GroupChatScreenProps) {
       </div>
 
       {/* 메시지 입력 */}
-      <div className="border-t border-border">
+      <div className="sticky bottom-0 border-t border-border dark:border-white bg-background">
         <div className="max-w-md mx-auto p-4">
           <div className="flex items-end space-x-2">
             <div className="flex-1">

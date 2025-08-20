@@ -339,9 +339,9 @@ export function MyPageScreen({ onNavigate, isDarkMode, onToggleDarkMode }: MyPag
 
       {/* 설정 메뉴 */}
       <Card>
-        <CardHeader className="pb-4">
-          <CardTitle className="text-base text-card-foreground flex items-center space-x-2">
-            <Settings className="h-4 w-4 icon-accent" />
+        <CardHeader className="pb-4 ">
+          <CardTitle className="text-base text-card-foreground flex items-center space-x-2 ">
+            <Settings className="h-4 w-4 icon-accent " />
             <span>설정</span>
           </CardTitle>
         </CardHeader>
