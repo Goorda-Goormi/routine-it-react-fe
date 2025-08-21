@@ -152,7 +152,7 @@ export function CreateRoutineScreen({ onBack }: CreateRoutineScreenProps) {
                   <SelectItem value="14">2주일 (14일)</SelectItem>
                   <SelectItem value="21">3주일 (21일)</SelectItem>
                   <SelectItem value="30">1개월 (30일)</SelectItem>
-                  <SelectItem value="66">66일 (습관 형성)</SelectItem>
+                  <SelectItem value="60">60일 (습관 형성)</SelectItem>
                   <SelectItem value="100">100일 도전</SelectItem>
                 </SelectContent>
               </Select>

@@ -17,7 +17,7 @@ export function HomeScreen({ onNavigate }: HomeScreenProps) {
   const todayString = today.toLocaleDateString('ko-KR', { month: 'long', day: 'numeric' });
 
   // 연속 출석일 (예시 데이터)
-  const currentStreak = 28;
+  const currentStreak = 365;
   const streakInfo = getStreakInfo(currentStreak);
 
   // 개인 루틴 데이터 (상태 관리)
@@ -162,7 +162,7 @@ export function HomeScreen({ onNavigate }: HomeScreenProps) {
             onClick={() => onNavigate('create-routine')}
             className="text-foreground border-border/60 hover:bg-accent hover:text-foreground"
           >
-            <Plus className="h-4 w-4 mr-1 icon-secondary" />
+            <Plus className="h-4 w-4 mr-1 icon-secondary bg" />
             루틴 추가
           </Button>
         </div>
@@ -180,7 +180,7 @@ export function HomeScreen({ onNavigate }: HomeScreenProps) {
                     <div className="text-xl font-bold text-card-yellow-text">
                       {completedRoutines}
                     </div>
-                    <div className="text-xs text-card-yellow-text/80">완료</div>
+                    <div className="text-xs font-normal text-card-yellow-text/80">완료</div>
                   </div>
                 </div>
               </CardContent>
@@ -195,17 +195,19 @@ export function HomeScreen({ onNavigate }: HomeScreenProps) {
                   </div>
                   <div className="text-center">
                     <div className="text-xl font-bold text-card-lavender-text">2,450</div>
-                    <div className="text-xs text-card-lavender-text/80">누적점수</div>
+                    <div className="text-xs font-normal text-card-lavender-text/80">누적점수</div>
                   </div>
                 </div>
               </CardContent>
             </Card>
 
             {/* 연속 출석 */}
-            <Card className="bg-card-mint-bg border border-card-mint-border dark:border-none dark:card-shadow">
+            <Card className={`${streakInfo.containBgColor} border ${streakInfo.borderColor} dark:border-none dark:card-shadow`}>
               <CardContent className="p-4">
                 <div className="flex flex-col items-center space-y-2">
-                  <div className="text-2xl">{streakInfo.icon}</div>
+                  <div className={`flex items-center justify-center w-8 h-8 rounded-full ${streakInfo.bgColor}`}>
+                    <div className="text-xl mb-0 bg">{streakInfo.icon}</div>
+                  </div>
                   <div className="text-center">
                     <div className={`text-xl font-bold ${streakInfo.textColor}`}>
                       {currentStreak}
@@ -220,8 +222,8 @@ export function HomeScreen({ onNavigate }: HomeScreenProps) {
           </div>
 
           {/* 연속 출석 메시지 */}
-          <div className="bg-card-mint-bg border border-card-mint-border rounded-lg dark:border-none dark:card-shadow">
-            <div className="flex items-center space-x-2">
+          <div className={`${streakInfo.containBgColor} border ${streakInfo.borderColor} rounded-lg dark:border-none dark:card-shadow`}>
+            <div className="flex items-center space-x-2 ml-3">
               <span className="text-lg">{streakInfo.icon}</span>
               <span className={`text-sm ${streakInfo.textColor}`}>
                 {getStreakMessage(currentStreak)}
@@ -283,7 +285,7 @@ export function HomeScreen({ onNavigate }: HomeScreenProps) {
                           : 'border-2 border-border/60 hover:border-green-500'
                       }`}
                     >
-                      {routine.completed && <CheckCircle className="h-4 w-4 text-white" />}
+                      {routine.completed && <CheckCircle className="h-w w-4 text-white" />}
                     </button>
                     
                     {!routine.completed && (

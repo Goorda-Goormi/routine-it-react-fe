@@ -50,8 +50,8 @@
   --icon-accent: #059669;
 
   /* 라이트모드 파스텔 카드 색상 - 옅은 톤 */
-  --card-yellow-bg: #fef3c7;
-  --card-yellow-border: #fde68a;
+  --card-yellow-bg: #fff7d5;
+  --card-yellow-border: #edcc46;
   --card-yellow-text: #92400e;
   --card-ivory-bg: #fffbeb;
   --card-ivory-border: #fed7aa;
@@ -65,9 +65,9 @@
   --card-lavender-bg: #f3f0ff;
   --card-lavender-border: #c4b5fd;
   --card-lavender-text: #6d28d9;
-  --card-mint-bg: #f0fdfa;
-  --card-mint-border: #a7f3d0;
-  --card-mint-text: #065f46;
+  --card-mint-bg: #f1ffe8;
+  --card-mint-border: #a0d377;
+  --card-mint-text: #065f1f;
 }
 
 .dark {
@@ -492,6 +492,24 @@
   .dark .text-purple-600,
   .dark .text-purple-300,
   .dark .text-purple-400 {
+    color: #ffffff;
+    opacity: 1;
+  }
+
+   /* 성장 카드 */
+  .dark .bg-mint-100 {
+    background-color: var(  --color-card-mint-bg);
+    opacity: 1;
+  }
+  .dark .border-mint-200\/60,
+  .dark .border-mint-500\/30 {
+    border-color: transparent;
+  }
+
+  .dark .text-mint-800,
+  .dark .text-mint-600,
+  .dark .text-mint-300,
+  .dark .text-mint-400 {
     color: #ffffff;
     opacity: 1;
   }
