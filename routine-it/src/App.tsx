@@ -49,7 +49,48 @@ export default function App() {
     return false;
   });
 
-  const [personalRoutines, setPersonalRoutines] = useState<Routine[]>([]);
+  // 개인 루틴 상태 추가
+  const [personalRoutines, setPersonalRoutines] = useState([
+    {
+      id: "1",
+      name: "아침 운동",
+      category: "운동",
+      time: "07:00",
+      completed: true,
+      streak: 5,
+      difficulty: "보통",
+      description: "매일 아침 30분씩 상쾌하게 운동하기",
+      frequency: "매일",
+      goal: "30",
+      reminder: true,
+    },
+    {
+      id: "2",
+      name: "물 2L 마시기",
+      category: "건강",
+      time: "언제든",
+      completed: false,
+      streak: 12,
+      difficulty: "쉬움",
+      description: "하루 종일 충분한 수분 섭취하기",
+      frequency: "매일",
+      goal: "30",
+      reminder: true,
+    },
+    {
+      id: "3",
+      name: "독서 30분",
+      category: "학습",
+      time: "21:00",
+      completed: true,
+      streak: 8,
+      difficulty: "보통",
+      description: "저녁에 책 읽는 시간을 가지기",
+      frequency: "매일",
+      goal: "30",
+      reminder: true,
+    },
+  ]);
 
   useEffect(() => {
     if (isDarkMode) {
@@ -119,13 +160,24 @@ export default function App() {
   // 새로운 루틴을 추가하는 함수
   const handleAddRoutine = (newRoutineData: any) => {
     // 임시 ID 및 기본값 설정
-    const newRoutine: Routine = {
+    const newRoutine = {
       ...newRoutineData,
       id: Date.now().toString(),
       completed: false,
       streak: 0,
     };
     setPersonalRoutines(prev => [...prev, newRoutine]);
+  };
+
+  // 기존 루틴을 수정하는 함수
+  const handleUpdateRoutine = (updatedRoutine: any) => {
+    setPersonalRoutines((prev) =>
+      prev.map((routine) =>
+        routine.id === updatedRoutine.id
+          ? { ...routine, ...updatedRoutine }
+          : routine
+      )
+    );
   };
   
   // 루틴 완료 상태를 토글하는 함수
@@ -154,6 +206,7 @@ export default function App() {
             <RoutineDetailScreen
               routine={currentScreen.params}
               onBack={navigateBack}
+              onUpdateRoutine={handleUpdateRoutine}
             />
           );
         case "group-detail":
