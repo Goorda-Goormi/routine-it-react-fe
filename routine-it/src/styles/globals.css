@@ -236,22 +236,22 @@
   /* SVG 아이콘 스타일링 */
   svg.icon-primary {
     color: var(--color-icon-primary);
-    fill: currentColor;
+    fill: var(--background);
   }
 
   svg.icon-secondary {
     color: var(--color-icon-secondary);
-    fill: currentColor;
+    fill: var(--background);
   }
 
   svg.icon-muted {
     color: var(--color-icon-muted);
-    fill: currentColor;
+    fill: var(--background);
   }
 
   svg.icon-accent {
     color: var(--color-icon-accent);
-    fill: currentColor;
+    fill: var(--background);
   }
 
   /* ================================================= */

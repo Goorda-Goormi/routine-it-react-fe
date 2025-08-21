@@ -152,7 +152,7 @@ export function RankingScreen() {
   return (
     <div className="h-full p-4">
       <Tabs defaultValue="personal" className="space-y-4">
-        <TabsList className="grid w-full grid-cols-2">
+        <TabsList className="grid w-[404px] h-[40px] grid-cols-2">
           <TabsTrigger value="personal">개인별</TabsTrigger>
           <TabsTrigger value="group">그룹별</TabsTrigger>
         </TabsList>
@@ -195,7 +195,7 @@ export function RankingScreen() {
                         <AvatarFallback>{user.name.charAt(0)}</AvatarFallback>
                       </Avatar>
                       
-                      <div>
+                      <div className='flex flex-col items-start'>
                         <div className="text-sm font-medium text-foreground">{user.name}</div>
                         <div className="text-xs text-foreground dark:opacity-75">
                           연속 {user.streakDays}일

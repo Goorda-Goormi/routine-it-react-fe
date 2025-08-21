@@ -160,7 +160,7 @@ export function MyPageScreen({ onNavigate, isDarkMode, onToggleDarkMode }: MyPag
                 <h2 className="text-lg font-semibold text-card-foreground">{user.name}</h2>
                 <Badge variant="secondary" className="text-xs">Lv.{user.level}</Badge>
               </div>
-              <p className="text-sm text-muted-foreground mb-2">{user.email}</p>
+              <p className="text-sm text-left text-muted-foreground mb-2">{user.email}</p>
               <div className="space-y-1">
                 <div className="flex items-center justify-between text-xs">
                   <span className="text-muted-foreground">경험치</span>
@@ -273,11 +273,11 @@ export function MyPageScreen({ onNavigate, isDarkMode, onToggleDarkMode }: MyPag
               return (
                 <Card key={index} className={`${stat.bgColor} ${stat.borderColor}`}>
                   <CardContent className="p-4">
-                    <div className="flex items-center space-x-3">
+                    <div className="flex items-start space-x-3">
                       <div className={`flex items-center justify-center w-10 h-10 rounded-full ${stat.iconBgColor}`}>
                         <IconComponent className="h-5 w-5 text-white" />
                       </div>
-                      <div>
+                      <div className='flex-1 min-w-0'>
                         <div className={`text-lg font-bold ${stat.textColor}`}>
                           {stat.value}
                         </div>
