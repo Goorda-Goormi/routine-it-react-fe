@@ -6,7 +6,7 @@ import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 import { Switch } from './ui/switch';
 import { Progress } from './ui/progress';
 import { 
-  User, 
+ User, 
   Edit3, 
   Calendar, 
   Trophy, 
@@ -30,19 +30,25 @@ interface MyPageScreenProps {
   onNavigate: (screen: string, params?: any) => void;
   isDarkMode: boolean;
   onToggleDarkMode: () => void;
+  user: {
+    name: string;
+    email: string;
+    avatar: string;
+    joinDate: string;
+    level: number;
+    exp: number;
+    maxExp: number;
+    streakDays: number;
+    bio: string;
+  }
 }
 
-export function MyPageScreen({ onNavigate, isDarkMode, onToggleDarkMode }: MyPageScreenProps) {
-  const [user] = useState({
-    name: '김민수',
-    email: 'minsu@example.com',
-    avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=80&h=80&fit=crop&crop=face',
-    joinDate: '2024년 1월',
-    level: 15,
-    exp: 2450,
-    maxExp: 3000,
-    streakDays: 28
-  });
+export function MyPageScreen({ onNavigate, isDarkMode, onToggleDarkMode, user }: MyPageScreenProps) {
+
+  // onNavigate 함수 호출 시 onSave 함수를 props로 전달
+  const handleEditProfile = () => {
+    onNavigate('profile-edit', { initialUserInfo: user, isDarkMode, onToggleDarkMode });
+  };
 
   const stats = [
     { 
@@ -173,7 +179,7 @@ export function MyPageScreen({ onNavigate, isDarkMode, onToggleDarkMode }: MyPag
             <Button 
               variant="outline" 
               size="sm"
-              onClick={() => onNavigate('profile-edit')}
+              onClick={handleEditProfile}
               className="text-card-foreground border-border hover:bg-accent hover:text-card-foreground"
             >
               <Edit3 className="h-4 w-4 mr-1 icon-secondary" />

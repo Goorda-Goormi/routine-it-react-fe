@@ -19,8 +19,16 @@ interface Routine {
   isGroupRoutine?: boolean;
 }
 
+interface UserInfo {
+  name: string;
+  username: string;
+  profileImage: string;
+}
+
+
 interface HomeScreenProps {
   onNavigate: (screen: string, params?: any) => void;
+  initialUserInfo: UserInfo;
 }
 
 interface Member {
@@ -44,7 +52,7 @@ interface VerificationPhoto {
   isPublic: boolean;
 }
 
-export function HomeScreen({ onNavigate }: HomeScreenProps) {
+export function HomeScreen({ onNavigate, initialUserInfo }: HomeScreenProps) {
   const today = new Date();
   const todayString = today.toLocaleDateString('ko-KR', { month: 'long', day: 'numeric' });
 
@@ -212,7 +220,7 @@ export function HomeScreen({ onNavigate }: HomeScreenProps) {
       <div className="space-y-4">
         <div className="flex items-center justify-between">
           <div className="flex flex-col items-start m-2">
-            <h2 className="text-xl font-semibold text-foreground">안녕하세요, 김민수님!</h2>
+            <h2 className="text-xl font-semibold text-foreground">안녕하세요, {initialUserInfo.name}님!</h2>
             <p className="text-sm text-foreground">
               {todayString} • 오늘도 화이팅!
             </p>

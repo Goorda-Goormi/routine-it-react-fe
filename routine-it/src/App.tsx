@@ -48,6 +48,17 @@ export default function App() {
     }
     return false;
   });
+  const [UserInfo, setUserInfo] = useState({
+      name: '구르미',
+      email: 'goormida@example.com',
+      avatar: '/profile.jpg',
+      joinDate: '2024년 1월',
+      level: 15,
+      exp: 2450,
+      maxExp: 3000,
+      streakDays: 28,
+      bio: '우리 함께 습관을 만들어봐요!'
+    });
 
   // 개인 루틴 상태 추가
   const [personalRoutines, setPersonalRoutines] = useState([
@@ -189,6 +200,11 @@ export default function App() {
     );
   };
 
+  // 프로필 정보를 업데이트하는 함수
+  const handleSaveProfile = (updatedInfo: any) => {
+      setUserInfo(prev => ({ ...prev, ...updatedInfo }));
+  };
+
   const currentScreen =
     navigationStack.length > 0
       ? navigationStack[navigationStack.length - 1]
@@ -218,7 +234,16 @@ export default function App() {
             />
           );
         case "profile-edit":
-          return <ProfileEditScreen onBack={navigateBack} />;
+          return (
+            <ProfileEditScreen 
+              onBack={navigateBack} 
+              onNavigate={navigateTo}
+              isDarkMode={isDarkMode}
+              onToggleDarkMode={toggleDarkMode}
+              initialUserInfo={UserInfo}
+              onSave={handleSaveProfile} 
+            />
+          );
         case "group-chat":
           return (
             <GroupChatScreen
@@ -250,7 +275,7 @@ export default function App() {
           );
         case "help":
           return <HelpScreen onBack={navigateBack} />;
-        case "user-home":
+       case "user-home":
           return (
             <UserHomeScreen
               user={currentScreen.params}
@@ -267,7 +292,16 @@ export default function App() {
   const renderMainScreen = () => {
     switch (activeTab) {
       case "home":
-        return <HomeScreen onNavigate={navigateTo} />;
+        return (
+          <HomeScreen 
+            onNavigate={navigateTo} 
+            initialUserInfo={{
+                name: UserInfo.name,
+                username: UserInfo.email.split('@')[0], // email에서 username 추출
+                profileImage: UserInfo.avatar // avatar를 profileImage로 사용
+            }} 
+        />
+        );
       case "routine":
         return <RoutineScreen 
           onNavigate={navigateTo} 
@@ -284,10 +318,20 @@ export default function App() {
             onNavigate={navigateTo}
             isDarkMode={isDarkMode}
             onToggleDarkMode={toggleDarkMode}
+            user={UserInfo}
           />
         );
       default:
-        return <HomeScreen onNavigate={navigateTo} />;
+        return (
+          <HomeScreen 
+              onNavigate={navigateTo} 
+              initialUserInfo={{
+                  name: UserInfo.name,
+                  username: UserInfo.email.split('@')[0], // username 추가
+                  profileImage: UserInfo.avatar // profileImage 추가
+              }} 
+          />
+        );
     }
   };
 
@@ -310,6 +354,7 @@ export default function App() {
                 onSearch={handleSearch}
                 onNewProject={handleNewProject}
                 onProfileMenuClick={handleProfileMenuClick}
+                userInfo={UserInfo}
               />
             )}
 
