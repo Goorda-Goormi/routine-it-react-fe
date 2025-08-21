@@ -8,8 +8,39 @@ import { Calendar, Target, Trophy, Users, Camera, CheckCircle, Plus, TrendingUp,
 import { ImageWithFallback } from './figma/ImageWithFallback';
 import { getStreakInfo, getStreakMessage } from './utils/streakUtils';
 
+interface Routine {
+  id: number;
+  name: string;
+  category?: string;
+  time: string;
+  completed: boolean;
+  streak: number;
+  difficulty?: string;
+}
+
 interface HomeScreenProps {
   onNavigate: (screen: string, params?: any) => void;
+}
+
+interface Member {
+  id: number;
+  name: string;
+  avatar: string;
+}
+
+interface Group {
+  id: number;
+  name: string;
+  members: number;
+  recentMembers: Member[];
+}
+
+interface VerificationPhoto {
+  id: number;
+  routine: string;
+  image: string;
+  date: string;
+  isPublic: boolean;
 }
 
 export function HomeScreen({ onNavigate }: HomeScreenProps) {
@@ -21,7 +52,7 @@ export function HomeScreen({ onNavigate }: HomeScreenProps) {
   const streakInfo = getStreakInfo(currentStreak);
 
   // 개인 루틴 데이터 (상태 관리)
-  const [personalRoutines, setPersonalRoutines] = useState([
+  const [personalRoutines, setPersonalRoutines] = useState<Routine[]>([
     {
       id: 1,
       name: '아침 운동',
@@ -46,7 +77,7 @@ export function HomeScreen({ onNavigate }: HomeScreenProps) {
   ]);
 
   // 참여 그룹 데이터
-  const participatingGroups = [
+  const participatingGroups: Group[] = [
     {
       id: 1,
       name: '아침 운동 챌린지',
@@ -69,46 +100,46 @@ export function HomeScreen({ onNavigate }: HomeScreenProps) {
   ];
 
   // 본인 인증 사진 그리드 데이터 (공개여부 추가)
-  const myVerificationPhotos = [
-    { 
-      id: 1, 
-      routine: '아침 운동', 
-      image: 'https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=150&h=150&fit=crop', 
+  const myVerificationPhotos: VerificationPhoto[] = [
+    {
+      id: 1,
+      routine: '아침 운동',
+      image: 'https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=150&h=150&fit=crop',
       date: '오늘',
       isPublic: true
     },
-    { 
-      id: 2, 
-      routine: '독서 30분', 
-      image: 'https://images.unsplash.com/photo-1506126613408-eca07ce68773?w=150&h=150&fit=crop', 
+    {
+      id: 2,
+      routine: '독서 30분',
+      image: 'https://images.unsplash.com/photo-1506126613408-eca07ce68773?w=150&h=150&fit=crop',
       date: '어제',
       isPublic: true
     },
-    { 
-      id: 3, 
-      routine: '물 2L 마시기', 
-      image: 'https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?w=150&h=150&fit=crop', 
+    {
+      id: 3,
+      routine: '물 2L 마시기',
+      image: 'https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?w=150&h=150&fit=crop',
       date: '11월 13일',
       isPublic: false
     },
-    { 
-      id: 4, 
-      routine: '명상 10분', 
-      image: 'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=150&h=150&fit=crop', 
+    {
+      id: 4,
+      routine: '명상 10분',
+      image: 'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=150&h=150&fit=crop',
       date: '11월 12일',
       isPublic: true
     },
-    { 
-      id: 5, 
-      routine: '일기 쓰기', 
-      image: 'https://images.unsplash.com/photo-1455390582262-044cdead277a?w=150&h=150&fit=crop', 
+    {
+      id: 5,
+      routine: '일기 쓰기',
+      image: 'https://images.unsplash.com/photo-1455390582262-044cdead277a?w=150&h=150&fit=crop',
       date: '11월 11일',
       isPublic: false
     },
-    { 
-      id: 6, 
-      routine: '스트레칭', 
-      image: 'https://images.unsplash.com/photo-1518611012118-696072aa579a?w=150&h=150&fit=crop', 
+    {
+      id: 6,
+      routine: '스트레칭',
+      image: 'https://images.unsplash.com/photo-1518611012118-696072aa579a?w=150&h=150&fit=crop',
       date: '11월 10일',
       isPublic: true
     }
@@ -121,24 +152,24 @@ export function HomeScreen({ onNavigate }: HomeScreenProps) {
   const totalRoutines = personalRoutines.length;
   const completionRate = Math.round((completedRoutines / totalRoutines) * 100);
 
-  const handleRoutineClick = (routine: any) => {
+  const handleRoutineClick = (routine: Routine) => {
     onNavigate('routine-detail', routine);
   };
 
-  const handleGroupClick = (group: any) => {
+  const handleGroupClick = (group: Group) => {
     onNavigate('group-detail', group);
   };
 
-  const handleMemberClick = (member: any) => {
+  const handleMemberClick = (member: Member) => {
     onNavigate('user-home', member);
   };
 
   // 루틴 완료 상태 토글
   const toggleRoutineCompletion = (routineId: number, e: React.MouseEvent) => {
     e.stopPropagation(); // 본문 클릭 이벤트 방지
-    setPersonalRoutines(prev => 
-      prev.map(routine => 
-        routine.id === routineId 
+    setPersonalRoutines(prev =>
+      prev.map(routine =>
+        routine.id === routineId
           ? { ...routine, completed: !routine.completed }
           : routine
       )
@@ -156,8 +187,8 @@ export function HomeScreen({ onNavigate }: HomeScreenProps) {
               {todayString} • 오늘도 화이팅!
             </p>
           </div>
-          <Button 
-            variant="outline" 
+          <Button
+            variant="outline"
             size="sm"
             onClick={() => onNavigate('create-routine')}
             className="text-foreground border-border/60 hover:bg-accent hover:text-foreground"
@@ -168,68 +199,68 @@ export function HomeScreen({ onNavigate }: HomeScreenProps) {
         </div>
 
         {/* 완료 현황 및 연속 출석 카드 - 다크모드에서 찐한 배경색 */}
-          <div className="grid grid-cols-3 gap-3">
-            {/* 완료일수 */}
-            <Card className="bg-card-yellow-bg border border-card-yellow-border dark:border-none dark:card-shadow">
-              <CardContent className="p-4">
-                <div className="flex flex-col items-center space-y-2">
-                  <div className="flex items-center justify-center w-8 h-8 rounded-full bg-orange-500 dark:bg-orange-700">
-                    <CheckCircle className="h-4 w-4 text-white" />
-                  </div>
-                  <div className="text-center">
-                    <div className="text-xl font-bold text-card-yellow-text">
-                      {completedRoutines}
-                    </div>
-                    <div className="text-xs font-normal text-card-yellow-text/80">완료</div>
-                  </div>
+        <div className="grid grid-cols-3 gap-3">
+          {/* 완료일수 */}
+          <Card className="bg-card-yellow-bg border border-card-yellow-border dark:border-none dark:card-shadow">
+            <CardContent className="p-4">
+              <div className="flex flex-col items-center space-y-2">
+                <div className="flex items-center justify-center w-8 h-8 rounded-full bg-orange-500 dark:bg-orange-700">
+                  <CheckCircle className="h-4 w-4 text-white" />
                 </div>
-              </CardContent>
-            </Card>
+                <div className="text-center">
+                  <div className="text-xl font-bold text-card-yellow-text">
+                    {completedRoutines}
+                  </div>
+                  <div className="text-xs font-normal text-card-yellow-text/80">완료</div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
 
-            {/* 누적점수 */}
-            <Card className="bg-card-lavender-bg border border-card-lavender-border dark:border-none dark:card-shadow">
-              <CardContent className="p-4">
-                <div className="flex flex-col items-center space-y-2">
-                  <div className="flex items-center justify-center w-8 h-8 rounded-full bg-purple-500 dark:bg-purple-800">
-                    <TrendingUp className="h-4 w-4 text-white" />
-                  </div>
-                  <div className="text-center">
-                    <div className="text-xl font-bold text-card-lavender-text">2,450</div>
-                    <div className="text-xs font-normal text-card-lavender-text/80">누적점수</div>
-                  </div>
+          {/* 누적점수 */}
+          <Card className="bg-card-lavender-bg border border-card-lavender-border dark:border-none dark:card-shadow">
+            <CardContent className="p-4">
+              <div className="flex flex-col items-center space-y-2">
+                <div className="flex items-center justify-center w-8 h-8 rounded-full bg-purple-500 dark:bg-purple-800">
+                  <TrendingUp className="h-4 w-4 text-white" />
                 </div>
-              </CardContent>
-            </Card>
+                <div className="text-center">
+                  <div className="text-xl font-bold text-card-lavender-text">2,450</div>
+                  <div className="text-xs font-normal text-card-lavender-text/80">누적점수</div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
 
-            {/* 연속 출석 */}
-            <Card className={`${streakInfo.containBgColor} border ${streakInfo.borderColor} dark:border-none dark:card-shadow`}>
-              <CardContent className="p-4">
-                <div className="flex flex-col items-center space-y-2">
-                  <div className={`flex items-center justify-center w-8 h-8 rounded-full ${streakInfo.bgColor}`}>
-                    <div className="text-xl mb-0 bg">{streakInfo.icon}</div>
+          {/* 연속 출석 */}
+          <Card className={`${streakInfo.containBgColor} border ${streakInfo.borderColor} dark:border-none dark:card-shadow`}>
+            <CardContent className="p-4">
+              <div className="flex flex-col items-center space-y-2">
+                <div className={`flex items-center justify-center w-8 h-8 rounded-full ${streakInfo.bgColor}`}>
+                  <div className="text-xl mb-0 bg">{streakInfo.icon}</div>
+                </div>
+                <div className="text-center">
+                  <div className={`text-xl font-bold ${streakInfo.textColor}`}>
+                    {currentStreak}
                   </div>
-                  <div className="text-center">
-                    <div className={`text-xl font-bold ${streakInfo.textColor}`}>
-                      {currentStreak}
-                    </div>
-                    <div className={`text-xs ${streakInfo.subTextColor}`}>
-                      {streakInfo.stage}
-                    </div>
+                  <div className={`text-xs ${streakInfo.subTextColor}`}>
+                    {streakInfo.stage}
                   </div>
                 </div>
-              </CardContent>
-            </Card>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* 연속 출석 메시지 */}
+        <div className={`${streakInfo.containBgColor} border ${streakInfo.borderColor} rounded-lg dark:border-none dark:card-shadow`}>
+          <div className="flex items-center space-x-2 ml-3">
+            <span className="text-lg">{streakInfo.icon}</span>
+            <span className={`text-sm ${streakInfo.textColor}`}>
+              {getStreakMessage(currentStreak)}
+            </span>
           </div>
-
-          {/* 연속 출석 메시지 */}
-          <div className={`${streakInfo.containBgColor} border ${streakInfo.borderColor} rounded-lg dark:border-none dark:card-shadow`}>
-            <div className="flex items-center space-x-2 ml-3">
-              <span className="text-lg">{streakInfo.icon}</span>
-              <span className={`text-sm ${streakInfo.textColor}`}>
-                {getStreakMessage(currentStreak)}
-              </span>
-            </div>
-          </div>
+        </div>
 
       </div>
 
@@ -251,10 +282,10 @@ export function HomeScreen({ onNavigate }: HomeScreenProps) {
           <div className="space-y-0">
             {personalRoutines.map((routine, index) => (
               <div key={routine.id}>
-                <div 
+                <div
                   className={`flex items-center justify-between rounded-lg p-3 transition-colors ${
-                    routine.completed 
-                      ? 'bg-green-50/50 dark:bg-green-900/20' 
+                    routine.completed
+                      ? 'bg-green-50/50 dark:bg-green-900/20'
                       : 'hover:bg-accent/50'
                   } ${index < personalRoutines.length - 1 ? 'mb-1' : ''}`}
                 >
@@ -262,8 +293,8 @@ export function HomeScreen({ onNavigate }: HomeScreenProps) {
                     <div className="flex items-center space-x-3">
                       <div className='flex flex-col items-start ml-2'>
                         <div className={`text-sm font-medium ${
-                          routine.completed 
-                            ? 'text-green-700 dark:text-green-400 line-through' 
+                          routine.completed
+                            ? 'text-green-700 dark:text-green-400 line-through'
                             : 'text-foreground'
                         }`}>
                           {routine.name}
@@ -274,23 +305,23 @@ export function HomeScreen({ onNavigate }: HomeScreenProps) {
                       </div>
                     </div>
                   </div>
-                  
-                  <div className="flex items-center space-x-2">
+
+                  <div className="flex items-center space-x-2 h-[30px]">
                     {/* 완료 체크박스 */}
                     <button
                       onClick={(e) => toggleRoutineCompletion(routine.id, e)}
-                      className={`w-6 h-6 rounded-full flex items-center justify-center transition-colors ${
-                        routine.completed 
-                          ? 'bg-green-500 hover:bg-green-600' 
+                      className={`w-8 h-8 rounded-full flex items-center justify-center transition-colors p-0 m-0 border-0 ${
+                        routine.completed
+                          ? 'bg-green-500 hover:bg-green-600'
                           : 'border-2 border-border/60 hover:border-green-500'
                       }`}
                     >
-                      {routine.completed && <CheckCircle className="h-w w-4 text-white" />}
+                      {routine.completed && <CheckCircle className="h-4 w-4 text-white" />}
                     </button>
-                    
+
                     {!routine.completed && (
-                      <Button 
-                        size="sm" 
+                      <Button
+                        size="sm"
                         variant="outline"
                         className="text-foreground border-border/60 hover:bg-accent hover:text-foreground"
                         onClick={(e) => {
@@ -322,7 +353,7 @@ export function HomeScreen({ onNavigate }: HomeScreenProps) {
           <div className="space-y-0">
             {participatingGroups.map((group, index) => (
               <div key={group.id}>
-                <div 
+                <div
                   className={`flex items-center justify-between p-3 cursor-pointer hover:bg-accent/50 transition-colors ${
                     index < participatingGroups.length - 1 ? 'border-b border-border/60' : ''
                   }`}
@@ -331,8 +362,8 @@ export function HomeScreen({ onNavigate }: HomeScreenProps) {
                   <div className="flex items-center space-x-3 flex-1">
                     <div className="flex -space-x-2 w-20">
                       {group.recentMembers.slice(0, 3).map((member, memberIndex) => (
-                        <Avatar 
-                          key={member.id} 
+                        <Avatar
+                          key={member.id}
                           className="w-8 h-8 border-2 border-background cursor-pointer hover:scale-110 transition-transform"
                           onClick={(e) => {
                             e.stopPropagation();
@@ -349,9 +380,9 @@ export function HomeScreen({ onNavigate }: HomeScreenProps) {
                       <div className="text-xs text-foreground dark:opacity-75">{group.members}명 참여</div>
                     </div>
                   </div>
-                  
-                  <Button 
-                    size="sm" 
+
+                  <Button
+                    size="sm"
                     variant="ghost"
                     className="text-foreground hover:text-foreground"
                   >
@@ -393,7 +424,7 @@ export function HomeScreen({ onNavigate }: HomeScreenProps) {
                     </div>
                   </div>
                 </div>
-                
+
                 {/* 날짜 정보 */}
                 <div className="text-center">
                   <span className="text-xs text-foreground dark:opacity-75">{photo.date}</span>

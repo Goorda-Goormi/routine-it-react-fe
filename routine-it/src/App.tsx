@@ -17,6 +17,20 @@ import { SettingsScreen } from "./components/SettingsScreen";
 import { HelpScreen } from "./components/HelpScreen";
 import { UserHomeScreen } from "./components/UserHomeScreen";
 
+interface Routine {
+  id: string;
+  name: string;
+  description?: string;
+  time: string;
+  frequency: string;
+  reminder: boolean;
+  goal: string;
+  category: string; // 카테고리 추가
+  completed: boolean;
+  streak: number;
+  difficulty: string; // 난이도 추가
+}
+
 interface NavigationState {
   screen: string;
   params?: any;
@@ -34,6 +48,8 @@ export default function App() {
     }
     return false;
   });
+
+  const [personalRoutines, setPersonalRoutines] = useState<Routine[]>([]);
 
   useEffect(() => {
     if (isDarkMode) {
@@ -82,6 +98,7 @@ export default function App() {
     ];
     if (tabs.includes(screen)) {
       setActiveTab(screen);
+      setNavigationStack([]);
       return;
     }
 
@@ -97,6 +114,27 @@ export default function App() {
 
   const toggleDarkMode = () => {
     setIsDarkMode(!isDarkMode);
+  };
+
+  // 새로운 루틴을 추가하는 함수
+  const handleAddRoutine = (newRoutineData: any) => {
+    // 임시 ID 및 기본값 설정
+    const newRoutine: Routine = {
+      ...newRoutineData,
+      id: Date.now().toString(),
+      completed: false,
+      streak: 0,
+    };
+    setPersonalRoutines(prev => [...prev, newRoutine]);
+  };
+  
+  // 루틴 완료 상태를 토글하는 함수
+  const handleToggleCompletion = (routineId: string) => {
+    setPersonalRoutines(prev =>
+      prev.map(routine =>
+        routine.id === routineId ? { ...routine, completed: !routine.completed } : routine
+      )
+    );
   };
 
   const currentScreen =
@@ -136,7 +174,12 @@ export default function App() {
             />
           );
         case "create-routine":
-          return <CreateRoutineScreen onBack={navigateBack} />;
+          return (
+            <CreateRoutineScreen 
+              onBack={navigateBack} 
+              onCreateRoutine={handleAddRoutine}
+            />
+          );
         case "create-group":
           return (
             <CreateGroupScreen
@@ -173,7 +216,11 @@ export default function App() {
       case "home":
         return <HomeScreen onNavigate={navigateTo} />;
       case "routine":
-        return <RoutineScreen onNavigate={navigateTo} />;
+        return <RoutineScreen 
+          onNavigate={navigateTo} 
+          personalRoutines={personalRoutines}
+          onToggleCompletion={handleToggleCompletion}
+        />;
       case "group":
         return <GroupScreen onNavigate={navigateTo} />;
       case "ranking":

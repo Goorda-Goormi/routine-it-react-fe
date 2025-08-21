@@ -8,11 +8,20 @@ import { Plus, Target, CheckCircle, Clock, Calendar, TrendingUp, Filter, Camera 
 
 interface RoutineScreenProps {
   onNavigate: (screen: string, params?: any) => void;
+  personalRoutines: any[]; // App.tsx에서 관리되는 개인 루틴 목록
+  onToggleCompletion: (routineId: string) => void; // 루틴 완료 상태를 토글하는 함수
 }
 
-export function RoutineScreen({ onNavigate }: RoutineScreenProps) {
+export function RoutineScreen({ onNavigate, personalRoutines, onToggleCompletion }: RoutineScreenProps) {
   const [activeFilter, setActiveFilter] = useState('today');
 
+  // 오늘의 루틴: personalRoutines에서 필터링하여 사용
+  const todayRoutines = personalRoutines.filter(routine => {
+    // 실제로는 여기에 오늘의 요일이나 날짜를 기반으로 필터링하는 로직이 들어가야 합니다.
+    // 예시에서는 모든 루틴을 '오늘의 루틴'으로 가정합니다.
+    return true;
+  });
+  /*
   // 오늘의 루틴 (상태 관리를 위해 useState 사용)
   const [todayRoutines, setTodayRoutines] = useState([
     {
@@ -52,6 +61,7 @@ export function RoutineScreen({ onNavigate }: RoutineScreenProps) {
       difficulty: '쉬움'
     }
   ]);
+  */
 
   // 전체 루틴
   const allRoutines = [
@@ -141,18 +151,6 @@ export function RoutineScreen({ onNavigate }: RoutineScreenProps) {
 
   const handleAddRoutine = () => {
     onNavigate('create-routine');
-  };
-
-  // 루틴 완료 상태 토글
-  const toggleRoutineCompletion = (routineId: number, e: React.MouseEvent) => {
-    e.stopPropagation(); // 본문 클릭 이벤트 방지
-    setTodayRoutines(prev => 
-      prev.map(routine => 
-        routine.id === routineId 
-          ? { ...routine, completed: !routine.completed }
-          : routine
-      )
-    );
   };
 
   return (
@@ -261,7 +259,10 @@ export function RoutineScreen({ onNavigate }: RoutineScreenProps) {
                         <div className="flex items-center space-x-2">
                           {/* 완료 체크박스 */}
                           <button
-                            onClick={(e) => toggleRoutineCompletion(routine.id, e)}
+                            onClick={(e) => {
+                              e.stopPropagation(); 
+                              onToggleCompletion(routine.id); // prop으로 받은 함수 사용
+                            }}
                             className={`w-6 h-6 rounded-full flex items-center justify-center transition-colors ${
                               routine.completed 
                                 ? 'bg-green-500 hover:bg-green-600' 
