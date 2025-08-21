@@ -4,7 +4,7 @@ import { Button } from './ui/button';
 import { Progress } from './ui/progress';
 import { Badge } from './ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
-import { Calendar, Target, Trophy, Users, Camera, CheckCircle, Plus, TrendingUp, Clock, Heart, MessageCircle, Flame } from 'lucide-react';
+import { Calendar, Target, Trophy, Users, Camera, CheckCircle, Plus, TrendingUp, Clock, Heart, MessageCircle, Flame, ChevronLeft, ChevronRight, X } from 'lucide-react';
 import { ImageWithFallback } from './figma/ImageWithFallback';
 import { getStreakInfo, getStreakMessage } from './utils/streakUtils';
 
@@ -16,6 +16,7 @@ interface Routine {
   completed: boolean;
   streak: number;
   difficulty?: string;
+  isGroupRoutine?: boolean;
 }
 
 interface HomeScreenProps {
@@ -56,23 +57,26 @@ export function HomeScreen({ onNavigate }: HomeScreenProps) {
     {
       id: 1,
       name: '아침 운동',
-      completed: true,
+      completed: false,
       time: '07:00',
-      streak: 5
+      streak: 5,
+      isGroupRoutine: true // 그룹 루틴 (예시)
     },
     {
       id: 2,
       name: '물 2L 마시기',
       completed: false,
       time: '언제든',
-      streak: 12
+      streak: 12,
+      isGroupRoutine: false // 개인 루틴
     },
     {
       id: 3,
       name: '독서 30분',
       completed: true,
       time: '21:00',
-      streak: 8
+      streak: 8,
+      isGroupRoutine: true // 그룹 루틴 (예시)
     }
   ]);
 
@@ -104,42 +108,42 @@ export function HomeScreen({ onNavigate }: HomeScreenProps) {
     {
       id: 1,
       routine: '아침 운동',
-      image: 'https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=150&h=150&fit=crop',
+      image: 'https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?fit=crop',
       date: '오늘',
       isPublic: true
     },
     {
       id: 2,
       routine: '독서 30분',
-      image: 'https://images.unsplash.com/photo-1506126613408-eca07ce68773?w=150&h=150&fit=crop',
+      image: 'https://images.unsplash.com/photo-1506126613408-eca07ce68773?fit=crop',
       date: '어제',
       isPublic: true
     },
     {
       id: 3,
       routine: '물 2L 마시기',
-      image: 'https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?w=150&h=150&fit=crop',
+      image: 'https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?fit=crop',
       date: '11월 13일',
       isPublic: false
     },
     {
       id: 4,
       routine: '명상 10분',
-      image: 'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=150&h=150&fit=crop',
+      image: 'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?fit=crop',
       date: '11월 12일',
       isPublic: true
     },
     {
       id: 5,
       routine: '일기 쓰기',
-      image: 'https://images.unsplash.com/photo-1455390582262-044cdead277a?w=150&h=150&fit=crop',
+      image: 'https://images.unsplash.com/photo-1455390582262-044cdead277a?fit=crop',
       date: '11월 11일',
       isPublic: false
     },
     {
       id: 6,
       routine: '스트레칭',
-      image: 'https://images.unsplash.com/photo-1518611012118-696072aa579a?w=150&h=150&fit=crop',
+      image: 'https://images.unsplash.com/photo-1518611012118-696072aa579a?fit=crop',
       date: '11월 10일',
       isPublic: true
     }
@@ -152,6 +156,9 @@ export function HomeScreen({ onNavigate }: HomeScreenProps) {
   const totalRoutines = personalRoutines.length;
   const completionRate = Math.round((completedRoutines / totalRoutines) * 100);
 
+  // 갤러리 상태 관리
+  const [selectedPhotoIndex, setSelectedPhotoIndex] = useState<number | null>(null);
+
   const handleRoutineClick = (routine: Routine) => {
     onNavigate('routine-detail', routine);
   };
@@ -162,6 +169,29 @@ export function HomeScreen({ onNavigate }: HomeScreenProps) {
 
   const handleMemberClick = (member: Member) => {
     onNavigate('user-home', member);
+  };
+
+  // 사진 클릭 핸들러
+  const handlePhotoClick = (index: number) => {
+    setSelectedPhotoIndex(index);
+  };
+
+  // 갤러리 닫기 핸들러
+  const handleCloseGallery = () => {
+    setSelectedPhotoIndex(null);
+  };
+
+  // 갤러리 이전/다음 사진 보기 핸들러
+  const handlePrevPhoto = () => {
+    if (selectedPhotoIndex !== null && selectedPhotoIndex > 0) {
+      setSelectedPhotoIndex(selectedPhotoIndex - 1);
+    }
+  };
+
+  const handleNextPhoto = () => {
+    if (selectedPhotoIndex !== null && selectedPhotoIndex < publicVerificationPhotos.length - 1) {
+      setSelectedPhotoIndex(selectedPhotoIndex + 1);
+    }
   };
 
   // 루틴 완료 상태 토글
@@ -308,30 +338,40 @@ export function HomeScreen({ onNavigate }: HomeScreenProps) {
 
                   <div className="flex items-center space-x-2 h-[30px]">
                     {/* 완료 체크박스 */}
-                    <button
-                      onClick={(e) => toggleRoutineCompletion(routine.id, e)}
-                      className={`w-8 h-8 rounded-full flex items-center justify-center transition-colors p-0 m-0 border-0 ${
-                        routine.completed
-                          ? 'bg-green-500 hover:bg-green-600'
-                          : 'border-2 border-border/60 hover:border-green-500'
-                      }`}
-                    >
-                      {routine.completed && <CheckCircle className="h-4 w-4 text-white" />}
-                    </button>
-
-                    {!routine.completed && (
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        className="text-foreground border-border/60 hover:bg-accent hover:text-foreground"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          // 인증 로직
-                        }}
+                    {/* 개인 루틴과 그룹 루틴에 따라 다른 로직 적용 */}
+                    {routine.isGroupRoutine ? (
+                      // 그룹 루틴
+                      routine.completed ? (
+                        // 완료된 그룹 루틴: div로 표시 (클릭 불가능)
+                        <div
+                          className={`w-8 h-8 rounded-full flex items-center justify-center transition-colors p-0 m-0 bg-green-500`}
+                        >
+                          <CheckCircle className="h-4 w-4 text-white" />
+                        </div>
+                      ) : (
+                        // 미완료 그룹 루틴: 인증 버튼
+                        <button
+                          onClick={(e) => toggleRoutineCompletion(routine.id, e)}
+                          className={`w-auto h-8 rounded-full flex items-center justify-center transition-colors px-3 py-1 text-xs text-foreground border border-border/60 hover:bg-accent`}
+                        >
+                          <span className='flex items-center'>
+                            <Camera className="h-4 w-4 mr-1 text-foreground/70" />
+                            인증
+                          </span>
+                        </button>
+                      )
+                    ) : (
+                      // 개인 루틴
+                      <button
+                        onClick={(e) => toggleRoutineCompletion(routine.id, e)}
+                        className={`w-8 h-8 rounded-full flex items-center justify-center transition-colors p-0 m-0 border-0 ${
+                          routine.completed
+                            ? 'bg-green-500 hover:bg-green-600'
+                            : 'border-2 border-border/60 hover:border-green-500'
+                        }`}
                       >
-                        <Camera className="h-4 w-4 mr-1 icon-secondary" />
-                        인증
-                      </Button>
+                        {routine.completed && <CheckCircle className="h-4 w-4 text-white" />}
+                      </button>
                     )}
                   </div>
                 </div>
@@ -406,16 +446,18 @@ export function HomeScreen({ onNavigate }: HomeScreenProps) {
         </CardHeader>
         <CardContent className="pt-0">
           <div className="grid grid-cols-3 gap-3">
-            {publicVerificationPhotos.map((photo) => (
-              <div key={photo.id} className="space-y-2">
-                {/* 인증 이미지 */}
+            {publicVerificationPhotos.map((photo, index) => (
+              <div
+                key={photo.id}
+                className="space-y-2 cursor-pointer"
+                onClick={() => handlePhotoClick(index)} // 클릭 이벤트 추가
+              >
                 <div className="relative rounded-lg overflow-hidden aspect-square">
                   <ImageWithFallback
                     src={photo.image}
                     alt={photo.routine}
                     className="w-full h-full object-cover"
                   />
-                  {/* 오버레이 정보 */}
                   <div className="absolute inset-0 bg-black/20 opacity-0 hover:opacity-100 transition-opacity flex items-end">
                     <div className="p-2 w-full">
                       <div className="text-white text-xs font-medium truncate">
@@ -424,8 +466,6 @@ export function HomeScreen({ onNavigate }: HomeScreenProps) {
                     </div>
                   </div>
                 </div>
-
-                {/* 날짜 정보 */}
                 <div className="text-center">
                   <span className="text-xs text-foreground dark:opacity-75">{photo.date}</span>
                 </div>
@@ -434,6 +474,56 @@ export function HomeScreen({ onNavigate }: HomeScreenProps) {
           </div>
         </CardContent>
       </Card>
+
+      {/* 갤러리 모달 (조건부 렌더링) */}
+      {selectedPhotoIndex !== null && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80">
+          <div className="relative h-full w-full max-w-lg flex flex-col items-center justify-center">
+            {/* 닫기 버튼 */}
+            <Button
+              variant="ghost"
+              size="icon"
+              className="absolute top-4 right-4 z-50 text-white hover:bg-black/50 hover:text-white hover:border-none rounded-full"
+              onClick={handleCloseGallery}
+            >
+              <X className="h-6 w-6" />
+            </Button>
+            {/* 사진 */}
+            <div className="flex-1 w-full flex items-center justify-center p-4">
+              <ImageWithFallback
+                src={publicVerificationPhotos[selectedPhotoIndex].image}
+                alt={publicVerificationPhotos[selectedPhotoIndex].routine}
+                className="max-h-full max-w-full object-contain"
+              />
+            </div>
+            {/* 사진 정보 */}
+            <div className="absolute bottom-16 w-full text-center text-white text-lg font-semibold">
+              {publicVerificationPhotos[selectedPhotoIndex].routine}
+            </div>
+            {/* 탐색 버튼 */}
+            <div className="absolute inset-y-0 flex items-center justify-between w-full px-6">
+              <Button
+                variant="ghost"
+                size="icon"
+                className="text-white opacity-80 rounded-full hover:bg-black/50  hover:text-white hover:border-none"
+                onClick={handlePrevPhoto}
+                disabled={selectedPhotoIndex === 0}
+              >
+                <ChevronLeft className="h-10 w-10" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="text-white opacity-80 rounded-full hover:bg-black/50  hover:text-white hover:border-none"
+                onClick={handleNextPhoto}
+                disabled={selectedPhotoIndex === publicVerificationPhotos.length - 1}
+              >
+                <ChevronRight className="h-10 w-10" />
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

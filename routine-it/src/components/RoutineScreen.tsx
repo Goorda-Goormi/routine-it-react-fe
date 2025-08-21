@@ -67,22 +67,24 @@ export function RoutineScreen({ onNavigate, personalRoutines, onToggleCompletion
   const allRoutines = [
     ...todayRoutines,
     {
-      id: 5,
-      name: '영어 공부',
-      category: '학습',
-      time: '19:00',
+      id: "5",
+      name: "영어 공부",
+      category: "학습",
+      time: "19:00",
       completed: false,
       streak: 15,
-      difficulty: '어려움'
+      difficulty: "어려움",
+      isGroupRoutine: true
     },
     {
-      id: 6,
-      name: '일기 쓰기',
-      category: '생활',
-      time: '22:00',
+      id: "6",
+      name: "일기 쓰기",
+      category: "생활",
+      time: "22:00",
       completed: true,
       streak: 20,
-      difficulty: '쉬움'
+      difficulty: "쉬움",
+      isGroupRoutine: true
     }
   ];
 
@@ -250,41 +252,53 @@ export function RoutineScreen({ onNavigate, personalRoutines, onToggleCompletion
                             </Badge>
                           </div>
                           <div className="text-xs text-foreground dark:opacity-75">
-                            <Clock className="h-3 w-3 inline mr-1 icon-muted" />
+                            <div className="h-3 w-3 inline mr-1 icon-muted" />
                             {routine.time} • {routine.streak}일 연속
                           </div>
                         </div>
                         
                         {/* 오른쪽: 액션 버튼들 */}
                         <div className="flex items-center space-x-2">
-                          {/* 완료 체크박스 */}
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation(); 
-                              onToggleCompletion(routine.id); // prop으로 받은 함수 사용
-                            }}
-                            className={`w-6 h-6 rounded-full flex items-center justify-center transition-colors ${
-                              routine.completed 
-                                ? 'bg-green-500 hover:bg-green-600' 
-                                : 'border-2 border-muted-foreground hover:border-green-500'
-                            }`}
-                          >
-                            {routine.completed && <CheckCircle className="h-4 w-4 text-white" />}
-                          </button>
-                          
-                          {!routine.completed && (
-                            <Button 
-                              size="sm" 
-                              variant="outline"
-                              className="text-foreground border-border hover:bg-accent hover:text-foreground"
+                          {/* 개인 루틴과 그룹 루틴에 따라 다른 로직 적용 */}
+                          {routine.isGroupRoutine ? (
+                            // 그룹 루틴
+                            routine.completed ? (
+                              // 완료된 그룹 루틴: div로 표시 (클릭 불가능)
+                              <div
+                                className={`w-6 h-6 rounded-full flex items-center justify-center transition-colors bg-green-500`}
+                              >
+                                <CheckCircle className="h-4 w-4 text-white" />
+                              </div>
+                            ) : (
+                              // 미완료 그룹 루틴: 인증 버튼
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation(); 
+                                  onToggleCompletion(routine.id); // prop으로 받은 함수 사용
+                                }}
+                                className={`w-auto h-6 rounded-full flex items-center justify-center transition-colors px-2 py-1 text-xs text-foreground border border-border/60 hover:bg-accent`}
+                              >
+                                <span className='flex items-center'>
+                                  <Camera className="h-3 w-3 mr-1 text-foreground/70" />
+                                  인증
+                                </span>
+                              </button>
+                            )
+                          ) : (
+                            // 개인 루틴
+                            <button
                               onClick={(e) => {
-                                e.stopPropagation();
-                                // 인증 로직
+                                e.stopPropagation(); 
+                                onToggleCompletion(routine.id); // prop으로 받은 함수 사용
                               }}
+                              className={`w-6 h-6 rounded-full flex items-center justify-center transition-colors ${
+                                routine.completed 
+                                  ? 'bg-green-500 hover:bg-green-600' 
+                                  : 'border-2 border-muted-foreground hover:border-green-500'
+                              }`}
                             >
-                              <Camera className="h-4 w-4 mr-1 icon-secondary" />
-                              인증
-                            </Button>
+                              {routine.completed && <CheckCircle className="h-4 w-4 text-white" />}
+                            </button>
                           )}
                         </div>
                       </div>
@@ -316,11 +330,13 @@ export function RoutineScreen({ onNavigate, personalRoutines, onToggleCompletion
                       onClick={() => handleRoutineClick(routine)}
                     >
                       <div className="flex items-center space-x-3">
-                        <div className={`w-6 h-6 rounded-full flex items-center justify-center ${
-                          routine.completed 
-                            ? 'bg-green-500' 
-                            : 'border-2 border-muted-foreground'
-                        }`}>
+                        <div
+                          className={`w-6 h-6 rounded-full flex items-center justify-center transition-colors ${
+                            routine.completed 
+                              ? 'bg-green-500' 
+                              : 'border-2 border-muted-foreground'
+                          }`}
+                        >
                           {routine.completed && <CheckCircle className="h-4 w-4 text-white" />}
                         </div>
                         <div>
@@ -336,7 +352,7 @@ export function RoutineScreen({ onNavigate, personalRoutines, onToggleCompletion
                             </Badge>
                           </div>
                           <div className="text-xs text-left text-foreground dark:opacity-75 ml-1">
-                            <Clock className="h-3 w-3 inline mr-1 icon-muted" />
+                            <div className="h-3 w-3 inline mr-1 icon-muted" />
                             {routine.time} • {routine.streak}일 연속
                           </div>
                         </div>
