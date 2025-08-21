@@ -40,7 +40,7 @@ export function SettingsScreen({ onBack, isDarkMode, onToggleDarkMode }: Setting
                 ) : (
                   <Sun className="h-5 w-5 text-muted-foreground" />
                 )}
-                <div>
+                <div className="flex flex-col items-start">
                   <div className="font-medium">다크 모드</div>
                   <div className="text-sm text-muted-foreground">
                     {isDarkMode ? '어두운 테마가 적용됩니다' : '밝은 테마가 적용됩니다'}
@@ -61,7 +61,7 @@ export function SettingsScreen({ onBack, isDarkMode, onToggleDarkMode }: Setting
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-3">
                 <Bell className="h-5 w-5 text-muted-foreground" />
-                <div>
+                <div className="flex flex-col items-start">
                   <div className="font-medium">루틴 리마인더</div>
                   <div className="text-sm text-muted-foreground">설정한 시간에 알림을 받습니다</div>
                 </div>
@@ -74,7 +74,7 @@ export function SettingsScreen({ onBack, isDarkMode, onToggleDarkMode }: Setting
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-3">
                 <Bell className="h-5 w-5 text-muted-foreground" />
-                <div>
+                <div className="flex flex-col items-start">
                   <div className="font-medium">그룹 활동 알림</div>
                   <div className="text-sm text-muted-foreground">그룹 채팅 및 인증 알림</div>
                 </div>

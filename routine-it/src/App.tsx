@@ -17,6 +17,20 @@ import { SettingsScreen } from "./components/SettingsScreen";
 import { HelpScreen } from "./components/HelpScreen";
 import { UserHomeScreen } from "./components/UserHomeScreen";
 
+interface Routine {
+  id: string;
+  name: string;
+  description?: string;
+  time: string;
+  frequency: string;
+  reminder: boolean;
+  goal: string;
+  category: string; // 카테고리 추가
+  completed: boolean;
+  streak: number;
+  difficulty: string; // 난이도 추가
+}
+
 interface NavigationState {
   screen: string;
   params?: any;
@@ -34,6 +48,60 @@ export default function App() {
     }
     return false;
   });
+  const [UserInfo, setUserInfo] = useState({
+      name: '구르미',
+      email: 'goormida@example.com',
+      avatar: '/profile.jpg',
+      joinDate: '2024년 1월',
+      level: 15,
+      exp: 2450,
+      maxExp: 3000,
+      streakDays: 28,
+      bio: '우리 함께 습관을 만들어봐요!'
+    });
+
+  // 개인 루틴 상태 추가
+  const [personalRoutines, setPersonalRoutines] = useState([
+    {
+      id: "1",
+      name: "아침 운동",
+      category: "운동",
+      time: "07:00",
+      completed: true,
+      streak: 5,
+      difficulty: "보통",
+      description: "매일 아침 30분씩 상쾌하게 운동하기",
+      frequency: "매일",
+      goal: "30",
+      reminder: true,
+    },
+    {
+      id: "2",
+      name: "물 2L 마시기",
+      category: "건강",
+      time: "언제든",
+      completed: false,
+      streak: 12,
+      difficulty: "쉬움",
+      description: "하루 종일 충분한 수분 섭취하기",
+      frequency: "매일",
+      goal: "30",
+      reminder: true,
+    },
+    {
+      id: "3",
+      name: "독서 30분",
+      category: "학습",
+      time: "21:00",
+      completed: true,
+      streak: 8,
+      difficulty: "보통",
+      description: "저녁에 책 읽는 시간을 가지기",
+      frequency: "매일",
+      goal: "30",
+      reminder: true,
+    },
+  ]);
 
   useEffect(() => {
     if (isDarkMode) {
@@ -82,6 +150,7 @@ export default function App() {
     ];
     if (tabs.includes(screen)) {
       setActiveTab(screen);
+      setNavigationStack([]);
       return;
     }
 
@@ -97,6 +166,43 @@ export default function App() {
 
   const toggleDarkMode = () => {
     setIsDarkMode(!isDarkMode);
+  };
+
+  // 새로운 루틴을 추가하는 함수
+  const handleAddRoutine = (newRoutineData: any) => {
+    // 임시 ID 및 기본값 설정
+    const newRoutine = {
+      ...newRoutineData,
+      id: Date.now().toString(),
+      completed: false,
+      streak: 0,
+    };
+    setPersonalRoutines(prev => [...prev, newRoutine]);
+  };
+
+  // 기존 루틴을 수정하는 함수
+  const handleUpdateRoutine = (updatedRoutine: any) => {
+    setPersonalRoutines((prev) =>
+      prev.map((routine) =>
+        routine.id === updatedRoutine.id
+          ? { ...routine, ...updatedRoutine }
+          : routine
+      )
+    );
+  };
+  
+  // 루틴 완료 상태를 토글하는 함수
+  const handleToggleCompletion = (routineId: string) => {
+    setPersonalRoutines(prev =>
+      prev.map(routine =>
+        routine.id === routineId ? { ...routine, completed: !routine.completed } : routine
+      )
+    );
+  };
+
+  // 프로필 정보를 업데이트하는 함수
+  const handleSaveProfile = (updatedInfo: any) => {
+      setUserInfo(prev => ({ ...prev, ...updatedInfo }));
   };
 
   const currentScreen =
@@ -116,6 +222,7 @@ export default function App() {
             <RoutineDetailScreen
               routine={currentScreen.params}
               onBack={navigateBack}
+              onUpdateRoutine={handleUpdateRoutine}
             />
           );
         case "group-detail":
@@ -127,7 +234,16 @@ export default function App() {
             />
           );
         case "profile-edit":
-          return <ProfileEditScreen onBack={navigateBack} />;
+          return (
+            <ProfileEditScreen 
+              onBack={navigateBack} 
+              onNavigate={navigateTo}
+              isDarkMode={isDarkMode}
+              onToggleDarkMode={toggleDarkMode}
+              initialUserInfo={UserInfo}
+              onSave={handleSaveProfile} 
+            />
+          );
         case "group-chat":
           return (
             <GroupChatScreen
@@ -136,7 +252,12 @@ export default function App() {
             />
           );
         case "create-routine":
-          return <CreateRoutineScreen onBack={navigateBack} />;
+          return (
+            <CreateRoutineScreen 
+              onBack={navigateBack} 
+              onCreateRoutine={handleAddRoutine}
+            />
+          );
         case "create-group":
           return (
             <CreateGroupScreen
@@ -154,7 +275,7 @@ export default function App() {
           );
         case "help":
           return <HelpScreen onBack={navigateBack} />;
-        case "user-home":
+       case "user-home":
           return (
             <UserHomeScreen
               user={currentScreen.params}
@@ -171,9 +292,22 @@ export default function App() {
   const renderMainScreen = () => {
     switch (activeTab) {
       case "home":
-        return <HomeScreen onNavigate={navigateTo} />;
+        return (
+          <HomeScreen 
+            onNavigate={navigateTo} 
+            initialUserInfo={{
+                name: UserInfo.name,
+                username: UserInfo.email.split('@')[0], // email에서 username 추출
+                profileImage: UserInfo.avatar // avatar를 profileImage로 사용
+            }} 
+        />
+        );
       case "routine":
-        return <RoutineScreen onNavigate={navigateTo} />;
+        return <RoutineScreen 
+          onNavigate={navigateTo} 
+          personalRoutines={personalRoutines}
+          onToggleCompletion={handleToggleCompletion}
+        />;
       case "group":
         return <GroupScreen onNavigate={navigateTo} />;
       case "ranking":
@@ -184,10 +318,20 @@ export default function App() {
             onNavigate={navigateTo}
             isDarkMode={isDarkMode}
             onToggleDarkMode={toggleDarkMode}
+            user={UserInfo}
           />
         );
       default:
-        return <HomeScreen onNavigate={navigateTo} />;
+        return (
+          <HomeScreen 
+              onNavigate={navigateTo} 
+              initialUserInfo={{
+                  name: UserInfo.name,
+                  username: UserInfo.email.split('@')[0], // username 추가
+                  profileImage: UserInfo.avatar // profileImage 추가
+              }} 
+          />
+        );
     }
   };
 
@@ -210,6 +354,7 @@ export default function App() {
                 onSearch={handleSearch}
                 onNewProject={handleNewProject}
                 onProfileMenuClick={handleProfileMenuClick}
+                userInfo={UserInfo}
               />
             )}
 

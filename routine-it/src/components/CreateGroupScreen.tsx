@@ -263,15 +263,17 @@ export function CreateGroupScreen({ onBack, group }: CreateGroupScreenProps) {
                   className="flex items-start space-x-3 p-3 rounded-lg border hover:bg-green-100/70 hover:text-green-800 hover:border-green-300/50 cursor-pointer transition-colors"
                 >
                   <RadioGroupItem value="optional" id="optional" className="mt-1" />
-                  <div className="flex-1">
-                    <div className="text-card-foreground font-medium">
-                      자유참여
+                  <div className="flex flex-1 items-start justify-between">
+                    <div className="flex flex-col items-start">
+                      <div className="text-card-foreground font-medium">
+                        자유참여
+                      </div>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        언제든 자유롭게 참여할 수 있습니다
+                      </p>
                     </div>
-                    <p className="text-xs text-muted-foreground mt-1">
-                      언제든 자유롭게 참여할 수 있습니다
-                    </p>
+                    <Badge variant="secondary" className="text-xs">추천</Badge>
                   </div>
-                  <Badge variant="secondary" className="text-xs">추천</Badge>
                 </Label>
                 
                 <Label 
@@ -279,15 +281,17 @@ export function CreateGroupScreen({ onBack, group }: CreateGroupScreenProps) {
                   className="flex items-start space-x-3 p-3 rounded-lg border hover:bg-red-100/70 hover:text-red-800 hover:border-red-300/50 cursor-pointer transition-colors"
                 >
                   <RadioGroupItem value="mandatory" id="mandatory" className="mt-1" />
-                  <div className="flex-1">
-                    <div className="text-card-foreground font-medium">
-                      의무참여
-                    </div>
-                    <p className="text-xs text-muted-foreground mt-1">
-                      정해진 시간에 반드시 참여해야 합니다
-                    </p>
+                    <div className="flex flex-1 items-start justify-between">
+                      <div className="flex flex-col items-start">
+                        <div className="text-card-foreground font-medium">
+                          의무참여
+                        </div>
+                        <p className="text-xs text-muted-foreground mt-1">
+                          정해진 시간에 반드시 참여해야 합니다
+                        </p>
+                      </div>
+                      <Badge variant="destructive" className="text-xs">엄격</Badge>
                   </div>
-                  <Badge variant="destructive" className="text-xs">엄격</Badge>
                 </Label>
               </RadioGroup>
             </div>

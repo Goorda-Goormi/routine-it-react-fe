@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
@@ -8,25 +8,77 @@ import { ArrowLeft, Save, Camera, User } from 'lucide-react';
 
 interface ProfileEditScreenProps {
   onBack: () => void;
+  onNavigate: (screen: string, params?: any) => void;
+  isDarkMode: boolean;
+  onToggleDarkMode: () => void;
+  initialUserInfo: {
+    name: string;
+    email: string;
+    avatar: string;
+    bio: string;
+  };
+  onSave: (updatedInfo: any) => void;
 }
 
-export function ProfileEditScreen({ onBack }: ProfileEditScreenProps) {
+export function ProfileEditScreen({ 
+  onBack, 
+  onNavigate, 
+  isDarkMode, 
+  onToggleDarkMode, 
+  initialUserInfo, 
+  onSave 
+}: ProfileEditScreenProps) {
+  // initialUserInfo prop을 사용하여 초기 상태 설정
   const [profileData, setProfileData] = useState({
-    name: '김루틴',
-    email: 'routine@example.com',
-    bio: '꾸준함이 최고의 재능이라고 믿습니다.',
+    name: initialUserInfo.name,
+    email: initialUserInfo.email,
+    bio: initialUserInfo.bio,
+    // 초기 prop에 없는 필드는 예시 데이터로 추가
     phone: '010-1234-5678'
   });
 
+  // 아바타 URL 상태 추가
+  const [avatarUrl, setAvatarUrl] = useState(initialUserInfo.avatar);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // 컴포넌트 마운트 시 initialUserInfo로 상태 초기화
+  useEffect(() => {
+    setProfileData({
+      name: initialUserInfo.name,
+      email: initialUserInfo.email,
+      bio: initialUserInfo.bio,
+      phone: '010-1234-5678' // mock data
+    });
+    setAvatarUrl(initialUserInfo.avatar);
+  }, [initialUserInfo]);
+
+  // 저장 버튼 클릭 핸들러
   const handleSave = () => {
-    // 프로필 저장 로직
-    console.log('프로필 저장:', profileData);
+    // onSave 함수를 호출하여 부모 컴포넌트로 데이터 전달
+    onSave({
+      name: profileData.name,
+      bio: profileData.bio,
+      avatar: avatarUrl,
+    });
+    console.log('프로필 저장:', profileData, '아바타:', avatarUrl);
     onBack();
   };
 
-  const handleAvatarChange = () => {
-    // 프로필 사진 변경 로직
-    console.log('프로필 사진 변경');
+  // 아바타 변경 버튼 클릭 시 파일 탐색기 열기
+  const handleAvatarChangeClick = () => {
+    // useRef로 참조한 input 요소의 click() 메서드 호출
+    fileInputRef.current?.click();
+  };
+
+  // 파일 선택 시 실행될 핸들러
+  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      // 선택된 파일의 임시 URL 생성
+      const newAvatarUrl = URL.createObjectURL(file);
+      setAvatarUrl(newAvatarUrl);
+      console.log('새 프로필 사진:', newAvatarUrl);
+    }
   };
 
   return (
@@ -54,22 +106,31 @@ export function ProfileEditScreen({ onBack }: ProfileEditScreenProps) {
             <div className="flex flex-col items-center space-y-4">
               <div className="relative">
                 <Avatar className="h-20 w-20">
-                  <AvatarImage src="/placeholder-avatar.jpg" alt="프로필" />
+                  {/* avatarUrl 상태 사용 */}
+                  <AvatarImage src={avatarUrl} alt="프로필" />
                   <AvatarFallback>
                     <User className="h-10 w-10" />
                   </AvatarFallback>
                 </Avatar>
                 <Button
-                  onClick={handleAvatarChange}
+                  onClick={handleAvatarChangeClick}
                   className="absolute -bottom-1 -right-1 rounded-full h-8 w-8 p-0"
                   size="sm"
                 >
                   <Camera className="h-4 w-4" />
                 </Button>
               </div>
-              <Button variant="outline" onClick={handleAvatarChange}>
+              <Button variant="outline" onClick={handleAvatarChangeClick}>
                 사진 변경
               </Button>
+              {/* 숨겨진 파일 입력 필드 */}
+              <input
+                type="file"
+                ref={fileInputRef}
+                onChange={handleFileChange} // 파일 변경 핸들러 추가
+                accept="image/*"
+                style={{ display: 'none' }}
+              />
             </div>
           </CardContent>
         </Card>

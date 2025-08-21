@@ -9,14 +9,23 @@ interface TopNavBarProps {
   onSearch: (query: string) => void;
   onNewProject: () => void;
   onProfileMenuClick: (action: string) => void;
+  userInfo: {
+    avatar: string;
+    name: string;
+  };
 }
 
-export function TopNavBar({ onSearch, onNewProject, onProfileMenuClick }: TopNavBarProps) {
+export function TopNavBar({ onSearch, onNewProject, onProfileMenuClick, userInfo }: TopNavBarProps) {
   const [searchQuery, setSearchQuery] = useState('');
 
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     onSearch(searchQuery);
+  };
+
+  // 아바타의 첫 글자를 가져오는 함수
+  const getInitial = (name: string) => {
+    return name ? name.charAt(0) : '';
   };
 
   return (
@@ -49,8 +58,8 @@ export function TopNavBar({ onSearch, onNewProject, onProfileMenuClick }: TopNav
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" size="sm" className="rounded-full p-1">
                 <Avatar className="h-7 w-7">
-                  <AvatarImage src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=32&h=32&fit=crop&crop=face" alt="프로필" />
-                  <AvatarFallback className="text-xs">김</AvatarFallback>
+                  <AvatarImage src={userInfo.avatar} alt="프로필" />
+                  <AvatarFallback className="text-xs">{getInitial(userInfo.name)}</AvatarFallback>
                 </Avatar>
               </Button>
             </DropdownMenuTrigger>

@@ -216,12 +216,12 @@ return (
               {myGroups.map((group, index) => (
                 <div key={group.id}>
                   <div 
-                    className={`p-3 cursor-pointer hover:bg-accent/50 transition-colors ${
+                    className={`p-5 rounded-lg cursor-pointer hover:bg-accent/50 transition-colors ${
                       index < myGroups.length - 1 ? 'border-b border-border/30' : ''
                     }`}
                     onClick={() => onNavigate('group-detail', group)}
                   >
-                    <div className="flex items-start justify-between mb-2">
+                    <div className="flex items-center justify-between mb-1">
                       <div className="flex items-center space-x-2 flex-1">
                         <span className="text-sm font-medium text-card-foreground">{group.name}</span>
                         {group.isOwner && <Crown className="h-3 w-3 text-yellow-400 icon-accent" />}
@@ -244,7 +244,7 @@ return (
                       </div>
                     </div>
                     
-                    <p className="text-xs text-muted-foreground mb-2">{group.description}</p>
+                    <p className="text-xs text-left text-muted-foreground mb-2">{group.description}</p>
                     
                     <div className="flex items-center justify-between text-xs text-muted-foreground mb-2">
                       <span>{getCategoryEmoji(group.category)} {getCategoryName(group.category)}</span>
@@ -294,7 +294,7 @@ return (
         <CardContent className="p-0">
           <Tabs defaultValue="all">
             <div className="px-4">
-              <TabsList className="grid w-full grid-cols-3">
+              <TabsList className="grid  w-[376px] h-[40px] grid-cols-3">
                 <TabsTrigger value="all">전체</TabsTrigger>
                 <TabsTrigger value="optional">자유참여</TabsTrigger>
                 <TabsTrigger value="mandatory">의무참여</TabsTrigger>
@@ -305,10 +305,10 @@ return (
               <div className="space-y-0">
                 {getFilteredGroups('all').map((group, index) => (
                   <div key={group.id}>
-                    <div className={`p-3 hover:bg-accent/50 transition-colors ${
+                    <div className={`p-5 rounded-lg hover:bg-accent/50 transition-colors ${
                       index < getFilteredGroups('all').length - 1 ? 'border-b border-border/30' : ''
                     }`}>
-                      <div className="flex items-center justify-between mb-2">
+                      <div className="flex items-center justify-between mb-1">
                         <div className="flex items-center space-x-2 flex-1">
                           <span className="text-sm font-medium text-card-foreground">{group.name}</span>
                           <Badge variant={group.type === '의무참여' ? 'destructive' : 'secondary'} className="text-xs">
@@ -328,7 +328,7 @@ return (
                         </Button>
                       </div>
                       
-                      <p className="text-xs text-muted-foreground mb-2">{group.description}</p>
+                      <p className="text-xs text-left text-muted-foreground mb-2">{group.description}</p>
                       
                       <div className="flex items-center justify-between text-xs text-muted-foreground">
                         <span>{getCategoryEmoji(group.category)} {getCategoryName(group.category)}</span>
@@ -345,10 +345,10 @@ return (
               <div className="space-y-0">
                 {getFilteredGroups('optional').map((group, index) => (
                   <div key={group.id}>
-                    <div className={`p-3 hover:bg-accent/50 transition-colors ${
+                    <div className={`p-5 rounded-lg hover:bg-accent/50 transition-colors ${
                       index < getFilteredGroups('optional').length - 1 ? 'border-b border-border/30' : ''
                     }`}>
-                      <div className="flex items-center justify-between mb-2">
+                      <div className="flex items-center justify-between mb-1">
                         <div className="flex items-center space-x-2 flex-1">
                           <span className="text-sm font-medium text-card-foreground">{group.name}</span>
                           <Badge variant="secondary" className="text-xs">자유참여</Badge>
@@ -366,7 +366,7 @@ return (
                         </Button>
                       </div>
                       
-                      <p className="text-xs text-muted-foreground mb-2">{group.description}</p>
+                      <p className="text-xs text-left text-muted-foreground mb-2">{group.description}</p>
                       
                       <div className="flex items-center justify-between text-xs text-muted-foreground">
                         <span>{getCategoryEmoji(group.category)} {getCategoryName(group.category)}</span>
@@ -383,10 +383,10 @@ return (
               <div className="space-y-0">
                 {getFilteredGroups('mandatory').map((group, index) => (
                   <div key={group.id}>
-                    <div className={`p-3 hover:bg-accent/50 transition-colors ${
+                    <div className={`p-5 rounded-lg hover:bg-accent/50 transition-colors ${
                       index < getFilteredGroups('mandatory').length - 1 ? 'border-b border-border/30' : ''
                     }`}>
-                      <div className="flex items-center justify-between mb-2">
+                      <div className="flex items-center justify-between mb-1">
                         <div className="flex items-center space-x-2 flex-1">
                           <span className="text-sm font-medium text-card-foreground">{group.name}</span>
                           <Badge variant="destructive" className="text-xs">의무참여</Badge>
@@ -404,7 +404,7 @@ return (
                         </Button>
                       </div>
                       
-                      <p className="text-xs text-muted-foreground mb-2">{group.description}</p>
+                      <p className="text-xs text-left text-muted-foreground mb-2">{group.description}</p>
                       
                       <div className="flex items-center justify-between text-xs text-muted-foreground">
                         <span>{getCategoryEmoji(group.category)} {getCategoryName(group.category)}</span>

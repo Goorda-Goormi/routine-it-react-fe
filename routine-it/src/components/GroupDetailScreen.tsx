@@ -119,7 +119,7 @@ export function GroupDetailScreen({ group, onBack, onNavigate }: GroupDetailScre
 
         {/* 탭 컨텐츠 */}
         <Tabs defaultValue="members">
-          <TabsList className="grid w-full grid-cols-3 h-8">
+          <TabsList className="grid w-[413px] h-[40px] grid-cols-3">
             <TabsTrigger value="members" className="text-xs">멤버</TabsTrigger>
             <TabsTrigger value="ranking" className="text-xs">순위</TabsTrigger>
             <TabsTrigger value="activity" className="text-xs">활동</TabsTrigger>
@@ -135,7 +135,7 @@ export function GroupDetailScreen({ group, onBack, onNavigate }: GroupDetailScre
                   {members.map((member, index) => (
                     <div key={member.id}>
                       <div 
-                        className="flex items-center justify-between p-3 cursor-pointer hover:bg-accent/50 transition-colors"
+                        className="flex items-center justify-between rounded-lg p-3 cursor-pointer hover:bg-accent/50 transition-colors"
                         onClick={() => handleMemberClick(member)}
                       >
                         <div className="flex items-center space-x-3">
@@ -160,7 +160,7 @@ export function GroupDetailScreen({ group, onBack, onNavigate }: GroupDetailScre
                                 </div>
                               )}
                             </div>
-                            <div className="text-xs text-muted-foreground">
+                            <div className="text-xs text-left text-muted-foreground">
                               {member.score}점
                             </div>
                           </div>

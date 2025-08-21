@@ -11,6 +11,7 @@ interface AttendanceLevel {
   maxDays: number;
   color: string;
   bgColor: string;
+  containBgColor: string;
 }
 
 const attendanceLevels: AttendanceLevel[] = [
@@ -19,8 +20,9 @@ const attendanceLevels: AttendanceLevel[] = [
     name: '새싹',
     minDays: 1,
     maxDays: 7,
-    color: 'text-green-300',
-    bgColor: 'bg-green-100/20 border border-green-200/30'
+    color: 'text-yellow-300',
+    bgColor: 'bg-yellow-100/20 border border-yellow-200/30',
+    containBgColor: 'bg-yellow-100'
   },
   {
     emoji: '🌿',
@@ -28,7 +30,8 @@ const attendanceLevels: AttendanceLevel[] = [
     minDays: 8,
     maxDays: 21,
     color: 'text-green-200',
-    bgColor: 'bg-green-100/30 border border-green-200/40'
+    bgColor: 'bg-lime-100/30 border border-lime-200/40',
+    containBgColor: 'bg-yellow-100'
   },
   {
     emoji: '🌸',
@@ -36,7 +39,8 @@ const attendanceLevels: AttendanceLevel[] = [
     minDays: 22,
     maxDays: 50,
     color: 'text-emerald-300',
-    bgColor: 'bg-emerald-100/20 border border-emerald-200/30'
+    bgColor: 'bg-emerald-100/20 border border-emerald-200/30',
+    containBgColor: 'bg-yellow-100'
   },
   {
     emoji: '🌳',
@@ -44,7 +48,8 @@ const attendanceLevels: AttendanceLevel[] = [
     minDays: 51,
     maxDays: 100,
     color: 'text-emerald-200',
-    bgColor: 'bg-emerald-100/30 border border-emerald-200/40'
+    bgColor: 'bg-emerald-100/30 border border-emerald-200/40',
+    containBgColor: 'bg-yellow-100'
   },
   {
     emoji: '🍎',
@@ -52,7 +57,8 @@ const attendanceLevels: AttendanceLevel[] = [
     minDays: 101,
     maxDays: 200,
     color: 'text-teal-300',
-    bgColor: 'bg-teal-100/20 border border-teal-200/30'
+    bgColor: 'bg-teal-100/20 border border-teal-200/30',
+    containBgColor: 'bg-yellow-100'
   },
   {
     emoji: '🌟',
@@ -60,7 +66,8 @@ const attendanceLevels: AttendanceLevel[] = [
     minDays: 201,
     maxDays: Infinity,
     color: 'text-yellow-300',
-    bgColor: 'bg-yellow-100/20 border border-yellow-200/30'
+    bgColor: 'bg-yellow-100/20 border border-yellow-200/30',
+    containBgColor: 'bg-yellow-100'
   }
 ];
 

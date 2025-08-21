@@ -10,21 +10,25 @@ import { ArrowLeft, Save } from 'lucide-react';
 
 interface CreateRoutineScreenProps {
   onBack: () => void;
+  onCreateRoutine: (newRoutineData: any) => void;
 }
 
-export function CreateRoutineScreen({ onBack }: CreateRoutineScreenProps) {
+export function CreateRoutineScreen({ onBack, onCreateRoutine }: CreateRoutineScreenProps) {
   const [formData, setFormData] = useState({
     name: '',
     description: '',
     time: '',
     frequency: '매일',
     reminder: true,
-    goal: '30'
+    goal: '30',
+    category: '기타',
+    difficulty: '쉬움'
   });
 
   const handleSave = () => {
     // 루틴 저장 로직
     console.log('루틴 저장:', formData);
+    onCreateRoutine(formData);
     onBack();
   };
 
@@ -63,6 +67,45 @@ export function CreateRoutineScreen({ onBack }: CreateRoutineScreenProps) {
               />
             </div>
             
+            {/* 카테고리 선택 추가 */}
+            <div>
+              <Label htmlFor="category">카테고리</Label>
+              <Select 
+                value={formData.category} 
+                onValueChange={(value) => setFormData({...formData, category: value})}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="운동">💪 운동</SelectItem>
+                  <SelectItem value="건강">🏥 건강</SelectItem>
+                  <SelectItem value="학습">📚 학습</SelectItem>
+                  <SelectItem value="생활">🏠 생활</SelectItem>
+                  <SelectItem value="기타">📋 기타</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* 난이도 선택 추가 */}
+            <div>
+              <Label htmlFor="difficulty">난이도</Label>
+              <Select 
+                value={formData.difficulty} 
+                onValueChange={(value) => setFormData({...formData, difficulty: value})}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="쉬움">쉬움</SelectItem>
+                  <SelectItem value="보통">보통</SelectItem>
+                  <SelectItem value="어려움">어려움</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+
             <div>
               <Label htmlFor="description">설명 (선택)</Label>
               <Textarea
@@ -152,7 +195,7 @@ export function CreateRoutineScreen({ onBack }: CreateRoutineScreenProps) {
                   <SelectItem value="14">2주일 (14일)</SelectItem>
                   <SelectItem value="21">3주일 (21일)</SelectItem>
                   <SelectItem value="30">1개월 (30일)</SelectItem>
-                  <SelectItem value="66">66일 (습관 형성)</SelectItem>
+                  <SelectItem value="60">60일 (습관 형성)</SelectItem>
                   <SelectItem value="100">100일 도전</SelectItem>
                 </SelectContent>
               </Select>
