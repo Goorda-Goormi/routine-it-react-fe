@@ -38,6 +38,7 @@ import {
 } from './ui/select';
 import { RadioGroup, RadioGroupItem } from './ui/radio-group';
 import { Switch } from './ui/switch';
+import { GroupMemberManager } from './GroupMemberManager'; // <-- 1. GroupMemberManager 컴포넌트 임포트
 
 interface GroupDetailScreenProps {
   group: any;
@@ -65,9 +66,10 @@ export function GroupDetailScreen({
   });
   const [errors, setErrors] = useState<any>({});
 
-  const members = [
+  // <-- 2. 멤버 목록을 useState로 변경하여 동적으로 관리
+  const [members, setMembers] = useState([
     {
-      id: 1,
+      id: '1',
       name: '김루틴',
       avatar:
         'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=40&h=40&fit=crop&crop=face',
@@ -77,7 +79,7 @@ export function GroupDetailScreen({
       isLeader: true,
     },
     {
-      id: 2,
+      id: '2',
       name: '박습관',
       avatar:
         'https://images.unsplash.com/photo-1494790108755-2616b95fcebf?w=40&h=40&fit=crop&crop=face',
@@ -87,7 +89,7 @@ export function GroupDetailScreen({
       isLeader: false,
     },
     {
-      id: 3,
+      id: '3',
       name: '이지속',
       avatar:
         'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=40&h=40&fit=crop&crop=face',
@@ -97,7 +99,7 @@ export function GroupDetailScreen({
       isLeader: false,
     },
     {
-      id: 4,
+      id: '4',
       name: '최노력',
       avatar:
         'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=40&h=40&fit=crop&crop=face',
@@ -107,7 +109,7 @@ export function GroupDetailScreen({
       isLeader: false,
     },
     {
-      id: 5,
+      id: '5',
       name: '정성실',
       avatar:
         'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=40&h=40&fit=crop&crop=face',
@@ -116,13 +118,16 @@ export function GroupDetailScreen({
       isOnline: true,
       isLeader: false,
     },
-  ];
-
-  const exMembers = [
-    { id: 6, name: '탈퇴한 회원1' },
-    { id: 7, name: '탈퇴한 회원2' },
-  ];
-
+  ]);
+  
+  // onKickMember 함수 추가
+  const handleKickMember = (memberId: string) => {
+    setMembers(members.filter(member => member.id !== memberId));
+    alert('멤버를 그룹에서 내보냈습니다.');
+    setShowExMembersModal(false); // 모달 닫기
+  };
+  
+  // 기존에 있던 exMembers 배열은 이제 필요하지 않아 제거했습니다.
   const weeklyRanking = [
     { rank: 1, name: '김루틴', score: 95, change: 'up' },
     { rank: 2, name: '박습관', score: 88, change: 'same' },
@@ -159,7 +164,7 @@ export function GroupDetailScreen({
     onNavigate('user-home', member);
   };
 
-  const currentUser = { id: 1, name: '김루틴' };
+  const currentUser = { id: '1', name: '김루틴' }; // id를 string으로 변경
   const isLeader = members.find((m) => m.id === currentUser.id)?.isLeader ?? false;
 
   const handleMenuClick = (action: string) => {
@@ -398,10 +403,10 @@ export function GroupDetailScreen({
 
   return (
     <div
-  className={`min-h-screen relative ${
-    showExMembersModal || showApprovalModal ? 'bg-transparent' : 'bg-background'
-  }`}
-> {/* 배경으로 디테일 페이지 나오게 하려고 했는데 안됐음 나중에 수정*/}
+      className={`min-h-screen relative ${
+        showExMembersModal || showApprovalModal ? 'bg-transparent' : 'bg-background'
+      }`}
+    > 
       <div className="sticky top-0 z-10 bg-background/95 backdrop-blur border-b p-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-3">
@@ -447,7 +452,7 @@ export function GroupDetailScreen({
                 )}
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={() => handleMenuClick('ex-members')}>
-                  탈퇴한 멤버 보기
+                  멤버 내보내기
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
@@ -651,33 +656,13 @@ export function GroupDetailScreen({
         </Tabs>
       </div>
 
-      {/* 탈퇴한 멤버 모달을 CustomModal에서 Dialog로 변경 */}
-      <Dialog open={showExMembersModal} onOpenChange={setShowExMembersModal}>
-       
-         <DialogContent className="bg-background/80 max-w-md text-icon-secondary dark:text-white">
-          <DialogHeader>
-            <DialogTitle>탈퇴한 멤버</DialogTitle>
-            <DialogDescription>이 그룹을 나간 멤버 목록입니다.</DialogDescription>
-          </DialogHeader>
-          <div className="space-y-2 max-h-60 overflow-y-auto">
-            {exMembers.map(member => (
-              <div key={member.id} className="flex items-center space-x-2 p-2 rounded-md bg-secondary/30">
-                <Avatar className="h-7 w-7">
-                  <AvatarFallback className="text-xs">
-                    {member.name[0]}
-                  </AvatarFallback>
-                </Avatar>
-                <span className="text-sm font-medium text-card-foreground">{member.name}</span>
-              </div>
-            ))}
-            {exMembers.length === 0 && (
-              <div className="text-center text-muted-foreground text-sm py-4">
-                탈퇴한 멤버가 없습니다.
-              </div>
-            )}
-          </div>
-        </DialogContent>
-      </Dialog>
+      {/* <-- 3. 탈퇴한 멤버 모달 코드 대신 GroupMemberManager 컴포넌트를 렌더링 */}
+      <GroupMemberManager
+        open={showExMembersModal}
+        onOpenChange={setShowExMembersModal}
+        members={members}
+        onKickMember={handleKickMember}
+      />
     
       {/* 인증 승인 모달 */}
       <Dialog open={showApprovalModal} onOpenChange={setShowApprovalModal}>
