@@ -148,7 +148,7 @@ export function CreateGroupScreen({ onBack, group }: CreateGroupScreenProps) {
           onClick={onBack}
           className="text-card-foreground hover:text-card-foreground p-1"
         >
-          <ArrowLeft className="h-5 w-5 icon-secondary" />
+          <ArrowLeft className="h-5 w-5 text-icon-secondary dark:text-white" />
         </Button>
         <div>
           <h1 className="text-lg font-medium text-card-foreground">
