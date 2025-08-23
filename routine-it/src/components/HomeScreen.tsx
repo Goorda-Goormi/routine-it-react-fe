@@ -229,7 +229,7 @@ export function HomeScreen({ onNavigate, initialUserInfo }: HomeScreenProps) {
             variant="outline"
             size="sm"
             onClick={() => onNavigate('create-routine')}
-            className="text-foreground border-border/60 hover:bg-accent hover:text-foreground"
+            className="text-foreground border-2 border-border/60 hover:bg-accent hover:text-foreground"
           >
             <Plus className="h-4 w-4 mr-1 icon-secondary bg" />
             루틴 추가
@@ -354,13 +354,13 @@ export function HomeScreen({ onNavigate, initialUserInfo }: HomeScreenProps) {
                         <div
                           className={`w-8 h-8 rounded-full flex items-center justify-center transition-colors p-0 m-0 bg-green-500`}
                         >
-                          <CheckCircle className="h-4 w-4 text-white" />
+                          <CheckCircle className="h-5 w-5 text-white" />
                         </div>
                       ) : (
                         // 미완료 그룹 루틴: 인증 버튼
                         <button
                           onClick={(e) => toggleRoutineCompletion(routine.id, e)}
-                          className={`w-auto h-8 rounded-full flex items-center justify-center transition-colors px-3 py-1 text-xs text-foreground border border-border/60 hover:bg-accent`}
+                          className={`w-auto h-8 rounded-full flex items-center justify-center transition-colors px-3 py-1 text-xs text-foreground border-2 border-border/60 hover:bg-accent`}
                         >
                           <span className='flex items-center'>
                             <Camera className="h-4 w-4 mr-1 text-foreground/70" />
@@ -372,13 +372,13 @@ export function HomeScreen({ onNavigate, initialUserInfo }: HomeScreenProps) {
                       // 개인 루틴
                       <button
                         onClick={(e) => toggleRoutineCompletion(routine.id, e)}
-                        className={`w-8 h-8 rounded-full flex items-center justify-center transition-colors p-0 m-0 border-0 ${
+                        className={`w-8 h-8 rounded-full flex items-center justify-center transition-colors  ${
                           routine.completed
                             ? 'bg-green-500 hover:bg-green-600'
                             : 'border-2 border-border/60 hover:border-green-500'
-                        }`}
+                        } !p-0 m-0 border-0`}
                       >
-                        {routine.completed && <CheckCircle className="h-4 w-4 text-white" />}
+                        {routine.completed && <CheckCircle className="h-5 w-5 text-white" />}
                       </button>
                     )}
                   </div>

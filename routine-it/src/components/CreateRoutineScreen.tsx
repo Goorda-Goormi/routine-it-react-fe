@@ -25,6 +25,34 @@ export function CreateRoutineScreen({ onBack, onCreateRoutine }: CreateRoutineSc
     difficulty: '쉬움'
   });
 
+  const daysOfWeek = ['월', '화', '수', '목', '금', '토', '일'];
+
+// 선택된 요일들을 상태로 관리합니다.
+const [selectedDays, setSelectedDays] = useState<string[]>([]);
+
+// 선택된 요일들을 기반으로 표시할 텍스트를 생성하는 함수입니다.
+const getFrequencyText = () => {
+  if (selectedDays.length === 7) {
+    return '매일';
+  }
+  if (selectedDays.length === 2 && selectedDays.includes('토') && selectedDays.includes('일')) {
+    return '주말';
+  }
+  if (selectedDays.length === 5 && selectedDays.every(day => ['월', '화', '수', '목', '금'].includes(day))) {
+    return '평일';
+  }
+  return selectedDays.join(', ') || '요일 선택';
+};
+
+const handleDayToggle = (day: string) => {
+  setSelectedDays((prev) => 
+    prev.includes(day)
+      ? prev.filter((d) => d !== day)
+      : [...prev, day].sort((a, b) => daysOfWeek.indexOf(a) - daysOfWeek.indexOf(b))
+  );
+};
+
+
   const handleSave = () => {
     // 루틴 저장 로직
     console.log('루틴 저장:', formData);
@@ -53,12 +81,12 @@ export function CreateRoutineScreen({ onBack, onCreateRoutine }: CreateRoutineSc
       <div className="p-4 space-y-4">
         {/* 기본 정보 */}
         <Card>
-          <CardHeader className="pb-3">
+          <CardHeader className="pb-3 pl-3">
             <CardTitle className="text-base">기본 정보</CardTitle>
           </CardHeader>
           <CardContent className="pt-0 space-y-4">
             <div>
-              <Label htmlFor="name">루틴 이름</Label>
+              <Label className="pb-3 pl-3" htmlFor="name">루틴 이름</Label>
               <Input
                 id="name"
                 placeholder="예: 아침 운동, 독서, 물 마시기"
@@ -69,7 +97,7 @@ export function CreateRoutineScreen({ onBack, onCreateRoutine }: CreateRoutineSc
             
             {/* 카테고리 선택 추가 */}
             <div>
-              <Label htmlFor="category">카테고리</Label>
+              <Label className="pb-3 pl-3" htmlFor="category">카테고리</Label>
               <Select 
                 value={formData.category} 
                 onValueChange={(value) => setFormData({...formData, category: value})}
@@ -89,7 +117,7 @@ export function CreateRoutineScreen({ onBack, onCreateRoutine }: CreateRoutineSc
 
             {/* 난이도 선택 추가 */}
             <div>
-              <Label htmlFor="difficulty">난이도</Label>
+              <Label className="pb-3 pl-3" htmlFor="difficulty">난이도</Label>
               <Select 
                 value={formData.difficulty} 
                 onValueChange={(value) => setFormData({...formData, difficulty: value})}
@@ -107,7 +135,7 @@ export function CreateRoutineScreen({ onBack, onCreateRoutine }: CreateRoutineSc
 
 
             <div>
-              <Label htmlFor="description">설명 (선택)</Label>
+              <Label className="pb-3 pl-3" htmlFor="description">설명 (선택)</Label>
               <Textarea
                 id="description"
                 placeholder="루틴에 대한 간단한 설명을 적어주세요"
@@ -121,12 +149,12 @@ export function CreateRoutineScreen({ onBack, onCreateRoutine }: CreateRoutineSc
 
         {/* 시간 설정 */}
         <Card>
-          <CardHeader className="pb-3">
+          <CardHeader className="pb-3 pl-3">
             <CardTitle className="text-base">시간 설정</CardTitle>
           </CardHeader>
           <CardContent className="pt-0 space-y-4">
             <div>
-              <Label htmlFor="time">시간</Label>
+              <Label className="pb-3 pl-3" htmlFor="time">시간</Label>
               <Input
                 id="time"
                 type="time"
@@ -136,36 +164,37 @@ export function CreateRoutineScreen({ onBack, onCreateRoutine }: CreateRoutineSc
             </div>
             
             <div>
-              <Label htmlFor="frequency">반복 주기</Label>
-              <Select 
-                value={formData.frequency} 
-                onValueChange={(value) => setFormData({...formData, frequency: value})}
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="매일">매일</SelectItem>
-                  <SelectItem value="주 3회">주 3회</SelectItem>
-                  <SelectItem value="주 5회">주 5회</SelectItem>
-                  <SelectItem value="주말">주말</SelectItem>
-                  <SelectItem value="평일">평일</SelectItem>
-                </SelectContent>
-              </Select>
+              <Label className='pl-3' htmlFor="frequency">
+                반복 주기 <span className="text-sm text-gray-500">{getFrequencyText()}</span>
+              </Label>
+              <div className="flex justify-center gap-5 pt-2">
+                {daysOfWeek.map((day) => (
+                  <Button
+                    key={day}
+                    variant={selectedDays.includes(day) ? 'default' : 'outline'}
+                    onClick={() => handleDayToggle(day)}
+                    className={`w-10 h-10 rounded-full ${
+                      selectedDays.includes(day) ? 'bg-primary text-white' : ''
+                    }`}
+                  >
+                    {day}
+                  </Button>
+                ))}
+              </div>
             </div>
           </CardContent>
         </Card>
 
         {/* 알림 설정 */}
         <Card>
-          <CardHeader className="pb-3">
+          <CardHeader className="pb-3 pl-3">
             <CardTitle className="text-base">알림 설정</CardTitle>
           </CardHeader>
           <CardContent className="pt-0">
             <div className="flex items-center justify-between">
               <div>
-                <Label>알림 켜기</Label>
-                <p className="text-sm text-muted-foreground">설정한 시간에 알림을 받습니다</p>
+                <Label className="pb-3 pl-3">알림 켜기</Label>
+                <p className="text-sm text-muted-foreground pl-3">설정한 시간에 알림을 받습니다</p>
               </div>
               <Switch
                 checked={formData.reminder}
@@ -177,12 +206,12 @@ export function CreateRoutineScreen({ onBack, onCreateRoutine }: CreateRoutineSc
 
         {/* 목표 설정 */}
         <Card>
-          <CardHeader className="pb-3">
+          <CardHeader className="pb-3 pl-3">
             <CardTitle className="text-base">목표 설정</CardTitle>
           </CardHeader>
           <CardContent className="pt-0">
             <div>
-              <Label htmlFor="goal">목표 연속일</Label>
+              <Label className="pb-3 pl-3" htmlFor="goal">목표 연속일</Label>
               <Select 
                 value={formData.goal} 
                 onValueChange={(value) => setFormData({...formData, goal: value})}

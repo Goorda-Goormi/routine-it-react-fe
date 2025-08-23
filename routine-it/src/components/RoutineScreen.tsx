@@ -258,16 +258,16 @@ export function RoutineScreen({ onNavigate, personalRoutines, onToggleCompletion
                         </div>
                         
                         {/* 오른쪽: 액션 버튼들 */}
-                        <div className="flex items-center space-x-2">
+                        <div className="flex items-center space-x-2 h-[30px]">
                           {/* 개인 루틴과 그룹 루틴에 따라 다른 로직 적용 */}
                           {routine.isGroupRoutine ? (
                             // 그룹 루틴
                             routine.completed ? (
                               // 완료된 그룹 루틴: div로 표시 (클릭 불가능)
                               <div
-                                className={`w-6 h-6 rounded-full flex items-center justify-center transition-colors bg-green-500`}
+                                className={`w-8 h-8 rounded-full flex items-center justify-center transition-colors p-0 m-0 border-0 bg-green-500`}
                               >
-                                <CheckCircle className="h-4 w-4 text-white" />
+                                <CheckCircle className="h-5 w-5 text-white" />
                               </div>
                             ) : (
                               // 미완료 그룹 루틴: 인증 버튼
@@ -276,7 +276,7 @@ export function RoutineScreen({ onNavigate, personalRoutines, onToggleCompletion
                                   e.stopPropagation(); 
                                   onToggleCompletion(routine.id); // prop으로 받은 함수 사용
                                 }}
-                                className={`w-auto h-6 rounded-full flex items-center justify-center transition-colors px-2 py-1 text-xs text-foreground border border-border/60 hover:bg-accent`}
+                                className={`w-auto h-8 rounded-full flex items-center justify-center transition-colors px-2 py-1 text-xs text-foreground border border-border/60 hover:bg-accent`}
                               >
                                 <span className='flex items-center'>
                                   <Camera className="h-3 w-3 mr-1 text-foreground/70" />
@@ -291,13 +291,13 @@ export function RoutineScreen({ onNavigate, personalRoutines, onToggleCompletion
                                 e.stopPropagation(); 
                                 onToggleCompletion(routine.id); // prop으로 받은 함수 사용
                               }}
-                              className={`w-6 h-6 rounded-full flex items-center justify-center transition-colors ${
-                                routine.completed 
-                                  ? 'bg-green-500 hover:bg-green-600' 
-                                  : 'border-2 border-muted-foreground hover:border-green-500'
-                              }`}
+                              className={`w-8 h-8 rounded-full flex items-center justify-center transition-colors m-0 border-0 ${
+                                routine.completed
+                                  ? 'bg-green-500 hover:bg-green-600'
+                                  : 'border-2 border-border/60 hover:border-green-500'
+                              } !p-0`}
                             >
-                              {routine.completed && <CheckCircle className="h-4 w-4 text-white" />}
+                              {routine.completed && <CheckCircle className="h-5 w-5 text-white" />}
                             </button>
                           )}
                         </div>
