@@ -94,6 +94,8 @@ export function getStreakMessage(streakDays: number): string {
     return '탐스런 열매가 맺혔어요! 꾸준함의 결실이에요!';
   } else if (streakDays >= 90) {
     return '커다란 나무로 성장했어요! 습관이 뿌리 깊이 내렸어요!';
+  } else if (streakDays >= 30) {
+    return '꽃이 활짝 피었어요! 당신의 생기있는 하루를 응원해요!';
   } else if (streakDays >= 7) {
     return '새싹이 커졌어요! 습관이 자리잡고 있다는 증거예요!';
   } else {

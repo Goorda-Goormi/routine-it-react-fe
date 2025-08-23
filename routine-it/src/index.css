@@ -30,7 +30,8 @@ body {
   margin: 0;
   display: flex;
   place-items: center;
-  min-width: 320px;
+  width: 100%;
+  height: 100%;
   font-family: var(--font-kr);
 }
 
@@ -63,11 +64,10 @@ button:focus-visible {
 
 /* Root 컨테이너 */
 #root {
-  max-width: 1280px;
   margin: 0 auto;
   padding: 2rem;
   text-align: center;
-  width:1080px;
+  width:100%;
 }
 
 /* 로고 (필요 시만 사용) */

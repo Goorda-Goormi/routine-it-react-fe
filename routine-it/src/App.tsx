@@ -342,7 +342,7 @@ export default function App() {
     >
   
       {/* 모바일 앱 컨테이너 */}
-      <div className="w-[450px] h-[800px] bg-background flex flex-col overflow-hidden rounded-lg shadow-2xl border border-border/50">
+      <div className="min-w-[360px] w-[450px] min-h-[704px] h-[800px] bg-background flex flex-col overflow-hidden rounded-lg shadow-2xl border border-border/50">
         {/* 로그인 상태가 아닐 때는 전체 화면 사용 */}
         {!isLoggedIn ? (
           <div className="w-full h-full">{renderScreen()}</div>

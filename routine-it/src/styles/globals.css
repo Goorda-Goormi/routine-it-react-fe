@@ -208,8 +208,7 @@
   body {
     background-color: var(--root-background);
     @apply text-foreground;
-    min-height: 100svh;
-    height: auto;
+    
   }
 
   /* 아이콘 색상 클래스 */
@@ -492,24 +491,6 @@
   .dark .text-purple-600,
   .dark .text-purple-300,
   .dark .text-purple-400 {
-    color: #ffffff;
-    opacity: 1;
-  }
-
-   /* 성장 카드 */
-  .dark .bg-mint-100 {
-    background-color: var(  --color-card-mint-bg);
-    opacity: 1;
-  }
-  .dark .border-mint-200\/60,
-  .dark .border-mint-500\/30 {
-    border-color: transparent;
-  }
-
-  .dark .text-mint-800,
-  .dark .text-mint-600,
-  .dark .text-mint-300,
-  .dark .text-mint-400 {
     color: #ffffff;
     opacity: 1;
   }
