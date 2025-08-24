@@ -4,7 +4,7 @@ import { Button } from './ui/button';
 import { Badge } from './ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogOverlay,DialogClose } from './ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogOverlay, DialogClose } from './ui/dialog';
 import { GroupApproval } from './GroupApproval';
 import {
   DropdownMenu,
@@ -28,7 +28,7 @@ import {
 } from 'lucide-react';
 
 import { GroupMemberManager } from './GroupMemberManager';
-import  GroupEdit from "./GroupEdit";  
+import GroupEdit from "./GroupEdit";
 
 interface GroupDetailScreenProps {
   group: any;
@@ -48,7 +48,7 @@ export function GroupDetailScreen({
 
   const [errors, setErrors] = useState<any>({});
 
-  // <-- 2. 멤버 목록을 useState로 변경하여 동적으로 관리
+  // 멤버 데이터에 isCertified 속성 추가
   const [members, setMembers] = useState([
     {
       id: '1',
@@ -59,6 +59,7 @@ export function GroupDetailScreen({
       score: 850,
       isOnline: true,
       isLeader: true,
+      isCertified: true, // 추가: 인증 상태
     },
     {
       id: '2',
@@ -69,6 +70,7 @@ export function GroupDetailScreen({
       score: 780,
       isOnline: false,
       isLeader: false,
+      isCertified: false, // 추가: 인증 상태
     },
     {
       id: '3',
@@ -79,6 +81,7 @@ export function GroupDetailScreen({
       score: 720,
       isOnline: true,
       isLeader: false,
+      isCertified: true, // 추가: 인증 상태
     },
     {
       id: '4',
@@ -89,6 +92,7 @@ export function GroupDetailScreen({
       score: 680,
       isOnline: false,
       isLeader: false,
+      isCertified: false, // 추가: 인증 상태
     },
     {
       id: '5',
@@ -99,17 +103,16 @@ export function GroupDetailScreen({
       score: 650,
       isOnline: true,
       isLeader: false,
+      isCertified: true, // 추가: 인증 상태
     },
   ]);
-  
-  // onKickMember 함수 추가
+
   const handleKickMember = (memberId: string) => {
     setMembers(members.filter(member => member.id !== memberId));
     alert('멤버를 그룹에서 내보냈습니다.');
-    setShowExMembersModal(false); // 모달 닫기
+    setShowExMembersModal(false);
   };
-  
-  // 기존에 있던 exMembers 배열은 이제 필요하지 않아 제거했습니다.
+
   const weeklyRanking = [
     { rank: 1, name: '김루틴', score: 95, change: 'up' },
     { rank: 2, name: '박습관', score: 88, change: 'same' },
@@ -121,13 +124,11 @@ export function GroupDetailScreen({
     { id: 2, user: '박습관', action: '목표 달성!', time: '1시간 전', image: null },
     { id: 3, user: '이지속', action: '운동 인증 완료', time: '2시간 전', image: null },
   ];
-  
+
   const authMessages = [
     { id: 1, user: '이지속', message: '오전 운동 인증' },
     { id: 2, user: '박습관', message: '아침 독서 완료' },
   ];
-
- 
 
   const handleJoinGroup = () => {
     setIsJoined(true);
@@ -141,7 +142,7 @@ export function GroupDetailScreen({
     onNavigate('user-home', member);
   };
 
-  const currentUser = { id: '1', name: '김루틴' }; // id를 string으로 변경
+  const currentUser = { id: '1', name: '김루틴' };
   const isLeader = members.find((m) => m.id === currentUser.id)?.isLeader ?? false;
 
   const handleMenuClick = (action: string) => {
@@ -171,15 +172,12 @@ export function GroupDetailScreen({
     setShowApprovalModal(false);
   };
 
-
-  
-
   return (
     <div
       className={`min-h-screen relative ${
         showExMembersModal || showApprovalModal ? 'bg-transparent' : 'bg-background'
       }`}
-    > 
+    >
       <div className="sticky top-0 z-10 bg-background/95 backdrop-blur border-b p-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-3">
@@ -343,9 +341,18 @@ export function GroupDetailScreen({
                             </div>
                           </div>
                         </div>
-                        <Badge variant="outline" className="text-xs">
-                          #{member.rank}
-                        </Badge>
+                        <div className="flex items-center space-x-2">
+                          {/* 인증 상태에 따라 뱃지 표시 */}
+                          <Badge
+                            variant={member.isCertified ? 'default' : 'destructive'}
+                            className="text-xs"
+                          >
+                            {member.isCertified ? '인증' : '미인증'}
+                          </Badge>
+                          <Badge variant="outline" className="text-xs">
+                            #{member.rank}
+                          </Badge>
+                        </div>
                       </div>
                       {index < members.length - 1 && (
                         <div className="border-b border-border/50 mx-3"></div>
@@ -428,25 +435,21 @@ export function GroupDetailScreen({
           </TabsContent>
         </Tabs>
       </div>
-      
-      {/* 그룹 정보 편집 모달*/}
-      <GroupEdit 
-        open={isEditing} 
-        onOpenChange={setIsEditing} 
-        group={group} 
+
+      <GroupEdit
+        open={isEditing}
+        onOpenChange={setIsEditing}
+        group={group}
       />
 
-      {/* 멤버 내보내기 */}
       <GroupMemberManager
         open={showExMembersModal}
         onOpenChange={setShowExMembersModal}
         members={members}
         onKickMember={handleKickMember}
       />
-    
-      {/* 인증 승인 모달 */}
+
       <Dialog open={showApprovalModal} onOpenChange={setShowApprovalModal}>
-      
         <DialogContent className="bg-background/80 max-w-md text-icon-secondary dark:text-white">
           <GroupApproval
             authMessages={authMessages}

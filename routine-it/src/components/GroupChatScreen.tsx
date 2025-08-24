@@ -29,8 +29,9 @@ interface Message {
   message: string;
   time: string;
   isMe: boolean;
-  type: 'text' | 'auth';
+  type: 'text' | 'auth'| 'image';
   reactions?: { [key: string]: number }; // 이모티콘 반응을 저장할 객체
+  imageUrl?: string;
 }
 
 export function GroupChatScreen({ group, onBack }: GroupChatScreenProps) {
@@ -158,6 +159,22 @@ export function GroupChatScreen({ group, onBack }: GroupChatScreenProps) {
     }
   };
 
+  const handleSendImage = (file: File) => {
+  const imageUrl = URL.createObjectURL(file); // 로컬 미리보기용 URL 생성
+  const newMessage: Message = {
+    id: messages.length + 1,
+    user: '나',
+    userId: myUserId,
+    message: '',
+    time: new Date().toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' }),
+    isMe: true,
+    type: 'image', // ✅
+    reactions: {},
+    imageUrl, // ✅
+  };
+  setMessages([...messages, newMessage]);
+};
+
   const handleSubmitAuth = () => {
     if (authData.description.trim()) {
       const authMessage: Message = {
@@ -171,7 +188,7 @@ export function GroupChatScreen({ group, onBack }: GroupChatScreenProps) {
         reactions: {}
       };
       setMessages([...messages, authMessage]);
-      setAuthData({ description: '', image: null });
+      setAuthData({ description: '', image: null, isPublic: authData.isPublic });
       setIsAuthDialogOpen(false);
     }
   };
@@ -374,7 +391,11 @@ export function GroupChatScreen({ group, onBack }: GroupChatScreenProps) {
                           <span className="text-xs font-medium text-green-600 dark:text-green-400">루틴 인증</span>
                         </div>
                       )}
-                      <p className="text-sm">{msg.message}</p>
+                      {msg.type === 'image' ? (
+    <img src={msg.imageUrl} alt="보낸 이미지" className="max-w-[200px] rounded-lg" />
+  ) : (
+    <p className="text-sm">{msg.message}</p>
+  )}
                     </div>
                     {/* 메시지 반응 표시 */}
                     {msg.reactions && Object.keys(msg.reactions).length > 0 && (
@@ -436,7 +457,21 @@ export function GroupChatScreen({ group, onBack }: GroupChatScreenProps) {
           <div className="flex items-end space-x-2">
             <div className="flex-1">
               <div className="flex items-center space-x-2 bg-muted rounded-lg p-2">
-                <Button variant="ghost" size="sm" className="p-1 text-card-foreground hover:text-card-foreground">
+                <input
+    type="file"
+    id="chat-image"
+    accept="image/*"
+    className="hidden"
+    onChange={(e) => {
+      const file = e.target.files?.[0];
+      if (file) handleSendImage(file);
+    }}
+  />
+                <Button variant="ghost" 
+                  size="sm" 
+                  className="p-1 text-card-foreground hover:text-card-foreground"
+                  onClick={() => document.getElementById('chat-image')?.click()}
+                >
                   <Image className="h-4 w-4 icon-secondary" />
                 </Button>
                 <Input
