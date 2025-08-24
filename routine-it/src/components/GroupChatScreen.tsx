@@ -8,6 +8,7 @@ import { Label } from './ui/label';
 import { Textarea } from './ui/textarea';
 import { ArrowLeft, Send, Image, Smile, Camera, CheckCircle, Users } from 'lucide-react';
 import { getStreakInfo } from './utils/streakUtils';
+//import { Field, Switch } from '@chakra-ui/react';
 
 interface GroupChatScreenProps {
   group: any;
@@ -38,7 +39,8 @@ export function GroupChatScreen({ group, onBack }: GroupChatScreenProps) {
   const [isMembersDialogOpen, setIsMembersDialogOpen] = useState(false);
   const [authData, setAuthData] = useState({
     description: '',
-    image: null as File | null
+    image: null as File | null,
+    isPublic: true, // 기본값은 공개로 설정
   });
   const [hoveredMessageId, setHoveredMessageId] = useState<number | null>(null);
 
@@ -298,6 +300,20 @@ export function GroupChatScreen({ group, onBack }: GroupChatScreenProps) {
                       </Button>
                     </div>
                   </div>
+
+<div className="flex items-center space-x-2">
+  <input
+    type="checkbox"
+    id="is-public"
+    checked={authData.isPublic}
+    onChange={(e) => setAuthData({...authData, isPublic: e.target.checked})}
+    className="form-checkbox h-4 w-4 text-green-600 rounded"
+  />
+  <Label htmlFor="is-public" className="text-sm font-medium text-card-foreground">
+    {authData.isPublic ? '전체 공개' : '나만 보기'}
+  </Label>
+</div>
+
                   <Button 
                     onClick={handleSubmitAuth} 
                     className="w-full bg-green-600 hover:bg-green-700 text-gray-700"
