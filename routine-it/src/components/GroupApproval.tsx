@@ -6,6 +6,7 @@ interface AuthMessage {
   id: number;
   user: string;
   message: string;
+  imageUrl?: string;
 }
 
 interface GroupApprovalProps {
@@ -29,27 +30,47 @@ export function GroupApproval({ authMessages, onApprove, onReject, onClose }: Gr
         {authMessages.map(auth => (
           <div
             key={auth.id}
-            className="flex justify-between items-center p-2 rounded hover:bg-accent/20"
+            className="flex flex-col space-y-2 p-2 rounded hover:bg-accent/20"
           >
-            <span>{auth.user} - {auth.message}</span>
-            <div className="space-x-1">
-              <Button
-                size="sm"
-                className="bg-green-400  hover:bg-green-500 text-white"
-                onClick={() => { onApprove(auth.id); onClose?.(); }}
-              >
-                승인
-              </Button>
-              <Button
-                size="sm"
-               className="bg-green-600 text-white hover:bg-green-700 transition-colors duration-200"
-                onClick={() => { onReject(auth.id); onClose?.(); }}
-              >
-                거절
-              </Button>
+            <div className="flex justify-between items-center">
+              <span className="text-sm font-medium">
+                {auth.user} - {auth.message}
+              </span>
+              <div className="space-x-1">
+                <Button
+                  size="sm"
+                  className="bg-green-400 hover:bg-green-500 text-white"
+                  onClick={() => { onApprove(auth.id); onClose?.(); }}
+                >
+                  승인
+                </Button>
+                <Button
+                  size="sm"
+                  className="bg-green-600 text-white hover:bg-green-700"
+                  onClick={() => { onReject(auth.id); onClose?.(); }}
+                >
+                  거절
+                </Button>
+              </div>
             </div>
+              {/*
+        {auth.imageUrl && (
+          <img
+            src={auth.imageUrl}
+            alt="인증 이미지"
+            className="max-h-40 rounded-lg object-cover cursor-pointer"
+            onClick={() => window.open(auth.imageUrl, '_blank')}
+          />
+        )}*/}
+            <img
+              src={auth.imageUrl || "https://via.placeholder.com/400x200?text=Placeholder+Image"}
+              alt="인증 이미지"
+              className="max-h-40 rounded-lg object-cover cursor-pointer"
+              onClick={() => window.open(auth.imageUrl || "https://via.placeholder.com/400x200?text=Placeholder+Image", '_blank')}
+            />
           </div>
         ))}
+
       </div>
     </div>
   );

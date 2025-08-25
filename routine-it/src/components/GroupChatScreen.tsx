@@ -250,10 +250,10 @@ const handleSendAlbum = (files: FileList) => {
   };
 
   return (
-    <div className="flex flex-col h-screen bg-background">
+    <div className="flex flex-col h-screen bg-background ">
       {/* 헤더 */}
-      <div className="sticky top-0 z-10 bg-background/95 backdrop-blur border-b border-b-[var(--color-border-bottom-custom)] p-4 ">
-        <div className="mx-auto flex items-center justify-between">
+      <div className="sticky top-0 z-10 bg-background/95 backdrop-blur border-b border-b-[var(--color-border-bottom-custom)] p-4  ">
+        <div className="mx-auto flex items-center justify-between ">
           <div className="flex-1 flex items-center space-x-3">
             <Button variant="ghost" size="sm" onClick={onBack} className="p-1 text-card-foreground hover:text-card-foreground">
               <ArrowLeft className="h-5 w-5 icon-secondary" />
@@ -264,15 +264,15 @@ const handleSendAlbum = (files: FileList) => {
             <h1 className="font-bold text-base text-card-foreground line-clamp-2">{group.name}</h1>
             <p className="text-xs text-muted-foreground">{group.members}명 참여 중</p>
           </div>
-          <div className="flex-1 flex items-center justify-end space-x-2">
-            <div className="flex-1" />
+          <div className="flex-1 flex items-center justify-end space-x-2 text-icon-secondary dark:text-white ">
+            <div className="flex-1 " />
             <Dialog open={isMembersDialogOpen} onOpenChange={setIsMembersDialogOpen}>
               <DialogTrigger asChild>
                 <Button variant="ghost" size="sm" className="text-card-foreground hover:text-card-foreground ">
                   <Users className="h-4 w-4 icon-secondary" />
                 </Button>
               </DialogTrigger>
-              <DialogContent className="max-w-sm mx-auto">
+              <DialogContent className="max-w-sm mx-auto text-icon-secondary ">
                 <DialogHeader>
                   <DialogTitle className="text-card-foreground">그룹 멤버</DialogTitle>
                   <DialogDescription>{group.name} 참여 멤버들의 연속 출석 현황</DialogDescription>
@@ -567,11 +567,8 @@ const handleSendAlbum = (files: FileList) => {
               <Send className="h-4 w-4 icon-primary" />
             </Button>
           </div>
-          
         </div>
-        
       </div>
-      
     </div>
     
   );

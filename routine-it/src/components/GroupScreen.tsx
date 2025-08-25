@@ -315,10 +315,10 @@ return (
         <CardContent className="p-0">
           <Tabs defaultValue="all">
             <div className="px-4">
-              <TabsList className="grid  w-[376px] h-[40px] grid-cols-3">
-                <TabsTrigger value="all">전체</TabsTrigger>
-                <TabsTrigger value="optional">자유참여</TabsTrigger>
-                <TabsTrigger value="mandatory">의무참여</TabsTrigger>
+              <TabsList className="w-full h-[40px] flex">
+                <TabsTrigger value="all" className="flex-1">전체</TabsTrigger>
+                <TabsTrigger value="optional" className="flex-1">자유참여</TabsTrigger>
+                <TabsTrigger value="mandatory" className="flex-1">의무참여</TabsTrigger>
               </TabsList>
             </div>
 

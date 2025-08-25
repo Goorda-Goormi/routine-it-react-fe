@@ -172,6 +172,8 @@ export function GroupDetailScreen({
     setShowApprovalModal(false);
   };
 
+
+
   return (
    
    <div
@@ -195,7 +197,7 @@ export function GroupDetailScreen({
               size="sm"
               className="text-card-foreground hover:text-card-foreground"
             >
-              <Share className="h-4 w-4 icon-secondary" />
+              
             </Button>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
