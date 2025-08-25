@@ -16,7 +16,7 @@ export function BottomTabNav({ activeTab, onTabChange }: BottomTabNavProps) {
   ];
 
   return (
-    <nav className="w-full bg-background px-2 py-2">
+    <nav className="w-full bg-background px-2 py-2 border-t border-t-[var(--color-border-bottom-custom)]">
       <div className="flex justify-around items-center">
         {tabs.map((tab) => {
           const Icon = tab.icon;

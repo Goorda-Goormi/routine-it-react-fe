@@ -122,7 +122,7 @@ export function RoutineDetailScreen({ routine, onBack, onUpdateRoutine }: Routin
   return (
     <div className="min-h-screen bg-background">
       {/* 헤더 */}
-      <div className="sticky top-0 z-10 bg-background/95 backdrop-blur border-b p-4">
+      <div className="sticky top-0 z-10 bg-background/95 backdrop-blur border-b border-b-[var(--color-border-bottom-custom)] p-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-3">
             <Button variant="ghost" size="sm" onClick={onBack} className="p-1">

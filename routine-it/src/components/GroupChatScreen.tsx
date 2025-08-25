@@ -8,6 +8,7 @@ import { Label } from './ui/label';
 import { Textarea } from './ui/textarea';
 import { ArrowLeft, Send, Image, Smile, Camera, CheckCircle, Users } from 'lucide-react';
 import { getStreakInfo } from './utils/streakUtils';
+//import { Field, Switch } from '@chakra-ui/react';
 
 interface GroupChatScreenProps {
   group: any;
@@ -28,8 +29,10 @@ interface Message {
   message: string;
   time: string;
   isMe: boolean;
-  type: 'text' | 'auth';
+  type: 'text' | 'auth'| 'image' | 'album';
   reactions?: { [key: string]: number }; // 이모티콘 반응을 저장할 객체
+  imageUrl?: string;
+  albumImages?: string[];
 }
 
 export function GroupChatScreen({ group, onBack }: GroupChatScreenProps) {
@@ -38,7 +41,8 @@ export function GroupChatScreen({ group, onBack }: GroupChatScreenProps) {
   const [isMembersDialogOpen, setIsMembersDialogOpen] = useState(false);
   const [authData, setAuthData] = useState({
     description: '',
-    image: null as File | null
+    image: null as File | null,
+    isPublic: true, // 기본값은 공개로 설정
   });
   const [hoveredMessageId, setHoveredMessageId] = useState<number | null>(null);
 
@@ -156,6 +160,43 @@ export function GroupChatScreen({ group, onBack }: GroupChatScreenProps) {
     }
   };
 
+  const handleSendImage = (file: File) => {
+  const imageUrl = URL.createObjectURL(file); // 로컬 미리보기용 URL 생성
+  const newMessage: Message = {
+    id: Date.now(),
+    user: '나',
+    userId: myUserId,
+    message: '',
+    time: new Date().toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' }),
+    isMe: true,
+    type: 'image', 
+    reactions: {},
+    imageUrl, 
+  };
+  setMessages([...messages, newMessage]);
+};
+
+const handleSendAlbum = (files: FileList) => {
+  const imageUrls = Array.from(files).map((file) =>
+    URL.createObjectURL(file)
+  );
+
+  const newMessage: Message = {
+    id: Date.now(),
+    user: '나',
+    userId: myUserId,
+    message: '',
+    time: new Date().toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' }),
+    isMe: true,
+    type: 'album',   
+    reactions: {},
+    albumImages: imageUrls,
+  };
+
+  setMessages((prev) => [...prev, newMessage]);
+};
+
+
   const handleSubmitAuth = () => {
     if (authData.description.trim()) {
       const authMessage: Message = {
@@ -169,7 +210,7 @@ export function GroupChatScreen({ group, onBack }: GroupChatScreenProps) {
         reactions: {}
       };
       setMessages([...messages, authMessage]);
-      setAuthData({ description: '', image: null });
+      setAuthData({ description: '', image: null, isPublic: authData.isPublic });
       setIsAuthDialogOpen(false);
     }
   };
@@ -211,7 +252,7 @@ export function GroupChatScreen({ group, onBack }: GroupChatScreenProps) {
   return (
     <div className="flex flex-col h-screen bg-background">
       {/* 헤더 */}
-      <div className="sticky top-0 z-10 bg-background/95 backdrop-blur border-b p-4 ">
+      <div className="sticky top-0 z-10 bg-background/95 backdrop-blur border-b border-b-[var(--color-border-bottom-custom)] p-4 ">
         <div className="mx-auto flex items-center justify-between">
           <div className="flex-1 flex items-center space-x-3">
             <Button variant="ghost" size="sm" onClick={onBack} className="p-1 text-card-foreground hover:text-card-foreground">
@@ -298,6 +339,20 @@ export function GroupChatScreen({ group, onBack }: GroupChatScreenProps) {
                       </Button>
                     </div>
                   </div>
+
+                  <div className="flex items-center space-x-2">
+                    <input
+                      type="checkbox"
+                      id="is-public"
+                      checked={authData.isPublic}
+                      onChange={(e) => setAuthData({...authData, isPublic: e.target.checked})}
+                      className="form-checkbox h-4 w-4 text-green-600 rounded"
+                    />
+                    <Label htmlFor="is-public" className="text-sm font-medium text-card-foreground">
+                      {authData.isPublic ? '전체 공개' : '나만 보기'}
+                    </Label>
+                  </div>
+
                   <Button 
                     onClick={handleSubmitAuth} 
                     className="w-full bg-green-600 hover:bg-green-700 text-gray-700"
@@ -313,8 +368,8 @@ export function GroupChatScreen({ group, onBack }: GroupChatScreenProps) {
       </div>
 
       {/* 메시지 목록 */}
-      <div className="flex-1 overflow-y-auto">
-        <div className="max-w-md mx-auto px-4 py-4 space-y-4">
+      <div className="flex-1 overflow-y-auto ">
+        <div className="max-w-md mx-auto px-4 py-4 space-y-4 ">
           {messages.map((msg) => {
             const userInfo = getUserInfo(msg.userId);
             const streakInfo = getStreakInfo(userInfo.streakDays);
@@ -324,7 +379,7 @@ export function GroupChatScreen({ group, onBack }: GroupChatScreenProps) {
             return (
               <div
                 key={msg.id}
-                className={`flex ${isMyMessage ? 'justify-end' : 'justify-start'}`}
+                className={`flex  ${isMyMessage ? 'justify-end' : 'justify-start'}`}
                 onMouseEnter={() => setHoveredMessageId(msg.id)}
                 onMouseLeave={() => setHoveredMessageId(null)}
               >
@@ -358,7 +413,28 @@ export function GroupChatScreen({ group, onBack }: GroupChatScreenProps) {
                           <span className="text-xs font-medium text-green-600 dark:text-green-400">루틴 인증</span>
                         </div>
                       )}
-                      <p className="text-sm">{msg.message}</p>
+                      {msg.type === 'album' ? (
+                        <div className="grid grid-cols-2 gap-2">
+                          {msg.albumImages?.map((img, idx) => (
+                            <img
+                              key={idx}
+                              src={img}
+                              alt={`앨범 이미지 ${idx + 1}`}
+                              className="w-full max-h-[150px] object-cover rounded-lg cursor-pointer"
+                              onClick={() => window.open(img, '_blank')}
+                            />
+                          ))}
+                        </div>
+                      ) : msg.type === 'image' ? (
+                        <img
+                          src={msg.imageUrl}
+                          alt="보낸 이미지"
+                          className="max-w-[200px] rounded-lg cursor-pointer"
+                          onClick={() => window.open(msg.imageUrl, '_blank')}
+                        />
+                      ) : (
+                        <p className="text-sm">{msg.message}</p>
+                      )}
                     </div>
                     {/* 메시지 반응 표시 */}
                     {msg.reactions && Object.keys(msg.reactions).length > 0 && (
@@ -415,12 +491,33 @@ export function GroupChatScreen({ group, onBack }: GroupChatScreenProps) {
       </div>
 
       {/* 메시지 입력 */}
-      <div className="sticky bottom-0 border-t border-border dark:border-white bg-background">
+      <div className="sticky bottom-0 border-t border-t-[var(--color-border-bottom-custom)] bg-background">
         <div className="max-w-md mx-auto p-4">
           <div className="flex items-end space-x-2">
             <div className="flex-1">
               <div className="flex items-center space-x-2 bg-muted rounded-lg p-2">
-                <Button variant="ghost" size="sm" className="p-1 text-card-foreground hover:text-card-foreground">
+                <input
+                  type="file"
+                  id="chat-image"
+                  accept="image/*"
+                  multiple
+                  className="hidden"
+                  onChange={(e) => {
+                  if (e.target.files && e.target.files.length > 0) {
+                    if (e.target.files.length === 1) {
+                      handleSendImage(e.target.files[0]);   // 한 장이면 그냥 이미지 메시지
+                    } else {
+                      handleSendAlbum(e.target.files);      // 여러 장이면 앨범 메시지
+                    }
+                  }
+                  e.target.value = '';
+                }}
+                />
+                <Button variant="ghost" 
+                  size="sm" 
+                  className="p-1 text-card-foreground hover:text-card-foreground"
+                  onClick={() => document.getElementById('chat-image')?.click()}
+                >
                   <Image className="h-4 w-4 icon-secondary" />
                 </Button>
                 <Input
@@ -470,8 +567,12 @@ export function GroupChatScreen({ group, onBack }: GroupChatScreenProps) {
               <Send className="h-4 w-4 icon-primary" />
             </Button>
           </div>
+          
         </div>
+        
       </div>
+      
     </div>
+    
   );
 }
