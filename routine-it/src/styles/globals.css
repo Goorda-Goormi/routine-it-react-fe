@@ -155,7 +155,6 @@
   --color-destructive: var(--destructive);
   --color-destructive-foreground: var(--destructive-foreground);
   --color-border: var(--border);
-  --color-border-bottom-custom: var(--border-bottom-custom);
   --color-input: var(--input);
   --color-input-background: var(--input-background);
   --color-switch-background: var(--switch-background);
@@ -212,6 +211,7 @@
   body {
     background-color: var(--root-background);
     @apply text-foreground;
+    
   }
 
   /* 아이콘 색상 클래스 */
@@ -412,7 +412,15 @@
     border-color: var(--color-border);
     opacity: 1;
   }
+  /* ================================================= */
+  /* 그룹 상세 화면 내 모달 겹치는 부분 배경 나오게*/
+  /* ================================================= */
 
+
+  [data-state="open"].fixed.inset-0 {
+  background-color: rgba(0,0,0,0.5) !important;
+  backdrop-filter: blur(0px);
+}
   /* ================================================= */
   /* 루틴 상세 화면 월간 통계 다크모드 스타일링 */
   /* ================================================= */
@@ -701,6 +709,7 @@
   .dark div:has(.Camera) {
     opacity: 1;
   }
+  
 
   /* 특정 패턴의 카드들 배경색 강제 적용 */
   .dark *[class*="from-orange"][class*="to-amber"] {
