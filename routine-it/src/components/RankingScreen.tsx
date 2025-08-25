@@ -152,7 +152,7 @@ export function RankingScreen() {
   return (
     <div className="h-full p-4">
       <Tabs defaultValue="personal" className="space-y-4">
-        <TabsList className="grid w-[404px] h-[40px] grid-cols-2">
+        <TabsList className="w-full h-[40px] grid-cols-2">
           <TabsTrigger value="personal">개인별</TabsTrigger>
           <TabsTrigger value="group">그룹별</TabsTrigger>
         </TabsList>

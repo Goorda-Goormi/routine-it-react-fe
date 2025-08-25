@@ -62,7 +62,6 @@ export default function App() {
       bio: '우리 함께 습관을 만들어봐요!'
     });
 
-  // 개인 루틴 상태 추가
   const [personalRoutines, setPersonalRoutines] = useState<Routine[]>([
     {
       id: 1,
@@ -105,8 +104,8 @@ export default function App() {
     },
   ]);
 
-  // 그룹 목록 상태 (임시 데이터)
   const [groups, setGroups] = useState<Group[]>([
+    // GroupScreen에서 옮겨온 데이터
     {
       id: 101,
       name: '아침 기상 챌린지',
@@ -127,6 +126,37 @@ export default function App() {
       category: 'exercise',
       owner: '임시소유자'
     },
+    {
+      id: 1,
+      name: '아침 운동 챌린지',
+      description: '매일 아침 운동하고 인증하기',
+      members: 12,
+      type: '의무참여',
+      progress: 80,
+      isOwner: true,
+      time: '06:00-09:00',
+      category: 'exercise',
+      recentMembers: [
+          { id: 1, name: '김민수', avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=40&h=40&fit=crop&crop=face' },
+          { id: 2, name: '이지영', avatar: 'https://images.unsplash.com/photo-1494790108755-2616b95fcebf?w=40&h=40&fit=crop&crop=face' },
+          { id: 3, name: '박철수', avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=40&h=40&fit=crop&crop=face' }
+      ]
+    },
+    {
+        id: 2,
+        name: '독서 모임',
+        description: '책 읽고 후기 공유하기',
+        members: 8,
+        type: '자유참여',
+        progress: 65,
+        isOwner: false,
+        time: '언제든',
+        category: 'study',
+        recentMembers: [
+            { id: 4, name: '정수현', avatar: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=40&h=40&fit=crop&crop=face' },
+            { id: 5, name: '최영호', avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=40&h=40&fit=crop&crop=face' }
+        ]
+    }
   ]);
 
   useEffect(() => {
@@ -194,9 +224,7 @@ export default function App() {
     setIsDarkMode(!isDarkMode);
   };
 
-  // 새로운 루틴을 추가하는 함수
   const handleAddRoutine = (newRoutineData: any) => {
-    // 임시 ID 및 기본값 설정
     const newRoutine = {
       ...newRoutineData,
       id: Date.now(),
@@ -205,8 +233,24 @@ export default function App() {
     };
     setPersonalRoutines(prev => [...prev, newRoutine]);
   };
+  
+  // 그룹을 추가하는 함수
+  const handleAddGroup = (newGroupData: any) => {
+    const newGroup = {
+      ...newGroupData,
+      id: Date.now(),
+      members: 1,
+      progress: 0,
+      isOwner: true,
+      time: newGroupData.hasAlarm ? newGroupData.alarmTime : '언제든',
+      owner: UserInfo.name,
+      recentMembers: [
+        { id: Date.now(), name: UserInfo.name, avatar: UserInfo.avatar }
+      ]
+    };
+    setGroups(prev => [newGroup, ...prev]);
+  };
 
-  // 기존 루틴을 수정하는 함수
   const handleUpdateRoutine = (updatedRoutine: Routine) => {
     if (updatedRoutine.isGroupRoutine) {
       setGroups(prevGroups => 
@@ -253,7 +297,6 @@ export default function App() {
     }
   };
 
-  // 프로필 정보를 업데이트하는 함수
   const handleSaveProfile = (updatedInfo: any) => {
       setUserInfo(prev => ({ ...prev, ...updatedInfo }));
   };
@@ -315,7 +358,7 @@ export default function App() {
           return (
             <CreateGroupScreen
               onBack={navigateBack}
-              group={currentScreen.params}
+              onCreateGroup={handleAddGroup}
             />
           );
         case "settings":
@@ -328,7 +371,7 @@ export default function App() {
           );
         case "help":
           return <HelpScreen onBack={navigateBack} />;
-       case "user-home":
+        case "user-home":
           return (
             <UserHomeScreen
               user={currentScreen.params}
@@ -354,11 +397,11 @@ export default function App() {
             onToggleCompletion={handleToggleCompletion}
             initialUserInfo={{
                 name: UserInfo.name,
-                username: UserInfo.email.split('@')[0], // email에서 username 추출
-                profileImage: UserInfo.avatar, // avatar를 profileImage로 사용
+                username: UserInfo.email.split('@')[0],
+                profileImage: UserInfo.avatar,
                 bio: UserInfo.bio,
             }} 
-        />
+          />
         );
       case "routine":
         return <RoutineScreen 
@@ -387,8 +430,8 @@ export default function App() {
               onToggleCompletion={handleToggleCompletion}
               initialUserInfo={{
                   name: UserInfo.name,
-                  username: UserInfo.email.split('@')[0], // username 추가
-                  profileImage: UserInfo.avatar, // profileImage 추가
+                  username: UserInfo.email.split('@')[0],
+                  profileImage: UserInfo.avatar,
                   bio: UserInfo.bio,
               }} 
           />
@@ -401,15 +444,12 @@ export default function App() {
     <div
       className={`min-h-screen w-full bg-[var(--root-background)] flex items-center justify-center `}
     >
-  
-      {/* 모바일 앱 컨테이너 */}
+    
       <div className="min-w-[360px] w-[450px] min-h-[704px] h-[800px] bg-background flex flex-col overflow-hidden rounded-lg shadow-2xl border border-border/50">
-        {/* 로그인 상태가 아닐 때는 전체 화면 사용 */}
         {!isLoggedIn ? (
           <div className="w-full h-full">{renderScreen()}</div>
         ) : (
           <>
-            {/* TopNavBar - 서브 화면에서는 숨김 */}
             {!currentScreen && (
               <TopNavBar
                 onSearch={handleSearch}
@@ -419,14 +459,11 @@ export default function App() {
               />
             )}
 
-            {/* 본문 영역 */}
             <main className="flex-1 bg-background flex flex-col overflow-hidden">
-              {/* 콘텐츠 영역 */}
               <div className="flex-1 overflow-auto ">
                 {renderScreen()}
               </div>
 
-              {/* 본문 영역 내 네비게이션 footer - 메인 화면에서만 표시 */}
               {!currentScreen && (
                 <div className="bg-background border-t border-border">
                   <BottomTabNav
