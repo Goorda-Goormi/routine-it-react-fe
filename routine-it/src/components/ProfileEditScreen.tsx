@@ -17,7 +17,7 @@ interface ProfileEditScreenProps {
     avatar: string;
     bio: string;
   };
-  onSave: (updatedInfo: any) => void;
+  onSaveProfile: (updatedInfo: any) => void;
 }
 
 export function ProfileEditScreen({ 
@@ -26,7 +26,7 @@ export function ProfileEditScreen({
   isDarkMode, 
   onToggleDarkMode, 
   initialUserInfo, 
-  onSave 
+  onSaveProfile
 }: ProfileEditScreenProps) {
   // initialUserInfo prop을 사용하여 초기 상태 설정
   const [profileData, setProfileData] = useState({
@@ -55,7 +55,7 @@ export function ProfileEditScreen({
   // 저장 버튼 클릭 핸들러
   const handleSave = () => {
     // onSave 함수를 호출하여 부모 컴포넌트로 데이터 전달
-    onSave({
+    onSaveProfile({
       name: profileData.name,
       bio: profileData.bio,
       avatar: avatarUrl,

@@ -294,7 +294,7 @@ export default function App() {
               isDarkMode={isDarkMode}
               onToggleDarkMode={toggleDarkMode}
               initialUserInfo={UserInfo}
-              onSave={handleSaveProfile} 
+              onSaveProfile={handleSaveProfile} 
             />
           );
         case "group-chat":
