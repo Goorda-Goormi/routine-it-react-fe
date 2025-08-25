@@ -8,7 +8,7 @@ import { Label } from './ui/label';
 import { Textarea } from './ui/textarea';
 import { ArrowLeft, Send, Image, Smile, Camera, CheckCircle, Users } from 'lucide-react';
 import { getStreakInfo } from './utils/streakUtils';
-//import { Field, Switch } from '@chakra-ui/react';
+import { GroupRoutineDialog } from './GroupRoutineDialog';
 
 interface GroupChatScreenProps {
   group: any;
@@ -197,6 +197,27 @@ const handleSendAlbum = (files: FileList) => {
 };
 
 
+const handleAuthSubmit = (data: { description: string; image: File | null; isPublic: boolean }) => {
+    // GroupRoutineDialog로부터 전달받은 data를 이용하여 메시지를 생성
+    const authMessage: Message = {
+      id: Date.now(), // 고유 ID를 Date.now()로 설정
+      user: '나',
+      userId: myUserId,
+      message: data.description,
+      time: new Date().toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' }),
+      isMe: true,
+      type: 'auth',
+      reactions: {}
+    };
+        // TODO: 실제로 이미지 업로드 로직을 여기에 추가
+        // if (data.image) { ... }
+        
+        // 메시지 목록에 추가
+    setMessages(prevMessages => [...prevMessages, authMessage]);
+    console.log("전송된 인증 데이터:", data);
+    };
+
+
   const handleSubmitAuth = () => {
     if (authData.description.trim()) {
       const authMessage: Message = {
@@ -249,327 +270,278 @@ const handleSendAlbum = (files: FileList) => {
     );
   };
 
-  return (
-    <div className="flex flex-col h-screen bg-background ">
-      {/* 헤더 */}
-      <div className="sticky top-0 z-10 bg-background/95 backdrop-blur border-b border-b-[var(--color-border-bottom-custom)] p-4  ">
-        <div className="mx-auto flex items-center justify-between ">
-          <div className="flex-1 flex items-center space-x-3">
-            <Button variant="ghost" size="sm" onClick={onBack} className="p-1 text-card-foreground hover:text-card-foreground">
-              <ArrowLeft className="h-5 w-5 icon-secondary" />
-            </Button>
-            <div className="flex-1" />
-          </div>
-          <div className="flex flex-col items-center">
-            <h1 className="font-bold text-base text-card-foreground line-clamp-2">{group.name}</h1>
-            <p className="text-xs text-muted-foreground">{group.members}명 참여 중</p>
-          </div>
-          <div className="flex-1 flex items-center justify-end space-x-2 text-icon-secondary dark:text-white ">
-            <div className="flex-1 " />
-            <Dialog open={isMembersDialogOpen} onOpenChange={setIsMembersDialogOpen}>
-              <DialogTrigger asChild>
-                <Button variant="ghost" size="sm" className="text-card-foreground hover:text-card-foreground ">
-                  <Users className="h-4 w-4 icon-secondary" />
-                </Button>
-              </DialogTrigger>
-              <DialogContent className="max-w-sm mx-auto text-icon-secondary ">
-                <DialogHeader>
-                  <DialogTitle className="text-card-foreground">그룹 멤버</DialogTitle>
-                  <DialogDescription>{group.name} 참여 멤버들의 연속 출석 현황</DialogDescription>
-                </DialogHeader>
-                <div className="space-y-3 max-h-80 overflow-y-auto">
-                  {groupMembers.map((member) => {
-                    const streakInfo = getStreakInfo(member.streakDays);
-                    return (
-                      <div key={member.id} className="flex items-center space-x-3 p-2 rounded-lg hover:bg-accent/50 transition-colors">
-                        <Avatar className="h-10 w-10">
-                          <AvatarImage src={member.avatar} alt={member.name} />
-                          <AvatarFallback className="text-sm">{member.name[0]}</AvatarFallback>
-                        </Avatar>
-                        <div className="flex-1">
-                          <div className="flex items-center space-x-2">
-                            <span className="text-lg">{streakInfo.icon}</span>
-                            <span className="text-sm font-medium text-card-foreground">{member.name}</span>
-                            {member.name === '나' && (<span className="text-xs text-muted-foreground">(나)</span>)}
-                          </div>
-                          <div className="text-xs text-muted-foreground">{member.streakDays}일 연속 • {streakInfo.stage}</div>
+return (
+  <div className="flex flex-col h-screen bg-background ">
+    {/* 헤더 */}
+    <div className="sticky top-0 z-10 bg-background/95 backdrop-blur border-b border-b-[var(--color-border-bottom-custom)] p-4  ">
+      <div className="mx-auto flex items-center justify-between ">
+        <div className="flex-1 flex items-center space-x-3">
+          <Button variant="ghost" size="sm" onClick={onBack} className="p-1 text-card-foreground hover:text-card-foreground">
+            <ArrowLeft className="h-5 w-5 icon-secondary" />
+          </Button>
+          <div className="flex-1" />
+        </div>
+        <div className="flex flex-col items-center">
+          <h1 className="font-bold text-base text-card-foreground line-clamp-2">{group.name}</h1>
+          <p className="text-xs text-muted-foreground">{group.members}명 참여 중</p>
+        </div>
+        <div className="flex-1 flex items-center justify-end space-x-2 text-icon-secondary dark:text-white ">
+          <div className="flex-1 " />
+          <Dialog open={isMembersDialogOpen} onOpenChange={setIsMembersDialogOpen}>
+            <DialogTrigger asChild>
+              <Button variant="ghost" size="sm" className="text-card-foreground hover:text-card-foreground ">
+                <Users className="h-4 w-4 icon-secondary" />
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-sm mx-auto text-icon-secondary ">
+              <DialogHeader>
+                <DialogTitle className="text-card-foreground">그룹 멤버</DialogTitle>
+                <DialogDescription>{group.name} 참여 멤버들의 연속 출석 현황</DialogDescription>
+              </DialogHeader>
+              <div className="space-y-3 max-h-80 overflow-y-auto">
+                {groupMembers.map((member) => {
+                  const streakInfo = getStreakInfo(member.streakDays);
+                  return (
+                    <div key={member.id} className="flex items-center space-x-3 p-2 rounded-lg hover:bg-accent/50 transition-colors">
+                      <Avatar className="h-10 w-10">
+                        <AvatarImage src={member.avatar} alt={member.name} />
+                        <AvatarFallback className="text-sm">{member.name[0]}</AvatarFallback>
+                      </Avatar>
+                      <div className="flex-1">
+                        <div className="flex items-center space-x-2">
+                          <span className="text-lg">{streakInfo.icon}</span>
+                          <span className="text-sm font-medium text-card-foreground">{member.name}</span>
+                          {member.id === myUserId && (<span className="text-xs text-muted-foreground">(나)</span>)}
                         </div>
+                        <div className="text-xs text-muted-foreground">{member.streakDays}일 연속 • {streakInfo.stage}</div>
                       </div>
-                    );
-                  })}
-                </div>
-              </DialogContent>
-            </Dialog>
-            <Dialog open={isAuthDialogOpen} onOpenChange={setIsAuthDialogOpen}>
-              <DialogTrigger asChild>
-                <Button size="sm" className="bg-green-400 hover:bg-green-500 text-icon-secondary dark:text-white">
-                  <CheckCircle className="h-4 w-4 mr-1 text-icon-secondary dark:text-white " />
-                  인증하기
-                </Button>
-              </DialogTrigger>
-              <DialogContent className="max-w-sm mx-auto dark:text-white">
-                <DialogHeader>
-                  <DialogTitle className="text-card-foreground">루틴 인증하기</DialogTitle>
-                  <DialogDescription>오늘의 루틴 수행 내용을 그룹 멤버들과 공유해주세요.</DialogDescription>
-                </DialogHeader>
-                <div className="space-y-4">
-                  <div>
-                    <Label htmlFor="description" className="text-card-foreground">인증 내용</Label>
-                    <Textarea
-                      id="description"
-                      placeholder="오늘의 루틴 수행 내용을 적어주세요"
-                      value={authData.description}
-                      onChange={(e) => setAuthData({...authData, description: e.target.value})}
-                      rows={3}
-                      className="bg-input-background border-border text-foreground placeholder:text-muted-foreground"
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="image" className="text-card-foreground">사진 첨부 (선택)</Label>
-                    <div className="mt-2">
-                      <input type="file" id="image" accept="image/*" onChange={handleImageSelect} className="hidden" />
-                      <Button
-                        type="button"
-                        variant="outline"
-                        className="w-full text-card-foreground border-border hover:bg-accent hover:text-card-foreground"
-                        onClick={() => document.getElementById('image')?.click()}
-                      >
-                        <Camera className="h-4 w-4 mr-2 icon-secondary" />
-                        {authData.image ? authData.image.name : '사진 선택'}
-                      </Button>
                     </div>
-                  </div>
-
-                  <div className="flex items-center space-x-2">
-                    <input
-                      type="checkbox"
-                      id="is-public"
-                      checked={authData.isPublic}
-                      onChange={(e) => setAuthData({...authData, isPublic: e.target.checked})}
-                      className="form-checkbox h-4 w-4 text-green-600 rounded"
-                    />
-                    <Label htmlFor="is-public" className="text-sm font-medium text-card-foreground">
-                      {authData.isPublic ? '전체 공개' : '나만 보기'}
-                    </Label>
-                  </div>
-
-                  <Button 
-                    onClick={handleSubmitAuth} 
-                    className="w-full bg-green-600 hover:bg-green-700 text-gray-700"
-                    disabled={!authData.description.trim()}
-                  >
-                    인증 완료
-                  </Button>
-                </div>
-              </DialogContent>
-            </Dialog>
-          </div>
+                  );
+                })}
+              </div>
+            </DialogContent>
+          </Dialog>
+          <Button
+            size="sm"
+            className="bg-green-400 hover:bg-green-500 text-icon-secondary dark:text-white"
+            onClick={() => setIsAuthDialogOpen(true)}
+          >
+            <CheckCircle className="h-4 w-4 mr-1 text-icon-secondary dark:text-white " />
+            인증하기
+          </Button>
         </div>
       </div>
+    </div>
 
-      {/* 메시지 목록 */}
-      <div className="flex-1 overflow-y-auto ">
-        <div className="max-w-md mx-auto px-4 py-4 space-y-4 ">
-          {messages.map((msg) => {
-            const userInfo = getUserInfo(msg.userId);
-            const streakInfo = getStreakInfo(userInfo.streakDays);
-            
-            const isMyMessage = msg.userId === myUserId;
+    {/* 메시지 목록 */}
+    <div className="flex-1 overflow-y-auto ">
+      <div className="max-w-md mx-auto px-4 py-4 space-y-4 ">
+        {messages.map((msg) => {
+          const userInfo = getUserInfo(msg.userId);
+          const streakInfo = getStreakInfo(userInfo.streakDays);
+          
+          const isMyMessage = msg.userId === myUserId;
 
-            return (
-              <div
-                key={msg.id}
-                className={`flex  ${isMyMessage ? 'justify-end' : 'justify-start'}`}
-                onMouseEnter={() => setHoveredMessageId(msg.id)}
-                onMouseLeave={() => setHoveredMessageId(null)}
-              >
-                <div className={`relative flex items-end space-x-2 max-w-[80%] ${isMyMessage ? 'flex-row-reverse space-x-reverse' : ''}`}>
+          return (
+            <div
+              key={msg.id}
+              className={`flex  ${isMyMessage ? 'justify-end' : 'justify-start'}`}
+              onMouseEnter={() => setHoveredMessageId(msg.id)}
+              onMouseLeave={() => setHoveredMessageId(null)}
+            >
+              <div className={`relative flex items-end space-x-2 max-w-[80%] ${isMyMessage ? 'flex-row-reverse space-x-reverse' : ''}`}>
+                {!isMyMessage && (
+                  <Avatar className="h-6 w-6">
+                    <AvatarImage src={userInfo.avatar} alt={msg.user} />
+                    <AvatarFallback className="text-xs">{msg.user[0]}</AvatarFallback>
+                  </Avatar>
+                )}
+                <div className={`flex flex-col ${isMyMessage ? 'items-end' : 'items-start'}`}>
                   {!isMyMessage && (
-                    <Avatar className="h-6 w-6">
-                      <AvatarImage src={userInfo.avatar} alt={msg.user} />
-                      <AvatarFallback className="text-xs">{msg.user[0]}</AvatarFallback>
-                    </Avatar>
+                    <div className="flex items-center space-x-1 mb-1">
+                      <span className="text-sm">{streakInfo.icon}</span>
+                      <span className="text-xs text-muted-foreground">{msg.user}</span>
+                      <span className="text-xs text-muted-foreground opacity-70">{userInfo.streakDays}일</span>
+                    </div>
                   )}
-                  <div className={`flex flex-col ${isMyMessage ? 'items-end' : 'items-start'}`}>
-                    {!isMyMessage && (
+                  <div
+                    className={`rounded-lg px-3 py-2 max-w-full break-words ${
+                      msg.type === 'auth' 
+                        ? 'bg-green-50/80 border border-green-200/50 dark:bg-green-900/20 dark:border-green-700/50'
+                        : isMyMessage
+                        ? 'bg-chart-5 text-primary'
+                        : 'bg-muted text-foreground'
+                    }`}
+                  >
+                    {msg.type === 'auth' && (
                       <div className="flex items-center space-x-1 mb-1">
-                        <span className="text-sm">{streakInfo.icon}</span>
-                        <span className="text-xs text-muted-foreground">{msg.user}</span>
-                        <span className="text-xs text-muted-foreground opacity-70">{userInfo.streakDays}일</span>
+                        <CheckCircle className="h-3 w-3 text-green-600" />
+                        <span className="text-xs font-medium text-green-600 dark:text-green-400">루틴 인증</span>
                       </div>
                     )}
-                    <div
-                      className={`rounded-lg px-3 py-2 max-w-full break-words ${
-                        msg.type === 'auth' 
-                          ? 'bg-green-50/80 border border-green-200/50 dark:bg-green-900/20 dark:border-green-700/50'
-                          : isMyMessage
-                          ? 'bg-chart-5 text-primary'
-                          : 'bg-muted text-foreground'
-                      }`}
-                    >
-                      {msg.type === 'auth' && (
-                        <div className="flex items-center space-x-1 mb-1">
-                          <CheckCircle className="h-3 w-3 text-green-600" />
-                          <span className="text-xs font-medium text-green-600 dark:text-green-400">루틴 인증</span>
-                        </div>
-                      )}
-                      {msg.type === 'album' ? (
-                        <div className="grid grid-cols-2 gap-2">
-                          {msg.albumImages?.map((img, idx) => (
-                            <img
-                              key={idx}
-                              src={img}
-                              alt={`앨범 이미지 ${idx + 1}`}
-                              className="w-full max-h-[150px] object-cover rounded-lg cursor-pointer"
-                              onClick={() => window.open(img, '_blank')}
-                            />
-                          ))}
-                        </div>
-                      ) : msg.type === 'image' ? (
-                        <img
-                          src={msg.imageUrl}
-                          alt="보낸 이미지"
-                          className="max-w-[200px] rounded-lg cursor-pointer"
-                          onClick={() => window.open(msg.imageUrl, '_blank')}
-                        />
-                      ) : (
-                        <p className="text-sm">{msg.message}</p>
-                      )}
-                    </div>
-                    {/* 메시지 반응 표시 */}
-                    {msg.reactions && Object.keys(msg.reactions).length > 0 && (
-                      <div className="flex space-x-1 mt-1">
-                        {Object.entries(msg.reactions).map(([emoji, count]) => (
-                          <div key={emoji} className="flex items-center text-xs p-1 rounded-full bg-secondary text-secondary-foreground">
-                            <span>{emoji}</span>
-                            <span className="ml-1">{count}</span>
-                          </div>
+                    {msg.type === 'album' ? (
+                      <div className="grid grid-cols-2 gap-2">
+                        {msg.albumImages?.map((img, idx) => (
+                          <img
+                            key={idx}
+                            src={img}
+                            alt={`앨범 이미지 ${idx + 1}`}
+                            className="w-full max-h-[150px] object-cover rounded-lg cursor-pointer"
+                            onClick={() => window.open(img, '_blank')}
+                          />
                         ))}
                       </div>
+                    ) : msg.type === 'image' ? (
+                      <img
+                        src={msg.imageUrl}
+                        alt="보낸 이미지"
+                        className="max-w-[200px] rounded-lg cursor-pointer"
+                        onClick={() => window.open(msg.imageUrl, '_blank')}
+                      />
+                    ) : (
+                      <p className="text-sm">{msg.message}</p>
                     )}
-                    <span className="text-xs text-muted-foreground mt-1">{msg.time}</span>
                   </div>
-
-                  {/* 마우스 호버 시 이모티콘 버튼 */}
-                  {hoveredMessageId === msg.id && (
-                    <Popover>
-                      <PopoverTrigger asChild>
-                        <Button 
-                          variant="ghost" 
-                          size="icon" 
-                          className={`absolute bottom-0 p-1 w-6 h-6 rounded-full bg-background/90 text-card-foreground hover:bg-card hover:text-card-foreground border border-border transition-opacity duration-200 z-10 ${isMyMessage ? 'left-[-1rem]' : 'right-[-1rem]'}`}
-                        >
-                          <Smile className="w-4 h-4 icon-secondary" />
-                        </Button>
-                      </PopoverTrigger>
-                      <PopoverContent 
-                        className="p-2 w-auto min-w-[150px] bg-background/95 backdrop-blur border-border" 
-                        align="start" 
-                        side="top" 
-                        sideOffset={10}
-                      >
-                        <div className="grid grid-cols-5 gap-1 text-2xl">
-                          {emojis.map((emoji, index) => (
-                            <Button
-                              key={index}
-                              variant="ghost"
-                              className="text-2xl p-1 h-8 w-8"
-                              onClick={() => handleReactionClick(msg.id, emoji)}
-                            >
-                              {emoji}
-                            </Button>
-                          ))}
+                  {/* 메시지 반응 표시 */}
+                  {msg.reactions && Object.keys(msg.reactions).length > 0 && (
+                    <div className="flex space-x-1 mt-1">
+                      {Object.entries(msg.reactions).map(([emoji, count]) => (
+                        <div key={emoji} className="flex items-center text-xs p-1 rounded-full bg-secondary text-secondary-foreground">
+                          <span>{emoji}</span>
+                          <span className="ml-1">{count}</span>
                         </div>
-                      </PopoverContent>
-                    </Popover>
+                      ))}
+                    </div>
                   )}
+                  <span className="text-xs text-muted-foreground mt-1">{msg.time}</span>
                 </div>
-              </div>
-            );
-          })}
-        </div>
-      </div>
 
-      {/* 메시지 입력 */}
-      <div className="sticky bottom-0 border-t border-t-[var(--color-border-bottom-custom)] bg-background">
-        <div className="max-w-md mx-auto p-4">
-          <div className="flex items-end space-x-2">
-            <div className="flex-1">
-              <div className="flex items-center space-x-2 bg-muted rounded-lg p-2">
-                <input
-                  type="file"
-                  id="chat-image"
-                  accept="image/*"
-                  multiple
-                  className="hidden"
-                  onChange={(e) => {
+                {/* 마우스 호버 시 이모티콘 버튼 */}
+                {hoveredMessageId === msg.id && (
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button 
+                        variant="ghost" 
+                        size="icon" 
+                        className={`absolute bottom-0 p-1 w-6 h-6 rounded-full bg-background/90 text-card-foreground hover:bg-card hover:text-card-foreground border border-border transition-opacity duration-200 z-10 ${isMyMessage ? 'left-[-1rem]' : 'right-[-1rem]'}`}
+                      >
+                        <Smile className="w-4 h-4 icon-secondary" />
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent 
+                      className="p-2 w-auto min-w-[150px] bg-background/95 backdrop-blur border-border" 
+                      align="start" 
+                      side="top" 
+                      sideOffset={10}
+                    >
+                      <div className="grid grid-cols-5 gap-1 text-2xl">
+                        {emojis.map((emoji, index) => (
+                          <Button
+                            key={index}
+                            variant="ghost"
+                            className="text-2xl p-1 h-8 w-8"
+                            onClick={() => handleReactionClick(msg.id, emoji)}
+                          >
+                            {emoji}
+                          </Button>
+                        ))}
+                      </div>
+                    </PopoverContent>
+                  </Popover>
+                )}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+
+    {/* 메시지 입력 */}
+    <div className="sticky bottom-0 border-t border-t-[var(--color-border-bottom-custom)] bg-background">
+      <div className="max-w-md mx-auto p-4">
+        <div className="flex items-end space-x-2">
+          <div className="flex-1">
+            <div className="flex items-center space-x-2 bg-muted rounded-lg p-2">
+              <input
+                type="file"
+                id="chat-image"
+                accept="image/*"
+                multiple
+                className="hidden"
+                onChange={(e) => {
                   if (e.target.files && e.target.files.length > 0) {
                     if (e.target.files.length === 1) {
-                      handleSendImage(e.target.files[0]);   // 한 장이면 그냥 이미지 메시지
+                      handleSendImage(e.target.files[0]);
                     } else {
-                      handleSendAlbum(e.target.files);      // 여러 장이면 앨범 메시지
+                      handleSendAlbum(e.target.files);
                     }
                   }
                   e.target.value = '';
                 }}
-                />
-                <Button variant="ghost" 
-                  size="sm" 
-                  className="p-1 text-card-foreground hover:text-card-foreground"
-                  onClick={() => document.getElementById('chat-image')?.click()}
+              />
+              <Button variant="ghost" 
+                size="sm" 
+                className="p-1 text-card-foreground hover:text-card-foreground"
+                onClick={() => document.getElementById('chat-image')?.click()}
+              >
+                <Image className="h-4 w-4 icon-secondary" />
+              </Button>
+              <Input
+                value={message}
+                onChange={(e) => setMessage(e.target.value)}
+                placeholder="메시지를 입력하세요..."
+                className="border-0 bg-transparent focus-visible:ring-0 p-0 text-foreground placeholder:text-muted-foreground"
+                onKeyPress={(e) => {
+                  if (e.key === 'Enter') {
+                    handleSendMessage();
+                  }
+                }}
+              />
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button variant="ghost" size="sm" className="p-1 text-card-foreground hover:text-card-foreground">
+                    <Smile className="h-4 w-4 icon-secondary" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent 
+                  className="p-2 bg-background/95 backdrop-blur border-border" 
+                  align="end" 
+                  side="top"
+                  sideOffset={10}
                 >
-                  <Image className="h-4 w-4 icon-secondary" />
-                </Button>
-                <Input
-                  value={message}
-                  onChange={(e) => setMessage(e.target.value)}
-                  placeholder="메시지를 입력하세요..."
-                  className="border-0 bg-transparent focus-visible:ring-0 p-0 text-foreground placeholder:text-muted-foreground"
-                  onKeyPress={(e) => {
-                    if (e.key === 'Enter') {
-                      handleSendMessage();
-                    }
-                  }}
-                />
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <Button variant="ghost" size="sm" className="p-1 text-card-foreground hover:text-card-foreground">
-                      <Smile className="h-4 w-4 icon-secondary" />
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent 
-                    className="p-2 bg-background/95 backdrop-blur border-border" 
-                    align="end" 
-                    side="top"
-                    sideOffset={10}
-                  >
-                    <div className="grid grid-cols-5 gap-2 w-full">
-                      {emojis.map((emoji, index) => (
-                        <Button 
-                          key={index}
-                          variant="ghost" 
-                          className="text-2xl p-1 h-10 w-10" 
-                          onClick={() => handleEmojiClick(emoji)}
-                        >
-                          {emoji}
-                        </Button>
-                      ))}
-                    </div>
-                  </PopoverContent>
-                </Popover>
-              </div>
+                  <div className="grid grid-cols-5 gap-2 w-full">
+                    {emojis.map((emoji, index) => (
+                      <Button 
+                        key={index}
+                        variant="ghost" 
+                        className="text-2xl p-1 h-10 w-10" 
+                        onClick={() => handleEmojiClick(emoji)}
+                      >
+                        {emoji}
+                      </Button>
+                    ))}
+                  </div>
+                </PopoverContent>
+              </Popover>
             </div>
-            <Button 
-              onClick={handleSendMessage}
-              className="rounded-full p-2 h-10 w-10"
-              disabled={!message.trim()}
-            >
-              <Send className="h-4 w-4 icon-primary" />
-            </Button>
           </div>
+          <Button 
+            onClick={handleSendMessage}
+            className="rounded-full p-2 h-10 w-10"
+            disabled={!message.trim()}
+          >
+            <Send className="h-4 w-4 icon-primary" />
+          </Button>
         </div>
       </div>
     </div>
     
-  );
+    {/*  인증 모달 컴포넌트 */}
+    <GroupRoutineDialog 
+      isOpen={isAuthDialogOpen}
+      onOpenChange={setIsAuthDialogOpen}
+      onAuthSubmit={handleAuthSubmit}
+    />
+  </div>
+);
 }

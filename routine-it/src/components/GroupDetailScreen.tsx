@@ -29,6 +29,7 @@ import {
 
 import { GroupMemberManager } from './GroupMemberManager';
 import GroupEdit from "./GroupEdit";
+import { GroupRoutineDialog } from './GroupRoutineDialog';
 
 interface GroupDetailScreenProps {
   group: any;
@@ -41,14 +42,14 @@ export function GroupDetailScreen({
   onBack,
   onNavigate,
 }: GroupDetailScreenProps) {
-  const [isJoined, setIsJoined] = useState(false);
+  const [isJoined, setIsJoined] = useState(true);
   const [isEditing, setIsEditing] = useState(false);
   const [showExMembersModal, setShowExMembersModal] = useState(false);
   const [showApprovalModal, setShowApprovalModal] = useState(false);
+  const [showRoutineModal, setShowRoutineModal] = useState(false); // 루틴 인증 모달 상태 추가
 
   const [errors, setErrors] = useState<any>({});
 
-  // 멤버 데이터에 isCertified 속성 추가
   const [members, setMembers] = useState([
     {
       id: '1',
@@ -59,7 +60,7 @@ export function GroupDetailScreen({
       score: 850,
       isOnline: true,
       isLeader: true,
-      isCertified: true, // 추가: 인증 상태
+      isCertified: true,
     },
     {
       id: '2',
@@ -70,7 +71,7 @@ export function GroupDetailScreen({
       score: 780,
       isOnline: false,
       isLeader: false,
-      isCertified: false, // 추가: 인증 상태
+      isCertified: false,
     },
     {
       id: '3',
@@ -81,7 +82,7 @@ export function GroupDetailScreen({
       score: 720,
       isOnline: true,
       isLeader: false,
-      isCertified: true, // 추가: 인증 상태
+      isCertified: true,
     },
     {
       id: '4',
@@ -92,7 +93,7 @@ export function GroupDetailScreen({
       score: 680,
       isOnline: false,
       isLeader: false,
-      isCertified: false, // 추가: 인증 상태
+      isCertified: false,
     },
     {
       id: '5',
@@ -103,7 +104,7 @@ export function GroupDetailScreen({
       score: 650,
       isOnline: true,
       isLeader: false,
-      isCertified: true, // 추가: 인증 상태
+      isCertified: true,
     },
   ]);
 
@@ -141,6 +142,19 @@ export function GroupDetailScreen({
   const handleMemberClick = (member: any) => {
     onNavigate('user-home', member);
   };
+  
+  // 루틴 인증 버튼 클릭 핸들러
+  const handleRoutineAuthClick = () => {
+    setShowRoutineModal(true);
+  };
+
+  // 루틴 인증 제출 핸들러
+  const handleAuthSubmit = (data: { description: string; image: File | null; isPublic: boolean }) => {
+    // TODO: 인증 데이터를 처리하는 로직 추가
+    console.log("인증 데이터 제출:", data);
+    alert('인증이 제출되었습니다!');
+    setShowRoutineModal(false);
+  };
 
   const currentUser = { id: '1', name: '김루틴' };
   const isLeader = members.find((m) => m.id === currentUser.id)?.isLeader ?? false;
@@ -172,11 +186,9 @@ export function GroupDetailScreen({
     setShowApprovalModal(false);
   };
 
-
-
   return (
-   
-   <div
+    
+    <div
       className= "min-h-screen relative">
       <div className="sticky top-0 z-10 bg-background/95 backdrop-blur border-b border-b-[var(--color-border-bottom-custom)] p-4">
         <div className="flex items-center justify-between">
@@ -197,7 +209,6 @@ export function GroupDetailScreen({
               size="sm"
               className="text-card-foreground hover:text-card-foreground"
             >
-              
             </Button>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
@@ -284,6 +295,7 @@ export function GroupDetailScreen({
                     채팅
                   </Button>
                   <Button
+                    onClick={handleRoutineAuthClick}
                     variant="outline"
                     className="flex-1 text-card-foreground border-border hover:bg-accent hover:text-card-foreground"
                   >
@@ -342,7 +354,6 @@ export function GroupDetailScreen({
                           </div>
                         </div>
                         <div className="flex items-center space-x-2">
-                          {/* 인증 상태에 따라 뱃지 표시 */}
                           <Badge
                             variant={member.isCertified ? 'default' : 'destructive'}
                             className="text-xs"
@@ -459,6 +470,13 @@ export function GroupDetailScreen({
           />
         </DialogContent>
       </Dialog>
+      
+      {/* 루틴 인증 모달 */}
+      <GroupRoutineDialog 
+        isOpen={showRoutineModal}
+        onOpenChange={setShowRoutineModal}
+        onAuthSubmit={handleAuthSubmit}
+      />
     </div>
   );
 }
