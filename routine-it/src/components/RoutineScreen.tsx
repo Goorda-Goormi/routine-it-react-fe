@@ -15,7 +15,7 @@ const getTodayDayOfWeek = () => {
 interface RoutineScreenProps {
   onNavigate: (screen: string, params?: any) => void;
   personalRoutines: any[];
-  onToggleCompletion: (routineId: number) => void;
+  onToggleCompletion: (routineId: number, isGroupRoutine?: boolean) => void;
 }
 
 export function RoutineScreen({ onNavigate, personalRoutines, onToggleCompletion }: RoutineScreenProps) {
@@ -283,7 +283,7 @@ export function RoutineScreen({ onNavigate, personalRoutines, onToggleCompletion
                               <button
                                 onClick={(e) => {
                                   e.stopPropagation(); 
-                                  onToggleCompletion(routine.id); // prop으로 받은 함수 사용
+                                  onToggleCompletion(routine.id, routine.isGroupRoutine); // prop으로 받은 함수 사용
                                 }}
                                 className={`w-auto h-8 rounded-full flex items-center justify-center transition-colors px-2 py-1 text-xs text-foreground border border-border/60 hover:bg-accent`}
                               >
@@ -298,7 +298,7 @@ export function RoutineScreen({ onNavigate, personalRoutines, onToggleCompletion
                             <button
                               onClick={(e) => {
                                 e.stopPropagation(); 
-                                onToggleCompletion(routine.id); // prop으로 받은 함수 사용
+                                onToggleCompletion(routine.id, routine.isGroupRoutine); // prop으로 받은 함수 사용
                               }}
                               className={`w-8 h-8 rounded-full flex items-center justify-center transition-colors m-0 border-0 ${
                                 routine.completed
