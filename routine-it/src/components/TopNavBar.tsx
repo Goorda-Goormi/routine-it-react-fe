@@ -29,7 +29,7 @@ export function TopNavBar({ onSearch, onNewProject, onProfileMenuClick, userInfo
   };
 
   return (
-    <header className="bg-background border-b border-border px-4 py-3">
+    <header className="bg-background border-b border-b-[var(--color-border-bottom-custom)] px-4 py-3">
       <div className="flex items-center justify-between">
         {/* 로고 및 앱 이름 */}
         <div className="flex items-center space-x-3">
