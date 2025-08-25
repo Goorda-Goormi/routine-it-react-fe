@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
@@ -13,10 +13,10 @@ import { Alert, AlertDescription } from './ui/alert';
 
 interface CreateGroupScreenProps {
   onBack: () => void;
-  group?: any; // 편집 모드일 때 기존 그룹 데이터
+  onCreateGroup: (groupData: any) => void; // 새로운 그룹 데이터를 전달할 콜백 함수 추가
 }
 
-export function CreateGroupScreen({ onBack, group }: CreateGroupScreenProps) {
+export function CreateGroupScreen({ onBack, onCreateGroup }: CreateGroupScreenProps) {
   const [formData, setFormData] = useState({
     name: '',
     description: '',
@@ -27,63 +27,48 @@ export function CreateGroupScreen({ onBack, group }: CreateGroupScreenProps) {
     maxMembers: '30'
   });
 
-  const [errors, setErrors] = useState<{[key: string]: string}>({});
+  const [errors, setErrors] = useState<{ [key: string]: string }>({});
 
   const categories = [
-    { 
-      id: 'health', 
-      name: '건강', 
-      emoji: '🏥', 
+    {
+      id: 'health',
+      name: '건강',
+      emoji: '🏥',
       description: '건강 관련 습관들',
       hoverColor: 'hover:bg-red-100/70 hover:text-red-800 hover:border-red-300/50'
     },
-    { 
-      id: 'exercise', 
-      name: '운동', 
-      emoji: '💪', 
+    {
+      id: 'exercise',
+      name: '운동',
+      emoji: '💪',
       description: '운동과 피트니스',
       hoverColor: 'hover:bg-orange-100/70 hover:text-orange-800 hover:border-orange-300/50'
     },
-    { 
-      id: 'study', 
-      name: '학습', 
-      emoji: '📚', 
+    {
+      id: 'study',
+      name: '학습',
+      emoji: '📚',
       description: '공부와 자기계발',
       hoverColor: 'hover:bg-blue-100/70 hover:text-blue-800 hover:border-blue-300/50'
     },
-    { 
-      id: 'lifestyle', 
-      name: '생활', 
-      emoji: '🏠', 
+    {
+      id: 'lifestyle',
+      name: '생활',
+      emoji: '🏠',
       description: '일상 생활 습관',
       hoverColor: 'hover:bg-green-100/70 hover:text-green-800 hover:border-green-300/50'
     },
-    { 
-      id: 'hobby', 
-      name: '취미', 
-      emoji: '🎨', 
+    {
+      id: 'hobby',
+      name: '취미',
+      emoji: '🎨',
       description: '취미와 여가 활동',
       hoverColor: 'hover:bg-purple-100/70 hover:text-purple-800 hover:border-purple-300/50'
     }
   ];
 
-  // 편집 모드일 때 기존 데이터 로드
-  useEffect(() => {
-    if (group) {
-      setFormData({
-        name: group.name || '',
-        description: group.description || '',
-        category: group.category || '',
-        type: group.type === '의무참여' ? 'mandatory' : 'optional',
-        hasAlarm: group.alarmTime ? true : false,
-        alarmTime: group.alarmTime || '09:00',
-        maxMembers: group.maxMembers?.toString() || '30'
-      });
-    }
-  }, [group]);
-
   const validateForm = () => {
-    const newErrors: {[key: string]: string} = {};
+    const newErrors: { [key: string]: string } = {};
 
     if (!formData.name.trim()) {
       newErrors.name = '그룹 이름을 입력해주세요';
@@ -115,16 +100,17 @@ export function CreateGroupScreen({ onBack, group }: CreateGroupScreenProps) {
       return;
     }
 
-    const groupData = {
+    const newGroup = {
       ...formData,
+      id: Date.now(), // 고유 ID 생성
       type: formData.type === 'mandatory' ? '의무참여' : '자유참여',
       alarmTime: formData.hasAlarm ? formData.alarmTime : null,
       maxMembers: parseInt(formData.maxMembers)
     };
 
-    console.log(group ? '그룹 수정:' : '그룹 생성:', groupData);
-    
-    // 실제로는 API 호출
+    console.log('그룹 생성:', newGroup);
+
+    onCreateGroup(newGroup); // 새 그룹 데이터를 GroupScreen으로 전달
     onBack();
   };
 
@@ -142,9 +128,9 @@ export function CreateGroupScreen({ onBack, group }: CreateGroupScreenProps) {
     <div className="h-full flex flex-col p-4">
       {/* 헤더 */}
       <div className="flex items-center space-x-3 mb-6">
-        <Button 
-          variant="ghost" 
-          size="sm" 
+        <Button
+          variant="ghost"
+          size="sm"
           onClick={onBack}
           className="text-card-foreground hover:text-card-foreground p-1"
         >
@@ -152,10 +138,10 @@ export function CreateGroupScreen({ onBack, group }: CreateGroupScreenProps) {
         </Button>
         <div>
           <h1 className="text-lg font-medium text-card-foreground">
-            {group ? '그룹 편집' : '새 그룹 만들기'}
+            새 그룹 만들기
           </h1>
           <p className="text-sm text-muted-foreground">
-            {group ? '그룹 정보를 수정하세요' : '함께할 그룹을 만들어보세요'}
+            함께할 그룹을 만들어보세요
           </p>
         </div>
       </div>
@@ -178,7 +164,7 @@ export function CreateGroupScreen({ onBack, group }: CreateGroupScreenProps) {
                 id="groupName"
                 placeholder="그룹 이름을 입력하세요"
                 value={formData.name}
-                onChange={(e) => setFormData({...formData, name: e.target.value})}
+                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                 className={`bg-input-background border-border text-foreground ${errors.name ? 'border-destructive' : ''}`}
                 maxLength={30}
               />
@@ -197,7 +183,7 @@ export function CreateGroupScreen({ onBack, group }: CreateGroupScreenProps) {
                 id="groupDescription"
                 placeholder="그룹에 대한 설명을 입력하세요"
                 value={formData.description}
-                onChange={(e) => setFormData({...formData, description: e.target.value})}
+                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                 className={`bg-input-background border-border text-foreground resize-none h-20 ${errors.description ? 'border-destructive' : ''}`}
                 maxLength={100}
               />
@@ -212,14 +198,14 @@ export function CreateGroupScreen({ onBack, group }: CreateGroupScreenProps) {
             {/* 카테고리 */}
             <div className="space-y-2">
               <Label className="text-card-foreground">카테고리</Label>
-              <Select value={formData.category} onValueChange={(value) => setFormData({...formData, category: value})}>
+              <Select value={formData.category} onValueChange={(value) => setFormData({ ...formData, category: value })}>
                 <SelectTrigger className={`bg-input-background border-border text-foreground ${errors.category ? 'border-destructive' : ''}`}>
                   <SelectValue placeholder="카테고리를 선택하세요" />
                 </SelectTrigger>
                 <SelectContent>
                   {categories.map((category) => (
-                    <SelectItem 
-                      key={category.id} 
+                    <SelectItem
+                      key={category.id}
                       value={category.id}
                       className={`transition-colors ${category.hoverColor}`}
                     >
@@ -253,13 +239,13 @@ export function CreateGroupScreen({ onBack, group }: CreateGroupScreenProps) {
             {/* 참여 유형 */}
             <div className="space-y-3">
               <Label className="text-card-foreground">참여 유형</Label>
-              <RadioGroup 
-                value={formData.type} 
-                onValueChange={(value) => setFormData({...formData, type: value})}
+              <RadioGroup
+                value={formData.type}
+                onValueChange={(value) => setFormData({ ...formData, type: value })}
                 className="space-y-3"
               >
-                <Label 
-                  htmlFor="optional" 
+                <Label
+                  htmlFor="optional"
                   className="flex items-start space-x-3 p-3 rounded-lg border hover:bg-green-100/70 hover:text-green-800 hover:border-green-300/50 cursor-pointer transition-colors"
                 >
                   <RadioGroupItem value="optional" id="optional" className="mt-1" />
@@ -275,22 +261,22 @@ export function CreateGroupScreen({ onBack, group }: CreateGroupScreenProps) {
                     <Badge variant="secondary" className="text-xs">추천</Badge>
                   </div>
                 </Label>
-                
-                <Label 
-                  htmlFor="mandatory" 
+
+                <Label
+                  htmlFor="mandatory"
                   className="flex items-start space-x-3 p-3 rounded-lg border hover:bg-red-100/70 hover:text-red-800 hover:border-red-300/50 cursor-pointer transition-colors"
                 >
                   <RadioGroupItem value="mandatory" id="mandatory" className="mt-1" />
-                    <div className="flex flex-1 items-start justify-between">
-                      <div className="flex flex-col items-start">
-                        <div className="text-card-foreground font-medium">
-                          의무참여
-                        </div>
-                        <p className="text-xs text-muted-foreground mt-1">
-                          정해진 시간에 반드시 참여해야 합니다
-                        </p>
+                  <div className="flex flex-1 items-start justify-between">
+                    <div className="flex flex-col items-start">
+                      <div className="text-card-foreground font-medium">
+                        의무참여
                       </div>
-                      <Badge variant="destructive" className="text-xs">엄격</Badge>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        정해진 시간에 반드시 참여해야 합니다
+                      </p>
+                    </div>
+                    <Badge variant="destructive" className="text-xs">엄격</Badge>
                   </div>
                 </Label>
               </RadioGroup>
@@ -299,7 +285,7 @@ export function CreateGroupScreen({ onBack, group }: CreateGroupScreenProps) {
             {/* 최대 인원 */}
             <div className="space-y-2">
               <Label htmlFor="maxMembers" className="text-card-foreground">최대 인원</Label>
-              <Select value={formData.maxMembers} onValueChange={(value) => setFormData({...formData, maxMembers: value})}>
+              <Select value={formData.maxMembers} onValueChange={(value) => setFormData({ ...formData, maxMembers: value })}>
                 <SelectTrigger className={`bg-input-background border-border text-foreground ${errors.maxMembers ? 'border-destructive' : ''}`}>
                   <SelectValue />
                 </SelectTrigger>
@@ -334,7 +320,7 @@ export function CreateGroupScreen({ onBack, group }: CreateGroupScreenProps) {
               </div>
               <Switch
                 checked={formData.hasAlarm}
-                onCheckedChange={(checked) => setFormData({...formData, hasAlarm: checked})}
+                onCheckedChange={(checked) => setFormData({ ...formData, hasAlarm: checked })}
               />
             </div>
 
@@ -346,7 +332,7 @@ export function CreateGroupScreen({ onBack, group }: CreateGroupScreenProps) {
                   id="alarmTime"
                   type="time"
                   value={formData.alarmTime}
-                  onChange={(e) => setFormData({...formData, alarmTime: e.target.value})}
+                  onChange={(e) => setFormData({ ...formData, alarmTime: e.target.value })}
                   className="bg-input-background border-border text-foreground"
                 />
               </div>
@@ -370,11 +356,11 @@ export function CreateGroupScreen({ onBack, group }: CreateGroupScreenProps) {
                     </Badge>
                   </div>
                 </div>
-                
+
                 {formData.description && (
                   <p className="text-xs text-muted-foreground mb-2">{formData.description}</p>
                 )}
-                
+
                 <div className="flex items-center justify-between text-xs text-muted-foreground">
                   <span>{getCategoryEmoji(formData.category)} {getCategoryName(formData.category)}</span>
                   <span>👥 최대 {formData.maxMembers}명</span>
@@ -389,7 +375,7 @@ export function CreateGroupScreen({ onBack, group }: CreateGroupScreenProps) {
         <Alert>
           <AlertCircle className="h-4 w-4 icon-muted" />
           <AlertDescription className="text-xs">
-            그룹을 생성한 후에도 설정을 변경할 수 있습니다. 
+            그룹을 생성한 후에도 설정을 변경할 수 있습니다.
             {formData.type === 'mandatory' && ' 의무참여 그룹은 멤버들이 정해진 시간에 참여해야 합니다.'}
           </AlertDescription>
         </Alert>
@@ -398,18 +384,18 @@ export function CreateGroupScreen({ onBack, group }: CreateGroupScreenProps) {
       {/* 하단 버튼 */}
       <div className="pt-4 border-t border-border bg-background">
         <div className="flex space-x-3">
-          <Button 
-            variant="outline" 
+          <Button
+            variant="outline"
             onClick={onBack}
             className="flex-1 text-card-foreground border-border hover:bg-accent hover:text-card-foreground"
           >
             취소
           </Button>
-          <Button 
+          <Button
             onClick={handleSubmit}
             className="flex-1 bg-primary text-primary-foreground hover:bg-primary/90"
           >
-            {group ? '수정하기' : '그룹 만들기'}
+            그룹 만들기
           </Button>
         </div>
       </div>
