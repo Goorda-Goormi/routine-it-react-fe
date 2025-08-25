@@ -4,9 +4,29 @@ import { Button } from './ui/button';
 import { Progress } from './ui/progress';
 import { Badge } from './ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
-import { ArrowLeft, Camera, Flame, TrendingUp, Calendar, Trophy, Users, CheckCircle, Target, Clock, Lock } from 'lucide-react';
+import { ArrowLeft, ChevronLeft, ChevronRight, X, Camera, Flame, TrendingUp, Calendar, Trophy, Users, CheckCircle, Target, Clock, Lock } from 'lucide-react';
 import { ImageWithFallback } from './figma/ImageWithFallback';
 import { getStreakInfo, getStreakMessage } from './utils/streakUtils';
+
+interface User {
+  id: number;
+  name: string;
+  avatar: string;
+  bio: string;
+  email: string;
+  level: number;
+  streak: number;
+}
+
+interface Routine {
+  id: number;
+  name: string;
+  description?: string;
+  time: string;
+  category: string;
+  completed: boolean;
+  isGroupRoutine?: boolean;
+}
 
 interface UserHomeScreenProps {
   user: any;
@@ -17,6 +37,28 @@ export function UserHomeScreen({ user, onBack }: UserHomeScreenProps) {
   const today = new Date();
   const todayString = today.toLocaleDateString('ko-KR', { month: 'long', day: 'numeric' });
 
+  const [selectedPhotoIndex, setSelectedPhotoIndex] = useState<number | null>(null);
+
+  const openGallery = (index: number) => {
+    setSelectedPhotoIndex(index);
+  };
+
+  const closeGallery = () => {
+    setSelectedPhotoIndex(null);
+  };
+
+  const showNextPhoto = () => {
+    if (selectedPhotoIndex !== null) {
+      setSelectedPhotoIndex((selectedPhotoIndex + 1) % allVerificationPhotos.length);
+    }
+  };
+
+  const showPrevPhoto = () => {
+    if (selectedPhotoIndex !== null) {
+      setSelectedPhotoIndex((selectedPhotoIndex - 1 + allVerificationPhotos.length) % allVerificationPhotos.length);
+    }
+  };
+
   // 다른 유저의 정보 (공개 정보)
   const [userProfile] = useState({
     name: user?.name || '이지영',
@@ -24,7 +66,8 @@ export function UserHomeScreen({ user, onBack }: UserHomeScreenProps) {
     level: 12,
     streakDays: 15,
     totalPoints: 1850,
-    joinDate: '2024년 3월'
+    joinDate: '2024년 3월',
+    bio: '오늘도 으쌰으쌰!'
   });
 
   // 연속 출석일 정보
@@ -86,42 +129,42 @@ export function UserHomeScreen({ user, onBack }: UserHomeScreenProps) {
     { 
       id: 1, 
       routine: '아침 요가', 
-      image: 'https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?w=150&h=150&fit=crop', 
+      image: 'https://images.unsplash.com/photo-1544367567-0f2fcb009e0b', 
       date: '오늘',
       isPublic: true
     },
     { 
       id: 2, 
       routine: '책 읽기', 
-      image: 'https://images.unsplash.com/photo-1506126613408-eca07ce68773?w=150&h=150&fit=crop', 
+      image: 'https://images.unsplash.com/photo-1506126613408-eca07ce68773', 
       date: '어제',
       isPublic: true
     },
     { 
       id: 3, 
       routine: '물 마시기', 
-      image: 'https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?w=150&h=150&fit=crop', 
+      image: 'https://images.unsplash.com/photo-1544367567-0f2fcb009e0b', 
       date: '11월 13일',
       isPublic: false // 비공개
     },
     { 
       id: 4, 
       routine: '명상', 
-      image: 'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=150&h=150&fit=crop', 
+      image: 'https://images.unsplash.com/photo-1506905925346-21bda4d32df4', 
       date: '11월 12일',
       isPublic: true
     },
     { 
       id: 5, 
       routine: '일기 쓰기', 
-      image: 'https://images.unsplash.com/photo-1455390582262-044cdead277a?w=150&h=150&fit=crop', 
+      image: 'https://images.unsplash.com/photo-1455390582262-044cdead277a', 
       date: '11월 11일',
       isPublic: false // 비공개
     },
     { 
       id: 6, 
       routine: '산책', 
-      image: 'https://images.unsplash.com/photo-1518611012118-696072aa579a?w=150&h=150&fit=crop', 
+      image: 'https://images.unsplash.com/photo-1518611012118-696072aa579a', 
       date: '11월 10일',
       isPublic: true
     }
@@ -159,7 +202,7 @@ export function UserHomeScreen({ user, onBack }: UserHomeScreenProps) {
           <ArrowLeft className="h-5 w-5 icon-secondary" />
         </Button>
         <div>
-          <h1 className="text-lg font-medium text-primary">
+          <h1 className="text-lg text-left font-medium text-primary">
             {userProfile.name}님의 홈
           </h1>
           <p className="text-sm text-muted-foreground">
@@ -169,7 +212,7 @@ export function UserHomeScreen({ user, onBack }: UserHomeScreenProps) {
       </div>
 
       {/* 콘텐츠 */}
-      <div className="flex-1 overflow-auto space-y-6">
+      <div className="flex-1 overflow-auto space-y-6 mx-1">
         {/* 사용자 정보 및 현황 */}
         <div className="space-y-4">
           <div className="flex items-center space-x-4">
@@ -177,12 +220,17 @@ export function UserHomeScreen({ user, onBack }: UserHomeScreenProps) {
               <AvatarImage src={userProfile.avatar} alt={userProfile.name} />
               <AvatarFallback className="text-lg">{userProfile.name.charAt(0)}</AvatarFallback>
             </Avatar>
-            <div className="flex-1">
-              <div className="flex items-center space-x-2 mb-1">
-                <h2 className="text-lg font-semibold text-primary">{userProfile.name}</h2>
-                <Badge variant="secondary" className="text-xs">Lv.{userProfile.level}</Badge>
+            <div className="flex flex-col flex-1 ml-1">
+              <div className="flex items-center justify-between w-90">
+                <div className="flex items-center space-x-2 mb-1">
+                  <h2 className="text-xl font-bold text-muted-foreground">{userProfile.name}</h2>
+                  <Badge variant="secondary" className="text-xs">Lv.{userProfile.level}</Badge>
+                </div>
+                <p className="text-sm font-semibold text-muted-foreground mt-0.5">{userProfile.joinDate}에 가입</p>
               </div>
-              <p className="text-sm text-muted-foreground">{userProfile.joinDate}에 가입</p>
+              <div className="text-sm text-left text-muted-foreground font-semibold">
+                "{userProfile.bio}"
+              </div>
             </div>
           </div>
 
@@ -285,7 +333,6 @@ export function UserHomeScreen({ user, onBack }: UserHomeScreenProps) {
                           {getCategoryEmoji(routine.category)} {routine.name}
                         </div>
                         <div className="text-xs text-muted-foreground">
-                          <Clock className="h-3 w-3 inline mr-1 icon-muted" />
                           {routine.time} • {routine.streak}일 연속
                         </div>
                       </div>
@@ -313,7 +360,7 @@ export function UserHomeScreen({ user, onBack }: UserHomeScreenProps) {
                     index < userGroups.length - 1 ? 'border-b border-border/30' : ''
                   }`}>
                     <div className="flex items-center space-x-3 flex-1">
-                      <div className="flex -space-x-2">
+                      <div className="flex -space-x-2 w-20">
                         {group.recentMembers.slice(0, 3).map((member, memberIndex) => (
                           <Avatar key={member.id} className="w-8 h-8 border-2 border-background">
                             <AvatarImage src={member.avatar} alt={member.name} />
@@ -323,7 +370,7 @@ export function UserHomeScreen({ user, onBack }: UserHomeScreenProps) {
                       </div>
                       <div>
                         <div className="text-sm font-medium text-foreground">{group.name}</div>
-                        <div className="text-xs text-muted-foreground">{group.members}명 참여</div>
+                        <div className="text-xs text-left text-muted-foreground">{group.members}명 참여</div>
                       </div>
                     </div>
                   </div>
@@ -345,15 +392,14 @@ export function UserHomeScreen({ user, onBack }: UserHomeScreenProps) {
                 <Badge variant="secondary" className="text-xs">
                   공개 {publicPhotosCount}/{totalPhotos}
                 </Badge>
-                <Lock className="h-3 w-3 text-muted-foreground" />
               </div>
             </div>
           </CardHeader>
           <CardContent className="pt-0">
             {publicVerificationPhotos.length > 0 ? (
               <div className="grid grid-cols-3 gap-3">
-                {publicVerificationPhotos.map((photo) => (
-                  <div key={photo.id} className="space-y-2">
+                {publicVerificationPhotos.map((photo, index) => (
+                  <div key={photo.id} className="space-y-2 cursor-pointer" onClick={() => openGallery(index)}>
                     {/* 인증 이미지 */}
                     <div className="relative rounded-lg overflow-hidden aspect-square">
                       <ImageWithFallback
@@ -390,6 +436,57 @@ export function UserHomeScreen({ user, onBack }: UserHomeScreenProps) {
           </CardContent>
         </Card>
       </div>
+    {/* 갤러리 모달 */}
+      {selectedPhotoIndex !== null && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80">
+          <div className="relative h-full w-full max-w-lg flex flex-col items-center justify-center">
+            {/* 닫기 버튼 */}
+            <Button
+              variant="ghost"
+              size="icon"
+              className="absolute top-4 right-4 z-50 text-white hover:bg-black/50 hover:text-white hover:border-none rounded-full"
+              onClick={closeGallery}
+            >
+              <X className="h-6 w-6" />
+            </Button>
+            {/* 사진 */}
+            <div className="flex-1 w-full flex items-center justify-center p-4">
+              <img 
+                src={publicVerificationPhotos[selectedPhotoIndex].image} 
+                alt={publicVerificationPhotos[selectedPhotoIndex].routine} 
+                className="max-w-full max-h-full object-contain"
+              />
+            </div>
+            {/* 사진 설명 */}
+            <div className="absolute bottom-16 w-full text-center text-white text-lg font-semibold">
+              {publicVerificationPhotos[selectedPhotoIndex].routine}
+            </div>
+            <div className="absolute inset-y-0 flex items-center justify-between w-full px-6">
+              {/* 이전 사진 버튼 */}
+              <Button 
+                variant="ghost"
+                size="icon"
+                className="text-white opacity-80 rounded-full hover:bg-black/50  hover:text-white hover:border-none"
+                onClick={showPrevPhoto} 
+                disabled={selectedPhotoIndex === 0}
+              >
+                <ChevronLeft className="h-10 w-10" />
+              </Button>
+              
+              {/* 다음 사진 버튼 */}
+              <Button
+                variant="ghost"
+                size="icon"
+                className="text-white opacity-80 rounded-full hover:bg-black/50  hover:text-white hover:border-none"
+                onClick={showNextPhoto} 
+                disabled={selectedPhotoIndex === publicVerificationPhotos.length - 1}
+              >
+                <ChevronRight className="h-6 w-6" />
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

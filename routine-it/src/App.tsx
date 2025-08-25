@@ -355,7 +355,8 @@ export default function App() {
             initialUserInfo={{
                 name: UserInfo.name,
                 username: UserInfo.email.split('@')[0], // email에서 username 추출
-                profileImage: UserInfo.avatar // avatar를 profileImage로 사용
+                profileImage: UserInfo.avatar, // avatar를 profileImage로 사용
+                bio: UserInfo.bio,
             }} 
         />
         );
@@ -387,7 +388,8 @@ export default function App() {
               initialUserInfo={{
                   name: UserInfo.name,
                   username: UserInfo.email.split('@')[0], // username 추가
-                  profileImage: UserInfo.avatar // profileImage 추가
+                  profileImage: UserInfo.avatar, // profileImage 추가
+                  bio: UserInfo.bio,
               }} 
           />
         );

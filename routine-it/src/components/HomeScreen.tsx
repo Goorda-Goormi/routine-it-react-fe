@@ -30,19 +30,15 @@ interface UserInfo {
   name: string;
   username: string;
   profileImage: string;
+  bio: string;
 }
 
 
 interface HomeScreenProps {
   onNavigate: (screen: string, params?: any) => void;
-  initialUserInfo: {
-    name: string;
-    username: string;
-    profileImage: string;
-  };
-  // 이 두 속성을 추가합니다.
-  personalRoutines: any[];
-  onToggleCompletion?: (routineId: string) => void;
+  initialUserInfo: UserInfo;
+  personalRoutines: Routine[]; // <--- 이 부분을 추가
+  onToggleCompletion: (routineId: number, isGroupRoutine?: boolean) => void; // <--- 이 부분을 추가
 }
 
 interface Member {
@@ -208,7 +204,7 @@ export function HomeScreen({ onNavigate, initialUserInfo, personalRoutines, onTo
           <div className="flex flex-col items-start m-2">
             <h2 className="text-xl font-semibold text-foreground">안녕하세요, {initialUserInfo.name}님!</h2>
             <p className="text-sm text-foreground">
-              {todayString} • 오늘도 화이팅!
+              {todayString} • {initialUserInfo.bio}
             </p>
           </div>
           <Button
