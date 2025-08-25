@@ -5,6 +5,7 @@ import { LoginScreen } from "./components/LoginScreen";
 import { HomeScreen } from "./components/HomeScreen";
 import { RoutineScreen } from "./components/RoutineScreen";
 import { GroupScreen } from "./components/GroupScreen";
+import type { Group } from "./components/GroupScreen"; 
 import { RankingScreen } from "./components/RankingScreen";
 import { MyPageScreen } from "./components/MyPageScreen";
 import { RoutineDetailScreen } from "./components/RoutineDetailScreen";
@@ -18,17 +19,18 @@ import { HelpScreen } from "./components/HelpScreen";
 import { UserHomeScreen } from "./components/UserHomeScreen";
 
 interface Routine {
-  id: string;
+  id: number;
   name: string;
   description?: string;
   time: string;
-  frequency: string;
+  frequency: string[];
   reminder: boolean;
   goal: string;
-  category: string; // 카테고리 추가
+  category: string;
   completed: boolean;
   streak: number;
-  difficulty: string; // 난이도 추가
+  difficulty: string;
+  isGroupRoutine?: boolean;
 }
 
 interface NavigationState {
@@ -61,45 +63,69 @@ export default function App() {
     });
 
   // 개인 루틴 상태 추가
-  const [personalRoutines, setPersonalRoutines] = useState([
+  const [personalRoutines, setPersonalRoutines] = useState<Routine[]>([
     {
-      id: "1",
-      name: "아침 운동",
-      category: "운동",
-      time: "07:00",
-      completed: true,
-      streak: 5,
-      difficulty: "보통",
-      description: "매일 아침 30분씩 상쾌하게 운동하기",
-      frequency: "매일",
-      goal: "30",
+      id: 1,
+      name: '아침 식단 챙기기',
+      description: '건강한 아침 식사를 통해 하루를 시작해보세요',
+      time: '08:00',
+      frequency: ["월", "화", "수", "목", "금", "토", "일"],
       reminder: true,
-    },
-    {
-      id: "2",
-      name: "물 2L 마시기",
+      goal: "30",
       category: "건강",
-      time: "언제든",
       completed: false,
-      streak: 12,
+      streak: 5,
       difficulty: "쉬움",
-      description: "하루 종일 충분한 수분 섭취하기",
-      frequency: "매일",
-      goal: "30",
-      reminder: true,
     },
     {
-      id: "3",
-      name: "독서 30분",
-      category: "학습",
-      time: "21:00",
-      completed: true,
-      streak: 8,
-      difficulty: "보통",
-      description: "저녁에 책 읽는 시간을 가지기",
-      frequency: "매일",
-      goal: "30",
+      id: 2,
+      name: '오후 산책',
+      description: '점심 후 15분 산책으로 소화를 돕고 기분 전환하기',
+      time: '13:00',
+      frequency: ["월", "화", "수", "목", "금"],
       reminder: true,
+      goal: "14",
+      category: "운동",
+      completed: false,
+      streak: 10,
+      difficulty: "보통",
+    },
+    {
+      id: 3,
+      name: '자기 전 책 읽기',
+      description: '자기 전 30분 책 읽기로 마음의 양식 쌓기',
+      time: '21:00',
+      frequency: ["월", "수", "금", "일"],
+      reminder: true,
+      goal: "60",
+      category: "학습",
+      completed: false,
+      streak: 20,
+      difficulty: "어려움",
+    },
+  ]);
+
+  // 그룹 목록 상태 (임시 데이터)
+  const [groups, setGroups] = useState<Group[]>([
+    {
+      id: 101,
+      name: '아침 기상 챌린지',
+      description: '일찍 일어나서 하루를 길게 사용하기',
+      members: 5,
+      type: '의무참여',
+      time: '05:30',
+      category: 'lifestyle',
+      owner: '임시소유자'
+    },
+    {
+      id: 102,
+      name: '매일 1시간 운동',
+      description: '집에서 꾸준히 운동하기',
+      members: 8,
+      type: '자유참여',
+      time: '19:00',
+      category: 'exercise',
+      owner: '임시소유자'
     },
   ]);
 
@@ -173,7 +199,7 @@ export default function App() {
     // 임시 ID 및 기본값 설정
     const newRoutine = {
       ...newRoutineData,
-      id: Date.now().toString(),
+      id: Date.now(),
       completed: false,
       streak: 0,
     };
@@ -181,23 +207,50 @@ export default function App() {
   };
 
   // 기존 루틴을 수정하는 함수
-  const handleUpdateRoutine = (updatedRoutine: any) => {
-    setPersonalRoutines((prev) =>
-      prev.map((routine) =>
-        routine.id === updatedRoutine.id
-          ? { ...routine, ...updatedRoutine }
-          : routine
+  const handleUpdateRoutine = (updatedRoutine: Routine) => {
+    if (updatedRoutine.isGroupRoutine) {
+      setGroups(prevGroups => 
+        prevGroups.map(group => ({
+          ...group,
+          // routines: group.routines.map(routine =>
+          //   routine.id === updatedRoutine.id ? updatedRoutine : routine
+          // ),
+        }))
+      );
+    } else {
+      setPersonalRoutines(prevRoutines =>
+        prevRoutines.map(routine =>
+          routine.id === updatedRoutine.id ? updatedRoutine : routine
+        )
+      );
+    }
+
+    setNavigationStack(prevStack =>
+      prevStack.map(navItem =>
+        navItem.screen === 'routine-detail' && navItem.params.id === updatedRoutine.id
+          ? { ...navItem, params: updatedRoutine }
+          : navItem
       )
     );
   };
-  
-  // 루틴 완료 상태를 토글하는 함수
-  const handleToggleCompletion = (routineId: string) => {
-    setPersonalRoutines(prev =>
-      prev.map(routine =>
-        routine.id === routineId ? { ...routine, completed: !routine.completed } : routine
-      )
-    );
+
+  const handleToggleCompletion = (routineId: number, isGroupRoutine?: boolean) => {
+    if (isGroupRoutine) {
+        setGroups(prevGroups => 
+          prevGroups.map(group => ({
+            ...group,
+            // routines: group.routines.map(routine =>
+            //   routine.id === routineId ? { ...routine, completed: !routine.completed } : routine
+            // ),
+          }))
+        );
+    } else {
+        setPersonalRoutines(prev =>
+          prev.map(routine =>
+            routine.id === routineId ? { ...routine, completed: !routine.completed } : routine
+          )
+        );
+    }
   };
 
   // 프로필 정보를 업데이트하는 함수
@@ -290,11 +343,15 @@ export default function App() {
   };
 
   const renderMainScreen = () => {
+    const allRoutines = [...personalRoutines, ...groups.flatMap(group => [])];
+    
     switch (activeTab) {
       case "home":
         return (
           <HomeScreen 
             onNavigate={navigateTo} 
+            personalRoutines={personalRoutines}
+            onToggleCompletion={handleToggleCompletion}
             initialUserInfo={{
                 name: UserInfo.name,
                 username: UserInfo.email.split('@')[0], // email에서 username 추출
@@ -305,11 +362,11 @@ export default function App() {
       case "routine":
         return <RoutineScreen 
           onNavigate={navigateTo} 
-          personalRoutines={personalRoutines}
+          personalRoutines={allRoutines}
           onToggleCompletion={handleToggleCompletion}
         />;
       case "group":
-        return <GroupScreen onNavigate={navigateTo} />;
+        return <GroupScreen onNavigate={navigateTo} groups={groups} />;
       case "ranking":
         return <RankingScreen />;
       case "mypage":
@@ -325,6 +382,8 @@ export default function App() {
         return (
           <HomeScreen 
               onNavigate={navigateTo} 
+              personalRoutines={personalRoutines}
+              onToggleCompletion={handleToggleCompletion}
               initialUserInfo={{
                   name: UserInfo.name,
                   username: UserInfo.email.split('@')[0], // username 추가

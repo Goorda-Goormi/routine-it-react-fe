@@ -8,6 +8,12 @@ import { Calendar, Target, Trophy, Users, Camera, CheckCircle, Plus, TrendingUp,
 import { ImageWithFallback } from './figma/ImageWithFallback';
 import { getStreakInfo, getStreakMessage } from './utils/streakUtils';
 
+const getTodayDayOfWeek = () => {
+  const dayOfWeek = ['일', '월', '화', '수', '목', '금', '토'];
+  const today = new Date();
+  return dayOfWeek[today.getDay()];
+};
+
 interface Routine {
   id: number;
   name: string;
@@ -17,6 +23,7 @@ interface Routine {
   streak: number;
   difficulty?: string;
   isGroupRoutine?: boolean;
+  frequency?: string[];
 }
 
 interface UserInfo {
@@ -28,7 +35,14 @@ interface UserInfo {
 
 interface HomeScreenProps {
   onNavigate: (screen: string, params?: any) => void;
-  initialUserInfo: UserInfo;
+  initialUserInfo: {
+    name: string;
+    username: string;
+    profileImage: string;
+  };
+  // 이 두 속성을 추가합니다.
+  personalRoutines: any[];
+  onToggleCompletion?: (routineId: string) => void;
 }
 
 interface Member {
@@ -52,7 +66,7 @@ interface VerificationPhoto {
   isPublic: boolean;
 }
 
-export function HomeScreen({ onNavigate, initialUserInfo }: HomeScreenProps) {
+export function HomeScreen({ onNavigate, initialUserInfo, personalRoutines, onToggleCompletion }: HomeScreenProps) {
   const today = new Date();
   const todayString = today.toLocaleDateString('ko-KR', { month: 'long', day: 'numeric' });
 
@@ -60,33 +74,15 @@ export function HomeScreen({ onNavigate, initialUserInfo }: HomeScreenProps) {
   const currentStreak = 365;
   const streakInfo = getStreakInfo(currentStreak);
 
-  // 개인 루틴 데이터 (상태 관리)
-  const [personalRoutines, setPersonalRoutines] = useState<Routine[]>([
-    {
-      id: 1,
-      name: '아침 운동',
-      completed: false,
-      time: '07:00',
-      streak: 5,
-      isGroupRoutine: true // 그룹 루틴 (예시)
-    },
-    {
-      id: 2,
-      name: '물 2L 마시기',
-      completed: false,
-      time: '언제든',
-      streak: 12,
-      isGroupRoutine: false // 개인 루틴
-    },
-    {
-      id: 3,
-      name: '독서 30분',
-      completed: true,
-      time: '21:00',
-      streak: 8,
-      isGroupRoutine: true // 그룹 루틴 (예시)
-    }
-  ]);
+  // 오늘의 루틴
+  const todayDay = getTodayDayOfWeek();
+  const todayRoutines = (personalRoutines || []).filter(routine => {
+    return routine.frequency && routine.frequency.includes(todayDay);
+  });
+
+  const completedRoutines = todayRoutines.filter(routine => routine.completed).length;
+  const totalRoutines = todayRoutines.length;
+  const completionRate = totalRoutines > 0 ? Math.round((completedRoutines / totalRoutines) * 100) : 0;
 
   // 참여 그룹 데이터
   const participatingGroups: Group[] = [
@@ -160,10 +156,6 @@ export function HomeScreen({ onNavigate, initialUserInfo }: HomeScreenProps) {
   // 공개된 인증사진만 필터링
   const publicVerificationPhotos = myVerificationPhotos.filter(photo => photo.isPublic);
 
-  const completedRoutines = personalRoutines.filter(routine => routine.completed).length;
-  const totalRoutines = personalRoutines.length;
-  const completionRate = Math.round((completedRoutines / totalRoutines) * 100);
-
   // 갤러리 상태 관리
   const [selectedPhotoIndex, setSelectedPhotoIndex] = useState<number | null>(null);
 
@@ -204,14 +196,8 @@ export function HomeScreen({ onNavigate, initialUserInfo }: HomeScreenProps) {
 
   // 루틴 완료 상태 토글
   const toggleRoutineCompletion = (routineId: number, e: React.MouseEvent) => {
-    e.stopPropagation(); // 본문 클릭 이벤트 방지
-    setPersonalRoutines(prev =>
-      prev.map(routine =>
-        routine.id === routineId
-          ? { ...routine, completed: !routine.completed }
-          : routine
-      )
-    );
+    e.stopPropagation();
+    onToggleCompletion(routineId);
   };
 
   return (
@@ -318,73 +304,77 @@ export function HomeScreen({ onNavigate, initialUserInfo }: HomeScreenProps) {
         </CardHeader>
         <CardContent className="pt-0">
           <div className="space-y-0">
-            {personalRoutines.map((routine, index) => (
-              <div key={routine.id}>
-                <div
-                  className={`flex items-center justify-between rounded-lg p-3 transition-colors ${
-                    routine.completed
-                      ? 'bg-green-50/50 dark:bg-green-900/20'
-                      : 'hover:bg-accent/50'
-                  } ${index < personalRoutines.length - 1 ? 'mb-1' : ''}`}
-                >
-                  <div className="flex items-center space-x-3 flex-1 cursor-pointer " onClick={() => handleRoutineClick(routine)}>
-                    <div className="flex items-center space-x-3">
-                      <div className='flex flex-col items-start ml-2'>
-                        <div className={`text-sm font-medium ${
-                          routine.completed
-                            ? 'text-green-700 dark:text-green-400 line-through'
-                            : 'text-foreground'
-                        }`}>
-                          {routine.name}
-                        </div>
-                        <div className="text-xs text-foreground dark:opacity-75">
-                          {routine.time} • {routine.streak}일 연속
+            {todayRoutines.length > 0 ? (
+              todayRoutines.map((routine, index) => (
+                <div key={routine.id}>
+                  <div
+                    className={`flex items-center justify-between rounded-lg p-3 transition-colors ${
+                      routine.completed
+                        ? 'bg-green-50/50 dark:bg-green-900/20'
+                        : 'hover:bg-accent/50'
+                    } ${index < personalRoutines.length - 1 ? 'mb-1' : ''}`}
+                  >
+                    <div className="flex items-center space-x-3 flex-1 cursor-pointer " onClick={() => handleRoutineClick(routine)}>
+                      <div className="flex items-center space-x-3">
+                        <div className='flex flex-col items-start ml-2'>
+                          <div className={`text-sm font-medium ${
+                            routine.completed
+                              ? 'text-green-700 dark:text-green-400 line-through'
+                              : 'text-foreground'
+                          }`}>
+                            {routine.name}
+                          </div>
+                          <div className="text-xs text-foreground dark:opacity-75">
+                            {routine.time} • {routine.streak}일 연속
+                          </div>
                         </div>
                       </div>
                     </div>
-                  </div>
 
-                  <div className="flex items-center space-x-2 h-[30px]">
-                    {/* 완료 체크박스 */}
-                    {/* 개인 루틴과 그룹 루틴에 따라 다른 로직 적용 */}
-                    {routine.isGroupRoutine ? (
-                      // 그룹 루틴
-                      routine.completed ? (
-                        // 완료된 그룹 루틴: div로 표시 (클릭 불가능)
-                        <div
-                          className={`w-8 h-8 rounded-full flex items-center justify-center transition-colors p-0 m-0 bg-green-500`}
-                        >
-                          <CheckCircle className="h-5 w-5 text-white" />
-                        </div>
+                    <div className="flex items-center space-x-2 h-[30px]">
+                      {/* 완료 체크박스 */}
+                      {/* 개인 루틴과 그룹 루틴에 따라 다른 로직 적용 */}
+                      {routine.isGroupRoutine ? (
+                        // 그룹 루틴
+                        routine.completed ? (
+                          // 완료된 그룹 루틴: div로 표시 (클릭 불가능)
+                          <div
+                            className={`w-8 h-8 rounded-full flex items-center justify-center transition-colors p-0 m-0 bg-green-500`}
+                          >
+                            <CheckCircle className="h-5 w-5 text-white" />
+                          </div>
+                        ) : (
+                          // 미완료 그룹 루틴: 인증 버튼
+                          <button
+                            onClick={(e) => toggleRoutineCompletion(routine.id, e)}
+                            className={`w-auto h-8 rounded-full flex items-center justify-center transition-colors px-3 py-1 text-xs text-foreground border-2 border-border/60 hover:bg-accent`}
+                          >
+                            <span className='flex items-center'>
+                              <Camera className="h-4 w-4 mr-1 text-foreground/70" />
+                              인증
+                            </span>
+                          </button>
+                        )
                       ) : (
-                        // 미완료 그룹 루틴: 인증 버튼
+                        // 개인 루틴
                         <button
                           onClick={(e) => toggleRoutineCompletion(routine.id, e)}
-                          className={`w-auto h-8 rounded-full flex items-center justify-center transition-colors px-3 py-1 text-xs text-foreground border-2 border-border/60 hover:bg-accent`}
+                          className={`w-8 h-8 rounded-full flex items-center justify-center transition-colors  ${
+                            routine.completed
+                              ? 'bg-green-500 hover:bg-green-600'
+                              : 'border-2 border-border/60 hover:border-green-500'
+                          } !p-0 m-0 border-0`}
                         >
-                          <span className='flex items-center'>
-                            <Camera className="h-4 w-4 mr-1 text-foreground/70" />
-                            인증
-                          </span>
+                          {routine.completed && <CheckCircle className="h-5 w-5 text-white" />}
                         </button>
-                      )
-                    ) : (
-                      // 개인 루틴
-                      <button
-                        onClick={(e) => toggleRoutineCompletion(routine.id, e)}
-                        className={`w-8 h-8 rounded-full flex items-center justify-center transition-colors  ${
-                          routine.completed
-                            ? 'bg-green-500 hover:bg-green-600'
-                            : 'border-2 border-border/60 hover:border-green-500'
-                        } !p-0 m-0 border-0`}
-                      >
-                        {routine.completed && <CheckCircle className="h-5 w-5 text-white" />}
-                      </button>
-                    )}
+                      )}
+                    </div>
                   </div>
                 </div>
-              </div>
-            ))}
+              ))
+            ) : (
+              <p className="text-sm text-center text-muted-foreground p-4">오늘은 루틴이 없어요!</p>
+          )}
           </div>
         </CardContent>
       </Card>

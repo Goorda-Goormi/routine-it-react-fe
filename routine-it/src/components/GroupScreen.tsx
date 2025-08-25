@@ -9,11 +9,32 @@ import { Progress } from './ui/progress';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 import { Plus, Search, Users, Calendar, Target, Crown, MessageCircle, Filter } from 'lucide-react';
 
-interface GroupScreenProps {
-  onNavigate: (screen: string, params?: any) => void;
+export interface Member {
+  id: number;
+  name: string;
+  avatar: string;
 }
 
-export function GroupScreen({ onNavigate }: GroupScreenProps) {
+export interface Group {
+  id: number;
+  name: string;
+  description: string;
+  members: number;
+  type: string;
+  progress?: number;
+  isOwner?: boolean;
+  time: string;
+  category: string;
+  recentMembers?: Member[];
+  owner?: string;
+}
+
+interface GroupScreenProps {
+  onNavigate: (screen: string, params?: any) => void;
+  groups: Group[];
+}
+
+export function GroupScreen({ onNavigate, groups }: GroupScreenProps) {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
 

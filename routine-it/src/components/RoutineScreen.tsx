@@ -6,20 +6,29 @@ import { Progress } from './ui/progress';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
 import { Plus, Target, CheckCircle, Clock, Calendar, TrendingUp, Filter, Camera } from 'lucide-react';
 
+const getTodayDayOfWeek = () => {
+  const dayOfWeek = ['일', '월', '화', '수', '목', '금', '토'];
+  const today = new Date();
+  return dayOfWeek[today.getDay()];
+};
+
 interface RoutineScreenProps {
   onNavigate: (screen: string, params?: any) => void;
-  personalRoutines: any[]; // App.tsx에서 관리되는 개인 루틴 목록
-  onToggleCompletion: (routineId: string) => void; // 루틴 완료 상태를 토글하는 함수
+  personalRoutines: any[];
+  onToggleCompletion: (routineId: number) => void;
 }
 
 export function RoutineScreen({ onNavigate, personalRoutines, onToggleCompletion }: RoutineScreenProps) {
   const [activeFilter, setActiveFilter] = useState('today');
 
   // 오늘의 루틴: personalRoutines에서 필터링하여 사용
+  const todayDay = getTodayDayOfWeek();
+
   const todayRoutines = personalRoutines.filter(routine => {
-    // 실제로는 여기에 오늘의 요일이나 날짜를 기반으로 필터링하는 로직이 들어가야 합니다.
-    // 예시에서는 모든 루틴을 '오늘의 루틴'으로 가정합니다.
-    return true;
+    if (routine.frequency && Array.isArray(routine.frequency)) {
+      return routine.frequency.includes(todayDay);
+    }
+    return false;
   });
   /*
   // 오늘의 루틴 (상태 관리를 위해 useState 사용)
@@ -65,9 +74,9 @@ export function RoutineScreen({ onNavigate, personalRoutines, onToggleCompletion
 
   // 전체 루틴
   const allRoutines = [
-    ...todayRoutines,
+    ...personalRoutines,
     {
-      id: "5",
+      id: 5,
       name: "영어 공부",
       category: "학습",
       time: "19:00",
@@ -77,7 +86,7 @@ export function RoutineScreen({ onNavigate, personalRoutines, onToggleCompletion
       isGroupRoutine: true
     },
     {
-      id: "6",
+      id: 6,
       name: "일기 쓰기",
       category: "생활",
       time: "22:00",
