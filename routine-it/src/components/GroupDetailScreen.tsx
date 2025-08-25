@@ -173,12 +173,10 @@ export function GroupDetailScreen({
   };
 
   return (
-    <div
-      className={`min-h-screen relative ${
-        showExMembersModal || showApprovalModal ? 'bg-transparent' : 'bg-background'
-      }`}
-    >
-      <div className="sticky top-0 z-10 bg-background/95 backdrop-blur border-b p-4">
+   
+   <div
+      className= "min-h-screen relative">
+      <div className="sticky top-0 z-10 bg-background/95 backdrop-blur border-b border-b-[var(--color-border-bottom-custom)] p-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-3">
             <Button
@@ -450,7 +448,7 @@ export function GroupDetailScreen({
       />
 
       <Dialog open={showApprovalModal} onOpenChange={setShowApprovalModal}>
-        <DialogContent className="bg-background/80 max-w-md text-icon-secondary dark:text-white">
+        <DialogContent className="max-w-md text-icon-secondary dark:text-white">
           <GroupApproval
             authMessages={authMessages}
             onApprove={handleApprove}

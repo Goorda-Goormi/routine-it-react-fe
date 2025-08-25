@@ -47,7 +47,7 @@ export function GroupMemberManager({ open, onOpenChange, members, onKickMember }
   return (
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="bg-background/80 max-w-md text-icon-secondary dark:text-white rounded-xl">
+        <DialogContent className=" max-w-md text-icon-secondary dark:text-white rounded-xl">
           <DialogHeader>
             <DialogTitle>그룹 멤버 관리</DialogTitle>
             <DialogDescription>
@@ -91,7 +91,7 @@ export function GroupMemberManager({ open, onOpenChange, members, onKickMember }
       
       {/* 멤버 내보내기 확인 모달 */}
       <Dialog open={showConfirmDialog} onOpenChange={setShowConfirmDialog}>
-        <DialogContent className="bg-background/80 max-w-md text-icon-secondary dark:text-white rounded-xl">
+        <DialogContent className="max-w-md text-icon-secondary dark:text-white rounded-xl">
           <DialogHeader>
             <DialogTitle>멤버 내보내기</DialogTitle>
             <DialogDescription>

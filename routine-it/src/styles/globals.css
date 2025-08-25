@@ -24,6 +24,8 @@
   --destructive: #dc2626;
   --destructive-foreground: #ffffff;
   --border: #e5e7eb;
+  /*이거 밑줄 부분만 따로 하려고*/
+  --border-bottom-custom:#e5e7eb;
   --input: transparent;
   --input-background: #f8fffe;
   --switch-background: #e5e7eb;
@@ -90,7 +92,8 @@
   --destructive: #ef4444;
   --destructive-foreground: #ffffff;
   --border: #1a4a2e;
-  /*--border: #ffffff;*/
+  /*밑줄용*/
+  --border-bottom-custom:#ffffff;
   --input: #0a2e18;
   --ring: #10b981;
   --font-weight-medium: 600;
@@ -152,6 +155,8 @@
   --color-destructive: var(--destructive);
   --color-destructive-foreground: var(--destructive-foreground);
   --color-border: var(--border);
+  /**/
+   --color-border-bottom-custom: var(--border-bottom-custom);
   --color-input: var(--input);
   --color-input-background: var(--input-background);
   --color-switch-background: var(--switch-background);
@@ -410,7 +415,15 @@
     border-color: var(--color-border);
     opacity: 1;
   }
+  /* ================================================= */
+  /* 그룹 상세 화면 내 모달 겹치는 부분 배경 나오게*/
+  /* ================================================= */
 
+
+  [data-state="open"].fixed.inset-0 {
+  background-color: rgba(0,0,0,0.5) !important;
+  backdrop-filter: blur(0px);
+}
   /* ================================================= */
   /* 루틴 상세 화면 월간 통계 다크모드 스타일링 */
   /* ================================================= */
@@ -717,6 +730,7 @@
   .dark div:has(.Camera) {
     opacity: 1;
   }
+  
 
   /* 특정 패턴의 카드들 배경색 강제 적용 */
   .dark *[class*="from-orange"][class*="to-amber"] {

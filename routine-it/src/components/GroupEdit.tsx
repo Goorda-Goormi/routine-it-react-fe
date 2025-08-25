@@ -158,7 +158,7 @@ export default function GroupEdit({ open, onOpenChange, group }: GroupEditProps)
 
 return (
   <Dialog open={open} onOpenChange={onOpenChange}>
-    <DialogContent className="sm:max-w-[425px] h-[90vh] flex flex-col p-4 overflow-hidden  text-icon-secondary dark:text-white">
+    <DialogContent className="sm:max-w-md md:max-w-lg lg:max-w-xl xl:max-w-2xl h-[90vh] flex flex-col p-4 overflow-hidden  text-icon-secondary dark:text-white">
       <DialogHeader>
         <DialogTitle>그룹 편집</DialogTitle>
         <DialogDescription>그룹 정보를 수정하세요</DialogDescription>
