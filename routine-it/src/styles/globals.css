@@ -93,6 +93,7 @@
   --destructive-foreground: #ffffff;
   --border: #1a4a2e;
   /*--border: #ffffff;*/
+  --border-bottom-custom:#ffffff;
   --input: #0a2e18;
   --ring: #10b981;
   --font-weight-medium: 600;
@@ -154,6 +155,7 @@
   --color-destructive: var(--destructive);
   --color-destructive-foreground: var(--destructive-foreground);
   --color-border: var(--border);
+  --color-border-bottom-custom: var(--border-bottom-custom);
   --color-input: var(--input);
   --color-input-background: var(--input-background);
   --color-switch-background: var(--switch-background);
