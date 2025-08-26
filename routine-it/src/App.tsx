@@ -46,6 +46,7 @@ export interface Group {
     recentMembers?: Member[];
     owner?: string;
     routines?: Routine[];
+    isJoined?: boolean;
 }
 
 export interface Member {
@@ -135,7 +136,8 @@ export default function App() {
       type: '의무참여',
       time: '05:30',
       category: 'lifestyle',
-      owner: '임시소유자'
+      owner: '임시소유자',
+      isJoined: false,
     },
     {
       id: 102,
@@ -145,7 +147,8 @@ export default function App() {
       type: '자유참여',
       time: '19:00',
       category: 'exercise',
-      owner: '임시소유자'
+      owner: '임시소유자',
+      isJoined: true,
     },
     {
     id: 1,
@@ -155,6 +158,7 @@ export default function App() {
     type: '의무참여',
     progress: 80,
     isOwner: true,
+    isJoined: false,
     time: '06:00-09:00',
     category: 'exercise',
     recentMembers: [
@@ -187,6 +191,7 @@ export default function App() {
         type: '자유참여',
         progress: 65,
         isOwner: false,
+        isJoined: true,
         time: '언제든',
         category: 'study',
         recentMembers: [
@@ -205,6 +210,7 @@ export default function App() {
     setGroupRoutines(newGroupRoutines);
   }, [groups]);
 
+  /*
   const handleJoinGroup = () => {
     // 임시로 가상의 그룹 루틴을 추가하는 로직
     const newGroupRoutine: Routine = {
@@ -224,7 +230,15 @@ export default function App() {
     
     setGroupRoutines(prevRoutines => [...prevRoutines, newGroupRoutine]);
     navigateTo('routine', {});
-  };
+  };*/
+  const handleJoinGroup = (groupId: number) => {
+  setGroups(prevGroups =>
+    prevGroups.map(group =>
+      group.id === groupId ? { ...group, isJoined: true } : group
+    )
+  );
+};
+
   
   // 모든 루틴을 합치는 배열
   //const allRoutines = [...personalRoutines, ...groupRoutines];
@@ -562,6 +576,7 @@ const handleUpdateGroup = (updatedGroup: Group) => {
       onBack={navigateBack}
       onNavigate={navigateTo}
       onUpdateGroup={handleUpdateGroup}
+      onJoinGroup={handleJoinGroup} 
     />
   );
         case "profile-edit":

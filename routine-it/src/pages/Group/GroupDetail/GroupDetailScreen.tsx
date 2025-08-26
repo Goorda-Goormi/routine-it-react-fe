@@ -13,6 +13,7 @@ interface GroupDetailScreenProps {
   onBack: () => void;
   onNavigate: (screen: string, params?: any) => void;
   onUpdateGroup: (group: any) => void;
+  onJoinGroup: (groupId: number) => void;
 }
 
 export function GroupDetailScreen({
@@ -21,9 +22,10 @@ export function GroupDetailScreen({
   onBack,
   onNavigate,
   onUpdateGroup,
+  onJoinGroup
 }: GroupDetailScreenProps){
   //const [isJoined, setIsJoined] = useState(true);
-   const [isJoined, setIsJoined] = useState(false);
+   
   const [isEditing, setIsEditing] = useState(false);
   const [showExMembersModal, setShowExMembersModal] = useState(false);
   const [showApprovalModal, setShowApprovalModal] = useState(false);
@@ -111,6 +113,7 @@ export function GroupDetailScreen({
 
   const handleJoinGroup = () => {
     setIsJoined(true);
+    onJoinGroup(groupId);
   };
 
   const handleChatClick = () => {
@@ -164,7 +167,8 @@ export function GroupDetailScreen({
     <div className="min-h-screen relative">
       <GroupDetailHeader
         group={group}
-        isJoined={isJoined}
+        //isJoined={isJoined}
+        isJoined={group?.isJoined}
         isLeader={isLeader}
         onBack={onBack}
         onJoinGroup={handleJoinGroup}
