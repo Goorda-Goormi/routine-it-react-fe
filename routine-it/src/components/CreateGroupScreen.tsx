@@ -19,7 +19,18 @@ interface CreateGroupScreenProps {
 export function CreateGroupScreen({ onBack, onCreateGroup }: CreateGroupScreenProps) {
   // 루틴 관련 필드 추가
   const daysOfWeek = ['월', '화', '수', '목', '금', '토', '일'];
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<{
+    name: string;
+    description: string;
+    category: string;
+    difficulty: string;
+    time: string;
+    selectedDays: string[]; 
+    type: string;
+    hasAlarm: boolean;
+    alarmTime: string;
+    maxMembers: string;
+  }>({
     name: '',
     description: '',
     category: '',
