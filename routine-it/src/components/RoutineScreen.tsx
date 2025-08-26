@@ -15,88 +15,32 @@ const getTodayDayOfWeek = () => {
 interface RoutineScreenProps {
   onNavigate: (screen: string, params?: any) => void;
   personalRoutines: any[];
-  onToggleCompletion: (routineId: number) => void;
+  onToggleCompletion: (routineId: number, isGroupRoutine?: boolean) => void;
 }
 
 export function RoutineScreen({ onNavigate, personalRoutines, onToggleCompletion }: RoutineScreenProps) {
   const [activeFilter, setActiveFilter] = useState('today');
 
   // 오늘의 루틴: personalRoutines에서 필터링하여 사용
-  const todayDay = getTodayDayOfWeek();
+  const getTodayDayOfWeek = () => {
+    const dayOfWeek = ['일', '월', '화', '수', '목', '금', '토'];
+    const today = new Date();
+    return dayOfWeek[today.getDay()];
+  };
 
+  const todayDay = getTodayDayOfWeek();
+  
+  // 오늘의 루틴: 전달받은 prop에서 필터링
   const todayRoutines = personalRoutines.filter(routine => {
     if (routine.frequency && Array.isArray(routine.frequency)) {
       return routine.frequency.includes(todayDay);
     }
     return false;
   });
-  /*
-  // 오늘의 루틴 (상태 관리를 위해 useState 사용)
-  const [todayRoutines, setTodayRoutines] = useState([
-    {
-      id: 1,
-      name: '아침 운동',
-      category: '운동',
-      time: '07:00',
-      completed: true,
-      streak: 5,
-      difficulty: '보통'
-    },
-    {
-      id: 2,
-      name: '물 2L 마시기',
-      category: '건강',
-      time: '언제든',
-      completed: false,
-      streak: 12,
-      difficulty: '쉬움'
-    },
-    {
-      id: 3,
-      name: '독서 30분',
-      category: '학습',
-      time: '21:00',
-      completed: true,
-      streak: 8,
-      difficulty: '보통'
-    },
-    {
-      id: 4,
-      name: '명상 10분',
-      category: '건강',
-      time: '06:30',
-      completed: false,
-      streak: 3,
-      difficulty: '쉬움'
-    }
-  ]);
-  */
 
   // 전체 루틴
-  const allRoutines = [
-    ...personalRoutines,
-    {
-      id: 5,
-      name: "영어 공부",
-      category: "학습",
-      time: "19:00",
-      completed: false,
-      streak: 15,
-      difficulty: "어려움",
-      isGroupRoutine: true
-    },
-    {
-      id: 6,
-      name: "일기 쓰기",
-      category: "생활",
-      time: "22:00",
-      completed: true,
-      streak: 20,
-      difficulty: "쉬움",
-      isGroupRoutine: true
-    }
-  ];
-
+  const allRoutines = personalRoutines;
+  
   // 추천 루틴
   const recommendedRoutines = [
     {
