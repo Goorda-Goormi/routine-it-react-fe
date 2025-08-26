@@ -34,6 +34,7 @@ interface RoutineDetailScreenProps {
 export function RoutineDetailScreen({ routine, onBack, onUpdateRoutine, onDeleteRoutine }: RoutineDetailScreenProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [editedRoutine, setEditedRoutine] = useState(routine);
+  const [errors, setErrors] = useState<{ [key: string]: string }>({});
   
   // 선택된 요일들을 상태로 관리합니다.
   const daysOfWeek = ['월', '화', '수', '목', '금', '토', '일'];
@@ -101,6 +102,30 @@ export function RoutineDetailScreen({ routine, onBack, onUpdateRoutine, onDelete
   };
 
   const handleSave = () => {
+    const newErrors: { [key: string]: string } = {};
+
+    if (!editedRoutine.name) {
+        newErrors.name = '루틴 이름을 입력해주세요.';
+    }
+    if (selectedDays.length === 0) {
+        newErrors.frequency = '하나 이상의 요일을 선택해주세요.';
+    }
+    if (!editedRoutine.time) {
+        newErrors.time = '시간을 설정해주세요.';
+    }
+    if (!editedRoutine.category) {
+        newErrors.category = '카테고리를 선택해주세요.';
+    }
+    if (!editedRoutine.difficulty) {
+        newErrors.difficulty = '난이도를 선택해주세요.';
+    }
+
+    setErrors(newErrors);
+
+    if (Object.keys(newErrors).length > 0) {
+        return;
+    }
+
     // App.tsx로 수정된 데이터를 전달하고 화면을 돌아갑니다.
     const updatedRoutine = { ...editedRoutine, frequency: selectedDays };
     onUpdateRoutine(updatedRoutine);
@@ -207,6 +232,7 @@ export function RoutineDetailScreen({ routine, onBack, onUpdateRoutine, onDelete
                   value={editedRoutine.name}
                   onChange={(e) => setEditedRoutine({...editedRoutine, name: e.target.value})}
                 />
+                {errors.name && <p className="text-destructive text-sm mt-1">{errors.name}</p>}
               </div>
               
               <div>
@@ -226,6 +252,7 @@ export function RoutineDetailScreen({ routine, onBack, onUpdateRoutine, onDelete
                     <SelectItem value="기타">📋 기타</SelectItem>
                   </SelectContent>
                 </Select>
+                {errors.category && <p className="text-destructive text-sm mt-1">{errors.category}</p>}
               </div>
 
               <div>
@@ -243,6 +270,7 @@ export function RoutineDetailScreen({ routine, onBack, onUpdateRoutine, onDelete
                     <SelectItem value="어려움">어려움</SelectItem>
                   </SelectContent>
                 </Select>
+                {errors.difficulty && <p className="text-destructive text-sm mt-1">{errors.difficulty}</p>}
               </div>
 
               <div>
@@ -262,6 +290,7 @@ export function RoutineDetailScreen({ routine, onBack, onUpdateRoutine, onDelete
                   value={editedRoutine.time}
                   onChange={(e) => setEditedRoutine({...editedRoutine, time: e.target.value})}
                 />
+                {errors.time && <p className="text-destructive text-sm mt-1">{errors.time}</p>}
               </div>
               
               <div>
@@ -282,6 +311,7 @@ export function RoutineDetailScreen({ routine, onBack, onUpdateRoutine, onDelete
                     </Button>
                   ))}
                 </div>
+                {errors.frequency && <p className="text-destructive text-sm mt-1 text-center">{errors.frequency}</p>}
               </div>
 
               <div>

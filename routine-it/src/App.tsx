@@ -16,6 +16,7 @@ import { CreateGroupScreen } from "./components/CreateGroupScreen";
 import { SettingsScreen } from "./components/SettingsScreen";
 import { HelpScreen } from "./components/HelpScreen";
 import { UserHomeScreen } from "./components/UserHomeScreen";
+import type { RecommendedRoutine } from "./components/RoutineScreen";
 
 export interface Routine {
   id: number;
@@ -204,20 +205,20 @@ export default function App() {
     setGroupRoutines(newGroupRoutines);
   }, [groups]);
 
-  const handleJoinGroup = (groupId: number) => {
+  const handleJoinGroup = () => {
     // 임시로 가상의 그룹 루틴을 추가하는 로직
     const newGroupRoutine: Routine = {
       id: Math.random(), // 고유 ID 생성
-      name: '새로 참여한 그룹 루틴',
-      description: '그룹 참여 후 추가된 루틴입니다',
-      time: '18:00',
+      name: '',
+      description: '',
+      time: '08:00',
       frequency: ["월", "화", "수", "목", "금", "토", "일"],
       reminder: true,
-      goal: "10",
-      category: "운동",
+      goal: "30",
+      category: "생활",
       completed: false,
       streak: 0,
-      difficulty: "보통",
+      difficulty: "쉬움",
       isGroupRoutine: true
     };
     
@@ -232,29 +233,72 @@ export default function App() {
     {
       id: 7,
       name: '스트레칭',
-      category: '운동',
       description: '매일 10분 스트레칭으로 몸의 긴장을 풀어보세요',
+      time: '08:00',
+      frequency: ['월', '화', '수', '목', '금', '토', '일'],
+      reminder: true,
+      goal: '30',
+      category: '운동',
+      completed: false,
+      streak: 0,
       difficulty: '쉬움',
-      popularity: 4.8,
-      participants: 1240
+      isGroupRoutine: false
     },
     {
       id: 8,
       name: '감사 일기',
-      category: '생활',
       description: '하루에 감사한 일 3가지를 적어보세요',
+      time: '08:00',
+      frequency: ['월', '화', '수', '목', '금', '토', '일'],
+      reminder: true,
+      goal: '30',
+      category: '기타',
+      completed: false,
+      streak: 0,
       difficulty: '쉬움',
-      popularity: 4.7,
-      participants: 980
+      isGroupRoutine: false
     },
     {
       id: 9,
-      name: '단어 암기',
-      category: '학습',
-      description: '매일 새로운 영어 단어 10개를 학습하세요',
+      name: '물 마시기',
+      description: '하루 2L 물 마시기로 건강한 습관을 만들어보세요',
+      time: '08:00',
+      frequency: ['월', '화', '수', '목', '금', '토', '일'],
+      reminder: true,
+      goal: '30',
+      category: '건강',
+      completed: false,
+      streak: 0,
       difficulty: '보통',
-      popularity: 4.6,
-      participants: 750
+      isGroupRoutine: false
+    },
+    {
+      id: 10,
+      name: '단어 암기',
+      description: '매일 새로운 영어 단어 10개를 학습하세요',
+      time: '08:00',
+      frequency: ['월', '화', '수', '목', '금', '토', '일'],
+      reminder: true,
+      goal: '30',
+      category: '학습',
+      completed: false,
+      streak: 0,
+      difficulty: '보통',
+      isGroupRoutine: false
+    },
+    {
+      id: 11,
+      name: '5분 청소하기',
+      description: '하루 5분만 투자해 내 주변자리를 정돈해보세요',
+      time: '08:00',
+      frequency: ['월', '화', '수', '목', '금', '토', '일'],
+      reminder: true,
+      goal: '30',
+      category: '생활',
+      completed: false,
+      streak: 0,
+      difficulty: '쉬움',
+      isGroupRoutine: false
     }
   ]);
 
@@ -418,6 +462,26 @@ export default function App() {
     }
   };
 
+  const handleAddRecommendedRoutine = (recommendedRoutine: RecommendedRoutine) => {
+    // 추천 루틴 데이터를 기반으로 새로운 루틴 객체 생성
+    const newRoutine = {
+        id: Math.random(),
+        name: recommendedRoutine.name,
+        description: recommendedRoutine.description,
+        category: recommendedRoutine.category,
+        difficulty: recommendedRoutine.difficulty,
+        time: '09:00',
+        frequency: ["월", "화", "수", "목", "금"],
+        reminder: true,
+        goal: '30',
+        completed: false,
+        streak: 0,
+    };
+
+    setPersonalRoutines(prevRoutines => [...prevRoutines, newRoutine]);
+  };
+
+
   const handleSaveProfile = (updatedInfo: any) => {
       setUserInfo(prev => ({ ...prev, ...updatedInfo }));
   };
@@ -556,6 +620,7 @@ export default function App() {
           allRoutines={allRoutines}
           recommendedRoutines={recommendedRoutines}
           onToggleCompletion={handleToggleCompletion}
+          onAddRecommendedRoutine={handleAddRecommendedRoutine}
         />;
       case "group":
         return <GroupScreen 

@@ -16,69 +16,75 @@ const getTodayDayOfWeek = () => {
 export interface RecommendedRoutine {
   id: number;
   name: string;
-  category: string;
   description: string;
+  time: string;
+  frequency: string[];
+  reminder: boolean;
+  goal: string;
+  category: string;
+  completed: boolean;
+  streak: number;
   difficulty: string;
-  popularity: number;
-  participants: number;
+  isGroupRoutine: boolean;
 }
 
 interface RoutineScreenProps {
-  onNavigate: (screen: string, params?: any) => void;
-  allRoutines: Routine[];
-  recommendedRoutines: RecommendedRoutine[]; // [수정] App.tsx로부터 추천 루틴 데이터를 Props로 받도록 추가
-  onToggleCompletion: (routineId: number, isGroupRoutine?: boolean) => void;
+  onNavigate: (screen: string, params?: any) => void;
+  allRoutines: Routine[];
+  recommendedRoutines: RecommendedRoutine[]; // [수정] App.tsx로부터 추천 루틴 데이터를 Props로 받도록 추가
+  onToggleCompletion: (routineId: number, isGroupRoutine?: boolean) => void;
+  onAddRecommendedRoutine: (routine: RecommendedRoutine) => void;
 }
 
-export function RoutineScreen({ onNavigate, allRoutines, recommendedRoutines, onToggleCompletion }: RoutineScreenProps) {
-  const [activeFilter, setActiveFilter] = useState('today');
-  const todayDay = getTodayDayOfWeek();
+export function RoutineScreen({ onNavigate, allRoutines, recommendedRoutines, onToggleCompletion, onAddRecommendedRoutine }: RoutineScreenProps) {
+  const [activeFilter, setActiveFilter] = useState('today');
+  const todayDay = getTodayDayOfWeek();
 
-  // [수정] Props로 받은 allRoutines를 바로 필터링하여 사용
-  const todayRoutines = allRoutines.filter(routine => {
-    if (routine.frequency && Array.isArray(routine.frequency)) {
-      return routine.frequency.includes(todayDay);
-    }
-    return false;
-  });
-  
-  const getCompletedCount = (routines: Routine[]) => {
-    return routines.filter(routine => routine.completed).length;
-  };
+  // [수정] Props로 받은 allRoutines를 바로 필터링하여 사용
+  const todayRoutines = allRoutines.filter(routine => {
+    if (routine.frequency && Array.isArray(routine.frequency)) {
+      return routine.frequency.includes(todayDay);
+    }
+    return false;
+  });
+   
+  const getCompletedCount = (routines: Routine[]) => {
+    return routines.filter(routine => routine.completed).length;
+  };
 
-  const getCompletionRate = (routines: Routine[]) => {
-    if (routines.length === 0) return 0;
-    return Math.round((getCompletedCount(routines) / routines.length) * 100);
-  };
+  const getCompletionRate = (routines: Routine[]) => {
+    if (routines.length === 0) return 0;
+    return Math.round((getCompletedCount(routines) / routines.length) * 100);
+  };
 
-  const getDifficultyColor = (difficulty: string) => {
-    switch (difficulty) {
-      case '쉬움': return 'text-green-600 bg-green-50 border-green-200 dark:text-white dark:bg-green-900/30 dark:border-green-700/30';
-      case '보통': return 'text-yellow-600 bg-yellow-50 border-yellow-200 dark:text-white dark:bg-yellow-900/30 dark:border-yellow-700/30';
-      case '어려움': return 'text-red-600 bg-red-50 border-red-200 dark:text-white dark:bg-red-900/30 dark:border-red-700/30';
-      default: return 'text-gray-600 bg-gray-50 border-gray-200 dark:text-white dark:bg-gray-900/30 dark:border-gray-700/30';
-    }
-  };
+  const getDifficultyColor = (difficulty: string) => {
+    switch (difficulty) {
+      case '쉬움': return 'text-green-600 bg-green-50 border-green-200 dark:text-white dark:bg-green-900/30 dark:border-green-700/30';
+      case '보통': return 'text-yellow-600 bg-yellow-50 border-yellow-200 dark:text-white dark:bg-yellow-900/30 dark:border-yellow-700/30';
+      case '어려움': return 'text-red-600 bg-red-50 border-red-200 dark:text-white dark:bg-red-900/30 dark:border-red-700/30';
+      default: return 'text-gray-600 bg-gray-50 border-gray-200 dark:text-white dark:bg-gray-900/30 dark:border-gray-700/30';
+    }
+  };
 
-  const getCategoryEmoji = (category: string) => {
-    switch (category) {
-      case '운동': return '💪';
-      case '건강': return '🏥';
-      case '학습': return '📚';
-      case '생활': return '🏠';
-      default: return '📋';
-    }
-  };
+  const getCategoryEmoji = (category: string) => {
+    switch (category) {
+      case '운동': return '💪';
+      case '건강': return '🏥';
+      case '학습': return '📚';
+      case '생활': return '🏠';
+      default: return '📋';
+    }
+  };
 
-  const handleRoutineClick = (routine: any) => {
-    onNavigate('routine-detail', routine);
-  };
+  const handleRoutineClick = (routine: any) => {
+    onNavigate('routine-detail', routine);
+  };
 
-  const handleAddRoutine = () => {
-    onNavigate('create-routine');
-  };
+  const handleAddRoutine = () => {
+    onNavigate('create-routine');
+  };
 
-  const getButtonOrCheckbox = (routine: Routine) => {
+  const getButtonOrCheckbox = (routine: Routine) => {
     if (routine.isGroupRoutine) {
       return routine.completed ? (
         <div className="w-8 h-8 rounded-full flex items-center justify-center transition-colors p-0 m-0 border-0 bg-green-500">
@@ -153,7 +159,9 @@ export function RoutineScreen({ onNavigate, allRoutines, recommendedRoutines, on
         className={`p-3 hover:bg-accent/50 transition-colors rounded-lg cursor-pointer ${
           !isLast && 'border-b border-border/30'
         }`}
-        onClick={() => onNavigate('routine-detail', routine)}
+        onClick={() => {onAddRecommendedRoutine(routine)
+          setActiveFilter('all'); 
+        }}
       >
         <div className="flex items-start justify-between mb-2">
           <div className="flex flex-col items-start">
@@ -171,15 +179,14 @@ export function RoutineScreen({ onNavigate, allRoutines, recommendedRoutines, on
             <p className="text-xs text-foreground dark:opacity-75 mb-2 ml-1">
               {routine.description}
             </p>
-            <div className="flex items-center space-x-3 text-xs text-foreground dark:opacity-75">
-              <span>⭐ {routine.popularity}</span>
-              <span>👥 {routine.participants.toLocaleString()}명 참여</span>
-            </div>
           </div>
           <Button 
             size="sm" 
             variant="outline"
             className="text-foreground border-border hover:bg-accent hover:text-foreground ml-3"
+            onClick={() => {
+              setActiveFilter('all'); 
+            }}
           >
             <Plus className="h-4 w-4 mr-1 icon-secondary" />
             추가
