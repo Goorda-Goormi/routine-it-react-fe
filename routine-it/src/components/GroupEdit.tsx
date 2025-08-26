@@ -28,6 +28,7 @@ interface GroupEditProps {
 }
 
 export default function GroupEdit({ open, onOpenChange, group,onSave }: GroupEditProps) {
+   const daysOfWeek = ['월', '화', '수', '목', '금', '토', '일'];
   const [formData, setFormData] = useState({
     name: '',
     description: '',
@@ -35,7 +36,10 @@ export default function GroupEdit({ open, onOpenChange, group,onSave }: GroupEdi
     type: 'optional',
     hasAlarm: false,
     alarmTime: '09:00',
-    maxMembers: '30'
+    maxMembers: '30',
+    selectedDays: [] as string[],
+     difficulty: '쉬움',
+     time: '09:00',
   });
 
   const [errors, setErrors] = useState<{[key: string]: string}>({});
@@ -87,7 +91,10 @@ export default function GroupEdit({ open, onOpenChange, group,onSave }: GroupEdi
         type: group.type === '의무참여' ? 'mandatory' : 'optional',
         hasAlarm: group.hasAlarm ? true : false,
         alarmTime: group.alarmTime || '09:00',
-        maxMembers: group.maxMembers?.toString() || '30'
+        maxMembers: group.maxMembers?.toString() || '30',
+         time: group.time || '09:00',
+         selectedDays: group.selectedDays || [],
+          difficulty: group.difficulty || '쉬움',
       });
     } else {
       setFormData({
@@ -97,10 +104,31 @@ export default function GroupEdit({ open, onOpenChange, group,onSave }: GroupEdi
         type: 'optional',
         hasAlarm: false,
         alarmTime: '09:00',
-        maxMembers: '30'
+        maxMembers: '30',
+        time: group.time || '09:00',
+         selectedDays: group.selectedDays || [],
+          difficulty: group.difficulty || '쉬움',
       });
     }
   }, [group, open]);
+
+   const handleDayToggle = (day: string) => {
+    setFormData(prev => {
+      const isSelected = prev.selectedDays.includes(day);
+      const newDays = isSelected
+        ? prev.selectedDays.filter(d => d !== day)
+        : [...prev.selectedDays, day].sort((a, b) => daysOfWeek.indexOf(a) - daysOfWeek.indexOf(b));
+      return { ...prev, selectedDays: newDays };
+    });
+  };
+
+  const getFrequencyText = () => {
+    if (formData.selectedDays.length === 0) return '요일 선택';
+    if (formData.selectedDays.length === 7) return '매일';
+    if (['토', '일'].every(d => formData.selectedDays.includes(d)) && formData.selectedDays.length === 2) return '주말';
+    if (['월', '화', '수', '목', '금'].every(d => formData.selectedDays.includes(d)) && formData.selectedDays.length === 5) return '평일';
+    return formData.selectedDays.join(', ');
+  };
 
   const validateForm = () => {
     const newErrors: {[key: string]: string} = {};
@@ -239,6 +267,47 @@ return (
             </div>
           </CardContent>
         </Card>
+
+        {/* 루틴 정보 */}
+          <Card>
+            <CardHeader><CardTitle>루틴 정보</CardTitle></CardHeader>
+            <CardContent className="space-y-4">
+              {/* 난이도 */}
+              <div>
+                <Label>난이도</Label>
+                <Select value={formData.difficulty} onValueChange={v => setFormData({ ...formData, difficulty: v })}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="쉬움">쉬움</SelectItem>
+                    <SelectItem value="보통">보통</SelectItem>
+                    <SelectItem value="어려움">어려움</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              {/* 시간 */}
+              <div>
+                <Label>시간</Label>
+                <Input type="time" value={formData.time} onChange={e => setFormData({ ...formData, time: e.target.value })} />
+              </div>
+              {/* 반복 요일 */}
+              <div>
+                <Label>반복 주기 <span className="ml-2 text-xs text-muted-foreground">{getFrequencyText()}</span></Label>
+                <div className="flex gap-2 flex-wrap mt-2">
+                  {daysOfWeek.map(day => (
+                    <Button
+                      key={day}
+                      variant={formData.selectedDays.includes(day) ? 'default' : 'outline'}
+                      onClick={() => handleDayToggle(day)}
+                      className="w-10 h-10 rounded-full"
+                    >
+                      {day}
+                    </Button>
+                  ))}
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        
 
         {/* 그룹 설정 */}
         <Card className="shadow-none border-none">
