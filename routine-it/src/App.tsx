@@ -408,6 +408,7 @@ export default function App() {
     members: 1,
     progress: 0,
     isOwner: true,
+    isJoined: true,
     time: newGroupData.time, // 이 부분은 이미 잘 적용되고 있습니다.
     owner: UserInfo.name,
     recentMembers: [
