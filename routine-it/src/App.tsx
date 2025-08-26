@@ -4,8 +4,7 @@ import { BottomTabNav } from "./components/BottomTabNav";
 import { LoginScreen } from "./components/LoginScreen";
 import { HomeScreen } from "./components/HomeScreen";
 import { RoutineScreen } from "./components/RoutineScreen";
-import { GroupScreen } from "./components/GroupScreen";
-import type { Group } from "./components/GroupScreen"; 
+import { GroupScreen } from "./components/GroupScreen"
 import { RankingScreen } from "./components/RankingScreen";
 import { MyPageScreen } from "./components/MyPageScreen";
 import { RoutineDetailScreen } from "./components/RoutineDetailScreen";
@@ -18,7 +17,7 @@ import { SettingsScreen } from "./components/SettingsScreen";
 import { HelpScreen } from "./components/HelpScreen";
 import { UserHomeScreen } from "./components/UserHomeScreen";
 
-interface Routine {
+export interface Routine {
   id: number;
   name: string;
   description?: string;
@@ -31,6 +30,27 @@ interface Routine {
   streak: number;
   difficulty: string;
   isGroupRoutine?: boolean;
+}
+
+export interface Group {
+  id: number;
+    name: string;
+    description: string;
+    members: number;
+    type: string;
+    progress?: number;
+    isOwner?: boolean;
+    time: string;
+    category: string;
+    recentMembers?: Member[];
+    owner?: string;
+    routines?: Routine[];
+}
+
+export interface Member {
+  id: number;
+  name: string;
+  avatar: string;
 }
 
 interface NavigationState {
@@ -127,21 +147,37 @@ export default function App() {
       owner: '임시소유자'
     },
     {
-      id: 1,
-      name: '아침 운동 챌린지',
-      description: '매일 아침 운동하고 인증하기',
-      members: 12,
-      type: '의무참여',
-      progress: 80,
-      isOwner: true,
-      time: '06:00-09:00',
-      category: 'exercise',
-      recentMembers: [
-          { id: 1, name: '김민수', avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=40&h=40&fit=crop&crop=face' },
-          { id: 2, name: '이지영', avatar: 'https://images.unsplash.com/photo-1494790108755-2616b95fcebf?w=40&h=40&fit=crop&crop=face' },
-          { id: 3, name: '박철수', avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=40&h=40&fit=crop&crop=face' }
-      ]
-    },
+    id: 1,
+    name: '아침 운동 챌린지',
+    description: '매일 아침 운동하고 인증하기',
+    members: 12,
+    type: '의무참여',
+    progress: 80,
+    isOwner: true,
+    time: '06:00-09:00',
+    category: 'exercise',
+    recentMembers: [
+        { id: 1, name: '김민수', avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=40&h=40&fit=crop&crop=face' },
+        { id: 2, name: '이지영', avatar: 'https://images.unsplash.com/photo-1494790108755-2616b95fcebf?w=40&h=40&fit=crop&crop=face' },
+        { id: 3, name: '박철수', avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=40&h=40&fit=crop&crop=face' }
+    ],
+    routines: [ // Example group routine
+      {
+        id: 1001,
+        name: '아침 운동 인증',
+        description: '6시-9시 사이에 운동 인증샷 올리기',
+        time: '06:00',
+        frequency: ["월", "화", "수", "목", "금", "토", "일"],
+        reminder: true,
+        goal: "30",
+        category: "exercise",
+        completed: false,
+        streak: 12,
+        difficulty: "보통",
+        isGroupRoutine: true,
+      }
+    ]
+  },
     {
         id: 2,
         name: '독서 모임',
@@ -283,9 +319,9 @@ export default function App() {
         setGroups(prevGroups => 
           prevGroups.map(group => ({
             ...group,
-            // routines: group.routines.map(routine =>
-            //   routine.id === routineId ? { ...routine, completed: !routine.completed } : routine
-            // ),
+            routines: group.routines?.map(routine =>
+            routine.id === routineId ? { ...routine, completed: !routine.completed } : routine
+            ),
           }))
         );
     } else {
@@ -386,7 +422,8 @@ export default function App() {
   };
 
   const renderMainScreen = () => {
-    const allRoutines = [...personalRoutines, ...groups.flatMap(group => [])];
+    const allGroupRoutines = groups.flatMap(group => group.routines || []);
+    const allRoutines = [...personalRoutines, ...allGroupRoutines];
     
     switch (activeTab) {
       case "home":
@@ -418,7 +455,9 @@ export default function App() {
                   onNewGroup={handleAddGroup} 
                 />
       case "ranking":
-      return <RankingScreen groups={groups} />;
+        return <RankingScreen 
+                  groups={groups}
+                />;
       case "mypage":
         return (
           <MyPageScreen

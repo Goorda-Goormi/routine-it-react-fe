@@ -5,6 +5,7 @@ import { Badge } from './ui/badge';
 import { Progress } from './ui/progress';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
 import { Plus, Target, CheckCircle, Clock, Calendar, TrendingUp, Filter, Camera } from 'lucide-react';
+import type { Routine } from '../App';
 
 const getTodayDayOfWeek = () => {
   const dayOfWeek = ['일', '월', '화', '수', '목', '금', '토'];
@@ -14,7 +15,7 @@ const getTodayDayOfWeek = () => {
 
 interface RoutineScreenProps {
   onNavigate: (screen: string, params?: any) => void;
-  personalRoutines: any[];
+  personalRoutines: Routine[];
   onToggleCompletion: (routineId: number, isGroupRoutine?: boolean) => void;
 }
 
@@ -22,25 +23,40 @@ export function RoutineScreen({ onNavigate, personalRoutines, onToggleCompletion
   const [activeFilter, setActiveFilter] = useState('today');
 
   // 오늘의 루틴: personalRoutines에서 필터링하여 사용
-  const getTodayDayOfWeek = () => {
-    const dayOfWeek = ['일', '월', '화', '수', '목', '금', '토'];
-    const today = new Date();
-    return dayOfWeek[today.getDay()];
-  };
-
   const todayDay = getTodayDayOfWeek();
-  
-  // 오늘의 루틴: 전달받은 prop에서 필터링
+
   const todayRoutines = personalRoutines.filter(routine => {
     if (routine.frequency && Array.isArray(routine.frequency)) {
       return routine.frequency.includes(todayDay);
     }
     return false;
   });
-
-  // 전체 루틴
-  const allRoutines = personalRoutines;
   
+  // 전체 루틴
+  const allRoutines = [
+    ...personalRoutines,
+    {
+      id: 5,
+      name: "영어 공부",
+      category: "학습",
+      time: "19:00",
+      completed: false,
+      streak: 15,
+      difficulty: "어려움",
+      isGroupRoutine: true
+    },
+    {
+      id: 6,
+      name: "일기 쓰기",
+      category: "생활",
+      time: "22:00",
+      completed: true,
+      streak: 20,
+      difficulty: "쉬움",
+      isGroupRoutine: true
+    }
+  ];
+
   // 추천 루틴
   const recommendedRoutines = [
     {
@@ -227,7 +243,7 @@ export function RoutineScreen({ onNavigate, personalRoutines, onToggleCompletion
                               <button
                                 onClick={(e) => {
                                   e.stopPropagation(); 
-                                  onToggleCompletion(routine.id); // prop으로 받은 함수 사용
+                                  onToggleCompletion(routine.id, true); // prop으로 받은 함수 사용
                                 }}
                                 className={`w-auto h-8 rounded-full flex items-center justify-center transition-colors px-2 py-1 text-xs text-foreground border border-border/60 hover:bg-accent`}
                               >
