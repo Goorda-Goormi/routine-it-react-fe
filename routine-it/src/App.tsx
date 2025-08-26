@@ -227,7 +227,16 @@ export default function App() {
   };
   
   // 모든 루틴을 합치는 배열
-  const allRoutines = [...personalRoutines, ...groupRoutines];
+  //const allRoutines = [...personalRoutines, ...groupRoutines];
+/*
+  const allRoutines = React.useMemo(() => {
+  return [
+    ...personalRoutines,
+    ...groups.flatMap(group =>
+      group.routines?.map(r => ({ ...r, isGroupRoutine: true })) || []
+    )
+  ];
+}, [personalRoutines, groups]);*/
 
   const [recommendedRoutines, setRecommendedRoutines] = useState([
     {
@@ -417,6 +426,8 @@ const handleUpdateGroup = (updatedGroup: Group) => {
       group.id === updatedGroup.id ? { ...group, ...updatedGroup } : group
     )
   );
+
+  
 };
 
 
@@ -544,14 +555,15 @@ const handleUpdateGroup = (updatedGroup: Group) => {
             />
           );
         case "group-detail":
-          return (
-            <GroupDetailScreen
-              group={currentScreen.params}
-              onBack={navigateBack}
-              onNavigate={navigateTo}
-             
-            />
-          );
+  return (
+    <GroupDetailScreen
+      groupId={currentScreen.params.id}  // group 객체 대신 id만 전달
+      groups={groups}                   // 전체 그룹 전달
+      onBack={navigateBack}
+      onNavigate={navigateTo}
+      onUpdateGroup={handleUpdateGroup}
+    />
+  );
         case "profile-edit":
           return (
             <ProfileEditScreen 
@@ -628,7 +640,8 @@ const handleUpdateGroup = (updatedGroup: Group) => {
       case "routine":
         return <RoutineScreen 
           onNavigate={navigateTo} 
-          allRoutines={allRoutines}
+          //allRoutines={allRoutines}
+          allRoutines={[...personalRoutines, ...groups.flatMap(g => g.routines || [])]}
           recommendedRoutines={recommendedRoutines}
           onToggleCompletion={handleToggleCompletion}
           onAddRecommendedRoutine={handleAddRecommendedRoutine}

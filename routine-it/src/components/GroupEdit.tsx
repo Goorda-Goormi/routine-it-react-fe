@@ -15,6 +15,7 @@ import { ArrowLeft, Clock, Users, Target, AlertCircle } from 'lucide-react';
 interface GroupEditProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  onSave: (group: any) => void;
   group?: {
     name: string;
     description: string;
@@ -26,7 +27,7 @@ interface GroupEditProps {
   };
 }
 
-export default function GroupEdit({ open, onOpenChange, group }: GroupEditProps) {
+export default function GroupEdit({ open, onOpenChange, group,onSave }: GroupEditProps) {
   const [formData, setFormData] = useState({
     name: '',
     description: '',
@@ -142,7 +143,7 @@ export default function GroupEdit({ open, onOpenChange, group }: GroupEditProps)
     };
 
     console.log('그룹 수정:', groupData);
-    
+    onSave(groupData); 
     onOpenChange(false);
   };
 

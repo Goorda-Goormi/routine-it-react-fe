@@ -8,21 +8,26 @@ import { GroupApproval } from './GroupApproval';
 import { GroupRoutineDialog } from './GroupRoutineDialog';
 
 interface GroupDetailScreenProps {
-  group: any;
+   groupId: number;
+  groups: any[];
   onBack: () => void;
   onNavigate: (screen: string, params?: any) => void;
+  onUpdateGroup: (group: any) => void;
 }
 
 export function GroupDetailScreen({
-  group,
+  groupId,
+  groups,
   onBack,
   onNavigate,
-}: GroupDetailScreenProps) {
+  onUpdateGroup,
+}: GroupDetailScreenProps){
   const [isJoined, setIsJoined] = useState(true);
   const [isEditing, setIsEditing] = useState(false);
   const [showExMembersModal, setShowExMembersModal] = useState(false);
   const [showApprovalModal, setShowApprovalModal] = useState(false);
   const [showRoutineModal, setShowRoutineModal] = useState(false);
+   const group = groups.find(g => g.id === groupId);
 
   // 가상 데이터
   const [members, setMembers] = useState([
@@ -178,7 +183,15 @@ export function GroupDetailScreen({
         />
       </div>
 
-      <GroupEdit open={isEditing} onOpenChange={setIsEditing} group={group} />
+      <GroupEdit 
+    open={isEditing}
+    onOpenChange={setIsEditing}
+    group={group} // 최신 group 참조
+    onSave={(updatedGroup) => {
+      onUpdateGroup({ ...group, ...updatedGroup });
+      setIsEditing(false);
+    }}
+  />
       <GroupMemberManager
         open={showExMembersModal}
         onOpenChange={setShowExMembersModal}
@@ -200,6 +213,7 @@ export function GroupDetailScreen({
         isOpen={showRoutineModal}
         onOpenChange={setShowRoutineModal}
         onAuthSubmit={handleAuthSubmit}
+
       />
     </div>
   );
