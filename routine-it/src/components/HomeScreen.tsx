@@ -7,7 +7,6 @@ import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 import { Calendar, Target, Trophy, Users, Camera, CheckCircle, Plus, TrendingUp, Clock, Heart, MessageCircle, Flame, ChevronLeft, ChevronRight, X } from 'lucide-react';
 import { ImageWithFallback } from './figma/ImageWithFallback';
 import { getStreakInfo, getStreakMessage } from './utils/streakUtils';
-import type { Group, Member } from './GroupScreen'; // Group 및 Member 인터페이스 가져오기
 
 const getTodayDayOfWeek = () => {
   const dayOfWeek = ['일', '월', '화', '수', '목', '금', '토'];
@@ -15,7 +14,7 @@ const getTodayDayOfWeek = () => {
   return dayOfWeek[today.getDay()];
 };
 
-interface Routine {
+export interface Routine {
   id: number;
   name: string;
   category?: string;
@@ -25,6 +24,21 @@ interface Routine {
   difficulty?: string;
   isGroupRoutine?: boolean;
   frequency?: string[];
+}
+
+export interface Member {
+    id: number;
+    name: string;
+    avatar: string;
+}
+
+export interface Group {
+  id: number;
+  name: string;
+  description?: string;
+  members: number;
+  routines?: Routine[];
+  recentMembers?: Member[];
 }
 
 interface UserInfo {
@@ -60,12 +74,24 @@ export function HomeScreen({ onNavigate, initialUserInfo, personalRoutines, onTo
 
   // 오늘의 루틴
   const todayDay = getTodayDayOfWeek();
-  const todayRoutines = (personalRoutines || []).filter(routine => {
+
+  // 개인 루틴 필터링
+  const todayPersonalRoutines = (personalRoutines || []).filter((routine: Routine) => {
     return routine.frequency && routine.frequency.includes(todayDay);
   });
 
-  const completedRoutines = todayRoutines.filter(routine => routine.completed).length;
-  const totalRoutines = todayRoutines.length;
+  const todayGroupRoutines = participatingGroups.flatMap((group: Group) => {
+    if (group.routines && Array.isArray(group.routines)) {
+      return group.routines.filter((routine: Routine) => routine.frequency && routine.frequency.includes(todayDay));
+    }
+    return [];
+  });
+
+  // 개인 루틴과 그룹 루틴을 모두 포함하는 '오늘의 루틴' 배열 생성
+  const allTodayRoutines = [...todayPersonalRoutines, ...todayGroupRoutines];
+
+  const completedRoutines = allTodayRoutines.filter(routine => routine.completed).length;
+  const totalRoutines = allTodayRoutines.length;
   const completionRate = totalRoutines > 0 ? Math.round((completedRoutines / totalRoutines) * 100) : 0;
 
   // 본인 인증 사진 그리드 데이터 (공개여부 추가)
@@ -265,8 +291,8 @@ export function HomeScreen({ onNavigate, initialUserInfo, personalRoutines, onTo
         </CardHeader>
         <CardContent className="pt-0">
           <div className="space-y-0">
-            {todayRoutines.length > 0 ? (
-              todayRoutines.map((routine, index) => (
+            {allTodayRoutines.length > 0 ? (
+              allTodayRoutines.map((routine: Routine, index: number) => (
                 <div key={routine.id}>
                   <div
                     className={`flex items-center justify-between rounded-lg p-3 transition-colors ${
@@ -356,7 +382,7 @@ export function HomeScreen({ onNavigate, initialUserInfo, personalRoutines, onTo
         <CardContent className="pt-0">
           <div className="space-y-0">
             {participatingGroups.length > 0 ? (
-              participatingGroups.map((group, index) => (
+              participatingGroups.map((group: Group, index: number) => (
                 <div key={group.id}>
                   <div
                     className={`flex items-center justify-between p-3 cursor-pointer hover:bg-accent/50 transition-colors ${

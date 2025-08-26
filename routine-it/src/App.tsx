@@ -422,6 +422,32 @@ export default function App() {
       setUserInfo(prev => ({ ...prev, ...updatedInfo }));
   };
 
+  const handleDeleteRoutine = (routineId: number, isGroupRoutine?: boolean) => {
+    if (isGroupRoutine) {
+      // 그룹 루틴 삭제
+      setGroups(prevGroups => 
+        prevGroups.map(group => {
+          if (group.routines) {
+            return {
+              ...group,
+              // 삭제할 루틴의 ID를 제외하고 새로운 배열 생성
+              routines: group.routines.filter(r => r.id !== routineId)
+            };
+          }
+          return group;
+        })
+      );
+    } else {
+      // 개인 루틴 삭제
+      setPersonalRoutines(prevRoutines =>
+        // 삭제할 루틴의 ID를 제외하고 새로운 배열 생성
+        prevRoutines.filter(routine => routine.id !== routineId)
+      );
+    }
+    // 삭제 후 이전 화면으로 돌아가기
+    navigateBack();
+  };
+
   const currentScreen =
     navigationStack.length > 0
       ? navigationStack[navigationStack.length - 1]
@@ -440,6 +466,7 @@ export default function App() {
               routine={currentScreen.params}
               onBack={navigateBack}
               onUpdateRoutine={handleUpdateRoutine}
+              onDeleteRoutine={handleDeleteRoutine}
             />
           );
         case "group-detail":

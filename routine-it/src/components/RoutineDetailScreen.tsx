@@ -28,9 +28,10 @@ interface RoutineDetailScreenProps {
   routine: Routine;
   onBack: () => void;
   onUpdateRoutine: (updatedRoutine: Routine) => void;
+  onDeleteRoutine: (routineId: number, isGroupRoutine?: boolean) => void;
 }
 
-export function RoutineDetailScreen({ routine, onBack, onUpdateRoutine }: RoutineDetailScreenProps) {
+export function RoutineDetailScreen({ routine, onBack, onUpdateRoutine, onDeleteRoutine }: RoutineDetailScreenProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [editedRoutine, setEditedRoutine] = useState(routine);
   
@@ -114,9 +115,10 @@ export function RoutineDetailScreen({ routine, onBack, onUpdateRoutine }: Routin
   };
   
   const handleDelete = () => {
-    // TODO: 여기에 App.tsx로 루틴 삭제를 요청하는 로직 추가
-    console.log(`루틴 삭제 요청: ${routine.name}`);
-    onBack();
+    const isConfirmed = window.confirm("정말로 이 루틴을 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.");
+    if (isConfirmed) {
+      onDeleteRoutine(routine.id, routine.isGroupRoutine);
+    }
   };
   
   return (
