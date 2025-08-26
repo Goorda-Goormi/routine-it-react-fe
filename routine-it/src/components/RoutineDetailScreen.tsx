@@ -28,11 +28,13 @@ interface RoutineDetailScreenProps {
   routine: Routine;
   onBack: () => void;
   onUpdateRoutine: (updatedRoutine: Routine) => void;
+  onDeleteRoutine: (routineId: number, isGroupRoutine?: boolean) => void;
 }
 
-export function RoutineDetailScreen({ routine, onBack, onUpdateRoutine }: RoutineDetailScreenProps) {
+export function RoutineDetailScreen({ routine, onBack, onUpdateRoutine, onDeleteRoutine }: RoutineDetailScreenProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [editedRoutine, setEditedRoutine] = useState(routine);
+  const [errors, setErrors] = useState<{ [key: string]: string }>({});
   
   // 선택된 요일들을 상태로 관리합니다.
   const daysOfWeek = ['월', '화', '수', '목', '금', '토', '일'];
@@ -100,6 +102,30 @@ export function RoutineDetailScreen({ routine, onBack, onUpdateRoutine }: Routin
   };
 
   const handleSave = () => {
+    const newErrors: { [key: string]: string } = {};
+
+    if (!editedRoutine.name) {
+        newErrors.name = '루틴 이름을 입력해주세요.';
+    }
+    if (selectedDays.length === 0) {
+        newErrors.frequency = '하나 이상의 요일을 선택해주세요.';
+    }
+    if (!editedRoutine.time) {
+        newErrors.time = '시간을 설정해주세요.';
+    }
+    if (!editedRoutine.category) {
+        newErrors.category = '카테고리를 선택해주세요.';
+    }
+    if (!editedRoutine.difficulty) {
+        newErrors.difficulty = '난이도를 선택해주세요.';
+    }
+
+    setErrors(newErrors);
+
+    if (Object.keys(newErrors).length > 0) {
+        return;
+    }
+
     // App.tsx로 수정된 데이터를 전달하고 화면을 돌아갑니다.
     const updatedRoutine = { ...editedRoutine, frequency: selectedDays };
     onUpdateRoutine(updatedRoutine);
@@ -114,9 +140,10 @@ export function RoutineDetailScreen({ routine, onBack, onUpdateRoutine }: Routin
   };
   
   const handleDelete = () => {
-    // TODO: 여기에 App.tsx로 루틴 삭제를 요청하는 로직 추가
-    console.log(`루틴 삭제 요청: ${routine.name}`);
-    onBack();
+    const isConfirmed = window.confirm("정말로 이 루틴을 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.");
+    if (isConfirmed) {
+      onDeleteRoutine(routine.id, routine.isGroupRoutine);
+    }
   };
   
   return (
@@ -205,6 +232,7 @@ export function RoutineDetailScreen({ routine, onBack, onUpdateRoutine }: Routin
                   value={editedRoutine.name}
                   onChange={(e) => setEditedRoutine({...editedRoutine, name: e.target.value})}
                 />
+                {errors.name && <p className="text-destructive text-sm mt-1">{errors.name}</p>}
               </div>
               
               <div>
@@ -224,6 +252,7 @@ export function RoutineDetailScreen({ routine, onBack, onUpdateRoutine }: Routin
                     <SelectItem value="기타">📋 기타</SelectItem>
                   </SelectContent>
                 </Select>
+                {errors.category && <p className="text-destructive text-sm mt-1">{errors.category}</p>}
               </div>
 
               <div>
@@ -241,6 +270,7 @@ export function RoutineDetailScreen({ routine, onBack, onUpdateRoutine }: Routin
                     <SelectItem value="어려움">어려움</SelectItem>
                   </SelectContent>
                 </Select>
+                {errors.difficulty && <p className="text-destructive text-sm mt-1">{errors.difficulty}</p>}
               </div>
 
               <div>
@@ -260,6 +290,7 @@ export function RoutineDetailScreen({ routine, onBack, onUpdateRoutine }: Routin
                   value={editedRoutine.time}
                   onChange={(e) => setEditedRoutine({...editedRoutine, time: e.target.value})}
                 />
+                {errors.time && <p className="text-destructive text-sm mt-1">{errors.time}</p>}
               </div>
               
               <div>
@@ -280,6 +311,7 @@ export function RoutineDetailScreen({ routine, onBack, onUpdateRoutine }: Routin
                     </Button>
                   ))}
                 </div>
+                {errors.frequency && <p className="text-destructive text-sm mt-1 text-center">{errors.frequency}</p>}
               </div>
 
               <div>

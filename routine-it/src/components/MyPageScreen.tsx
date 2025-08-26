@@ -23,7 +23,9 @@ import {
   Star,
   Zap,
   Heart,
-  Shield
+  Shield,
+  ChevronLeft,
+  ChevronRight
 } from 'lucide-react';
 
 interface MyPageScreenProps {
@@ -44,6 +46,51 @@ interface MyPageScreenProps {
 }
 
 export function MyPageScreen({ onNavigate, isDarkMode, onToggleDarkMode, user }: MyPageScreenProps) {
+  const [currentDate, setCurrentDate] = useState(new Date());
+
+  const getCalendarData = (date: Date) => {
+    const year = date.getFullYear();
+    const month = date.getMonth();
+    
+    // 해당 월의 첫 날
+    const firstDayOfMonth = new Date(year, month, 1);
+    // 해당 월의 마지막 날
+    const lastDayOfMonth = new Date(year, month + 1, 0);
+    
+    // 첫 날의 요일 (0: 일요일, 1: 월요일, ...)
+    const firstDayOfWeek = firstDayOfMonth.getDay();
+    // 해당 월의 총 날짜 수
+    const numDays = lastDayOfMonth.getDate();
+    
+    const daysArray = [];
+    
+    // 요일 시작을 맞추기 위해 빈 칸 추가
+    for (let i = 0; i < firstDayOfWeek; i++) {
+      daysArray.push(null);
+    }
+    
+    // 해당 월의 날짜 추가
+    for (let i = 1; i <= numDays; i++) {
+      daysArray.push(i);
+    }
+    
+    return {
+      year,
+      month: month + 1,
+      days: daysArray,
+      today: new Date().getDate(),
+    };
+  };
+
+  const calendarData = getCalendarData(currentDate);
+
+  const handlePrevMonth = () => {
+    setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 1));
+  };
+  
+  const handleNextMonth = () => {
+    setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 1));
+  };
 
   // onNavigate 함수 호출 시 onSave 함수를 props로 전달
   const handleEditProfile = () => {
@@ -192,45 +239,46 @@ export function MyPageScreen({ onNavigate, isDarkMode, onToggleDarkMode, user }:
       {/* 이번 달 출석 달력 */}
       <Card>
         <CardHeader className="pb-4">
-          <CardTitle className="text-base text-card-foreground flex items-center space-x-2">
-            <Calendar className="h-4 w-4 icon-accent" />
-            <span>11월 출석 현황</span>
-          </CardTitle>
+          <div className="flex justify-between items-center w-full">
+            <Button onClick={handlePrevMonth} variant="ghost" size="sm">
+              <ChevronLeft className="h-4 w-4" />
+            </Button>
+            <CardTitle className="text-base text-card-foreground flex items-center space-x-2">
+              <Calendar className="h-4 w-4 icon-accent" />
+              <span>{calendarData.year}년 {calendarData.month}월 출석 현황</span>
+            </CardTitle>
+            <Button onClick={handleNextMonth} variant="ghost" size="sm">
+              <ChevronRight className="h-4 w-4" />
+            </Button>
+          </div>
         </CardHeader>
         <CardContent className="pt-0">
-          <div className="space-y-3">
+          <div className="space-y-3 ml-5">
             {/* 달력 헤더 */}
             <div className="grid grid-cols-7 gap-1 text-center text-xs text-muted-foreground">
-              <div>일</div>
-              <div>월</div>
-              <div>화</div>
-              <div>수</div>
-              <div>목</div>
-              <div>금</div>
-              <div>토</div>
+              <div className="w-8 h-8 flex items-center justify-center">일</div>
+              <div className="w-8 h-8 flex items-center justify-center">월</div>
+              <div className="w-8 h-8 flex items-center justify-center">화</div>
+              <div className="w-8 h-8 flex items-center justify-center">수</div>
+              <div className="w-8 h-8 flex items-center justify-center">목</div>
+              <div className="w-8 h-8 flex items-center justify-center">금</div>
+              <div className="w-8 h-8 flex items-center justify-center">토</div>
             </div>
             
             {/* 달력 본체 */}
             <div className="grid grid-cols-7 gap-1">
-              {/* 11월 1일이 금요일이라고 가정 */}
-              {[...Array(5)].map((_, i) => (
-                <div key={`empty-${i}`} className="h-8"></div>
-              ))}
-              
-              {/* 11월 날짜들 */}
-              {[...Array(30)].map((_, i) => {
-                const day = i + 1;
-                const today = 15; // 오늘을 15일로 가정
-                const isToday = day === today;
-                const isPast = day < today;
-                const isFuture = day > today;
+              {calendarData.days.map((day, i) => {
+                const isToday = day !== null && new Date().getFullYear() === calendarData.year && new Date().getMonth() + 1 === calendarData.month && day === calendarData.today;
+                const isPast = day !== null && (currentDate.getFullYear() < new Date().getFullYear() || (currentDate.getFullYear() === new Date().getFullYear() && currentDate.getMonth() < new Date().getMonth()) || (currentDate.getFullYear() === new Date().getFullYear() && currentDate.getMonth() === new Date().getMonth() && day < new Date().getDate()));
                 const hasAttendance = isPast && Math.random() > 0.2; // 80% 확률로 출석
                 
                 return (
                   <div
-                    key={day}
+                    key={i}
                     className={`h-8 w-8 flex items-center justify-center text-xs rounded-full ${
-                      isToday
+                      day === null
+                        ? '' // 빈 칸
+                        : isToday
                         ? 'bg-primary text-primary-foreground font-medium'
                         : hasAttendance
                         ? 'bg-green-500 text-white'

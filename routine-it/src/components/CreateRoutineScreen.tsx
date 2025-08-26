@@ -8,27 +8,42 @@ import { Textarea } from './ui/textarea';
 import { Switch } from './ui/switch';
 import { ArrowLeft, Save } from 'lucide-react';
 
+interface NewRoutine {
+  id: number;
+  name: string;
+  description: string;
+  time: string;
+  frequency: string[];
+  reminder: boolean;
+  goal: string;
+  category: string;
+  difficulty: string;
+  completed: boolean;
+  streak: number;
+}
+
 interface CreateRoutineScreenProps {
   onBack: () => void;
-  onCreateRoutine: (newRoutineData: any) => void;
+  onCreateRoutine: (newRoutineData: NewRoutine) => void;
 }
 
 export function CreateRoutineScreen({ onBack, onCreateRoutine }: CreateRoutineScreenProps) {
   const [formData, setFormData] = useState({
     name: '',
     description: '',
-    time: '',
-    frequency: '매일',
+    time: '08:00',
+    frequency: '',
     reminder: true,
     goal: '30',
-    category: '기타',
-    difficulty: '쉬움'
+    category: '',
+    difficulty: ''
   });
 
   const daysOfWeek = ['월', '화', '수', '목', '금', '토', '일'];
 
 // 선택된 요일들을 상태로 관리합니다.
 const [selectedDays, setSelectedDays] = useState<string[]>([]);
+const [errors, setErrors] = useState<{ [key: string]: string }>({});
 
 // 선택된 요일들을 기반으로 표시할 텍스트를 생성하는 함수입니다.
 const getFrequencyText = () => {
@@ -54,9 +69,46 @@ const handleDayToggle = (day: string) => {
 
 
   const handleSave = () => {
-    // 루틴 저장 로직
-    console.log('루틴 저장:', formData);
-    onCreateRoutine(formData);
+    // 유효성 검사 로직을 추가합니다.
+    const newErrors: { [key: string]: string } = {};
+    if (!formData.name) {
+      newErrors.name = '루틴 이름을 입력해주세요.';
+    }
+    if (selectedDays.length === 0) {
+      newErrors.frequency = '하나 이상의 요일을 선택해주세요.';
+    }
+    if (!formData.time) {
+      newErrors.time = '시간을 설정해주세요.';
+    }
+    if (!formData.category) {
+      newErrors.category = '카테고리를 선택해주세요.';
+    }
+    if (!formData.difficulty) {
+      newErrors.difficulty = '난이도를 선택해주세요.';
+    }
+
+    setErrors(newErrors);
+
+    // 오류가 있으면 저장 로직을 중단합니다.
+    if (Object.keys(newErrors).length > 0) {
+      return;
+    }
+
+    const newRoutineData: NewRoutine = {
+      id: Math.random(), // 임시 ID
+      name: formData.name,
+      description: formData.description,
+      time: formData.time,
+      frequency: selectedDays, // 선택된 요일 배열을 사용합니다.
+      reminder: formData.reminder,
+      goal: formData.goal,
+      category: formData.category,
+      difficulty: formData.difficulty,
+      completed: false, // 새로운 루틴은 완료되지 않은 상태로 시작
+      streak: 0, // 새로운 루틴은 연속일이 0으로 시작
+    };
+
+    onCreateRoutine(newRoutineData);
     onBack();
   };
 
@@ -89,10 +141,11 @@ const handleDayToggle = (day: string) => {
               <Label className="pb-3 pl-3" htmlFor="name">루틴 이름</Label>
               <Input
                 id="name"
-                placeholder="예: 아침 운동, 독서, 물 마시기"
+                placeholder="루틴 이름을 입력하세요"
                 value={formData.name}
                 onChange={(e) => setFormData({...formData, name: e.target.value})}
               />
+              {errors.name && <p className="text-destructive text-sm mt-1">{errors.name}</p>}
             </div>
             
             {/* 카테고리 선택 추가 */}
@@ -103,7 +156,7 @@ const handleDayToggle = (day: string) => {
                 onValueChange={(value) => setFormData({...formData, category: value})}
               >
                 <SelectTrigger>
-                  <SelectValue />
+                  <SelectValue placeholder="카테고리를 선택하세요"  />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="운동">💪 운동</SelectItem>
@@ -113,6 +166,7 @@ const handleDayToggle = (day: string) => {
                   <SelectItem value="기타">📋 기타</SelectItem>
                 </SelectContent>
               </Select>
+              {errors.category && <p className="text-destructive text-sm mt-1">{errors.category}</p>}
             </div>
 
             {/* 난이도 선택 추가 */}
@@ -123,7 +177,7 @@ const handleDayToggle = (day: string) => {
                 onValueChange={(value) => setFormData({...formData, difficulty: value})}
               >
                 <SelectTrigger>
-                  <SelectValue />
+                  <SelectValue placeholder="난이도를 선택하세요"  />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="쉬움">쉬움</SelectItem>
@@ -131,6 +185,7 @@ const handleDayToggle = (day: string) => {
                   <SelectItem value="어려움">어려움</SelectItem>
                 </SelectContent>
               </Select>
+              {errors.difficulty && <p className="text-destructive text-sm mt-1">{errors.difficulty}</p>}
             </div>
 
 
@@ -161,6 +216,7 @@ const handleDayToggle = (day: string) => {
                 value={formData.time}
                 onChange={(e) => setFormData({...formData, time: e.target.value})}
               />
+              {errors.time && <p className="text-destructive text-sm mt-1">{errors.time}</p>}
             </div>
             
             <div>
@@ -181,6 +237,7 @@ const handleDayToggle = (day: string) => {
                   </Button>
                 ))}
               </div>
+              {errors.frequency && <p className="text-destructive text-sm mt-1 text-center">{errors.frequency}</p>}
             </div>
           </CardContent>
         </Card>
