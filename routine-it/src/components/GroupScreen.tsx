@@ -33,11 +33,14 @@ interface GroupScreenProps {
   groups: Group[]; // 모든 그룹 데이터
   myGroups: Group[]; // 내가 참여 중인 그룹 데이터
   onNewGroup: (newGroup: Group) => void; // 새로운 그룹 생성 시 호출될 함수
+  onJoinGroup: (groupId: number) => void;
 }
 
-export function GroupScreen({ onNavigate, groups, myGroups, onNewGroup }: GroupScreenProps) {
+export function GroupScreen({ onNavigate, groups, myGroups, onNewGroup, onJoinGroup }: GroupScreenProps) {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
+  const [filterCategory, setFilterCategory] = useState('');
+  const [activeTab, setActiveTab] = useState('find');
 
   const categories = [
     { id: 'all', name: '전체', hoverColor: 'hover:bg-gray-100/70 hover:text-gray-800' },

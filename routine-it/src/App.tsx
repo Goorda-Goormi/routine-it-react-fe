@@ -195,6 +195,69 @@ export default function App() {
     }
   ]);
 
+  const [groupRoutines, setGroupRoutines] = useState<Routine[]>([]);
+
+  useEffect(() => {
+    const newGroupRoutines: Routine[] = groups.flatMap(group => 
+      group.routines?.map(routine => ({ ...routine, isGroupRoutine: true })) || []
+    );
+    setGroupRoutines(newGroupRoutines);
+  }, [groups]);
+
+  const handleJoinGroup = (groupId: number) => {
+    // 임시로 가상의 그룹 루틴을 추가하는 로직
+    const newGroupRoutine: Routine = {
+      id: Math.random(), // 고유 ID 생성
+      name: '새로 참여한 그룹 루틴',
+      description: '그룹 참여 후 추가된 루틴입니다',
+      time: '18:00',
+      frequency: ["월", "화", "수", "목", "금", "토", "일"],
+      reminder: true,
+      goal: "10",
+      category: "운동",
+      completed: false,
+      streak: 0,
+      difficulty: "보통",
+      isGroupRoutine: true
+    };
+    
+    setGroupRoutines(prevRoutines => [...prevRoutines, newGroupRoutine]);
+    navigateTo('routine', {});
+  };
+  
+  // 모든 루틴을 합치는 배열
+  const allRoutines = [...personalRoutines, ...groupRoutines];
+
+  const [recommendedRoutines, setRecommendedRoutines] = useState([
+    {
+      id: 7,
+      name: '스트레칭',
+      category: '운동',
+      description: '매일 10분 스트레칭으로 몸의 긴장을 풀어보세요',
+      difficulty: '쉬움',
+      popularity: 4.8,
+      participants: 1240
+    },
+    {
+      id: 8,
+      name: '감사 일기',
+      category: '생활',
+      description: '하루에 감사한 일 3가지를 적어보세요',
+      difficulty: '쉬움',
+      popularity: 4.7,
+      participants: 980
+    },
+    {
+      id: 9,
+      name: '단어 암기',
+      category: '학습',
+      description: '매일 새로운 영어 단어 10개를 학습하세요',
+      difficulty: '보통',
+      popularity: 4.6,
+      participants: 750
+    }
+  ]);
+
   useEffect(() => {
     if (isDarkMode) {
       document.documentElement.classList.add("dark");
@@ -282,6 +345,22 @@ export default function App() {
       owner: UserInfo.name,
       recentMembers: [
         { id: Date.now(), name: UserInfo.name, avatar: UserInfo.avatar }
+      ],
+      routines: [ // 새로운 그룹에 기본 루틴 추가
+        {
+          id: Date.now(),
+          name: newGroupData.name,
+          description: newGroupData.description,
+          time: newGroupData.hasAlarm ? newGroupData.alarmTime : '언제든',
+          frequency: newGroupData.frequency,
+          reminder: newGroupData.hasAlarm,
+          goal: newGroupData.goal,
+          category: newGroupData.category,
+          completed: false,
+          streak: 0,
+          difficulty: newGroupData.difficulty,
+          isGroupRoutine: true, // 그룹 루틴임을 명시
+        }
       ]
     };
     setGroups(prev => [newGroup, ...prev]);
@@ -290,13 +369,19 @@ export default function App() {
   const handleUpdateRoutine = (updatedRoutine: Routine) => {
     if (updatedRoutine.isGroupRoutine) {
       setGroups(prevGroups => 
-        prevGroups.map(group => ({
-          ...group,
-          // routines: group.routines.map(routine =>
-          //   routine.id === updatedRoutine.id ? updatedRoutine : routine
-          // ),
-        }))
-      );
+            prevGroups.map(group => {
+                if (group.routines && Array.isArray(group.routines)) {
+                    const groupHasRoutine = group.routines.some(r => r.id === updatedRoutine.id);
+                    if (groupHasRoutine) {
+                        return {
+                            ...group,
+                            routines: group.routines.map(r => r.id === updatedRoutine.id ? updatedRoutine : r)
+                        };
+                    }
+                }
+                return group;
+            })
+        );
     } else {
       setPersonalRoutines(prevRoutines =>
         prevRoutines.map(routine =>
@@ -422,9 +507,6 @@ export default function App() {
   };
 
   const renderMainScreen = () => {
-    const allGroupRoutines = groups.flatMap(group => group.routines || []);
-    const allRoutines = [...personalRoutines, ...allGroupRoutines];
-    
     switch (activeTab) {
       case "home":
         return (
@@ -444,7 +526,8 @@ export default function App() {
       case "routine":
         return <RoutineScreen 
           onNavigate={navigateTo} 
-          personalRoutines={allRoutines}
+          allRoutines={allRoutines}
+          recommendedRoutines={recommendedRoutines}
           onToggleCompletion={handleToggleCompletion}
         />;
       case "group":
@@ -453,6 +536,7 @@ export default function App() {
                   groups={groups} 
                   myGroups={groups}   // 임시로 참여중 그룹 = 전체 그룹
                   onNewGroup={handleAddGroup} 
+                  onJoinGroup={handleJoinGroup}
                 />
       case "ranking":
         return <RankingScreen 
