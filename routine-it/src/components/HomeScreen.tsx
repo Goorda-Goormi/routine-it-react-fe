@@ -324,9 +324,13 @@ export function HomeScreen({ onNavigate, initialUserInfo, personalRoutines, onTo
                             routine.completed
                               ? 'bg-green-500 hover:bg-green-600'
                               : 'border-2 border-border/60 hover:border-green-500'
-                          } !p-0 m-0 border-0`}
+                          } !p-0 m-0`}
                         >
-                          {routine.completed && <CheckCircle className="h-5 w-5 text-white" />}
+                          <CheckCircle
+                            className={`h-5 w-5 ${
+                              routine.completed ? 'text-white' : 'text-transparent'
+                            }`}
+                          />
                         </button>
                       )}
                     </div>
