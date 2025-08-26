@@ -332,6 +332,7 @@ export function HomeScreen({ onNavigate, initialUserInfo, personalRoutines, onTo
                             }`}
                           />
                         </button>
+
                       )}
                     </div>
                   </div>

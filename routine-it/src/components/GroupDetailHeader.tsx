@@ -44,6 +44,7 @@ export const GroupDetailHeader = ({
 }: GroupDetailHeaderProps) => {
   const handleMenuClick = (action: string) => {
     if (!isLeader) {
+      // 이 부분은 이미 드롭다운이 비활성화되어 접근할 수 없지만, 혹시 모를 상황에 대비해 남겨둡니다.
       alert('리더만 권한이 있습니다');
       return;
     }
@@ -75,9 +76,14 @@ export const GroupDetailHeader = ({
         <div className="flex items-center space-x-2">
           <Button variant="ghost" size="sm" className="text-card-foreground hover:text-card-foreground"></Button>
           <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="sm" className="text-card-foreground hover:text-card-foreground">
-                <Settings className="h-4 w-4 icon-secondary" />
+            {/* 리더가 아닐 경우 disabled prop을 추가하여 클릭을 막음 */}
+            <DropdownMenuTrigger asChild disabled={!isLeader}>
+              <Button
+                variant="ghost"
+                size="sm"
+                className={`hover:bg-accent ${isLeader ? 'text-card-foreground' : 'text-muted-foreground'}`}
+              >
+                <Settings className="h-4 w-4" />
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
@@ -89,7 +95,7 @@ export const GroupDetailHeader = ({
                 </>
               )}
               <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={() => handleMenuClick('ex-members')}>멤버 내보내기</DropdownMenuItem>
+              <DropdownMenuItem onClick={() => handleMenuClick('ex-members')}>멤버 관리하기</DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
         </div>

@@ -131,6 +131,17 @@ export function GroupDetailScreen({
     setShowExMembersModal(false);
   };
 
+  const handleDelegateLeader = (newLeaderId: string) => {
+    // 새로운 리더 ID를 받아 멤버 상태를 업데이트합니다.
+    const updatedMembers = members.map(member => ({
+      ...member,
+      isLeader: member.id === newLeaderId,
+    }));
+    setMembers(updatedMembers);
+    alert('리더 권한이 성공적으로 위임되었습니다.');
+    setShowExMembersModal(false);
+  };
+
   const handleApprove = (id: number) => {
     console.log(`${id}번 인증을 승인했습니다.`);
     alert(`${id}번 인증이 승인되었습니다.`);
@@ -173,6 +184,7 @@ export function GroupDetailScreen({
         onOpenChange={setShowExMembersModal}
         members={members}
         onKickMember={handleKickMember}
+        onDelegateLeader={handleDelegateLeader} 
       />
       <Dialog open={showApprovalModal} onOpenChange={setShowApprovalModal}>
         <DialogContent className="max-w-md text-icon-secondary dark:text-white">
