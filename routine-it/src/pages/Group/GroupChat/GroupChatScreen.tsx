@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
-import { Button } from './ui/button';
-import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from './ui/dialog';
+import { Button } from '../../../components/ui/button';
+import { Avatar, AvatarFallback, AvatarImage } from '../../../components/ui/avatar';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '../../../components/ui/dialog';
 import { ArrowLeft, CheckCircle, Users } from 'lucide-react';
-import { getStreakInfo } from './utils/streakUtils';
+import { getStreakInfo } from '../../../components/utils/streakUtils';
 import { GroupRoutineDialog } from './GroupRoutineDialog';
 import { GroupChatMessages } from './GroupChatMessages';
 import { GroupChatInput } from './GroupChatInput';

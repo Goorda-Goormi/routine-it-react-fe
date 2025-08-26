@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
-import { Button } from './ui/button';
-import { Input } from './ui/input';
-import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
+import { Button } from '../../../components/ui/button';
+import { Input } from '../../../components/ui/input';
+import { Popover, PopoverContent, PopoverTrigger } from '../../../components/ui/popover';
 import { Send, Image, Smile } from 'lucide-react';
 
 interface GroupChatInputProps {

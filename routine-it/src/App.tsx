@@ -1,22 +1,22 @@
 import React, { useState, useEffect } from "react";
 import { TopNavBar } from "./components/TopNavBar";
 import { BottomTabNav } from "./components/BottomTabNav";
-import { LoginScreen } from "./components/LoginScreen";
-import { HomeScreen } from "./components/HomeScreen";
-import { RoutineScreen } from "./components/RoutineScreen";
-import { GroupScreen } from "./components/GroupScreen"
-import { RankingScreen } from "./components/RankingScreen";
-import { MyPageScreen } from "./components/MyPageScreen";
-import { RoutineDetailScreen } from "./components/RoutineDetailScreen";
-import { GroupDetailScreen } from "./components/GroupDetailScreen";
-import { ProfileEditScreen } from "./components/ProfileEditScreen";
-import { GroupChatScreen } from "./components/GroupChatScreen";
-import { CreateRoutineScreen } from "./components/CreateRoutineScreen";
-import { CreateGroupScreen } from "./components/CreateGroupScreen";
+import { LoginScreen } from "./pages/Login/LoginScreen";
+import { HomeScreen } from "./pages/Home/HomeScreen";
+import { RoutineScreen } from "./pages/Routine/RoutineScreen";
+import { GroupScreen } from "./pages/Group/GroupScreen"
+import { RankingScreen } from "./pages/Ranking/RankingScreen";
+import { MyPageScreen } from "./pages/MyPage/MyPageScreen";
+import { RoutineDetailScreen } from "./pages/Routine/RoutineDetailScreen";
+import { GroupDetailScreen } from "./pages/Group/GroupDetail/GroupDetailScreen";
+import { ProfileEditScreen } from "./pages/MyPage/ProfileEditScreen";
+import { GroupChatScreen } from "./pages/Group/GroupChat/GroupChatScreen";
+import { CreateRoutineScreen } from "./components/modules/CreateRoutineScreen";
+import { CreateGroupScreen } from "./pages/Group/CreateGroupScreen";
 import { SettingsScreen } from "./components/SettingsScreen";
 import { HelpScreen } from "./components/HelpScreen";
-import { UserHomeScreen } from "./components/UserHomeScreen";
-import type { RecommendedRoutine } from "./components/RoutineScreen";
+import { UserHomeScreen } from "./pages/Home/UserHomeScreen";
+import type { RecommendedRoutine } from "./pages/Routine/RoutineScreen";
 
 export interface Routine {
   id: number;

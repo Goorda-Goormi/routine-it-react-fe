@@ -1,11 +1,11 @@
 import React, { useState } from 'react';
-import { Dialog, DialogContent } from './ui/dialog';
+import { Dialog, DialogContent } from '../../../components/ui/dialog';
 import { GroupDetailHeader } from './GroupDetailHeader';
 import { GroupDetailTabs } from './GroupDetailTabs';
 import { GroupMemberManager } from './GroupMemberManager';
 import GroupEdit from './GroupEdit';
 import { GroupApproval } from './GroupApproval';
-import { GroupRoutineDialog } from './GroupRoutineDialog';
+import { GroupRoutineDialog } from '../GroupChat/GroupRoutineDialog';
 
 interface GroupDetailScreenProps {
    groupId: number;

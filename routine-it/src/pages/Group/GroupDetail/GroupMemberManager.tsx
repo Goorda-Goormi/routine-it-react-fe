@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
-import { Button } from './ui/button';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from './ui/dialog';
-import { Avatar, AvatarFallback } from './ui/avatar';
+import { Button } from '../../../components/ui/button';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from '../../../components/ui/dialog';
+import { Avatar, AvatarFallback } from '../../../components/ui/avatar';
 import { MinusCircle, Crown } from 'lucide-react';
 
 // 그룹 멤버 데이터 타입을 정의합니다. isLeader 속성을 추가합니다.

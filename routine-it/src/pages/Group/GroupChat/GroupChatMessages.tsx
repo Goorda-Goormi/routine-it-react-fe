@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
-import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
-import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
-import { Button } from './ui/button';
+import { Avatar, AvatarFallback, AvatarImage } from '../../../components/ui/avatar';
+import { Popover, PopoverContent, PopoverTrigger } from '../../../components/ui/popover';
+import { Button } from '../../../components/ui/button';
 import { Smile, CheckCircle } from 'lucide-react';
-import { getStreakInfo } from './utils/streakUtils';
-import { Message } from './groupChatScreen';
+import { getStreakInfo } from '../../../components/utils/streakUtils';
+import { Message } from './GroupChatScreen';
 
 interface GroupChatMessagesProps {
   messages: Message[];

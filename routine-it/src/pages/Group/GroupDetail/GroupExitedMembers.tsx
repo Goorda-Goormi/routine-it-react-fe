@@ -1,6 +1,6 @@
-import React from 'react';
-import { Button } from './ui/button';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from './ui/dialog';
+/*import React from 'react';
+import { Button } from '../../../components/ui/button';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '../../../components/ui/dialog';
 
 interface GroupExitedMembersProps {
   open: boolean;
@@ -32,3 +32,4 @@ export function GroupExitedMembers({ open, onOpenChange }: GroupExitedMembersPro
     </Dialog>
   );
 }
+*/
