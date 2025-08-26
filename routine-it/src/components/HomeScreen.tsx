@@ -7,7 +7,7 @@ import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 import { Calendar, Target, Trophy, Users, Camera, CheckCircle, Plus, TrendingUp, Clock, Heart, MessageCircle, Flame, ChevronLeft, ChevronRight, X } from 'lucide-react';
 import { ImageWithFallback } from './figma/ImageWithFallback';
 import { getStreakInfo, getStreakMessage } from './utils/streakUtils';
-import { Group, Member } from './GroupScreen'; // Group 및 Member 인터페이스 가져오기
+import type { Group, Member } from './GroupScreen'; // Group 및 Member 인터페이스 가져오기
 
 const getTodayDayOfWeek = () => {
   const dayOfWeek = ['일', '월', '화', '수', '목', '금', '토'];
