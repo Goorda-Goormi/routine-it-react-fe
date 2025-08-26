@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Button } from './ui/button';
 import { Badge } from './ui/badge';
@@ -30,11 +30,12 @@ export interface Group {
 
 interface GroupScreenProps {
   onNavigate: (screen: string, params?: any) => void;
-  groups: Group[];
-  newGroup?: any; // CreateGroupScreen에서 전달받을 새로운 그룹 데이터
+  groups: Group[]; // 모든 그룹 데이터
+  myGroups: Group[]; // 내가 참여 중인 그룹 데이터
+  onNewGroup: (newGroup: Group) => void; // 새로운 그룹 생성 시 호출될 함수
 }
 
-export function GroupScreen({ onNavigate, groups, newGroup }: GroupScreenProps) {
+export function GroupScreen({ onNavigate, groups, myGroups, onNewGroup }: GroupScreenProps) {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
 
@@ -48,13 +49,13 @@ export function GroupScreen({ onNavigate, groups, newGroup }: GroupScreenProps) 
   ];
 
   // 필터링 로직
-  const getFilteredGroups = (filter: string) => {
-    let filtered = groups;
+  const getFilteredGroups = (filter: string, groupList: Group[]) => {
+    let filtered = groupList;
 
     if (filter === 'mandatory') {
-      filtered = groups.filter(group => group.type === '의무참여');
+      filtered = groupList.filter(group => group.type === '의무참여');
     } else if (filter === 'optional') {
-      filtered = groups.filter(group => group.type === '자유참여');
+      filtered = groupList.filter(group => group.type === '자유참여');
     }
 
     if (selectedCategory !== 'all') {
@@ -128,13 +129,13 @@ export function GroupScreen({ onNavigate, groups, newGroup }: GroupScreenProps) 
           </div>
         </CardHeader>
         <CardContent className="pt-0">
-          {groups.length > 0 ? (
+          {myGroups.length > 0 ? (
             <div className="space-y-0">
-              {groups.map((group, index) => (
+              {myGroups.map((group, index) => (
                 <div key={group.id}>
                   <div
                     className={`p-5 rounded-lg cursor-pointer hover:bg-accent/50 transition-colors ${
-                      index < groups.length - 1 ? 'border-b border-border/30' : ''
+                      index < myGroups.length - 1 ? 'border-b border-border/30' : ''
                     }`}
                     onClick={() => onNavigate('group-detail', group)}
                   >
@@ -220,10 +221,10 @@ export function GroupScreen({ onNavigate, groups, newGroup }: GroupScreenProps) 
 
             <TabsContent value="all" className="px-4 pb-4 mt-4">
               <div className="space-y-0">
-                {getFilteredGroups('all').map((group, index) => (
+                {getFilteredGroups('all', groups).map((group, index) => (
                   <div key={group.id}>
                     <div className={`p-5 rounded-lg hover:bg-accent/50 transition-colors ${
-                      index < getFilteredGroups('all').length - 1 ? 'border-b border-border/30' : ''
+                      index < getFilteredGroups('all', groups).length - 1 ? 'border-b border-border/30' : ''
                       }`}>
                       <div className="flex items-center justify-between mb-1">
                         <div className="flex items-center space-x-2 flex-1">
@@ -260,10 +261,10 @@ export function GroupScreen({ onNavigate, groups, newGroup }: GroupScreenProps) 
 
             <TabsContent value="optional" className="px-4 pb-4 mt-4">
               <div className="space-y-0">
-                {getFilteredGroups('optional').map((group, index) => (
+                {getFilteredGroups('optional', groups).map((group, index) => (
                   <div key={group.id}>
                     <div className={`p-5 rounded-lg hover:bg-accent/50 transition-colors ${
-                      index < getFilteredGroups('optional').length - 1 ? 'border-b border-border/30' : ''
+                      index < getFilteredGroups('optional', groups).length - 1 ? 'border-b border-border/30' : ''
                       }`}>
                       <div className="flex items-center justify-between mb-1">
                         <div className="flex items-center space-x-2 flex-1">
@@ -298,10 +299,10 @@ export function GroupScreen({ onNavigate, groups, newGroup }: GroupScreenProps) 
 
             <TabsContent value="mandatory" className="px-4 pb-4 mt-4">
               <div className="space-y-0">
-                {getFilteredGroups('mandatory').map((group, index) => (
+                {getFilteredGroups('mandatory', groups).map((group, index) => (
                   <div key={group.id}>
                     <div className={`p-5 rounded-lg hover:bg-accent/50 transition-colors ${
-                      index < getFilteredGroups('mandatory').length - 1 ? 'border-b border-border/30' : ''
+                      index < getFilteredGroups('mandatory', groups).length - 1 ? 'border-b border-border/30' : ''
                       }`}>
                       <div className="flex items-center justify-between mb-1">
                         <div className="flex items-center space-x-2 flex-1">

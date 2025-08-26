@@ -401,6 +401,7 @@ export default function App() {
                 profileImage: UserInfo.avatar,
                 bio: UserInfo.bio,
             }} 
+            participatingGroups={groups}   
           />
         );
       case "routine":
@@ -410,7 +411,12 @@ export default function App() {
           onToggleCompletion={handleToggleCompletion}
         />;
       case "group":
-        return <GroupScreen onNavigate={navigateTo} groups={groups} />;
+        return <GroupScreen 
+                  onNavigate={navigateTo} 
+                  groups={groups} 
+                  myGroups={groups}   // 임시로 참여중 그룹 = 전체 그룹
+                  onNewGroup={handleAddGroup} 
+                />
       case "ranking":
         return <RankingScreen />;
       case "mypage":
@@ -425,15 +431,16 @@ export default function App() {
       default:
         return (
           <HomeScreen 
-              onNavigate={navigateTo} 
-              personalRoutines={personalRoutines}
-              onToggleCompletion={handleToggleCompletion}
-              initialUserInfo={{
-                  name: UserInfo.name,
-                  username: UserInfo.email.split('@')[0],
-                  profileImage: UserInfo.avatar,
-                  bio: UserInfo.bio,
-              }} 
+            onNavigate={navigateTo} 
+            personalRoutines={personalRoutines}
+            onToggleCompletion={handleToggleCompletion}
+            initialUserInfo={{
+                name: UserInfo.name,
+                username: UserInfo.email.split('@')[0],
+                profileImage: UserInfo.avatar,
+                bio: UserInfo.bio,
+            }} 
+            participatingGroups={groups}   
           />
         );
     }

@@ -7,6 +7,7 @@ import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 import { Calendar, Target, Trophy, Users, Camera, CheckCircle, Plus, TrendingUp, Clock, Heart, MessageCircle, Flame, ChevronLeft, ChevronRight, X } from 'lucide-react';
 import { ImageWithFallback } from './figma/ImageWithFallback';
 import { getStreakInfo, getStreakMessage } from './utils/streakUtils';
+import { Group, Member } from './GroupScreen'; // Group 및 Member 인터페이스 가져오기
 
 const getTodayDayOfWeek = () => {
   const dayOfWeek = ['일', '월', '화', '수', '목', '금', '토'];
@@ -33,25 +34,12 @@ interface UserInfo {
   bio: string;
 }
 
-
 interface HomeScreenProps {
   onNavigate: (screen: string, params?: any) => void;
   initialUserInfo: UserInfo;
-  personalRoutines: Routine[]; // <--- 이 부분을 추가
-  onToggleCompletion: (routineId: number, isGroupRoutine?: boolean) => void; // <--- 이 부분을 추가
-}
-
-interface Member {
-  id: number;
-  name: string;
-  avatar: string;
-}
-
-interface Group {
-  id: number;
-  name: string;
-  members: number;
-  recentMembers: Member[];
+  personalRoutines: Routine[];
+  onToggleCompletion: (routineId: number, isGroupRoutine?: boolean) => void;
+  participatingGroups: Group[]; // 추가: 참여 중인 그룹 목록
 }
 
 interface VerificationPhoto {
@@ -62,7 +50,7 @@ interface VerificationPhoto {
   isPublic: boolean;
 }
 
-export function HomeScreen({ onNavigate, initialUserInfo, personalRoutines, onToggleCompletion }: HomeScreenProps) {
+export function HomeScreen({ onNavigate, initialUserInfo, personalRoutines, onToggleCompletion, participatingGroups }: HomeScreenProps) {
   const today = new Date();
   const todayString = today.toLocaleDateString('ko-KR', { month: 'long', day: 'numeric' });
 
@@ -79,29 +67,6 @@ export function HomeScreen({ onNavigate, initialUserInfo, personalRoutines, onTo
   const completedRoutines = todayRoutines.filter(routine => routine.completed).length;
   const totalRoutines = todayRoutines.length;
   const completionRate = totalRoutines > 0 ? Math.round((completedRoutines / totalRoutines) * 100) : 0;
-
-  // 참여 그룹 데이터
-  const participatingGroups: Group[] = [
-    {
-      id: 1,
-      name: '아침 운동 챌린지',
-      members: 12,
-      recentMembers: [
-        { id: 1, name: '김민수', avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=40&h=40&fit=crop&crop=face' },
-        { id: 2, name: '이지영', avatar: 'https://images.unsplash.com/photo-1494790108755-2616b95fcebf?w=40&h=40&fit=crop&crop=face' },
-        { id: 3, name: '박철수', avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=40&h=40&fit=crop&crop=face' }
-      ]
-    },
-    {
-      id: 2,
-      name: '독서 모임',
-      members: 8,
-      recentMembers: [
-        { id: 4, name: '정수현', avatar: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=40&h=40&fit=crop&crop=face' },
-        { id: 5, name: '최영호', avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=40&h=40&fit=crop&crop=face' }
-      ]
-    }
-  ];
 
   // 본인 인증 사진 그리드 데이터 (공개여부 추가)
   const myVerificationPhotos: VerificationPhoto[] = [
@@ -355,7 +320,7 @@ export function HomeScreen({ onNavigate, initialUserInfo, personalRoutines, onTo
                         // 개인 루틴
                         <button
                           onClick={(e) => toggleRoutineCompletion(routine.id, e)}
-                          className={`w-8 h-8 rounded-full flex items-center justify-center transition-colors  ${
+                          className={`w-8 h-8 rounded-full flex items-center justify-center transition-colors  ${
                             routine.completed
                               ? 'bg-green-500 hover:bg-green-600'
                               : 'border-2 border-border/60 hover:border-green-500'
@@ -370,7 +335,7 @@ export function HomeScreen({ onNavigate, initialUserInfo, personalRoutines, onTo
               ))
             ) : (
               <p className="text-sm text-center text-muted-foreground p-4">오늘은 루틴이 없어요!</p>
-          )}
+            )}
           </div>
         </CardContent>
       </Card>
@@ -385,46 +350,50 @@ export function HomeScreen({ onNavigate, initialUserInfo, personalRoutines, onTo
         </CardHeader>
         <CardContent className="pt-0">
           <div className="space-y-0">
-            {participatingGroups.map((group, index) => (
-              <div key={group.id}>
-                <div
-                  className={`flex items-center justify-between p-3 cursor-pointer hover:bg-accent/50 transition-colors ${
-                    index < participatingGroups.length - 1 ? 'border-b border-border/60' : ''
-                  }`}
-                  onClick={() => handleGroupClick(group)}
-                >
-                  <div className="flex items-center space-x-3 flex-1">
-                    <div className="flex -space-x-2 w-20">
-                      {group.recentMembers.slice(0, 3).map((member, memberIndex) => (
-                        <Avatar
-                          key={member.id}
-                          className="w-8 h-8 border-2 border-background cursor-pointer hover:scale-110 transition-transform"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleMemberClick(member);
-                          }}
-                        >
-                          <AvatarImage src={member.avatar} alt={member.name} />
-                          <AvatarFallback className="text-xs">{member.name.charAt(0)}</AvatarFallback>
-                        </Avatar>
-                      ))}
-                    </div>
-                    <div className='flex flex-col items-start ml-2'>
-                      <div className="text-sm font-medium text-foreground">{group.name}</div>
-                      <div className="text-xs text-foreground dark:opacity-75">{group.members}명 참여</div>
-                    </div>
-                  </div>
-
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    className="text-foreground hover:text-foreground"
+            {participatingGroups.length > 0 ? (
+              participatingGroups.map((group, index) => (
+                <div key={group.id}>
+                  <div
+                    className={`flex items-center justify-between p-3 cursor-pointer hover:bg-accent/50 transition-colors ${
+                      index < participatingGroups.length - 1 ? 'border-b border-border/60' : ''
+                    }`}
+                    onClick={() => handleGroupClick(group)}
                   >
-                    보기
-                  </Button>
+                    <div className="flex items-center space-x-3 flex-1">
+                      <div className="flex -space-x-2 w-20">
+                        {group.recentMembers && group.recentMembers.slice(0, 3).map((member, memberIndex) => (
+                          <Avatar
+                            key={member.id}
+                            className="w-8 h-8 border-2 border-background cursor-pointer hover:scale-110 transition-transform"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleMemberClick(member);
+                            }}
+                          >
+                            <AvatarImage src={member.avatar} alt={member.name} />
+                            <AvatarFallback className="text-xs">{member.name.charAt(0)}</AvatarFallback>
+                          </Avatar>
+                        ))}
+                      </div>
+                      <div className='flex flex-col items-start ml-2'>
+                        <div className="text-sm font-medium text-foreground">{group.name}</div>
+                        <div className="text-xs text-foreground dark:opacity-75">{group.members}명 참여</div>
+                      </div>
+                    </div>
+
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      className="text-foreground hover:text-foreground"
+                    >
+                      보기
+                    </Button>
+                  </div>
                 </div>
-              </div>
-            ))}
+              ))
+            ) : (
+              <p className="text-sm text-center text-muted-foreground p-4">아직 참여 중인 그룹이 없어요.</p>
+            )}
           </div>
         </CardContent>
       </Card>
@@ -453,15 +422,15 @@ export function HomeScreen({ onNavigate, initialUserInfo, personalRoutines, onTo
                     className="w-full h-full object-cover"
                   />
                   <div className="absolute inset-0 bg-black/20 opacity-0 hover:opacity-100 transition-opacity flex items-end">
-                    <div className="p-2 w-full">
-                      <div className="text-white text-xs font-medium truncate">
-                        {photo.routine}
-                      </div>
+                    <div className="p-2">
+                      <span className="text-xs text-white bg-black/50 px-2 py-1 rounded">
+                        {photo.date}
+                      </span>
                     </div>
                   </div>
                 </div>
-                <div className="text-center">
-                  <span className="text-xs text-foreground dark:opacity-75">{photo.date}</span>
+                <div className="text-xs text-foreground font-medium text-center">
+                  {photo.routine}
                 </div>
               </div>
             ))}
@@ -469,55 +438,6 @@ export function HomeScreen({ onNavigate, initialUserInfo, personalRoutines, onTo
         </CardContent>
       </Card>
 
-      {/* 갤러리 모달 (조건부 렌더링) */}
-      {selectedPhotoIndex !== null && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80">
-          <div className="relative h-full w-full max-w-lg flex flex-col items-center justify-center">
-            {/* 닫기 버튼 */}
-            <Button
-              variant="ghost"
-              size="icon"
-              className="absolute top-4 right-4 z-50 text-white hover:bg-black/50 hover:text-white hover:border-none rounded-full"
-              onClick={handleCloseGallery}
-            >
-              <X className="h-6 w-6" />
-            </Button>
-            {/* 사진 */}
-            <div className="flex-1 w-full flex items-center justify-center p-4">
-              <ImageWithFallback
-                src={publicVerificationPhotos[selectedPhotoIndex].image}
-                alt={publicVerificationPhotos[selectedPhotoIndex].routine}
-                className="max-h-full max-w-full object-contain"
-              />
-            </div>
-            {/* 사진 정보 */}
-            <div className="absolute bottom-16 w-full text-center text-white text-lg font-semibold">
-              {publicVerificationPhotos[selectedPhotoIndex].routine}
-            </div>
-            {/* 탐색 버튼 */}
-            <div className="absolute inset-y-0 flex items-center justify-between w-full px-6">
-              <Button
-                variant="ghost"
-                size="icon"
-                className="text-white opacity-80 rounded-full hover:bg-black/50  hover:text-white hover:border-none"
-                onClick={handlePrevPhoto}
-                disabled={selectedPhotoIndex === 0}
-              >
-                <ChevronLeft className="h-10 w-10" />
-              </Button>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="text-white opacity-80 rounded-full hover:bg-black/50  hover:text-white hover:border-none"
-                onClick={handleNextPhoto}
-                disabled={selectedPhotoIndex === publicVerificationPhotos.length - 1}
-              >
-                <ChevronRight className="h-10 w-10" />
-              </Button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
