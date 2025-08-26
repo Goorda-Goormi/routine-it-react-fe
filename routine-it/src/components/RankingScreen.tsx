@@ -32,7 +32,6 @@ export function RankingScreen({ groups }: { groups: Group[] }) {
     { id: 7, rank: 7, name: '윤태준', avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=40&h=40&fit=crop&crop=face', totalScore: 2080, streakDays: 26 }
   ];
 
-  // groups 데이터를 랭킹용으로 변환 (총점 등은 더미 값 넣기)
 // groups 기반 더미 점수 계산
 const groupRanking = groups
   .map((group) => ({
