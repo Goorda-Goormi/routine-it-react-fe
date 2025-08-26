@@ -8,20 +8,25 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 import { RadioGroup, RadioGroupItem } from './ui/radio-group';
 import { Switch } from './ui/switch';
 import { Badge } from './ui/badge';
-import { ArrowLeft, Clock, Users, Target, AlertCircle } from 'lucide-react';
+import { ArrowLeft, Clock, Users, Target, AlertCircle, CheckSquare } from 'lucide-react';
 import { Alert, AlertDescription } from './ui/alert';
 
 interface CreateGroupScreenProps {
   onBack: () => void;
-  onCreateGroup: (groupData: any) => void; // 새로운 그룹 데이터를 전달할 콜백 함수 추가
+  onCreateGroup: (groupData: any) => void;
 }
 
 export function CreateGroupScreen({ onBack, onCreateGroup }: CreateGroupScreenProps) {
+  // 루틴 관련 필드 추가
+  const daysOfWeek = ['월', '화', '수', '목', '금', '토', '일'];
   const [formData, setFormData] = useState({
     name: '',
     description: '',
     category: '',
-    type: 'optional', // 'optional' 또는 'mandatory'
+    difficulty: '쉬움', // 난이도 기본값
+    time: '09:00', // 시간 기본값
+    selectedDays: [], // 선택된 요일
+    type: 'optional',
     hasAlarm: false,
     alarmTime: '09:00',
     maxMembers: '30'
@@ -67,6 +72,28 @@ export function CreateGroupScreen({ onBack, onCreateGroup }: CreateGroupScreenPr
     }
   ];
 
+  const handleDayToggle = (day: string) => {
+    setFormData(prevData => {
+      const isSelected = prevData.selectedDays.includes(day);
+      const newSelectedDays = isSelected
+        ? prevData.selectedDays.filter(d => d !== day)
+        : [...prevData.selectedDays, day].sort((a, b) => daysOfWeek.indexOf(a) - daysOfWeek.indexOf(b));
+      return { ...prevData, selectedDays: newSelectedDays };
+    });
+  };
+
+  const getFrequencyText = () => {
+    if (formData.selectedDays.length === 0) return '요일 선택';
+    if (formData.selectedDays.length === 7) return '매일';
+    if (['토', '일'].every(day => formData.selectedDays.includes(day)) && formData.selectedDays.length === 2) {
+      return '주말';
+    }
+    if (['월', '화', '수', '목', '금'].every(day => formData.selectedDays.includes(day)) && formData.selectedDays.length === 5) {
+      return '평일';
+    }
+    return formData.selectedDays.join(', ');
+  };
+
   const validateForm = () => {
     const newErrors: { [key: string]: string } = {};
 
@@ -86,6 +113,14 @@ export function CreateGroupScreen({ onBack, onCreateGroup }: CreateGroupScreenPr
       newErrors.category = '카테고리를 선택해주세요';
     }
 
+    if (!formData.difficulty) {
+        newErrors.difficulty = '난이도를 선택해주세요';
+    }
+    
+    if (formData.selectedDays.length === 0) {
+        newErrors.selectedDays = '반복 주기를 1개 이상 선택해주세요';
+    }
+
     const maxMembers = parseInt(formData.maxMembers);
     if (isNaN(maxMembers) || maxMembers < 2 || maxMembers > 50) {
       newErrors.maxMembers = '최대 인원은 2명~50명 사이로 설정해주세요';
@@ -102,7 +137,7 @@ export function CreateGroupScreen({ onBack, onCreateGroup }: CreateGroupScreenPr
 
     const newGroup = {
       ...formData,
-      id: Date.now(), // 고유 ID 생성
+      id: Date.now(),
       type: formData.type === 'mandatory' ? '의무참여' : '자유참여',
       alarmTime: formData.hasAlarm ? formData.alarmTime : null,
       maxMembers: parseInt(formData.maxMembers)
@@ -110,7 +145,7 @@ export function CreateGroupScreen({ onBack, onCreateGroup }: CreateGroupScreenPr
 
     console.log('그룹 생성:', newGroup);
 
-    onCreateGroup(newGroup); // 새 그룹 데이터를 GroupScreen으로 전달
+    onCreateGroup(newGroup);
     onBack();
   };
 
@@ -222,6 +257,75 @@ export function CreateGroupScreen({ onBack, onCreateGroup }: CreateGroupScreenPr
               </Select>
               {errors.category && (
                 <p className="text-xs text-destructive">{errors.category}</p>
+              )}
+            </div>
+            
+          </CardContent>
+        </Card>
+
+        {/* 루틴 정보 (새로 추가된 부분) */}
+        <Card>
+          <CardHeader className="pb-4">
+            <CardTitle className="text-base text-card-foreground flex items-center space-x-2">
+              <CheckSquare className="h-4 w-4 icon-accent" />
+              <span>루틴 정보</span>
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {/* 난이도 선택 */}
+            <div className="space-y-2">
+              <Label htmlFor="difficulty" className="text-card-foreground">난이도</Label>
+              <Select 
+                value={formData.difficulty} 
+                onValueChange={(value) => setFormData({...formData, difficulty: value})}
+              >
+                <SelectTrigger className={`bg-input-background border-border text-foreground ${errors.difficulty ? 'border-destructive' : ''}`}>
+                  <SelectValue placeholder="난이도를 선택하세요" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="쉬움">쉬움</SelectItem>
+                  <SelectItem value="보통">보통</SelectItem>
+                  <SelectItem value="어려움">어려움</SelectItem>
+                </SelectContent>
+              </Select>
+              {errors.difficulty && (
+                <p className="text-xs text-destructive">{errors.difficulty}</p>
+              )}
+            </div>
+
+            {/* 시간 선택 */}
+            <div className="space-y-2">
+              <Label htmlFor="time" className="text-card-foreground">시간</Label>
+              <Input
+                id="time"
+                type="time"
+                value={formData.time}
+                onChange={(e) => setFormData({...formData, time: e.target.value})}
+                className="bg-input-background border-border text-foreground"
+              />
+            </div>
+
+            {/* 반복 주기 */}
+            <div className="space-y-2">
+              <Label className="text-card-foreground">
+                반복 주기 <span className="text-sm text-muted-foreground ml-2">{getFrequencyText()}</span>
+              </Label>
+              <div className="flex flex-wrap gap-2 pt-2">
+                {daysOfWeek.map((day) => (
+                  <Button
+                    key={day}
+                    variant={formData.selectedDays.includes(day) ? 'default' : 'outline'}
+                    onClick={() => handleDayToggle(day)}
+                    className={`w-10 h-10 rounded-full text-card-foreground ${
+                      formData.selectedDays.includes(day) ? 'bg-primary text-primary-foreground' : 'bg-background border-border'
+                    } hover:bg-accent hover:text-card-foreground`}
+                  >
+                    {day}
+                  </Button>
+                ))}
+              </div>
+              {errors.selectedDays && (
+                <p className="text-xs text-destructive">{errors.selectedDays}</p>
               )}
             </div>
           </CardContent>
@@ -361,10 +465,27 @@ export function CreateGroupScreen({ onBack, onCreateGroup }: CreateGroupScreenPr
                   <p className="text-xs text-muted-foreground mb-2">{formData.description}</p>
                 )}
 
-                <div className="flex items-center justify-between text-xs text-muted-foreground">
-                  <span>{getCategoryEmoji(formData.category)} {getCategoryName(formData.category)}</span>
-                  <span>👥 최대 {formData.maxMembers}명</span>
-                  {formData.hasAlarm && <span>⏰ {formData.alarmTime}</span>}
+                <div className="flex items-center justify-between text-xs text-muted-foreground flex-wrap gap-y-1">
+                  <span className="flex items-center gap-1">
+                    {getCategoryEmoji(formData.category)} {getCategoryName(formData.category)}
+                  </span>
+                  <span className="flex items-center gap-1">
+                    <Users className="w-3 h-3" /> 최대 {formData.maxMembers}명
+                  </span>
+                  <span className="flex items-center gap-1">
+                    <Target className="w-3 h-3" /> {formData.difficulty}
+                  </span>
+                  <span className="flex items-center gap-1">
+                    <Clock className="w-3 h-3" /> {formData.time}
+                  </span>
+                  <span className="flex items-center gap-1">
+                    <CheckSquare className="w-3 h-3" /> {getFrequencyText()}
+                  </span>
+                  {formData.hasAlarm && (
+                    <span className="flex items-center gap-1">
+                      <Clock className="w-3 h-3" /> 알림: {formData.alarmTime}
+                    </span>
+                  )}
                 </div>
               </div>
             </CardContent>

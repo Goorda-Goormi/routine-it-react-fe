@@ -335,36 +335,46 @@ export default function App() {
   
   // 그룹을 추가하는 함수
   const handleAddGroup = (newGroupData: any) => {
-    const newGroup = {
-      ...newGroupData,
-      id: Date.now(),
-      members: 1,
-      progress: 0,
-      isOwner: true,
-      time: newGroupData.hasAlarm ? newGroupData.alarmTime : '언제든',
-      owner: UserInfo.name,
-      recentMembers: [
-        { id: Date.now(), name: UserInfo.name, avatar: UserInfo.avatar }
-      ],
-      routines: [ // 새로운 그룹에 기본 루틴 추가
-        {
-          id: Date.now(),
-          name: newGroupData.name,
-          description: newGroupData.description,
-          time: newGroupData.hasAlarm ? newGroupData.alarmTime : '언제든',
-          frequency: newGroupData.frequency,
-          reminder: newGroupData.hasAlarm,
-          goal: newGroupData.goal,
-          category: newGroupData.category,
-          completed: false,
-          streak: 0,
-          difficulty: newGroupData.difficulty,
-          isGroupRoutine: true, // 그룹 루틴임을 명시
-        }
-      ]
-    };
-    setGroups(prev => [newGroup, ...prev]);
+  const newGroup = {
+    ...newGroupData,
+    id: Date.now(),
+    members: 1,
+    progress: 0,
+    isOwner: true,
+    time: newGroupData.time, // 이 부분은 이미 잘 적용되고 있습니다.
+    owner: UserInfo.name,
+    recentMembers: [
+      { id: Date.now(), name: UserInfo.name, avatar: UserInfo.avatar }
+    ],
+    routines: [ // 새로운 그룹에 기본 루틴 추가
+      {
+        id: Date.now(),
+        name: newGroupData.name,
+        description: newGroupData.description,
+        time: newGroupData.time, // 그룹의 루틴에도 time 적용
+        frequency: newGroupData.selectedDays, // 'frequency'로 변경
+        reminder: newGroupData.hasAlarm, // 'reminder'에 hasAlarm 적용
+        goal: newGroupData.goal, // goal 필드 추가 필요
+        category: newGroupData.category,
+        completed: false,
+        streak: 0,
+        difficulty: newGroupData.difficulty,
+        isGroupRoutine: true,
+      }
+    ]
   };
+  setGroups(prev => [newGroup, ...prev]);
+};
+
+
+const handleUpdateGroup = (updatedGroup: Group) => {
+  setGroups(prevGroups =>
+    prevGroups.map(group =>
+      group.id === updatedGroup.id ? { ...group, ...updatedGroup } : group
+    )
+  );
+};
+
 
   const handleUpdateRoutine = (updatedRoutine: Routine) => {
     if (updatedRoutine.isGroupRoutine) {
@@ -448,6 +458,7 @@ export default function App() {
               group={currentScreen.params}
               onBack={navigateBack}
               onNavigate={navigateTo}
+             
             />
           );
         case "profile-edit":
