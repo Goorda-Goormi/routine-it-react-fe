@@ -65,9 +65,9 @@ export const GroupDetailHeader = ({
   };
 
   return (
-    <div className="sticky top-0 z-10 bg-background/95 backdrop-blur border-b border-b-[var(--color-border-bottom-custom)] p-4">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center space-x-3">
+    <div className="sticky top-0 z-10 bg-background/95 backdrop-blur ">
+      <div className="flex items-center justify-between backdrop-blur  p-4 border-b border-b-[var(--color-border-bottom-custom)]">
+        <div className="flex items-center space-x-3 ">
           <Button variant="ghost" size="sm" onClick={onBack} className="p-1">
             <ArrowLeft className="h-5 w-5 text-icon-secondary dark:text-white" />
           </Button>
@@ -88,12 +88,10 @@ export const GroupDetailHeader = ({
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
               <DropdownMenuItem onClick={() => handleMenuClick('edit')}>그룹 정보 편집</DropdownMenuItem>
-              {group.type === '의무참여' && isLeader && (
-                <>
+              
                   <DropdownMenuSeparator />
                   <DropdownMenuItem onClick={() => handleMenuClick('approval')}>인증 승인 / 반려</DropdownMenuItem>
-                </>
-              )}
+                
               <DropdownMenuSeparator />
               <DropdownMenuItem onClick={() => handleMenuClick('ex-members')}>멤버 관리하기</DropdownMenuItem>
             </DropdownMenuContent>

@@ -22,7 +22,8 @@ export function GroupDetailScreen({
   onNavigate,
   onUpdateGroup,
 }: GroupDetailScreenProps){
-  const [isJoined, setIsJoined] = useState(true);
+  //const [isJoined, setIsJoined] = useState(true);
+   const [isJoined, setIsJoined] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [showExMembersModal, setShowExMembersModal] = useState(false);
   const [showApprovalModal, setShowApprovalModal] = useState(false);
