@@ -418,7 +418,7 @@ export default function App() {
                   onNewGroup={handleAddGroup} 
                 />
       case "ranking":
-        return <RankingScreen />;
+      return <RankingScreen groups={groups} />;
       case "mypage":
         return (
           <MyPageScreen
