@@ -42,8 +42,7 @@ interface RoutineScreenProps {
 export function RoutineScreen({ onNavigate, allRoutines, recommendedRoutines, onToggleCompletion, onAddRecommendedRoutine, onOpenAttendanceModal, onOpenStreakModal, onOpenBadgeModal }: RoutineScreenProps) {
   const [activeFilter, setActiveFilter] = useState('today');
   const todayDay = getTodayDayOfWeek();
-
-  // [수정] Props로 받은 allRoutines를 바로 필터링하여 사용
+ 
   const todayRoutines = allRoutines.filter(routine => {
     if (routine.frequency && Array.isArray(routine.frequency)) {
       return routine.frequency.includes(todayDay);
@@ -103,7 +102,7 @@ export function RoutineScreen({ onNavigate, allRoutines, recommendedRoutines, on
           className="w-auto h-8 rounded-full flex items-center justify-center transition-colors px-2 py-1 text-xs text-foreground border border-border/60 hover:bg-accent"
         >
           <span className="flex items-center">
-            <Camera className="h-3 w-3 mr-1 text-foreground/70" />
+            {routine.type === '의무참여' && <Camera className="h-3 w-3 mr-1 text-foreground/70" />}
             인증
           </span>
         </button>

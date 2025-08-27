@@ -24,6 +24,8 @@ export interface Routine {
   difficulty?: string;
   isGroupRoutine?: boolean;
   frequency?: string[];
+  type?: string;
+  isOwner?: boolean;
 }
 
 export interface Member {
@@ -344,7 +346,7 @@ export function HomeScreen({ onNavigate, initialUserInfo, personalRoutines, onTo
                             className={`w-auto h-8 rounded-full flex items-center justify-center transition-colors px-3 py-1 text-xs text-foreground border-2 border-border/60 hover:bg-accent`}
                           >
                             <span className='flex items-center'>
-                              <Camera className="h-4 w-4 mr-1 text-foreground/70" />
+                              {routine.type === '의무참여' && <Camera className="h-4 w-4 mr-1 text-foreground/70" />}
                               인증
                             </span>
                           </button>

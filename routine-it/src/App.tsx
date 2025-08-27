@@ -35,6 +35,7 @@ export interface Routine {
   streak: number;
   difficulty: string;
   isGroupRoutine?: boolean;
+  type?: string;
 }
 
 export interface Group {
