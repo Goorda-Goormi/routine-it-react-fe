@@ -82,6 +82,7 @@ export default function App() {
   const [isAttendanceModalOpen, setAttendanceModalOpen] = useState(false);
   const [isStreakModalOpen, setStreakModalOpen] = useState(false);
   
+  
   const [isBadgeModalOpen, setBadgeModalOpen] = useState(false);
   const [badgeName, setBadgeName] = useState('');
   const [badgeImage, setBadgeImage] = useState('');
@@ -779,7 +780,7 @@ const handleUpdateGroup = (updatedGroup: Group) => {
                   onNavigate={navigateTo} 
                   groups={groups} 
                   myGroups={groups}   // 임시로 참여중 그룹 = 전체 그룹
-                  onNewGroup={handleAddGroup} 
+                  onNewGroup={() => navigateTo("create-group")}
                   onJoinGroup={handleJoinGroup}
                 />
       case "ranking":
