@@ -17,6 +17,10 @@ import { SettingsScreen } from "./components/SettingsScreen";
 import { HelpScreen } from "./components/HelpScreen";
 import { UserHomeScreen } from "./pages/Home/UserHomeScreen";
 import type { RecommendedRoutine } from "./pages/Routine/RoutineScreen";
+import { AttendanceModal } from './components/modules/AttendanceModal';
+import { StreakModal } from './components/modules/StreakModal';
+import { getStreakInfo } from './components/utils/streakUtils';
+import { AchievementBadgeModal } from './components/modules/AchievementBadgeModal';
 
 export interface Routine {
   id: number;
@@ -60,6 +64,8 @@ interface NavigationState {
   params?: any;
 }
 
+type BadgeType = '첫걸음' | '7일 연속' | '루틴 마스터' | '월간 챔피언';
+
 export default function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [activeTab, setActiveTab] = useState("home");
@@ -72,6 +78,73 @@ export default function App() {
     }
     return false;
   });
+  const [isAttendanceModalOpen, setAttendanceModalOpen] = useState(false);
+  const [isStreakModalOpen, setStreakModalOpen] = useState(false);
+  
+  const [isBadgeModalOpen, setBadgeModalOpen] = useState(false);
+  const [badgeName, setBadgeName] = useState('');
+  const [badgeImage, setBadgeImage] = useState('');
+  const [pendingBadges, setPendingBadges] = useState<{ name: string; image: string; }[]>([]);
+  const [lastCompletionDate, setLastCompletionDate] = useState<string | null>(() => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('lastCompletionDate');
+    }
+    return null;
+  });
+
+  // 루틴 완료 횟수 및 획득 뱃지 상태 (localStorage에 저장)
+  const [routineCompletionCount, setRoutineCompletionCount] = useState<number>(() => {
+    return Number(localStorage.getItem('routineCompletionCount')) || 0;
+  });
+  const [attendanceCount, setAttendanceCount] = useState(() => {
+    const savedCount = localStorage.getItem('attendanceCount');
+    return savedCount ? Number(savedCount) : 0;
+  });
+  const [earnedBadges, setEarnedBadges] = useState<BadgeType[]>(() => {
+    const storedBadges = localStorage.getItem('earnedBadges');
+    return storedBadges ? JSON.parse(storedBadges) : [];
+  });
+  
+  // 스트릭 일수 상태 (AttendanceModal과 연동되어야 함)
+  const [streakDays, setStreakDays] = useState(() => {
+    const savedStreak = localStorage.getItem('streakDays');
+    return savedStreak ? Number(savedStreak) : 0;
+  });
+
+  const badgeInfo = {
+    '첫걸음': {
+      image: 'https://i.ibb.co/6P0D6kX/first-step-badge.png',
+      message: '첫 번째 루틴 완료를 축하합니다!'
+    },
+    '7일 연속': {
+      image: 'https://i.ibb.co/wJv0P2H/7-day-streak-badge.png',
+      message: '7일 연속 출석! 당신의 꾸준함을 응원합니다!'
+    },
+    '루틴 마스터': {
+      image: 'https://i.ibb.co/hK8xN2Y/routine-master-badge.png',
+      message: '총 100개 루틴을 완료했습니다! 당신은 진정한 루틴 마스터!'
+    },
+    '월간 챔피언': {
+      image: 'https://i.ibb.co/5c9dK9y/monthly-champion-badge.png',
+      message: '이번 달 30번 출석! 루틴잇 월간 챔피언입니다!'
+    }
+  };
+
+  // 뱃지 획득 조건을 확인하고 모달을 띄우는 함수
+  // const checkAndShowBadge = (badge: BadgeType, conditionMet: boolean) => {
+  //   if (conditionMet && !earnedBadges.includes(badge)) {
+  //     setBadgeName(badge);
+  //     setBadgeImage(badgeInfo[badge].image);
+  //     setBadgeModalOpen(true);
+
+  //     // 뱃지 획득 목록에 추가하고 localStorage에 저장
+  //     const newEarnedBadges = [...earnedBadges, badge];
+  //     setEarnedBadges(newEarnedBadges);
+  //     localStorage.setItem('earnedBadges', JSON.stringify(newEarnedBadges));
+  //   }
+  // };
+
+
   const [UserInfo, setUserInfo] = useState({
       name: '구르미',
       email: 'goormida@example.com',
@@ -480,23 +553,54 @@ const handleUpdateGroup = (updatedGroup: Group) => {
   };
 
   const handleToggleCompletion = (routineId: number, isGroupRoutine?: boolean) => {
+    let isCompleted = false;
+
     if (isGroupRoutine) {
-        setGroups(prevGroups => 
-          prevGroups.map(group => ({
-            ...group,
-            routines: group.routines?.map(routine =>
-            routine.id === routineId ? { ...routine, completed: !routine.completed } : routine
-            ),
-          }))
-        );
+    setGroups(prevGroups => {
+      const updatedGroups = prevGroups.map(group => ({
+        ...group,
+        routines: group.routines?.map(routine => {
+          if (routine.id === routineId) {
+            // 루틴 완료 상태를 확인하여 변수에 저장
+            isCompleted = !routine.completed;
+            return { ...routine, completed: !routine.completed };
+          }
+          return routine;
+        }),
+      }));
+      if (isCompleted) {
+          // 루틴 완료 횟수 증가 및 localStorage 업데이트
+          const newRoutineCount = routineCompletionCount + 1;
+          setRoutineCompletionCount(newRoutineCount);
+          localStorage.setItem('routineCompletionCount', String(newRoutineCount));
+
+      }
+      return updatedGroups;
+    });
     } else {
-        setPersonalRoutines(prev =>
-          prev.map(routine =>
-            routine.id === routineId ? { ...routine, completed: !routine.completed } : routine
-          )
-        );
-    }
-  };
+    setPersonalRoutines(prev => {
+      const updatedRoutines = prev.map(routine => {
+        if (routine.id === routineId) {
+          // 루틴 완료 상태를 확인하여 변수에 저장
+          isCompleted = !routine.completed;
+          return { ...routine, completed: !routine.completed };
+        }
+        return routine;
+      });
+      // 루틴 완료 시에만 상태를 업데이트하고, isCompleted를 true로 설정합니다.
+      if (isCompleted) {
+        // AttendanceModal을 띄우는 함수 호출
+        handleOpenAttendanceModal();
+
+        // 루틴 완료 횟수 증가 및 localStorage 업데이트
+        const newRoutineCount = routineCompletionCount + 1;
+        setRoutineCompletionCount(newRoutineCount);
+        localStorage.setItem('routineCompletionCount', String(newRoutineCount));
+      }
+      return updatedRoutines;
+    });
+  }
+};
 
   const handleAddRecommendedRoutine = (recommendedRoutine: RecommendedRoutine) => {
     // 추천 루틴 데이터를 기반으로 새로운 루틴 객체 생성
@@ -644,13 +748,17 @@ const handleUpdateGroup = (updatedGroup: Group) => {
             onNavigate={navigateTo} 
             personalRoutines={personalRoutines}
             onToggleCompletion={handleToggleCompletion}
+            streakDays={streakDays}
             initialUserInfo={{
                 name: UserInfo.name,
                 username: UserInfo.email.split('@')[0],
                 profileImage: UserInfo.avatar,
                 bio: UserInfo.bio,
             }} 
-            participatingGroups={groups}   
+            participatingGroups={groups}
+            onOpenAttendanceModal={handleOpenAttendanceModal}
+            onOpenStreakModal={handleOpenStreakModal}
+            onOpenBadgeModal={handleOpenBadgeModal}   
           />
         );
       case "routine":
@@ -661,6 +769,9 @@ const handleUpdateGroup = (updatedGroup: Group) => {
           recommendedRoutines={recommendedRoutines}
           onToggleCompletion={handleToggleCompletion}
           onAddRecommendedRoutine={handleAddRecommendedRoutine}
+          onOpenAttendanceModal={handleOpenAttendanceModal}
+          onOpenStreakModal={handleOpenStreakModal}
+          onOpenBadgeModal={handleOpenBadgeModal}
         />;
       case "group":
         return <GroupScreen 
@@ -689,6 +800,7 @@ const handleUpdateGroup = (updatedGroup: Group) => {
             onNavigate={navigateTo} 
             personalRoutines={personalRoutines}
             onToggleCompletion={handleToggleCompletion}
+            streakDays={streakDays}
             initialUserInfo={{
                 name: UserInfo.name,
                 username: UserInfo.email.split('@')[0],
@@ -696,8 +808,112 @@ const handleUpdateGroup = (updatedGroup: Group) => {
                 bio: UserInfo.bio,
             }} 
             participatingGroups={groups}   
+            onOpenAttendanceModal={handleOpenAttendanceModal}
+            onOpenStreakModal={handleOpenStreakModal}
+            onOpenBadgeModal={handleOpenBadgeModal}
           />
         );
+    }
+  };
+
+  const handleOpenAttendanceModal = () => {
+    const today = new Date().toDateString();
+    
+    // 루틴 완료 시 호출
+    if (lastCompletionDate !== today) {
+    setAttendanceModalOpen(true);
+    setLastCompletionDate(today);
+    localStorage.setItem('lastCompletionDate', today);
+  }
+};
+
+  const handleOpenStreakModal = (streakDays: number) => {
+    // 특정 누적일 달성 시 호출
+    setStreakModalOpen(true);
+  };
+  
+  const handleOpenBadgeModal = (badgeName: string, badgeImage: string) => {
+    // 배지 획득 시 호출
+    setBadgeModalOpen(true);
+  };
+
+  const handleNextModalSequence = (currentStreak: number, currentAttendance: number) => {
+    
+    // 1. 스트릭 모달 조건 검사 (누적 출석 모달)
+    const streakMilestones = [7, 30, 90, 180, 365];
+    if (streakMilestones.includes(currentStreak)) {
+        setStreakModalOpen(true);
+    } 
+    // 2. 배지 모달 조건 검사 (성취 배지 모달)
+    else {
+        checkAndShowAllBadges(currentStreak, currentAttendance);
+    }
+  };
+
+  const checkAndShowAllBadges = (currentStreak: number, currentAttendance: number) => {
+    const badgesToShow = [];
+    
+    // 첫걸음 배지 조건 (첫 출석)
+    if (currentAttendance === 1) {
+        badgesToShow.push({ name: '첫걸음', image: '/images/badges/first-step.png' });
+    }
+    
+    // 7일 연속 배지 조건
+    if (currentStreak === 7) {
+        badgesToShow.push({ name: '7일 연속', image: '/images/badges/seven-day-streak.png' });
+    }
+    
+    // 월간 챔피언 배지 조건
+    if (currentAttendance === 30) {
+        badgesToShow.push({ name: '월간 챔피언', image: '/images/badges/monthly-champion.png' });
+    }
+    
+    // 만약 보여줄 배지가 있다면
+    if (badgesToShow.length > 0) {
+        // 첫 번째 배지 정보를 상태에 저장하고 모달을 엽니다.
+        const firstBadge = badgesToShow.shift();
+        if (firstBadge) {
+          setBadgeName(firstBadge.name);
+          setBadgeImage(firstBadge.image);
+          setBadgeModalOpen(true);
+          
+          // 다음 배지들이 있다면, 상태에 저장해 둡니다. (이후에 사용할 수 있도록)
+          setPendingBadges(badgesToShow);
+        }
+    }
+  };
+
+  const handleCloseAttendanceModal = () => {
+    setAttendanceModalOpen(false);
+
+    // 출석 인증 횟수 증가 및 localStorage 업데이트
+    const newAttendanceCount = attendanceCount + 1;
+    setAttendanceCount(newAttendanceCount);
+    localStorage.setItem('attendanceCount', String(newAttendanceCount));
+
+    // 스트릭 일수 증가 및 localStorage 업데이트
+    const newStreakDays = streakDays + 1;
+    setStreakDays(newStreakDays);
+    localStorage.setItem('streakDays', String(newStreakDays));
+
+    handleNextModalSequence(newStreakDays, newAttendanceCount);
+  };
+
+  const handleCloseStreakModal = () => {
+    setStreakModalOpen(false);
+    checkAndShowAllBadges(streakDays, attendanceCount);
+  };
+
+  const handleCloseBadgeModal = () => {
+    setBadgeModalOpen(false);
+    if (pendingBadges.length > 0) {
+        const nextBadge = pendingBadges.shift();
+        if (nextBadge) {
+          setBadgeName(nextBadge.name);
+          setBadgeImage(nextBadge.image);
+          setBadgeModalOpen(true);
+          setPendingBadges(pendingBadges);
+        }
     }
   };
 
@@ -738,6 +954,23 @@ const handleUpdateGroup = (updatedGroup: Group) => {
           </>
         )}
       </div>
+      <AttendanceModal
+        isOpen={isAttendanceModalOpen}
+        onClose={handleCloseAttendanceModal}
+      />
+
+      <StreakModal
+        isOpen={isStreakModalOpen}
+        onClose={handleCloseStreakModal}
+        streakDays={streakDays}
+      />
+
+      <AchievementBadgeModal
+        isOpen={isBadgeModalOpen}
+        onClose={handleCloseBadgeModal}
+        badgeName={badgeName}
+        badgeImage={badgeImage}
+      />
     </div>
   );
 }

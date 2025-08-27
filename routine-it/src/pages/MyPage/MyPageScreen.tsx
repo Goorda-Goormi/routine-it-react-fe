@@ -152,7 +152,7 @@ export function MyPageScreen({ onNavigate, isDarkMode, onToggleDarkMode, user }:
       earned: true, 
       date: '2024.01.15',
       icon: Zap,
-      bgColor: 'bg-amber-500/70',
+      bgColor: 'bg-amber-200/70',
       borderColor: 'border-amber-200/50',
       textColor: 'text-amber-800',
       subTextColor: 'text-amber-700'
@@ -164,7 +164,7 @@ export function MyPageScreen({ onNavigate, isDarkMode, onToggleDarkMode, user }:
       earned: true, 
       date: '2024.01.22',
       icon: Heart,
-      bgColor: 'bg-green-500/70',
+      bgColor: 'bg-lime-600/30',
       borderColor: 'border-green-200/50',
       textColor: 'text-green-800',
       subTextColor: 'text-green-700'
@@ -176,7 +176,7 @@ export function MyPageScreen({ onNavigate, isDarkMode, onToggleDarkMode, user }:
       earned: true, 
       date: '2024.03.10',
       icon: Shield,
-      bgColor: 'bg-blue-500/70',
+      bgColor: 'bg-blue-300/60',
       borderColor: 'border-blue-200/50',
       textColor: 'text-blue-800',
       subTextColor: 'text-blue-700'
@@ -185,13 +185,13 @@ export function MyPageScreen({ onNavigate, isDarkMode, onToggleDarkMode, user }:
       id: 4, 
       name: '월간 챔피언', 
       description: '한 달 완주', 
-      earned: false, 
-      date: null,
+      earned: true, 
+      date: '2024.05.30',
       icon: Trophy,
-      bgColor: 'bg-gray-300/70',
-      borderColor: 'border-gray-300/50',
-      textColor: 'text-gray-700',
-      subTextColor: 'text-gray-600'
+      bgColor: 'bg-red-300/60',
+      borderColor: 'border-red-300/50',
+      textColor: 'text-red-800',
+      subTextColor: 'text-red-600'
     }
   ];
 
@@ -361,26 +361,36 @@ export function MyPageScreen({ onNavigate, isDarkMode, onToggleDarkMode, user }:
             {achievements.map((achievement) => {
               const IconComponent = achievement.icon;
               return (
-                <Card key={achievement.id} className={`${achievement.bgColor} ${achievement.borderColor}`}>
-                  <CardContent className="p-4">
-                    <div className="flex items-start space-x-3">
-                      <div className={`flex items-center justify-center w-10 h-10 rounded-full ${
-                        achievement.earned ? 'bg-yellow-500' : 'bg-gray-400'
+                <Card 
+                  key={achievement.id} 
+                  className={
+                    achievement.earned 
+                      ? `${achievement.bgColor} ${achievement.borderColor}`
+                      : 'bg-gray-200/70 border-gray-300/50'
+                  }>
+                  <CardContent className="p-4 mt-1.5">
+                    <div className="flex items-start space-x-4.5">
+                      <div className={`flex items-center justify-center w-10 h-10 rounded-full border-2 ${
+                        achievement.earned ? 'bg-yellow-400 border-yellow-500/80' : 'bg-gray-300 border-gray-400/40'
                       }`}>
                         <IconComponent className="h-5 w-5 text-white" />
                       </div>
-                      <div className="flex-1 min-w-0">
-                        <div className={`text-sm font-medium ${achievement.textColor} truncate`}>
+                      <div className="flex flex-col items-start min-w-0">
+                        <div className={`text-sm font-medium truncate ${
+                          achievement.earned ? achievement.textColor : 'text-gray-700'
+                        }`}>
                           {achievement.name}
                         </div>
-                        <div className={`text-xs ${achievement.subTextColor} mb-1`}>
+                        <div className={`text-xs mb-1 ${
+                          achievement.earned ? achievement.subTextColor : 'text-gray-600'
+                        }`}>
                           {achievement.description}
                         </div>
-                        {achievement.earned && achievement.date && (
-                          <div className={`text-xs ${achievement.subTextColor}`}>
-                            {achievement.date}
-                          </div>
-                        )}
+                        <div className={`text-xs ${
+                          achievement.earned ? achievement.subTextColor : 'text-gray-600'
+                        }`}>
+                          {achievement.earned && achievement.date ? achievement.date : '미획득'}
+                        </div>
                       </div>
                     </div>
                   </CardContent>

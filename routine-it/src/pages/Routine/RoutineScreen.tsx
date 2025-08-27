@@ -34,9 +34,12 @@ interface RoutineScreenProps {
   recommendedRoutines: RecommendedRoutine[]; // [수정] App.tsx로부터 추천 루틴 데이터를 Props로 받도록 추가
   onToggleCompletion: (routineId: number, isGroupRoutine?: boolean) => void;
   onAddRecommendedRoutine: (routine: RecommendedRoutine) => void;
+  onOpenAttendanceModal: () => void;
+  onOpenStreakModal: (streakDays: number) => void;
+  onOpenBadgeModal: (badgeName: string, badgeImage: string) => void;
 }
 
-export function RoutineScreen({ onNavigate, allRoutines, recommendedRoutines, onToggleCompletion, onAddRecommendedRoutine }: RoutineScreenProps) {
+export function RoutineScreen({ onNavigate, allRoutines, recommendedRoutines, onToggleCompletion, onAddRecommendedRoutine, onOpenAttendanceModal, onOpenStreakModal, onOpenBadgeModal }: RoutineScreenProps) {
   const [activeFilter, setActiveFilter] = useState('today');
   const todayDay = getTodayDayOfWeek();
 
@@ -95,6 +98,7 @@ export function RoutineScreen({ onNavigate, allRoutines, recommendedRoutines, on
           onClick={(e) => {
             e.stopPropagation();
             onToggleCompletion(routine.id, true);
+            onOpenAttendanceModal(); 
           }}
           className="w-auto h-8 rounded-full flex items-center justify-center transition-colors px-2 py-1 text-xs text-foreground border border-border/60 hover:bg-accent"
         >
@@ -110,6 +114,7 @@ export function RoutineScreen({ onNavigate, allRoutines, recommendedRoutines, on
           onClick={(e) => {
             e.stopPropagation();
             onToggleCompletion(routine.id);
+            onOpenAttendanceModal(); 
           }}
           className={`w-8 h-8 rounded-full flex items-center justify-center transition-colors m-0 border-0 ${
             routine.completed ? 'bg-green-500 hover:bg-green-600' : 'border-2 border-muted-foreground/60 hover:border-green-500'

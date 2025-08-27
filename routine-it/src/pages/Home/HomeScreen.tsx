@@ -53,7 +53,11 @@ interface HomeScreenProps {
   initialUserInfo: UserInfo;
   personalRoutines: Routine[];
   onToggleCompletion: (routineId: number, isGroupRoutine?: boolean) => void;
+  streakDays: number;
   participatingGroups: Group[]; // 추가: 참여 중인 그룹 목록
+  onOpenAttendanceModal: () => void;
+  onOpenStreakModal: (streakDays: number) => void;
+  onOpenBadgeModal: (badgeName: string, badgeImage: string) => void;
 }
 
 interface VerificationPhoto {
@@ -64,13 +68,13 @@ interface VerificationPhoto {
   isPublic: boolean;
 }
 
-export function HomeScreen({ onNavigate, initialUserInfo, personalRoutines, onToggleCompletion, participatingGroups }: HomeScreenProps) {
+export function HomeScreen({ onNavigate, initialUserInfo, personalRoutines, onToggleCompletion, streakDays, participatingGroups, onOpenAttendanceModal, onOpenStreakModal, onOpenBadgeModal }: HomeScreenProps) {
   const today = new Date();
   const todayString = today.toLocaleDateString('ko-KR', { month: 'long', day: 'numeric' });
 
   // 연속 출석일 (예시 데이터)
-  const currentStreak = 365;
-  const streakInfo = getStreakInfo(currentStreak);
+  const currentStreak = 0;
+  const streakInfo = getStreakInfo(streakDays);
 
   // 오늘의 루틴
   const todayDay = getTodayDayOfWeek();
@@ -252,7 +256,7 @@ export function HomeScreen({ onNavigate, initialUserInfo, personalRoutines, onTo
                 </div>
                 <div className="text-center">
                   <div className={`text-xl font-bold ${streakInfo.textColor}`}>
-                    {currentStreak}
+                    {streakDays}
                   </div>
                   <div className={`text-xs ${streakInfo.subTextColor}`}>
                     {streakInfo.stage}
@@ -333,7 +337,10 @@ export function HomeScreen({ onNavigate, initialUserInfo, personalRoutines, onTo
                         ) : (
                           // 미완료 그룹 루틴: 인증 버튼
                           <button
-                            onClick={(e) => toggleRoutineCompletion(routine.id, e)}
+                            onClick={(e) => {
+                              toggleRoutineCompletion(routine.id, e); 
+                              onOpenAttendanceModal();
+                            }} 
                             className={`w-auto h-8 rounded-full flex items-center justify-center transition-colors px-3 py-1 text-xs text-foreground border-2 border-border/60 hover:bg-accent`}
                           >
                             <span className='flex items-center'>
@@ -345,7 +352,10 @@ export function HomeScreen({ onNavigate, initialUserInfo, personalRoutines, onTo
                       ) : (
                         // 개인 루틴
                         <button
-                          onClick={(e) => toggleRoutineCompletion(routine.id, e)}
+                          onClick={(e) => {
+                              toggleRoutineCompletion(routine.id, e); 
+                              onOpenAttendanceModal();
+                            }} 
                           className={`w-8 h-8 rounded-full flex items-center justify-center transition-colors m-0 border-0 ${
                                 routine.completed
                                   ? 'bg-green-500 hover:bg-green-600'
