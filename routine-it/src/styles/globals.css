@@ -1223,4 +1223,14 @@
   .dark div {
     opacity: 1;
   }
+  
+  /* 스크롤바 숨기기 
+  .scrollbar-hide-group {
+    -ms-overflow-style: none; 
+    scrollbar-width: none; 
+  }
+
+  .scrollbar-hide-group::-webkit-scrollbar {
+    display: none;
+  }*/
 }
