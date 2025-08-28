@@ -14,9 +14,10 @@ interface GroupRoutineDialogProps {
   // 인증 완료 시 호출될 함수
   onAuthSubmit: (data: { description: string; image: File | null; isPublic: boolean }) => void;
   selectedRoutine: Routine | null; 
+  isMandatory: boolean;
 }
 
-export function GroupRoutineDialog({ isOpen, onOpenChange, onAuthSubmit }: GroupRoutineDialogProps) {
+export function GroupRoutineDialog({ isOpen, onOpenChange, onAuthSubmit,isMandatory }: GroupRoutineDialogProps) {
   const [authData, setAuthData] = useState({
     description: '',
     image: null as File | null,
@@ -31,6 +32,11 @@ export function GroupRoutineDialog({ isOpen, onOpenChange, onAuthSubmit }: Group
   };
 
   const handleSubmit = () => {
+     if (isMandatory && !authData.image) {
+        alert('의무 참여 그룹은 사진 인증이 필수입니다!');
+        return;
+    }
+    
     if (authData.description.trim()) {
       onAuthSubmit(authData);
       // 모달 닫기 전에 상태 초기화
@@ -59,7 +65,9 @@ export function GroupRoutineDialog({ isOpen, onOpenChange, onAuthSubmit }: Group
             />
           </div>
           <div>
-            <Label htmlFor="image" className="text-card-foreground">사진 첨부 (선택)</Label>
+            <Label htmlFor="image" className="text-card-foreground">
+              사진 첨부 ({isMandatory ? '필수' : '선택'})
+              </Label>
             <div className="mt-2">
               <input type="file" id="image" accept="image/*" onChange={handleImageSelect} className="hidden" />
               <Button
@@ -88,7 +96,7 @@ export function GroupRoutineDialog({ isOpen, onOpenChange, onAuthSubmit }: Group
           <Button 
             onClick={handleSubmit} 
             className="w-full bg-green-600 hover:bg-green-700 text-gray-700"
-            disabled={!authData.description.trim()}
+              disabled={!authData.description.trim() || (isMandatory && !authData.image)}
           >
             인증 완료
           </Button>

@@ -190,9 +190,10 @@ export function GroupChatScreen({ group, onBack, onAddAuthMessage }: GroupChatSc
       reactions: {},
     };
     setMessages((prevMessages) => [...prevMessages, authMessage]);
-    
+     
+    const routineId = group.routines?.[0]?.id || 0;
     // 2. props로 받은 onAddAuthMessage 함수를 호출하여 필요한 모든 데이터를 전달
-    onAddAuthMessage(group.id, data, myUserName);
+    onAddAuthMessage(group.id, data, myUserName, myUserId, routineId);
     
     setIsAuthDialogOpen(false);
   };
@@ -294,7 +295,13 @@ export function GroupChatScreen({ group, onBack, onAddAuthMessage }: GroupChatSc
       <GroupChatInput handleSendMessage={handleSendMessage} handleSendImage={handleSendImage} handleSendAlbum={handleSendAlbum} />
       
       {/* GroupRoutineDialog 모달을 조건부 렌더링 */}
-       <GroupRoutineDialog isOpen={isAuthDialogOpen} onOpenChange={setIsAuthDialogOpen} onAuthSubmit={handleAuthSubmit} />
+       <GroupRoutineDialog 
+       isOpen={isAuthDialogOpen} 
+       onOpenChange={setIsAuthDialogOpen} 
+       onAuthSubmit={handleAuthSubmit}
+       isMandatory={group.isMandatory}
+       selectedRoutine={group.routines?.[0] || null} 
+       />
     </div>
   );
 }

@@ -61,7 +61,7 @@ export function GroupChatMessages({ messages, myUserId, getUserInfo, handleReact
                     {msg.type === 'auth' && (
                       <div className="flex items-center space-x-1 mb-1">
                         <CheckCircle className="h-3 w-3 text-green-600" />
-                        <span className="text-xs font-medium text-green-600 dark:text-green-400">루틴 인증</span>
+                        <span className="text-xs font-medium text-green-600 dark:text-green-400">루틴 인증 전송</span>
                       </div>
                     )}
                     {msg.type === 'album' ? (

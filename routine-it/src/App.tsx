@@ -54,6 +54,7 @@ export interface Group {
     owner?: string;
     routines?: Routine[];
     isJoined?: boolean;
+    isMandatory?: boolean;
 }
 
 export interface PendingAuthMap {
@@ -320,6 +321,7 @@ export default function App() {
       category: 'lifestyle',
       owner: '임시소유자',
       isJoined: false,
+      isMandatory: true,
     },
     {
       id: 102,
@@ -331,6 +333,7 @@ export default function App() {
       category: 'exercise',
       owner: '임시소유자',
       isJoined: true,
+      isMandatory: false,
     },
     {
     id: 1,
@@ -343,6 +346,7 @@ export default function App() {
     isJoined: false,
     time: '06:00-09:00',
     category: 'exercise',
+    isMandatory: true,
     recentMembers: [
         { id: 1, name: '김민수', avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=40&h=40&fit=crop&crop=face' },
         { id: 2, name: '이지영', avatar: 'https://images.unsplash.com/photo-1494790108755-2616b95fcebf?w=40&h=40&fit=crop&crop=face' },
@@ -584,6 +588,7 @@ export default function App() {
   
   // 그룹을 추가하는 함수
   const handleAddGroup = (newGroupData: any) => {
+     const isMandatory = newGroupData.type === "의무참여"; 
   const newGroup = {
     ...newGroupData,
     id: Date.now(),
@@ -611,10 +616,13 @@ export default function App() {
         difficulty: newGroupData.difficulty,
         isGroupRoutine: true,
       }
-    ]
+    ],
+     isMandatory: isMandatory, 
   };
+  console.log('새로운 그룹 생성 시 isMandatory:', newGroup.isMandatory);
   setGroups(prev => [newGroup, ...prev]);
 };
+
 
 
 const handleUpdateGroup = (updatedGroup: Group) => {
