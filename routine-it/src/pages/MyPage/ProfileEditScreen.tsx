@@ -18,6 +18,7 @@ interface ProfileEditScreenProps {
     bio: string;
   };
   onSaveProfile: (updatedInfo: any) => void;
+  onDeleteAccount: () => void;
 }
 
 export function ProfileEditScreen({ 
@@ -26,7 +27,8 @@ export function ProfileEditScreen({
   isDarkMode, 
   onToggleDarkMode, 
   initialUserInfo, 
-  onSaveProfile
+  onSaveProfile,
+  onDeleteAccount
 }: ProfileEditScreenProps) {
   // initialUserInfo prop을 사용하여 초기 상태 설정
   const [profileData, setProfileData] = useState({
@@ -210,7 +212,7 @@ export function ProfileEditScreen({
             <Button variant="outline" className="w-full justify-start">
               계정 연동 관리
             </Button>
-            <Button variant="outline" className="w-full justify-start text-destructive">
+            <Button variant="outline" className="w-full justify-start text-destructive" onClick={onDeleteAccount}>
               계정 삭제
             </Button>
           </CardContent>

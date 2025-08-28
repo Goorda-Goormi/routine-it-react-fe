@@ -520,6 +520,47 @@ export default function App() {
     setIsLoggedIn(true);
   };
 
+  const handleLogout = () => {
+    setIsLoggedIn(false);
+    setActiveTab("home");
+    setNavigationStack([]);
+    alert("로그아웃 되었습니다.");
+  };
+
+  const handleDeleteAccount = () => {
+    const isConfirmed = window.confirm("계정 탈퇴 시 모든 정보가 삭제되며 복구할 수 없습니다. 정말로 탈퇴하시겠습니까?");
+    if (isConfirmed) {
+      // 실제 API 호출 로직은 여기에 추가
+      setIsLoggedIn(false);
+      setActiveTab("home");
+      setNavigationStack([]);
+      setUserInfo({
+        name: '',
+        id: 0,
+        email: '',
+        avatar: '',
+        joinDate: '',
+        level: 0,
+        exp: 0,
+        maxExp: 0,
+        streakDays: 0,
+        bio: ''
+      });
+      setPersonalRoutines([]);
+      setGroups([]);
+      setPendingAuthMessages({});
+      setLastCompletionDate(null);
+      setRoutineCompletionCount(0);
+      setAttendanceCount(0);
+      setEarnedBadges([]);
+      setStreakDays(0);
+
+      localStorage.clear();
+      
+      alert("계정이 성공적으로 탈퇴되었습니다.");
+    }
+  };
+
   const handleSearch = (query: string) => {
     console.log("검색:", query);
   };
@@ -807,7 +848,9 @@ const handleUpdateGroup = (updatedGroup: Group) => {
               isDarkMode={isDarkMode}
               onToggleDarkMode={toggleDarkMode}
               initialUserInfo={UserInfo}
-              onSaveProfile={handleSaveProfile} 
+              onSaveProfile={handleSaveProfile}
+              onDeleteAccount={handleDeleteAccount} 
+              
             />
           );
         case "group-chat":
@@ -838,6 +881,7 @@ const handleUpdateGroup = (updatedGroup: Group) => {
               onBack={navigateBack}
               isDarkMode={isDarkMode}
               onToggleDarkMode={toggleDarkMode}
+              onDeleteAccount={handleDeleteAccount} 
             />
           );
         case "help":
@@ -912,6 +956,7 @@ const handleUpdateGroup = (updatedGroup: Group) => {
             isDarkMode={isDarkMode}
             onToggleDarkMode={toggleDarkMode}
             user={UserInfo}
+            onLogout={handleLogout}
           />
         );
       default:

@@ -43,9 +43,10 @@ interface MyPageScreenProps {
     streakDays: number;
     bio: string;
   }
+  onLogout: () => void;
 }
 
-export function MyPageScreen({ onNavigate, isDarkMode, onToggleDarkMode, user }: MyPageScreenProps) {
+export function MyPageScreen({ onNavigate, isDarkMode, onToggleDarkMode, user, onLogout }: MyPageScreenProps) {
   const [currentDate, setCurrentDate] = useState(new Date());
 
   const getCalendarData = (date: Date) => {
@@ -465,7 +466,9 @@ export function MyPageScreen({ onNavigate, isDarkMode, onToggleDarkMode, user }:
         </div>
         
         <Button
+          variant="outline"
           className="w-full bg-red-500/80 hover:bg-red-600/80 text-white border-red-400/50 hover:border-red-500/50 transition-colors"
+          onClick={onLogout}
         >
           <LogOut className="h-4 w-4 mr-2" />
           로그아웃

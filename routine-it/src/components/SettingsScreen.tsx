@@ -9,9 +9,10 @@ interface SettingsScreenProps {
   onBack: () => void;
   isDarkMode: boolean;
   onToggleDarkMode: () => void;
+  onDeleteAccount: () => void;
 }
 
-export function SettingsScreen({ onBack, isDarkMode, onToggleDarkMode }: SettingsScreenProps) {
+export function SettingsScreen({ onBack, isDarkMode, onToggleDarkMode, onDeleteAccount }: SettingsScreenProps) {
   return (
     <div className="min-h-screen bg-background">
       {/* 헤더 */}
@@ -114,7 +115,7 @@ export function SettingsScreen({ onBack, isDarkMode, onToggleDarkMode }: Setting
             <CardTitle className="text-base">계정 관리</CardTitle>
           </CardHeader>
           <CardContent className="pt-0">
-            <Button variant="ghost" className="w-full justify-start p-3 h-auto text-destructive">
+            <Button variant="ghost" className="w-full justify-start p-3 h-auto text-destructive" onClick={onDeleteAccount}>
               <Trash2 className="h-5 w-5 mr-3" />
               <div className="text-left">
                 <div className="font-medium">계정 삭제</div>
