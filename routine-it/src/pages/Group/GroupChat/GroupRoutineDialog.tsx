@@ -5,6 +5,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { Label } from '../../../components/ui/label';
 import { Textarea } from '../../../components/ui/textarea';
 import { Camera, CheckCircle } from 'lucide-react';
+import type { Routine } from '../../../App';
 
 interface GroupRoutineDialogProps {
   // 모달을 열고 닫는 상태
@@ -12,6 +13,7 @@ interface GroupRoutineDialogProps {
   onOpenChange: (open: boolean) => void;
   // 인증 완료 시 호출될 함수
   onAuthSubmit: (data: { description: string; image: File | null; isPublic: boolean }) => void;
+  selectedRoutine: Routine | null; 
 }
 
 export function GroupRoutineDialog({ isOpen, onOpenChange, onAuthSubmit }: GroupRoutineDialogProps) {

@@ -8,7 +8,7 @@ import { Calendar, Target, Trophy, Users, Camera, CheckCircle, Plus, TrendingUp,
 import { ImageWithFallback } from '../../components/figma/ImageWithFallback';
 import { getStreakInfo, getStreakMessage } from '../../components/utils/streakUtils';
 import { GroupRoutineDialog } from '../../pages/Group/GroupChat/GroupRoutineDialog';
-import { AuthMessage } from '../../interfaces';
+import type { AuthMessage } from '../../interfaces';
 
 const getTodayDayOfWeek = () => {
   const dayOfWeek = ['일', '월', '화', '수', '목', '금', '토'];

@@ -22,6 +22,7 @@ import { StreakModal } from './components/modules/StreakModal';
 import { getStreakInfo } from './components/utils/streakUtils';
 import { AchievementBadgeModal } from './components/modules/AchievementBadgeModal';
 import type { AuthMessage } from "./interfaces";
+
 export interface Routine {
   id: number;
   name: string;
@@ -36,6 +37,7 @@ export interface Routine {
   difficulty: string;
   isGroupRoutine?: boolean;
   type?: string;
+  isOwner?: boolean;
 }
 
 export interface Group {
@@ -52,6 +54,10 @@ export interface Group {
     owner?: string;
     routines?: Routine[];
     isJoined?: boolean;
+}
+
+export interface PendingAuthMap {
+  [groupId: number]: AuthMessage[];
 }
 
 export interface Member {
@@ -859,12 +865,7 @@ const handleUpdateGroup = (updatedGroup: Group) => {
             personalRoutines={personalRoutines}
             onToggleCompletion={handleToggleCompletion}
             streakDays={streakDays}
-            initialUserInfo={{
-                name: UserInfo.name,
-                username: UserInfo.email.split('@')[0],
-                profileImage: UserInfo.avatar,
-                bio: UserInfo.bio,
-            }} 
+            initialUserInfo={UserInfo}
             participatingGroups={groups}
             onOpenAttendanceModal={handleOpenAttendanceModal}
             onOpenStreakModal={handleOpenStreakModal}
@@ -886,6 +887,11 @@ const handleUpdateGroup = (updatedGroup: Group) => {
           onOpenAttendanceModal={handleOpenAttendanceModal}
           onOpenStreakModal={handleOpenStreakModal}
           onOpenBadgeModal={handleOpenBadgeModal}
+          onAddAuthMessage={handleAddAuthMessage} 
+          initialUserInfo={UserInfo} 
+          participatingGroups={groups} 
+          allGroups={groups}
+          pendingAuthMessages={pendingAuthMessages} 
         />;
       case "group":
         return <GroupScreen 
@@ -915,12 +921,7 @@ const handleUpdateGroup = (updatedGroup: Group) => {
             personalRoutines={personalRoutines}
             onToggleCompletion={handleToggleCompletion}
             streakDays={streakDays}
-            initialUserInfo={{
-                name: UserInfo.name,
-                username: UserInfo.email.split('@')[0],
-                profileImage: UserInfo.avatar,
-                bio: UserInfo.bio,
-            }} 
+            initialUserInfo={UserInfo}
             participatingGroups={groups}   
             onOpenAttendanceModal={handleOpenAttendanceModal}
             onOpenStreakModal={handleOpenStreakModal}

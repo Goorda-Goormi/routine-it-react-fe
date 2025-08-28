@@ -5,7 +5,9 @@ import { Badge } from '../../components/ui/badge';
 import { Progress } from '../../components/ui/progress';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../components/ui/tabs';
 import { Plus, Target, CheckCircle, Clock, Calendar, TrendingUp, Filter, Camera, Users } from 'lucide-react';
-import type { Routine } from '../../App';
+import type { Routine, Group } from '../../App';
+import type { AuthMessage } from '../../interfaces';
+import { GroupRoutineDialog } from '../../pages/Group/GroupChat/GroupRoutineDialog';
 
 const getTodayDayOfWeek = () => {
   const dayOfWeek = ['일', '월', '화', '수', '목', '금', '토'];
@@ -37,11 +39,18 @@ interface RoutineScreenProps {
   onOpenAttendanceModal: () => void;
   onOpenStreakModal: (streakDays: number) => void;
   onOpenBadgeModal: (badgeName: string, badgeImage: string) => void;
+  onAddAuthMessage: (groupId: number, data: any, userName: string, userId: string | number, routineId: number) => void;
+  initialUserInfo: { name: string; id: number | string; };
+  participatingGroups: Group[];
+  allGroups: Group[];
+  pendingAuthMessages: { [groupId: number]: AuthMessage[] };
 }
 
-export function RoutineScreen({ onNavigate, allRoutines, recommendedRoutines, onToggleCompletion, onAddRecommendedRoutine, onOpenAttendanceModal, onOpenStreakModal, onOpenBadgeModal }: RoutineScreenProps) {
+export function RoutineScreen({ onNavigate, allRoutines, recommendedRoutines, onToggleCompletion, onAddRecommendedRoutine, onOpenAttendanceModal, onOpenStreakModal, onOpenBadgeModal, onAddAuthMessage, initialUserInfo, participatingGroups, pendingAuthMessages, allGroups }: RoutineScreenProps) {
   const [activeFilter, setActiveFilter] = useState('today');
   const todayDay = getTodayDayOfWeek();
+  const [isGroupDialogOpen, setIsGroupDialogOpen] = useState(false);
+  const [selectedRoutine, setSelectedRoutine] = useState<Routine | null>(null);
  
   const todayRoutines = allRoutines.filter(routine => {
     if (routine.frequency && Array.isArray(routine.frequency)) {
@@ -86,27 +95,66 @@ export function RoutineScreen({ onNavigate, allRoutines, recommendedRoutines, on
     onNavigate('create-routine');
   };
 
+  const handleGroupAuthClick = (routine: Routine, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setSelectedRoutine(routine);
+    setIsGroupDialogOpen(true);
+  };
+
+  const handleGroupAuthSubmit = (data: { description: string; image: File | null; isPublic: boolean }) => {
+    if (!selectedRoutine) return;
+
+    // 'participatingGroups'가 undefined일 경우 빈 배열로 처리하여 오류 방지
+    const groupId = (participatingGroups || []).find(group => 
+        group.routines?.some(r => r.id === selectedRoutine.id)
+    )?.id;
+
+    if (groupId) {
+        // App.tsx에서 props로 받은 함수를 호출하여 인증 메시지를 추가합니다.
+        onAddAuthMessage(groupId, data, initialUserInfo.name, initialUserInfo.id, selectedRoutine.id);
+    }
+
+    // 모달을 닫습니다.
+    setIsGroupDialogOpen(false);
+};
+
   const getButtonOrCheckbox = (routine: Routine) => {
+    const groupId = (participatingGroups || []).find(group => 
+      group.routines?.some(r => r.id === routine.id)
+    )?.id;
+
+    // [추가] 해당 루틴이 인증 대기 중인지 확인합니다.
+    const isPendingAuth = groupId && pendingAuthMessages[groupId]?.some(msg => msg.routineId === routine.id);
+
     if (routine.isGroupRoutine) {
-      return routine.completed ? (
-        <div className="w-8 h-8 rounded-full flex items-center justify-center transition-colors p-0 m-0 border-0 bg-green-500">
-          <CheckCircle className="h-5 w-5 text-white" />
-        </div>
-      ) : (
-        <button
-          onClick={(e) => {
-            e.stopPropagation();
-            onToggleCompletion(routine.id, true);
-            onOpenAttendanceModal(); 
-          }}
-          className="w-auto h-8 rounded-full flex items-center justify-center transition-colors px-2 py-1 text-xs text-foreground border border-border/60 hover:bg-accent"
-        >
-          <span className="flex items-center">
-            {routine.type === '의무참여' && <Camera className="h-3 w-3 mr-1 text-foreground/70" />}
-            인증
-          </span>
-        </button>
-      );
+      if (isPendingAuth) {
+        return (
+          <button
+            disabled
+            className="w-auto h-8 rounded-full flex items-center justify-center transition-colors px-2 py-1 text-xs text-muted-foreground/80 border border-border/60 bg-accent cursor-not-allowed"
+          >
+            승인 대기
+          </button>
+          );
+        } else if (routine.completed) {
+          return (
+            <div className="w-8 h-8 rounded-full flex items-center justify-center transition-colors p-0 m-0 border-0 bg-green-500">
+              <CheckCircle className="h-5 w-5 text-white" />
+            </div>
+          );
+        } else {
+          return (
+            <button
+              onClick={(e) => handleGroupAuthClick(routine, e)}
+              className="w-auto h-8 rounded-full flex items-center justify-center transition-colors px-2 py-1 text-xs text-foreground border border-border/60 hover:bg-accent"
+            >  
+              <span className="flex items-center">
+                {routine.type === '의무참여' && <Camera className="h-3 w-3 mr-1 text-foreground/70" />}
+                인증
+              </span>
+            </button>
+          );
+        }
     } else {
       return (
         <button
@@ -298,6 +346,12 @@ export function RoutineScreen({ onNavigate, allRoutines, recommendedRoutines, on
           </Card>
         </TabsContent>
       </Tabs>
+      <GroupRoutineDialog
+        isOpen={isGroupDialogOpen}
+        onOpenChange={setIsGroupDialogOpen}
+        onAuthSubmit={handleGroupAuthSubmit}
+        selectedRoutine={selectedRoutine}
+      />
     </div>
   );
 }

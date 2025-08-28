@@ -12,9 +12,9 @@ import { Switch } from '../../components/ui/switch';
 interface Routine {
   id: number;
   name: string;
-  description?: string;
+  description: string;
   time: string;
-  frequency: string[]; // `string[]` 타입으로 수정
+  frequency: string[];
   reminder: boolean;
   goal: string;
   category: string;
@@ -22,6 +22,8 @@ interface Routine {
   streak: number;
   difficulty: string;
   isGroupRoutine?: boolean;
+  type?: string;
+  isOwner?: boolean;
 }
 
 interface RoutineDetailScreenProps {
