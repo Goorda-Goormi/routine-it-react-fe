@@ -325,7 +325,7 @@ export function RoutineDetailScreen({ routine, onBack, onUpdateRoutine, onDelete
                 <Label htmlFor="edit-reminder">알림 켜기</Label>
                 <Switch
                   id="edit-reminder"
-                  checked={editedRoutine.reminder}
+                  checked={!!editedRoutine.reminder}
                   onCheckedChange={(checked) => setEditedRoutine({...editedRoutine, reminder: checked})}
                 />
               </div>
