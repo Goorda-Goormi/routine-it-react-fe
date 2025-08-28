@@ -27,3 +27,22 @@ export interface AuthMessage {
   routineId: number; 
   userId: string | number;
 }
+
+export interface Routine {
+  id: number;
+  name: string;
+  category?: string;
+  time: string;
+  completed: boolean;
+  streak: number;
+  difficulty?: string;
+  isGroupRoutine?: boolean;
+  frequency?: string[];
+  type?: string;
+  isOwner?: boolean;
+  reminder?: string; 
+  goal?: string;
+  description?: string;
+
+
+}

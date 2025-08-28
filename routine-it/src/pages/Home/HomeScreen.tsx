@@ -8,7 +8,7 @@ import { Calendar, Target, Trophy, Users, Camera, CheckCircle, Plus, TrendingUp,
 import { ImageWithFallback } from '../../components/figma/ImageWithFallback';
 import { getStreakInfo, getStreakMessage } from '../../components/utils/streakUtils';
 import { GroupRoutineDialog } from '../../pages/Group/GroupChat/GroupRoutineDialog';
-import type { AuthMessage } from '../../interfaces';
+import type { AuthMessage,Routine } from '../../interfaces';
 
 const getTodayDayOfWeek = () => {
   const dayOfWeek = ['일', '월', '화', '수', '목', '금', '토'];
@@ -16,19 +16,7 @@ const getTodayDayOfWeek = () => {
   return dayOfWeek[today.getDay()];
 };
 
-export interface Routine {
-  id: number;
-  name: string;
-  category?: string;
-  time: string;
-  completed: boolean;
-  streak: number;
-  difficulty?: string;
-  isGroupRoutine?: boolean;
-  frequency?: string[];
-  type?: string;
-  isOwner?: boolean;
-}
+
 
 export interface Member {
   id: number;
@@ -132,6 +120,7 @@ export function HomeScreen({
 
   const handleGroupAuthClick = (routine: Routine, e: React.MouseEvent) => {
     e.stopPropagation();
+      console.log('클릭된 루틴:', routine);
     setSelectedRoutine(routine);
     setIsGroupDialogOpen(true);
   };
@@ -541,6 +530,8 @@ export function HomeScreen({
         isOpen={isGroupDialogOpen}
         onOpenChange={setIsGroupDialogOpen}
         onAuthSubmit={handleGroupAuthSubmit}
+        selectedRoutine={selectedRoutine}
+        isMandatory={selectedRoutine?.type === '의무참여'}
       />
     </div>
   );

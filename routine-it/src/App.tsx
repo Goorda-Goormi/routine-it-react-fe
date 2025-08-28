@@ -21,24 +21,9 @@ import { AttendanceModal } from './components/modules/AttendanceModal';
 import { StreakModal } from './components/modules/StreakModal';
 import { getStreakInfo } from './components/utils/streakUtils';
 import { AchievementBadgeModal } from './components/modules/AchievementBadgeModal';
-import type { AuthMessage } from "./interfaces";
+import type { AuthMessage,Routine } from "./interfaces";
 
-export interface Routine {
-  id: number;
-  name: string;
-  description?: string;
-  time: string;
-  frequency: string[];
-  reminder: boolean;
-  goal: string;
-  category: string;
-  completed: boolean;
-  streak: number;
-  difficulty: string;
-  isGroupRoutine?: boolean;
-  type?: string;
-  isOwner?: boolean;
-}
+
 
 export interface Group {
   id: number;
@@ -582,6 +567,7 @@ export default function App() {
       id: Date.now(),
       completed: false,
       streak: 0,
+       isGroupRoutine: false,
     };
     setPersonalRoutines(prev => [...prev, newRoutine]);
   };
@@ -733,6 +719,7 @@ const handleUpdateGroup = (updatedGroup: Group) => {
         goal: '30',
         completed: false,
         streak: 0,
+         isGroupRoutine: false,
     };
 
     setPersonalRoutines(prevRoutines => [...prevRoutines, newRoutine]);

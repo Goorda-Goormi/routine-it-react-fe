@@ -8,23 +8,8 @@ import { Textarea } from '../../components/ui/textarea';
 import { Label } from '../../components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../components/ui/select';
 import { Switch } from '../../components/ui/switch';
+import type { Routine } from '../../interfaces';
 
-interface Routine {
-  id: number;
-  name: string;
-  description: string;
-  time: string;
-  frequency: string[];
-  reminder: boolean;
-  goal: string;
-  category: string;
-  completed: boolean;
-  streak: number;
-  difficulty: string;
-  isGroupRoutine?: boolean;
-  type?: string;
-  isOwner?: boolean;
-}
 
 interface RoutineDetailScreenProps {
   routine: Routine;

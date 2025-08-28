@@ -273,6 +273,19 @@ export function GroupChatScreen({ group, onBack, onAddAuthMessage }: GroupChatSc
                     );
                   })}
                 </div>
+                <div className="border-t pt-4 mt-4">
+                  <Button
+                    variant="destructive"
+                    className="w-full"
+                    onClick={() => {
+                      // 실제 그룹 나가기 로직을 여기에 구현
+                      // onBack 함수를 호출하여 이전 화면(그룹 목록)으로 돌아갑니다.
+                      onBack();
+                    }}
+                  >
+                    그룹 나가기
+                  </Button>
+                </div>
               </DialogContent>
             </Dialog>
             {/* 인증하기 버튼 */}
