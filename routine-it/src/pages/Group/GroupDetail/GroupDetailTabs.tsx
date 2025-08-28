@@ -18,6 +18,7 @@ export const GroupDetailTabs = ({
   recentActivities,
   onMemberClick,
 }: GroupDetailTabsProps) => {
+   console.log("GroupDetailTabs로 전달된 멤버 데이터:", members);
   return (
     <Tabs defaultValue="members">
       <TabsList className="grid w-full h-auto grid-cols-3">

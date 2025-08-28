@@ -21,7 +21,7 @@ import { AttendanceModal } from './components/modules/AttendanceModal';
 import { StreakModal } from './components/modules/StreakModal';
 import { getStreakInfo } from './components/utils/streakUtils';
 import { AchievementBadgeModal } from './components/modules/AchievementBadgeModal';
-import { AuthMessage } from "./interfaces";
+import type { AuthMessage } from "./interfaces";
 export interface Routine {
   id: number;
   name: string;
@@ -58,6 +58,7 @@ export interface Member {
   id: number;
   name: string;
   avatar: string;
+  isCertified?: boolean; 
 }
 
 interface NavigationState {
@@ -74,33 +75,88 @@ export default function App() {
    // 루틴 인증 메시지를 추가하는 함수
  
   // 루틴 인증 메시지를 추가하는 함수에 groupId 추가
-  const handleAddAuthMessage = (groupId: number, data: { description: string; image: File | null; isPublic: boolean }, userName: string) => {
-    const newAuthMessage: AuthMessage = {
-      id: Date.now(),
-      user: userName,
-      message: data.description,
-      imageUrl: data.image ? URL.createObjectURL(data.image) : null,
-    };
-    
-    // 해당 그룹의 메시지 배열에 새 메시지 추가
-    setPendingAuthMessages(prevMessages => ({
-      ...prevMessages,
-      [groupId]: [...(prevMessages[groupId] || []), newAuthMessage]
-    }));
-    
-    console.log('인증 데이터 제출:', data);
-    alert('인증이 제출되었습니다!');
+  const handleAddAuthMessage = (
+  groupId: number, 
+  data: { description: string; image: File | null; isPublic: boolean }, 
+  userName: string,
+  userId: string | number, // userId 추가
+  routineId: number // routineId 추가
+) => {
+  const newAuthMessage: AuthMessage = {
+    id: Date.now(),
+    user: userName,
+    userId: userId, // userId 저장
+    message: data.description,
+    imageUrl: data.image ? URL.createObjectURL(data.image) : null,
+    routineId: routineId, // routineId 저장
   };
+  
+  setPendingAuthMessages(prevMessages => ({
+    ...prevMessages,
+    [groupId]: [...(prevMessages[groupId] || []), newAuthMessage]
+  }));
+  
+  console.log('인증 데이터 제출:', data);
+  alert('인증이 제출되었습니다!');
+};
 
   // 루틴 인증을 승인하는 함수에 groupId 추가
   const handleApproveAuthMessage = (groupId: number, id: number) => {
-    setPendingAuthMessages(prevMessages => ({
-      ...prevMessages,
-      [groupId]: (prevMessages[groupId] || []).filter(msg => msg.id !== id)
-    }));
-    console.log(`${id}번 인증을 승인했습니다.`);
-    alert(`${id}번 인증이 승인되었습니다.`);
-  };
+  // 1. 승인할 인증 메시지 찾기
+  const messageToApprove = pendingAuthMessages[groupId]?.find(msg => msg.id === id);
+
+  if (!messageToApprove) {
+    console.log("승인할 인증 메시지를 찾을 수 없습니다.");
+    return;
+  }
+  
+  // 2. 그룹 상태를 업데이트하는 로직
+  setGroups(prevGroups => 
+    prevGroups.map(group => {
+      // 해당 그룹인지 확인
+      if (group.id === groupId) {
+        // 그룹 내에서 해당 루틴 찾기
+        const updatedRoutines = group.routines?.map(routine => {
+          if (routine.id === messageToApprove.routineId) {
+            return {
+              ...routine,
+              // 루틴 완료 상태 업데이트 (예: isCertified를 true로 설정)
+              completed: true, // 또는 별도의 인증 상태 필드 사용
+            };
+          }
+          return routine;
+        });
+
+        // 멤버 상태 업데이트 (예: '인증' 뱃지 표시)
+        const updatedMembers = group.recentMembers?.map(member => {
+          if (member.id === messageToApprove.userId) {
+            return {
+              ...member,
+              isCertified: true, // 인증 상태를 나타내는 필드 추가
+            };
+          }
+          return member;
+        });
+
+        return { 
+          ...group, 
+          routines: updatedRoutines,
+          recentMembers: updatedMembers 
+        };
+      }
+      return group;
+    })
+  );
+
+  // 3. pendingAuthMessages 상태에서 승인된 메시지 제거
+  setPendingAuthMessages(prevMessages => ({
+    ...prevMessages,
+    [groupId]: (prevMessages[groupId] || []).filter(msg => msg.id !== id)
+  }));
+  
+  console.log(`${id}번 인증을 승인했습니다.`);
+  alert(`${id}번 인증이 승인되었습니다.`);
+};
 
   // 루틴 인증을 거절하는 함수에 groupId 추가
   const handleRejectAuthMessage = (groupId: number, id: number) => {
@@ -193,7 +249,7 @@ export default function App() {
 
   const [UserInfo, setUserInfo] = useState({
       name: '구르미',
-      id:'1',
+      id:1,
       email: 'goormida@example.com',
       avatar: '/profile.jpg',
       joinDate: '2024년 1월',
@@ -529,10 +585,10 @@ export default function App() {
     progress: 0,
     isOwner: true,
     isJoined: true,
-    time: newGroupData.time, // 이 부분은 이미 잘 적용되고 있습니다.
+    time: newGroupData.time, 
     owner: UserInfo.name,
     recentMembers: [
-      { id: Date.now(), name: UserInfo.name, avatar: UserInfo.avatar }
+      { id: Number(UserInfo.id), name: UserInfo.name, avatar: UserInfo.avatar, isCertified: false }
     ],
     routines: [ // 새로운 그룹에 기본 루틴 추가
       {
