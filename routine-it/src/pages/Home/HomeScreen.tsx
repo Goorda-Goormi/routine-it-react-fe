@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card';
 import { Button } from '../../components/ui/button';
 import { Progress } from '../../components/ui/progress';
@@ -9,6 +9,7 @@ import { ImageWithFallback } from '../../components/figma/ImageWithFallback';
 import { getStreakInfo, getStreakMessage } from '../../components/utils/streakUtils';
 import { GroupRoutineDialog } from '../../pages/Group/GroupChat/GroupRoutineDialog';
 import { AuthMessage } from '../../interfaces';
+
 const getTodayDayOfWeek = () => {
   const dayOfWeek = ['일', '월', '화', '수', '목', '금', '토'];
   const today = new Date();
@@ -30,9 +31,9 @@ export interface Routine {
 }
 
 export interface Member {
-    id: number;
-    name: string;
-    avatar: string;
+  id: number;
+  name: string;
+  avatar: string;
 }
 
 export interface Group {
@@ -61,14 +62,14 @@ interface HomeScreenProps {
   personalRoutines: Routine[];
   onToggleCompletion: (routineId: number, isGroupRoutine?: boolean) => void;
   streakDays: number;
-  participatingGroups: Group[]; // 추가: 참여 중인 그룹 목록
-   pendingAuthMessages: PendingAuthMap;
+  participatingGroups: Group[];
+  pendingAuthMessages: PendingAuthMap;
   onOpenAttendanceModal: () => void;
   onOpenStreakModal: (streakDays: number) => void;
   onOpenBadgeModal: (badgeName: string, badgeImage: string) => void;
-   onAddAuthMessage: (groupId: number, data: any, userName: string) => void;
-   onApproveAuthMessage: (groupId: number, authId: number) => void;
-    onRejectAuthMessage: (groupId: number, authId: number) => void;
+  onAddAuthMessage: (groupId: number, data: any, userName: string, userId: string | number, routineId: number) => void;
+  onApproveAuthMessage: (groupId: number, authId: number) => void;
+  onRejectAuthMessage: (groupId: number, authId: number) => void;
 }
 
 interface VerificationPhoto {
@@ -79,76 +80,67 @@ interface VerificationPhoto {
   isPublic: boolean;
 }
 
-export function HomeScreen({ onNavigate, 
-  initialUserInfo, 
-  personalRoutines, 
-  onToggleCompletion, 
-  streakDays, 
-  participatingGroups, 
-  onOpenAttendanceModal, 
-  onOpenStreakModal, 
-  onOpenBadgeModal, 
+export function HomeScreen({
+  onNavigate,
+  initialUserInfo,
+  personalRoutines,
+  onToggleCompletion,
+  streakDays,
+  participatingGroups,
+  pendingAuthMessages,
+  onOpenAttendanceModal,
+  onOpenStreakModal,
+  onOpenBadgeModal,
   onAddAuthMessage,
-onApproveAuthMessage,
+  onApproveAuthMessage,
   onRejectAuthMessage,
-  pendingAuthMessages, }:
-   HomeScreenProps) {
+}: HomeScreenProps) {
   const today = new Date();
   const todayString = today.toLocaleDateString('ko-KR', { month: 'long', day: 'numeric' });
-  
+
   const [isGroupDialogOpen, setIsGroupDialogOpen] = useState(false);
   const [selectedRoutine, setSelectedRoutine] = useState<Routine | null>(null);
-    const [authRoutineMap, setAuthRoutineMap] = useState<Record<number, number>>({});
-   // 그룹 루틴 인증 버튼 클릭
+  const [routineStates, setRoutineStates] = useState<Record<number, 'completed' | 'pending' | 'initial'>>({});
+
+  useEffect(() => {
+    const newRoutineStates: Record<number, 'completed' | 'pending' | 'initial'> = {};
+    const allRoutines = [
+      ...personalRoutines,
+      ...participatingGroups.flatMap(group => group.routines || [])
+    ];
+
+    allRoutines.forEach(routine => {
+      if (routine.isGroupRoutine) {
+        if (routine.completed) {
+          newRoutineStates[routine.id] = 'completed';
+        } else if (
+          participatingGroups.some(group =>
+            pendingAuthMessages[group.id]?.some(msg => msg.routineId === routine.id)
+          )
+        ) {
+          newRoutineStates[routine.id] = 'pending';
+        } else {
+          newRoutineStates[routine.id] = 'initial';
+        }
+      } else {
+        newRoutineStates[routine.id] = routine.completed ? 'completed' : 'initial';
+      }
+    });
+
+    setRoutineStates(newRoutineStates);
+  }, [participatingGroups, personalRoutines, pendingAuthMessages]);
+
   const handleGroupAuthClick = (routine: Routine, e: React.MouseEvent) => {
     e.stopPropagation();
     setSelectedRoutine(routine);
     setIsGroupDialogOpen(true);
   };
 
-  /*
-const handleGroupAuthSubmit = (data: { description: string; image: File | null; isPublic: boolean }) => {
-  if (!selectedRoutine) return;
-
-  // 1️⃣ 루틴 상태를 'pending'으로 변경
-  setRoutineStates(prevStates => ({
-    ...prevStates,
-    [selectedRoutine.id]: 'pending'
-  }));
-
-  // 2️⃣ 참여 그룹 찾기
-  const groupId = participatingGroups.find(group =>
-    group.routines?.some(r => r.id === selectedRoutine.id)
-  )?.id;
-
-  if (groupId) {
-    // 3️⃣ authId 생성 (임시로 Date.now 사용, 실제는 상태 관리 로직에 맞춰 생성)
-    const newAuthId = Date.now();
-
-    // 4️⃣ authId → routineId 매핑 저장
-    setAuthRoutineMap(prev => ({
-      ...prev,
-      [newAuthId]: selectedRoutine.id
-    }));
-
-    // 5️⃣ 인증 메시지 추가
-    onAddAuthMessage(groupId, { ...data, id: newAuthId }, initialUserInfo.name);
-  }
-
-  console.log('그룹 루틴 인증 제출:', selectedRoutine.name, data);
-
-  // 6️⃣ 다이얼로그 닫기
-  setIsGroupDialogOpen(false);
-};
-*/
-  // 연속 출석일 (예시 데이터)
   const currentStreak = 0;
   const streakInfo = getStreakInfo(streakDays);
 
-  // 오늘의 루틴
   const todayDay = getTodayDayOfWeek();
 
-  // 개인 루틴 필터링
   const todayPersonalRoutines = (personalRoutines || []).filter((routine: Routine) => {
     return routine.frequency && routine.frequency.includes(todayDay);
   });
@@ -160,76 +152,53 @@ const handleGroupAuthSubmit = (data: { description: string; image: File | null; 
     return [];
   });
 
-  /*
-    // 각 루틴의 상태를 관리하는 새로운 state
-  // 'completed'는 개인 루틴용, 'pending'은 그룹 루틴 인증 대기용
-  const [routineStates, setRoutineStates] = useState<Record<number, 'completed' | 'pending' | 'initial'>>({});
-  const allTodayRoutines = [...todayPersonalRoutines, ...todayGroupRoutines];
-
-  const completedRoutines = allTodayRoutines.filter(routine => {
-    // 개인 루틴은 기존 completed 속성 사용
-    if (!routine.isGroupRoutine) {
-      return routine.completed;
-    }
-    // 그룹 루틴은 routineStates 상태를 확인
-    return routineStates[routine.id] === 'completed';
-  }).length;
-
-  const totalRoutines = allTodayRoutines.length;
-  const completionRate = totalRoutines > 0 ? Math.round((completedRoutines / totalRoutines) * 100) : 0;
-*/
-
-
-  // 본인 인증 사진 그리드 데이터 (공개여부 추가)
   const myVerificationPhotos: VerificationPhoto[] = [
     {
       id: 1,
       routine: '아침 운동',
       image: 'https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?fit=crop',
       date: '오늘',
-      isPublic: true
+      isPublic: true,
     },
     {
       id: 2,
       routine: '독서 30분',
       image: 'https://images.unsplash.com/photo-1506126613408-eca07ce68773?fit=crop',
       date: '어제',
-      isPublic: true
+      isPublic: true,
     },
     {
       id: 3,
       routine: '물 2L 마시기',
       image: 'https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?fit=crop',
       date: '11월 13일',
-      isPublic: false
+      isPublic: false,
     },
     {
       id: 4,
       routine: '명상 10분',
       image: 'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?fit=crop',
       date: '11월 12일',
-      isPublic: true
+      isPublic: true,
     },
     {
       id: 5,
       routine: '일기 쓰기',
       image: 'https://images.unsplash.com/photo-1455390582262-044cdead277a?fit=crop',
       date: '11월 11일',
-      isPublic: false
+      isPublic: false,
     },
     {
       id: 6,
       routine: '스트레칭',
       image: 'https://images.unsplash.com/photo-1518611012118-696072aa579a?fit=crop',
       date: '11월 10일',
-      isPublic: true
-    }
+      isPublic: true,
+    },
   ];
 
-  // 공개된 인증사진만 필터링
   const publicVerificationPhotos = myVerificationPhotos.filter(photo => photo.isPublic);
 
-  // 갤러리 상태 관리
   const [selectedPhotoIndex, setSelectedPhotoIndex] = useState<number | null>(null);
 
   const handleRoutineClick = (routine: Routine) => {
@@ -244,17 +213,14 @@ const handleGroupAuthSubmit = (data: { description: string; image: File | null; 
     onNavigate('user-home', member);
   };
 
-  // 사진 클릭 핸들러
   const handlePhotoClick = (index: number) => {
     setSelectedPhotoIndex(index);
   };
 
-  // 갤러리 닫기 핸들러
   const handleCloseGallery = () => {
     setSelectedPhotoIndex(null);
   };
 
-  // 갤러리 이전/다음 사진 보기 핸들러
   const handlePrevPhoto = () => {
     if (selectedPhotoIndex !== null && selectedPhotoIndex > 0) {
       setSelectedPhotoIndex(selectedPhotoIndex - 1);
@@ -267,55 +233,30 @@ const handleGroupAuthSubmit = (data: { description: string; image: File | null; 
     }
   };
 
-  // 루틴 완료 상태 토글
   const toggleRoutineCompletion = (routineId: number, e: React.MouseEvent) => {
     e.stopPropagation();
     onToggleCompletion(routineId);
   };
 
-
- // ✅ 추가/수정: 그룹 루틴의 상태를 관리하는 state
-  const [routineStates, setRoutineStates] = useState<Record<number, 'completed' | 'pending' | 'initial'>>({});
-
-  // ✅ 추가: 그룹 루틴 인증 제출 핸들러
   const handleGroupAuthSubmit = (data: { description: string; image: File | null; isPublic: boolean }) => {
     if (!selectedRoutine) return;
 
-    // 1. 참여 그룹 찾기
-    const groupId = participatingGroups.find(group =>
-      group.routines?.some(r => r.id === selectedRoutine.id)
-    )?.id;
+    const groupId = participatingGroups.find(group => group.routines?.some(r => r.id === selectedRoutine.id))?.id;
 
     if (groupId) {
-        // 2. onAddAuthMessage 함수 호출
-        onAddAuthMessage(groupId, { ...data, id: Date.now() }, initialUserInfo.name);
+      onAddAuthMessage(groupId, { ...data, id: Date.now() }, initialUserInfo.name, initialUserInfo.id,selectedRoutine.id);
 
-        // 3. 'pending' 상태로 변경
-        setRoutineStates(prevStates => ({
-            ...prevStates,
-            [selectedRoutine.id]: 'pending'
-        }));
+      setRoutineStates(prevStates => ({
+        ...prevStates,
+        [selectedRoutine.id]: 'pending',
+      }));
     }
 
     setIsGroupDialogOpen(false);
   };
-  
-  // ✅ 추가: 인증 승인/반려 시 루틴 상태를 업데이트하는 함수
-  const handleAuthUpdate = (authId: number, isApproved: boolean) => {
-    const routineId = Object.keys(pendingAuthMessages).flatMap(groupId =>
-      pendingAuthMessages[Number(groupId)].find(msg => msg.id === authId) ?
-      participatingGroups.find(g => g.id === Number(groupId))?.routines?.find(r => r.name === msg.description)?.id : []
-    )[0];
 
-    if (routineId) {
-      setRoutineStates(prev => ({
-        ...prev,
-        [routineId]: isApproved ? 'completed' : 'initial'
-      }));
-    }
-  };
-    const allTodayRoutines = [...todayPersonalRoutines, ...todayGroupRoutines];
-  // ✅ 수정: completedRoutines 계산 로직 변경
+  const allTodayRoutines = [...todayPersonalRoutines, ...todayGroupRoutines];
+
   const completedRoutines = allTodayRoutines.filter(routine => {
     if (routine.isGroupRoutine) {
       return routineStates[routine.id] === 'completed';
@@ -323,13 +264,11 @@ const handleGroupAuthSubmit = (data: { description: string; image: File | null; 
     return routine.completed;
   }).length;
 
-   const totalRoutines = allTodayRoutines.length;
+  const totalRoutines = allTodayRoutines.length;
   const completionRate = totalRoutines > 0 ? Math.round((completedRoutines / totalRoutines) * 100) : 0;
-
 
   return (
     <div className="space-y-6 h-full p-4 ">
-      {/* 오늘 날짜 및 완료 현황 */}
       <div className="space-y-4">
         <div className="flex items-center justify-between">
           <div className="flex flex-col items-start m-2">
@@ -349,9 +288,7 @@ const handleGroupAuthSubmit = (data: { description: string; image: File | null; 
           </Button>
         </div>
 
-        {/* 완료 현황 및 연속 출석 카드 - 다크모드에서 찐한 배경색 */}
         <div className="grid grid-cols-3 gap-3">
-          {/* 완료일수 */}
           <Card className="bg-card-yellow-bg border border-card-yellow-border dark:border-none dark:card-shadow">
             <CardContent className="p-4">
               <div className="flex flex-col items-center space-y-2">
@@ -368,7 +305,6 @@ const handleGroupAuthSubmit = (data: { description: string; image: File | null; 
             </CardContent>
           </Card>
 
-          {/* 누적점수 */}
           <Card className="bg-card-lavender-bg border border-card-lavender-border dark:border-none dark:card-shadow">
             <CardContent className="p-4">
               <div className="flex flex-col items-center space-y-2">
@@ -383,7 +319,6 @@ const handleGroupAuthSubmit = (data: { description: string; image: File | null; 
             </CardContent>
           </Card>
 
-          {/* 연속 출석 */}
           <Card className={`${streakInfo.containBgColor} border ${streakInfo.borderColor} dark:border-none dark:card-shadow`}>
             <CardContent className="p-4">
               <div className="flex flex-col items-center space-y-2">
@@ -403,7 +338,6 @@ const handleGroupAuthSubmit = (data: { description: string; image: File | null; 
           </Card>
         </div>
 
-        {/* 연속 출석 메시지 */}
         <div className={`${streakInfo.containBgColor} border ${streakInfo.borderColor} rounded-lg dark:border-none dark:card-shadow`}>
           <div className="flex items-center space-x-2 ml-3">
             <span className="text-lg">{streakInfo.icon}</span>
@@ -412,117 +346,102 @@ const handleGroupAuthSubmit = (data: { description: string; image: File | null; 
             </span>
           </div>
         </div>
-
       </div>
 
-       {/* 오늘의 루틴 */}
       <Card className="dark:card-shadow">
         <CardHeader className="pb-4">
           <div className="flex items-center justify-between">
             <CardTitle className="text-base text-foreground flex items-center space-x-2">
               <Target className="h-4 w-4 icon-accent" />
-                <span>오늘의 루틴</span>
-              </CardTitle>
+              <span>오늘의 루틴</span>
+            </CardTitle>
             <Badge variant="secondary" className="text-xs">
               {completedRoutines}/{totalRoutines} 완료
             </Badge>
-          </div>
+          </div>
           <Progress value={completionRate} className="h-2" />
         </CardHeader>
         <CardContent className="pt-0">
           <div className="space-y-0">
             {allTodayRoutines.length > 0 ? (
               allTodayRoutines.map((routine: Routine, index: number) => {
-                // 루틴의 현재 상태를 확인
-                const isPending = routine.isGroupRoutine && routineStates[routine.id] === 'pending';
-                const isCompleted = routine.completed || routineStates[routine.id] === 'completed';
+                const currentState = routineStates[routine.id] || 'initial';
+                const isPending = currentState === 'pending';
+                const isCompleted = currentState === 'completed';
 
-              return (
-                <div key={routine.id}>
-                  <div
-                    className={`flex items-center justify-between rounded-lg p-3 transition-colors ${
-                      isCompleted
-                        ? 'bg-green-50/50 dark:bg-green-900/20'
-                        : 'hover:bg-accent/50'
+                return (
+                  <div key={routine.id}>
+                    <div
+                      className={`flex items-center justify-between rounded-lg p-3 transition-colors ${
+                        isCompleted ? 'bg-green-50/50 dark:bg-green-900/20' : 'hover:bg-accent/50'
                       } ${index < personalRoutines.length - 1 ? 'mb-1' : ''}`}
-                  >
-                    <div className="flex items-center space-x-3 flex-1 cursor-pointer " onClick={() => handleRoutineClick(routine)}>
-                      <div className="flex items-center space-x-3">
-                        <div className='flex flex-col items-start ml-2'>
-                          <div className={`text-sm font-medium ${
-                            isCompleted
-                              ? 'text-green-700 dark:text-green-400 line-through'
-                              : 'text-foreground'
-                          }`}>
-                            {routine.name}
-                          </div>
-                          <div className="text-xs text-foreground dark:opacity-75">
-                            {routine.time} • {routine.streak}일 연속
+                    >
+                      <div className="flex items-center space-x-3 flex-1 cursor-pointer " onClick={() => handleRoutineClick(routine)}>
+                        <div className="flex items-center space-x-3">
+                          <div className='flex flex-col items-start ml-2'>
+                            <div className={`text-sm font-medium ${isCompleted ? 'text-green-700 dark:text-green-400 line-through' : 'text-foreground'}`}>
+                              {routine.name}
+                            </div>
+                            <div className="text-xs text-foreground dark:opacity-75">
+                              {routine.time} • {routine.streak}일 연속
+                            </div>
                           </div>
                         </div>
                       </div>
-                    </div>
 
-                    <div className="flex items-center space-x-2 h-[30px]">
-          {routine.isGroupRoutine ? (
-            isCompleted ? (
-              <div className="w-8 h-8 rounded-full flex items-center justify-center transition-colors p-0 m-0 bg-green-500">
-                <CheckCircle className="h-5 w-5 text-white" />
-              </div>
-            ) : isPending ? (
-              <Badge
-                variant="secondary"
-                className="bg-orange-100 text-orange-600 border border-orange-300 dark:bg-orange-900/40 dark:text-orange-300 dark:border-orange-800"
-              >
-                승인 대기
-              </Badge>
+                      <div className="flex items-center space-x-2 h-[30px]">
+                        {routine.isGroupRoutine ? (
+                          isCompleted ? (
+                            <div className="w-8 h-8 rounded-full flex items-center justify-center transition-colors p-0 m-0 bg-green-500">
+                              <CheckCircle className="h-5 w-5 text-white" />
+                            </div>
+                          ) : isPending ? (
+                            <Badge
+                              variant="secondary"
+                              className="bg-orange-100 text-orange-600 border border-orange-300 dark:bg-orange-900/40 dark:text-orange-300 dark:border-orange-800"
+                            >
+                              승인 대기
+                            </Badge>
+                          ) : (
+                            <button
+                              onClick={(e) => handleGroupAuthClick(routine, e)}
+                              className="w-auto h-8 rounded-full flex items-center justify-center transition-colors px-3 py-1 text-xs text-foreground border-2 border-border/60 hover:bg-accent"
+                            >
+                              <span className="flex items-center">
+                                {routine.type === '의무참여' && <Camera className="h-4 w-4 mr-1 text-foreground/70" />}
+                                인증
+                              </span>
+                            </button>
+                          )
+                        ) : (
+                          <button
+                            onClick={(e) => {
+                              toggleRoutineCompletion(routine.id, e);
+                              onOpenAttendanceModal();
+                            }}
+                            className={`w-8 h-8 rounded-full flex items-center justify-center transition-colors m-0 border-0 ${
+                              routine.completed ? 'bg-green-500 hover:bg-green-600' : 'border-2 border-border/60 hover:border-green-500'
+                            } !p-0`}
+                          >
+                            <CheckCircle
+                              className={`h-5 w-5 ${
+                                routine.completed ? 'text-white' : 'text-transparent'
+                              }`}
+                            />
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                );
+              })
             ) : (
-              <button
-                onClick={(e) => handleGroupAuthClick(routine, e)}
-                className="w-auto h-8 rounded-full flex items-center justify-center transition-colors px-3 py-1 text-xs text-foreground border-2 border-border/60 hover:bg-accent"
-              >
-                <span className="flex items-center">
-                  {routine.type === '의무참여' && (
-                    <Camera className="h-4 w-4 mr-1 text-foreground/70" />
-                  )}
-                  인증
-                </span>
-              </button>
-            )
-          ) : (
-            // 개인 루틴
-            <button
-              onClick={(e) => {
-                toggleRoutineCompletion(routine.id, e);
-                onOpenAttendanceModal();
-              }}
-              className={`w-8 h-8 rounded-full flex items-center justify-center transition-colors m-0 border-0 ${
-                routine.completed
-                  ? 'bg-green-500 hover:bg-green-600'
-                  : 'border-2 border-border/60 hover:border-green-500'
-              } !p-0`}
-            >
-              <CheckCircle
-                className={`h-5 w-5 ${
-                  routine.completed ? 'text-white' : 'text-transparent'
-                }`}
-              />
-            </button>
-          )}
-           </div>
-              </div>
-            </div>
-          );
-        })
-           ) : (
-        <p className="text-sm text-center text-muted-foreground p-4">오늘은 루틴이 없어요!</p>
-      )}
-    </div>
-      
+              <p className="text-sm text-center text-muted-foreground p-4">오늘은 루틴이 없어요!</p>
+            )}
+          </div>
         </CardContent>
       </Card>
 
-      {/* 참여 그룹 */}
       <Card className="dark:card-shadow">
         <CardHeader className="pb-4">
           <CardTitle className="text-base text-foreground flex items-center space-x-2">
@@ -580,7 +499,6 @@ const handleGroupAuthSubmit = (data: { description: string; image: File | null; 
         </CardContent>
       </Card>
 
-      {/* 나의 인증 사진 그리드 (공개된 것만) */}
       <Card className="dark:card-shadow">
         <CardHeader className="pb-4">
           <CardTitle className="text-base text-foreground flex items-center space-x-2">
@@ -595,7 +513,7 @@ const handleGroupAuthSubmit = (data: { description: string; image: File | null; 
               <div
                 key={photo.id}
                 className="space-y-2 cursor-pointer"
-                onClick={() => handlePhotoClick(index)} // 클릭 이벤트 추가
+                onClick={() => handlePhotoClick(index)}
               >
                 <div className="relative rounded-lg overflow-hidden aspect-square">
                   <ImageWithFallback
@@ -619,14 +537,11 @@ const handleGroupAuthSubmit = (data: { description: string; image: File | null; 
           </div>
         </CardContent>
       </Card>
-
-
-            <GroupRoutineDialog
-              isOpen={isGroupDialogOpen}
-              onOpenChange={setIsGroupDialogOpen}
-             // onAuthSubmit={handleGroupAuthSubmit}
-              onAuthSubmit={handleGroupAuthSubmit}
-            />
+      <GroupRoutineDialog
+        isOpen={isGroupDialogOpen}
+        onOpenChange={setIsGroupDialogOpen}
+        onAuthSubmit={handleGroupAuthSubmit}
+      />
     </div>
   );
 }

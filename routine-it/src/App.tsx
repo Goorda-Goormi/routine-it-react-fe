@@ -871,7 +871,8 @@ const handleUpdateGroup = (updatedGroup: Group) => {
             onOpenBadgeModal={handleOpenBadgeModal}
             onAddAuthMessage={handleAddAuthMessage}
             pendingAuthMessages={pendingAuthMessages}
-              
+              onApproveAuthMessage={handleApproveAuthMessage}
+                    onRejectAuthMessage={handleRejectAuthMessage}
           />
         );
       case "routine":
@@ -926,6 +927,8 @@ const handleUpdateGroup = (updatedGroup: Group) => {
             onOpenBadgeModal={handleOpenBadgeModal}
             onAddAuthMessage={handleAddAuthMessage}
             pendingAuthMessages={pendingAuthMessages}
+            onApproveAuthMessage={handleApproveAuthMessage}
+                    onRejectAuthMessage={handleRejectAuthMessage}
              
           />
         );
