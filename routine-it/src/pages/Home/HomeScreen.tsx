@@ -7,6 +7,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '../../components/ui/avatar'
 import { Calendar, Target, Trophy, Users, Camera, CheckCircle, Plus, TrendingUp, Clock, Heart, MessageCircle, Flame, ChevronLeft, ChevronRight, X } from 'lucide-react';
 import { ImageWithFallback } from '../../components/figma/ImageWithFallback';
 import { getStreakInfo, getStreakMessage } from '../../components/utils/streakUtils';
+import { GroupRoutineDialog } from '../../pages/Group/GroupChat/GroupRoutineDialog';
 
 const getTodayDayOfWeek = () => {
   const dayOfWeek = ['일', '월', '화', '수', '목', '금', '토'];
@@ -73,7 +74,25 @@ interface VerificationPhoto {
 export function HomeScreen({ onNavigate, initialUserInfo, personalRoutines, onToggleCompletion, streakDays, participatingGroups, onOpenAttendanceModal, onOpenStreakModal, onOpenBadgeModal }: HomeScreenProps) {
   const today = new Date();
   const todayString = today.toLocaleDateString('ko-KR', { month: 'long', day: 'numeric' });
+  
+  const [isGroupDialogOpen, setIsGroupDialogOpen] = useState(false);
+  const [selectedRoutine, setSelectedRoutine] = useState<Routine | null>(null);
 
+   // 그룹 루틴 인증 버튼 클릭
+  const handleGroupAuthClick = (routine: Routine, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setSelectedRoutine(routine);
+    setIsGroupDialogOpen(true);
+  };
+
+  // 모달에서 인증 완료 시
+  const handleGroupAuthSubmit = (data: { description: string; image: File | null; isPublic: boolean }) => {
+    if (selectedRoutine) {
+      // 루틴 완료 처리
+      onToggleCompletion(selectedRoutine.id, true);
+      console.log('그룹 루틴 인증 제출:', selectedRoutine.name, data);
+    }
+  };
   // 연속 출석일 (예시 데이터)
   const currentStreak = 0;
   const streakInfo = getStreakInfo(streakDays);
@@ -328,30 +347,27 @@ export function HomeScreen({ onNavigate, initialUserInfo, personalRoutines, onTo
                       {/* 완료 체크박스 */}
                       {/* 개인 루틴과 그룹 루틴에 따라 다른 로직 적용 */}
                       {routine.isGroupRoutine ? (
-                        // 그룹 루틴
-                        routine.completed ? (
-                          // 완료된 그룹 루틴: div로 표시 (클릭 불가능)
-                          <div
-                            className={`w-8 h-8 rounded-full flex items-center justify-center transition-colors p-0 m-0 bg-green-500`}
-                          >
-                            <CheckCircle className="h-5 w-5 text-white" />
-                          </div>
-                        ) : (
-                          // 미완료 그룹 루틴: 인증 버튼
-                          <button
-                            onClick={(e) => {
-                              toggleRoutineCompletion(routine.id, e); 
-                              onOpenAttendanceModal();
-                            }} 
-                            className={`w-auto h-8 rounded-full flex items-center justify-center transition-colors px-3 py-1 text-xs text-foreground border-2 border-border/60 hover:bg-accent`}
-                          >
-                            <span className='flex items-center'>
-                              {routine.type === '의무참여' && <Camera className="h-4 w-4 mr-1 text-foreground/70" />}
-                              인증
-                            </span>
-                          </button>
-                        )
-                      ) : (
+  // 그룹 루틴
+  routine.completed ? (
+    // 완료된 그룹 루틴: div로 표시 (클릭 불가능)
+    <div
+      className={`w-8 h-8 rounded-full flex items-center justify-center transition-colors p-0 m-0 bg-green-500`}
+    >
+      <CheckCircle className="h-5 w-5 text-white" />
+    </div>
+  ) : (
+    // 미완료 그룹 루틴: 인증 버튼 (모달 오픈)
+    <button
+      onClick={(e) => handleGroupAuthClick(routine, e)}
+      className={`w-auto h-8 rounded-full flex items-center justify-center transition-colors px-3 py-1 text-xs text-foreground border-2 border-border/60 hover:bg-accent`}
+    >
+      <span className='flex items-center'>
+        {routine.type === '의무참여' && <Camera className="h-4 w-4 mr-1 text-foreground/70" />}
+        인증
+      </span>
+    </button>
+  )
+) : (
                         // 개인 루틴
                         <button
                           onClick={(e) => {
@@ -481,6 +497,12 @@ export function HomeScreen({ onNavigate, initialUserInfo, personalRoutines, onTo
         </CardContent>
       </Card>
 
+
+            <GroupRoutineDialog
+              isOpen={isGroupDialogOpen}
+              onOpenChange={setIsGroupDialogOpen}
+              onAuthSubmit={handleGroupAuthSubmit}
+            />
     </div>
   );
 }

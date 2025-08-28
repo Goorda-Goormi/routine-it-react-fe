@@ -1,13 +1,7 @@
 import React from 'react';
 import { Button } from '../../../components/ui/button';
 import { DialogHeader, DialogTitle, DialogDescription } from '../../../components/ui/dialog';
-
-interface AuthMessage {
-  id: number;
-  user: string;
-  message: string;
-  imageUrl?: string;
-}
+import type { AuthMessage } from '../../../interfaces';
 
 interface InviteMessage {
   id: number;
@@ -60,7 +54,7 @@ export function GroupApproval({
                   className="bg-green-400 hover:bg-green-500 text-white"
                   onClick={() => {
                     onApprove(invite.id);
-                    onClose?.();
+                    //onClose?.();
                   }}
                 >
                   승인
@@ -70,7 +64,7 @@ export function GroupApproval({
                   className="bg-green-600 text-white hover:bg-green-700"
                   onClick={() => {
                     onReject(invite.id);
-                    onClose?.();
+                    //onClose?.();
                   }}
                 >
                   거절

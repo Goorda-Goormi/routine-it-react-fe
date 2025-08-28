@@ -18,3 +18,10 @@ export interface Group {
   recentMembers?: Member[];
   owner?: string;
 }
+
+export interface AuthMessage {
+  id: number;
+  user: string;
+  message: string;
+  imageUrl: string | null;
+}

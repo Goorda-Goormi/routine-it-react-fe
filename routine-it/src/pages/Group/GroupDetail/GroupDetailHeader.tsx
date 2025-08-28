@@ -28,6 +28,7 @@ interface GroupDetailHeaderProps {
   onOpenEdit: () => void;
   onOpenApproval: () => void;
   onOpenExMembers: () => void;
+  pendingAuthCount: number;
 }
 
 export const GroupDetailHeader = ({
@@ -41,6 +42,7 @@ export const GroupDetailHeader = ({
   onOpenEdit,
   onOpenApproval,
   onOpenExMembers,
+  pendingAuthCount,
 }: GroupDetailHeaderProps) => {
   const handleMenuClick = (action: string) => {
     if (!isLeader) {
@@ -66,7 +68,7 @@ export const GroupDetailHeader = ({
 
   return (
     <div className="sticky top-0 z-10 bg-background/95 backdrop-blur ">
-      <div className="flex items-center justify-between backdrop-blur  p-4 border-b border-b-[var(--color-border-bottom-custom)]">
+      <div className="flex items-center justify-between backdrop-blur p-4 border-b border-b-[var(--color-border-bottom-custom)]">
         <div className="flex items-center space-x-3 ">
           <Button variant="ghost" size="sm" onClick={onBack} className="p-1">
             <ArrowLeft className="h-5 w-5 text-icon-secondary dark:text-white" />
@@ -76,7 +78,6 @@ export const GroupDetailHeader = ({
         <div className="flex items-center space-x-2">
           <Button variant="ghost" size="sm" className="text-card-foreground hover:text-card-foreground"></Button>
           <DropdownMenu>
-            {/* 리더가 아닐 경우 disabled prop을 추가하여 클릭을 막음 */}
             <DropdownMenuTrigger asChild disabled={!isLeader}>
               <Button
                 variant="ghost"
@@ -89,9 +90,19 @@ export const GroupDetailHeader = ({
             <DropdownMenuContent align="end">
               <DropdownMenuItem onClick={() => handleMenuClick('edit')}>그룹 정보 편집</DropdownMenuItem>
               
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={() => handleMenuClick('approval')}>인증 승인 / 반려</DropdownMenuItem>
-                
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={() => handleMenuClick('approval')} className="relative">
+                <div className="flex items-center justify-between w-full">
+                  <span>인증 승인 / 반려</span>
+                  {/* pendingAuthCount가 0보다 클 때만 뱃지 표시 */}
+                  {pendingAuthCount > 0 && (
+                    <Badge variant="destructive" className="ml-2 px-2 py-0.5 text-xs">
+                      {pendingAuthCount}
+                    </Badge>
+                  )}
+                </div>
+              </DropdownMenuItem>
+              
               <DropdownMenuSeparator />
               <DropdownMenuItem onClick={() => handleMenuClick('ex-members')}>멤버 관리하기</DropdownMenuItem>
             </DropdownMenuContent>

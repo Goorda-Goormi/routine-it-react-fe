@@ -21,7 +21,7 @@ import { AttendanceModal } from './components/modules/AttendanceModal';
 import { StreakModal } from './components/modules/StreakModal';
 import { getStreakInfo } from './components/utils/streakUtils';
 import { AchievementBadgeModal } from './components/modules/AchievementBadgeModal';
-
+import { AuthMessage } from "./interfaces";
 export interface Routine {
   id: number;
   name: string;
@@ -66,10 +66,54 @@ interface NavigationState {
 }
 
 type BadgeType = '첫걸음' | '7일 연속' | '루틴 마스터' | '월간 챔피언';
-
+//type PendingAuthMap = { [groupId: number]: AuthMessage[] };
 export default function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [activeTab, setActiveTab] = useState("home");
+  const [pendingAuthMessages, setPendingAuthMessages] = useState<PendingAuthMap>({});
+   // 루틴 인증 메시지를 추가하는 함수
+ 
+  // 루틴 인증 메시지를 추가하는 함수에 groupId 추가
+  const handleAddAuthMessage = (groupId: number, data: { description: string; image: File | null; isPublic: boolean }, userName: string) => {
+    const newAuthMessage: AuthMessage = {
+      id: Date.now(),
+      user: userName,
+      message: data.description,
+      imageUrl: data.image ? URL.createObjectURL(data.image) : null,
+    };
+    
+    // 해당 그룹의 메시지 배열에 새 메시지 추가
+    setPendingAuthMessages(prevMessages => ({
+      ...prevMessages,
+      [groupId]: [...(prevMessages[groupId] || []), newAuthMessage]
+    }));
+    
+    console.log('인증 데이터 제출:', data);
+    alert('인증이 제출되었습니다!');
+  };
+
+  // 루틴 인증을 승인하는 함수에 groupId 추가
+  const handleApproveAuthMessage = (groupId: number, id: number) => {
+    setPendingAuthMessages(prevMessages => ({
+      ...prevMessages,
+      [groupId]: (prevMessages[groupId] || []).filter(msg => msg.id !== id)
+    }));
+    console.log(`${id}번 인증을 승인했습니다.`);
+    alert(`${id}번 인증이 승인되었습니다.`);
+  };
+
+  // 루틴 인증을 거절하는 함수에 groupId 추가
+  const handleRejectAuthMessage = (groupId: number, id: number) => {
+    setPendingAuthMessages(prevMessages => ({
+      ...prevMessages,
+      [groupId]: (prevMessages[groupId] || []).filter(msg => msg.id !== id)
+    }));
+    console.log(`${id}번 인증을 거절했습니다.`);
+    alert(`${id}번 인증이 거절되었습니다.`);
+  };
+  
+  
+  
   const [navigationStack, setNavigationStack] = useState<
     NavigationState[]
   >([]);
@@ -683,7 +727,12 @@ const handleUpdateGroup = (updatedGroup: Group) => {
       onBack={navigateBack}
       onNavigate={navigateTo}
       onUpdateGroup={handleUpdateGroup}
-      onJoinGroup={handleJoinGroup} 
+      onJoinGroup={handleJoinGroup}
+      pendingAuthMessages={pendingAuthMessages}
+              onAddAuthMessage={handleAddAuthMessage}
+              onApproveAuthMessage={handleApproveAuthMessage}
+              onRejectAuthMessage={handleRejectAuthMessage}
+              currentUser={UserInfo} 
     />
   );
         case "profile-edit":
