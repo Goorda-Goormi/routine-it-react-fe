@@ -21,24 +21,9 @@ import { AttendanceModal } from './components/modules/AttendanceModal';
 import { StreakModal } from './components/modules/StreakModal';
 import { getStreakInfo } from './components/utils/streakUtils';
 import { AchievementBadgeModal } from './components/modules/AchievementBadgeModal';
-import type { AuthMessage } from "./interfaces";
+import type { AuthMessage,Routine } from "./interfaces";
 
-export interface Routine {
-  id: number;
-  name: string;
-  description?: string;
-  time: string;
-  frequency: string[];
-  reminder: boolean;
-  goal: string;
-  category: string;
-  completed: boolean;
-  streak: number;
-  difficulty: string;
-  isGroupRoutine?: boolean;
-  type?: string;
-  isOwner?: boolean;
-}
+
 
 export interface Group {
   id: number;
@@ -54,6 +39,7 @@ export interface Group {
     owner?: string;
     routines?: Routine[];
     isJoined?: boolean;
+    isMandatory?: boolean;
 }
 
 export interface PendingAuthMap {
@@ -320,6 +306,7 @@ export default function App() {
       category: 'lifestyle',
       owner: '임시소유자',
       isJoined: false,
+      isMandatory: true,
     },
     {
       id: 102,
@@ -331,6 +318,7 @@ export default function App() {
       category: 'exercise',
       owner: '임시소유자',
       isJoined: true,
+      isMandatory: false,
     },
     {
     id: 1,
@@ -343,6 +331,7 @@ export default function App() {
     isJoined: false,
     time: '06:00-09:00',
     category: 'exercise',
+    isMandatory: true,
     recentMembers: [
         { id: 1, name: '김민수', avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=40&h=40&fit=crop&crop=face' },
         { id: 2, name: '이지영', avatar: 'https://images.unsplash.com/photo-1494790108755-2616b95fcebf?w=40&h=40&fit=crop&crop=face' },
@@ -619,12 +608,14 @@ export default function App() {
       id: Date.now(),
       completed: false,
       streak: 0,
+       isGroupRoutine: false,
     };
     setPersonalRoutines(prev => [...prev, newRoutine]);
   };
   
   // 그룹을 추가하는 함수
   const handleAddGroup = (newGroupData: any) => {
+     const isMandatory = newGroupData.type === "의무참여"; 
   const newGroup = {
     ...newGroupData,
     id: Date.now(),
@@ -652,10 +643,13 @@ export default function App() {
         difficulty: newGroupData.difficulty,
         isGroupRoutine: true,
       }
-    ]
+    ],
+     isMandatory: isMandatory, 
   };
+  console.log('새로운 그룹 생성 시 isMandatory:', newGroup.isMandatory);
   setGroups(prev => [newGroup, ...prev]);
 };
+
 
 
 const handleUpdateGroup = (updatedGroup: Group) => {
@@ -766,6 +760,7 @@ const handleUpdateGroup = (updatedGroup: Group) => {
         goal: '30',
         completed: false,
         streak: 0,
+         isGroupRoutine: false,
     };
 
     setPersonalRoutines(prevRoutines => [...prevRoutines, newRoutine]);
@@ -825,21 +820,21 @@ const handleUpdateGroup = (updatedGroup: Group) => {
             />
           );
         case "group-detail":
-  return (
-    <GroupDetailScreen
-      groupId={currentScreen.params.id}  // group 객체 대신 id만 전달
-      groups={groups}                   // 전체 그룹 전달
-      onBack={navigateBack}
-      onNavigate={navigateTo}
-      onUpdateGroup={handleUpdateGroup}
-      onJoinGroup={handleJoinGroup}
-      pendingAuthMessages={pendingAuthMessages}
-      onAddAuthMessage={handleAddAuthMessage}
-      onApproveAuthMessage={handleApproveAuthMessage}
-      onRejectAuthMessage={handleRejectAuthMessage}
-      currentUser={UserInfo} 
-    />
-  );
+          return (
+            <GroupDetailScreen
+              groupId={currentScreen.params.id}  // group 객체 대신 id만 전달
+              groups={groups}                   // 전체 그룹 전달
+              onBack={navigateBack}
+              onNavigate={navigateTo}
+              onUpdateGroup={handleUpdateGroup}
+              onJoinGroup={handleJoinGroup}
+              pendingAuthMessages={pendingAuthMessages}
+              onAddAuthMessage={handleAddAuthMessage}
+              onApproveAuthMessage={handleApproveAuthMessage}
+              onRejectAuthMessage={handleRejectAuthMessage}
+              currentUser={UserInfo} 
+            />
+          );
         case "profile-edit":
           return (
             <ProfileEditScreen 

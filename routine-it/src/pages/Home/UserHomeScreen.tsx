@@ -7,6 +7,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '../../components/ui/avatar'
 import { ArrowLeft, ChevronLeft, ChevronRight, X, Camera, Flame, TrendingUp, Calendar, Trophy, Users, CheckCircle, Target, Clock, Lock } from 'lucide-react';
 import { ImageWithFallback } from '../../components/figma/ImageWithFallback';
 import { getStreakInfo, getStreakMessage } from '../../components/utils/streakUtils';
+import type {Routine} from '../../interfaces';
 
 interface User {
   id: number;
@@ -16,16 +17,6 @@ interface User {
   email: string;
   level: number;
   streak: number;
-}
-
-interface Routine {
-  id: number;
-  name: string;
-  description?: string;
-  time: string;
-  category: string;
-  completed: boolean;
-  isGroupRoutine?: boolean;
 }
 
 interface UserHomeScreenProps {
