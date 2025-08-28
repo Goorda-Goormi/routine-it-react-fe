@@ -35,8 +35,8 @@ export interface Group {
 
 interface UserInfo {
   name: string;
-  username: string;
-  profileImage: string;
+  //username: string;
+  avatar: string;
   bio: string;
 }
 

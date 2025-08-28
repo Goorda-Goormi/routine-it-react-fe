@@ -40,7 +40,7 @@ export interface Routine {
   frequency?: string[];
   type?: string;
   isOwner?: boolean;
-  reminder?: string; 
+  reminder?: string | boolean;
   goal?: string;
   description?: string;
 

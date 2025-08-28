@@ -173,7 +173,7 @@ export function RoutineDetailScreen({ routine, onBack, onUpdateRoutine, onDelete
           <Card>
             <CardHeader className="pb-3">
               <CardTitle className="text-base text-foreground flex items-center space-x-2">
-                <span className="text-xl">{getCategoryEmoji(routine.category)}</span>
+                <span className="text-xl">{getCategoryEmoji(routine.category ?? '')}</span>
                 <span className="font-semibold text-xl">{routine.name}</span>
               </CardTitle>
             </CardHeader>
@@ -182,7 +182,7 @@ export function RoutineDetailScreen({ routine, onBack, onUpdateRoutine, onDelete
                 <div className="flex items-center space-x-2 text-foreground">
                   <Badge 
                     variant="outline" 
-                    className={`text-sm ${getDifficultyColor(routine.difficulty)}`}
+                    className={`text-sm ${getDifficultyColor(routine.difficulty ?? '')}`}
                   >
                     {editedRoutine.difficulty}
                   </Badge>
@@ -197,7 +197,7 @@ export function RoutineDetailScreen({ routine, onBack, onUpdateRoutine, onDelete
                 </div>
                 <div className="flex items-center space-x-2 text-sm text-foreground">
                   <Calendar className="h-4 w-4 text-icon-secondary" />
-                  <span>반복 주기: {getFrequencyText(routine.frequency)}</span>
+                  <span>반복 주기: {getFrequencyText(routine.frequency ?? [])}</span>
                 </div>
                 <div className="flex items-center space-x-2 text-sm text-foreground">
                   <Target className="h-4 w-4 text-icon-secondary" />

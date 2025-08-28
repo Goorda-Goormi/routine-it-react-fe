@@ -224,20 +224,7 @@ export default function App() {
     }
   };
 
-  // 뱃지 획득 조건을 확인하고 모달을 띄우는 함수
-  // const checkAndShowBadge = (badge: BadgeType, conditionMet: boolean) => {
-  //   if (conditionMet && !earnedBadges.includes(badge)) {
-  //     setBadgeName(badge);
-  //     setBadgeImage(badgeInfo[badge].image);
-  //     setBadgeModalOpen(true);
-
-  //     // 뱃지 획득 목록에 추가하고 localStorage에 저장
-  //     const newEarnedBadges = [...earnedBadges, badge];
-  //     setEarnedBadges(newEarnedBadges);
-  //     localStorage.setItem('earnedBadges', JSON.stringify(newEarnedBadges));
-  //   }
-  // };
-
+ 
 
   const [UserInfo, setUserInfo] = useState({
       name: '구르미',
@@ -381,27 +368,7 @@ export default function App() {
     setGroupRoutines(newGroupRoutines);
   }, [groups]);
 
-  /*
-  const handleJoinGroup = () => {
-    // 임시로 가상의 그룹 루틴을 추가하는 로직
-    const newGroupRoutine: Routine = {
-      id: Math.random(), // 고유 ID 생성
-      name: '',
-      description: '',
-      time: '08:00',
-      frequency: ["월", "화", "수", "목", "금", "토", "일"],
-      reminder: true,
-      goal: "30",
-      category: "생활",
-      completed: false,
-      streak: 0,
-      difficulty: "쉬움",
-      isGroupRoutine: true
-    };
-    
-    setGroupRoutines(prevRoutines => [...prevRoutines, newGroupRoutine]);
-    navigateTo('routine', {});
-  };*/
+  
   const handleJoinGroup = (groupId: number) => {
   setGroups(prevGroups =>
     prevGroups.map(group =>
@@ -411,18 +378,6 @@ export default function App() {
 };
 
   
-  // 모든 루틴을 합치는 배열
-  //const allRoutines = [...personalRoutines, ...groupRoutines];
-/*
-  const allRoutines = React.useMemo(() => {
-  return [
-    ...personalRoutines,
-    ...groups.flatMap(group =>
-      group.routines?.map(r => ({ ...r, isGroupRoutine: true })) || []
-    )
-  ];
-}, [personalRoutines, groups]);*/
-
   const [recommendedRoutines, setRecommendedRoutines] = useState([
     {
       id: 7,
