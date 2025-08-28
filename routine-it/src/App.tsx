@@ -21,37 +21,8 @@ import { AttendanceModal } from './components/modules/AttendanceModal';
 import { StreakModal } from './components/modules/StreakModal';
 import { getStreakInfo } from './components/utils/streakUtils';
 import { AchievementBadgeModal } from './components/modules/AchievementBadgeModal';
-import type { AuthMessage,Routine } from "./interfaces";
+import type { AuthMessage,Routine,Group,Member,PendingAuthMap } from "./interfaces";
 
-
-
-export interface Group {
-  id: number;
-    name: string;
-    description: string;
-    members: number;
-    type: string;
-    progress?: number;
-    isOwner?: boolean;
-    time: string;
-    category: string;
-    recentMembers?: Member[];
-    owner?: string;
-    routines?: Routine[];
-    isJoined?: boolean;
-    isMandatory?: boolean;
-}
-
-export interface PendingAuthMap {
-  [groupId: number]: AuthMessage[];
-}
-
-export interface Member {
-  id: number;
-  name: string;
-  avatar: string;
-  isCertified?: boolean; 
-}
 
 interface NavigationState {
   screen: string;

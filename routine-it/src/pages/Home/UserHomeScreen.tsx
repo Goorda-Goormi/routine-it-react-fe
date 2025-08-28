@@ -7,17 +7,9 @@ import { Avatar, AvatarFallback, AvatarImage } from '../../components/ui/avatar'
 import { ArrowLeft, ChevronLeft, ChevronRight, X, Camera, Flame, TrendingUp, Calendar, Trophy, Users, CheckCircle, Target, Clock, Lock } from 'lucide-react';
 import { ImageWithFallback } from '../../components/figma/ImageWithFallback';
 import { getStreakInfo, getStreakMessage } from '../../components/utils/streakUtils';
-import type {Routine} from '../../interfaces';
+import type {Routine, User} from '../../interfaces';
 
-interface User {
-  id: number;
-  name: string;
-  avatar: string;
-  bio: string;
-  email: string;
-  level: number;
-  streak: number;
-}
+
 
 interface UserHomeScreenProps {
   user: any;
@@ -51,7 +43,8 @@ export function UserHomeScreen({ user, onBack }: UserHomeScreenProps) {
   };
 
   // 다른 유저의 정보 (공개 정보)
-  const [userProfile] = useState({
+  const [userProfile] = useState<User>({
+    id: user.id,
     name: user?.name || '이지영',
     avatar: user?.avatar || 'https://images.unsplash.com/photo-1494790108755-2616b95fcebf?w=80&h=80&fit=crop&crop=face',
     level: 12,

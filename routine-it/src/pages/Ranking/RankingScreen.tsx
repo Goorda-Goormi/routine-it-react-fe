@@ -6,20 +6,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../components/ui/ta
 import { Avatar, AvatarFallback, AvatarImage } from '../../components/ui/avatar';
 import { Trophy, Users, Medal, Crown, Star, Target } from 'lucide-react';
 import { rankGroups } from '../../components/utils/rankingUtils';
+import type { Group } from '../../interfaces';
 
-interface Group {
-  id: number;
-  name: string;
-  description?: string;
-  members: number;
-  type: string;
-  time: string;
-  category: string;
-  owner?: string;
-  progress?: number;
-  isOwner?: boolean;
-  recentMembers?: { id: number; name: string; avatar: string }[];
-}
 
 export function RankingScreen({ groups }: { groups: Group[] }) {
   // 개인별 랭킹 데이터는 그대로 둡니다

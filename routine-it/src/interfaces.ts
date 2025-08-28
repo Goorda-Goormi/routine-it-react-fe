@@ -1,8 +1,11 @@
+//모든 파일에서 다 같은 변수 사용하면 그냥 "변수명 : 타입"
+//일부 파일에서는 몇 변수가 필요없으면 "변수명? : 타입""
 
 export interface Member {
   id: number;
   name: string;
   avatar: string;
+  isCertified?: boolean; 
 }
 
 export interface Group {
@@ -17,7 +20,13 @@ export interface Group {
   category: string;
   recentMembers?: Member[];
   owner?: string;
+  routines?: Routine[];
+  isJoined?: boolean;
+  isMandatory?: boolean;
+
 }
+
+
 
 export interface AuthMessage {
   id: number;
@@ -45,4 +54,24 @@ export interface Routine {
   description?: string;
 
 
+}
+
+export interface PendingAuthMap {
+  [groupId: number]: AuthMessage[];
+}
+
+
+export interface User {
+  id: number;
+  name: string;
+  avatar: string;
+  bio?: string;
+  email?: string;
+  level?: number;
+  streak?: number;
+  streakDays: number;
+  //아마 여긴 더미에서만 필요한 속성이 아닐까
+  totalPoints?: number;
+  joinDate?: string;
+  //위에 두 개. userhome
 }

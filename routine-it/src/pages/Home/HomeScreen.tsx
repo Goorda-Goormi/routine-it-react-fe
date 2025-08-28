@@ -8,7 +8,7 @@ import { Calendar, Target, Trophy, Users, Camera, CheckCircle, Plus, TrendingUp,
 import { ImageWithFallback } from '../../components/figma/ImageWithFallback';
 import { getStreakInfo, getStreakMessage } from '../../components/utils/streakUtils';
 import { GroupRoutineDialog } from '../../pages/Group/GroupChat/GroupRoutineDialog';
-import type { AuthMessage,Routine } from '../../interfaces';
+import type { AuthMessage,Routine,Group,Member,PendingAuthMap } from '../../interfaces';
 
 const getTodayDayOfWeek = () => {
   const dayOfWeek = ['일', '월', '화', '수', '목', '금', '토'];
@@ -18,20 +18,7 @@ const getTodayDayOfWeek = () => {
 
 
 
-export interface Member {
-  id: number;
-  name: string;
-  avatar: string;
-}
 
-export interface Group {
-  id: number;
-  name: string;
-  description?: string;
-  members: number;
-  routines?: Routine[];
-  recentMembers?: Member[];
-}
 
 interface UserInfo {
   name: string;
@@ -40,9 +27,7 @@ interface UserInfo {
   bio: string;
 }
 
-interface PendingAuthMap {
-  [groupId: number]: AuthMessage[];
-}
+
 
 interface HomeScreenProps {
   onNavigate: (screen: string, params?: any) => void;
