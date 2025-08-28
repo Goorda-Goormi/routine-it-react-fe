@@ -792,21 +792,21 @@ const handleUpdateGroup = (updatedGroup: Group) => {
             />
           );
         case "group-detail":
-  return (
-    <GroupDetailScreen
-      groupId={currentScreen.params.id}  // group 객체 대신 id만 전달
-      groups={groups}                   // 전체 그룹 전달
-      onBack={navigateBack}
-      onNavigate={navigateTo}
-      onUpdateGroup={handleUpdateGroup}
-      onJoinGroup={handleJoinGroup}
-      pendingAuthMessages={pendingAuthMessages}
-      onAddAuthMessage={handleAddAuthMessage}
-      onApproveAuthMessage={handleApproveAuthMessage}
-      onRejectAuthMessage={handleRejectAuthMessage}
-      currentUser={UserInfo} 
-    />
-  );
+          return (
+            <GroupDetailScreen
+              groupId={currentScreen.params.id}  // group 객체 대신 id만 전달
+              groups={groups}                   // 전체 그룹 전달
+              onBack={navigateBack}
+              onNavigate={navigateTo}
+              onUpdateGroup={handleUpdateGroup}
+              onJoinGroup={handleJoinGroup}
+              pendingAuthMessages={pendingAuthMessages}
+              onAddAuthMessage={handleAddAuthMessage}
+              onApproveAuthMessage={handleApproveAuthMessage}
+              onRejectAuthMessage={handleRejectAuthMessage}
+              currentUser={UserInfo} 
+            />
+          );
         case "profile-edit":
           return (
             <ProfileEditScreen 

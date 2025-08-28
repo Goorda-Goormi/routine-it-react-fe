@@ -132,28 +132,28 @@ export function GroupDetailScreen({
       />
 
       <Dialog open={showApprovalModal} onOpenChange={setShowApprovalModal}>
-  <DialogContent className="max-w-md text-icon-secondary dark:text-white">
-    <GroupApproval
-  authMessages={pendingGroupAuthMessages}
-  onApprove={(messageId) => {
-    const message = pendingGroupAuthMessages.find(m => m.id === messageId);
-    if (message) {
-      console.log("인증 제출한 사용자 ID:", message.userId);
-      console.log("승인 처리 대상 메시지 ID:", messageId);
-      onApproveAuthMessage(groupId, messageId);
-    }
-    setShowApprovalModal(false);
-  }}
-  onReject={(messageId) => {
-    const message = pendingGroupAuthMessages.find(m => m.id === messageId);
-    if (message) {
-      console.log("거절 처리 대상 사용자 ID:", message.userId);
-    }
-    onRejectAuthMessage(groupId, messageId);
-    setShowApprovalModal(false);
-  }}
-  onClose={() => setShowApprovalModal(false)}
-/>
+        <DialogContent className="max-w-md text-icon-secondary dark:text-white">
+          <GroupApproval
+        authMessages={pendingGroupAuthMessages}
+        onApprove={(messageId) => {
+          const message = pendingGroupAuthMessages.find(m => m.id === messageId);
+          if (message) {
+            console.log("인증 제출한 사용자 ID:", message.userId);
+            console.log("승인 처리 대상 메시지 ID:", messageId);
+            onApproveAuthMessage(groupId, messageId);
+          }
+          setShowApprovalModal(false);
+        }}
+        onReject={(messageId) => {
+          const message = pendingGroupAuthMessages.find(m => m.id === messageId);
+          if (message) {
+            console.log("거절 처리 대상 사용자 ID:", message.userId);
+          }
+          onRejectAuthMessage(groupId, messageId);
+          setShowApprovalModal(false);
+        }}
+        onClose={() => setShowApprovalModal(false)}
+      />
   </DialogContent>
 </Dialog>
 
@@ -161,6 +161,8 @@ export function GroupDetailScreen({
         isOpen={showRoutineModal}
         onOpenChange={setShowRoutineModal}
         onAuthSubmit={handleAuthSubmit}
+        isMandatory={group?.isMandatory}
+        selectedRoutine={group?.routines?.[0] || null}
       />
     </div>
   );
