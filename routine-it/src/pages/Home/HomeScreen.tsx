@@ -18,8 +18,6 @@ const getTodayDayOfWeek = () => {
 
 
 
-
-
 interface UserInfo {
   name: string;
   //username: string;

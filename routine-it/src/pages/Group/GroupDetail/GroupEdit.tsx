@@ -24,6 +24,9 @@ interface GroupEditProps {
     hasAlarm?: boolean;
     alarmTime?: string;
     maxMembers: number;
+    time: string;
+    selectedDays: string[];
+    difficulty: string;
   };
 }
 

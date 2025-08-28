@@ -58,7 +58,7 @@ export function UserHomeScreen({ user, onBack }: UserHomeScreenProps) {
   const streakInfo = getStreakInfo(userProfile.streakDays);
 
   // 상대방의 오늘 루틴 (공개)
-  const userRoutines = [
+  const userRoutines: Routine[] = [
     {
       id: 1,
       name: '아침 요가',

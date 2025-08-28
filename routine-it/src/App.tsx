@@ -579,9 +579,16 @@ export default function App() {
 
 
 const handleUpdateGroup = (updatedGroup: Group) => {
+  const isMandatory = updatedGroup.type === '의무참여';
   setGroups(prevGroups =>
     prevGroups.map(group =>
-      group.id === updatedGroup.id ? { ...group, ...updatedGroup } : group
+      group.id === updatedGroup.id 
+      ? { 
+        ...group, 
+        ...updatedGroup, 
+        isMandatory: isMandatory, 
+      }
+       : group
     )
   );
 
