@@ -113,10 +113,14 @@ export function GroupDetailScreen({
   };
   const handleApprove = (id: number) => {
     onApproveAuthMessage(groupId, id);
+
+
     setShowApprovalModal(false);
   };
   const handleReject = (id: number) => {
     onRejectAuthMessage(groupId, id);
+
+  
     setShowApprovalModal(false);
   };
 

@@ -24,4 +24,5 @@ export interface AuthMessage {
   user: string;
   message: string;
   imageUrl: string | null;
+  routineId: number; 
 }

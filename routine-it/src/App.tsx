@@ -669,6 +669,7 @@ const handleUpdateGroup = (updatedGroup: Group) => {
   };
 
 
+
   const handleSaveProfile = (updatedInfo: any) => {
       setUserInfo(prev => ({ ...prev, ...updatedInfo }));
   };
@@ -811,7 +812,10 @@ const handleUpdateGroup = (updatedGroup: Group) => {
             participatingGroups={groups}
             onOpenAttendanceModal={handleOpenAttendanceModal}
             onOpenStreakModal={handleOpenStreakModal}
-            onOpenBadgeModal={handleOpenBadgeModal}   
+            onOpenBadgeModal={handleOpenBadgeModal}
+            onAddAuthMessage={handleAddAuthMessage}
+            pendingAuthMessages={pendingAuthMessages}
+              
           />
         );
       case "routine":
@@ -864,6 +868,9 @@ const handleUpdateGroup = (updatedGroup: Group) => {
             onOpenAttendanceModal={handleOpenAttendanceModal}
             onOpenStreakModal={handleOpenStreakModal}
             onOpenBadgeModal={handleOpenBadgeModal}
+            onAddAuthMessage={handleAddAuthMessage}
+            pendingAuthMessages={pendingAuthMessages}
+             
           />
         );
     }
