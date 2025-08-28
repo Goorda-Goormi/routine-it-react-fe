@@ -11,6 +11,7 @@ import { GroupChatInput } from './GroupChatInput';
 interface GroupChatScreenProps {
   group: any;
   onBack: () => void;
+  onAddAuthMessage: (groupId: number, data: any, userName: string) => void;
 }
 
 interface User {
@@ -33,7 +34,7 @@ export interface Message {
   albumImages?: string[];
 }
 
-export function GroupChatScreen({ group, onBack }: GroupChatScreenProps) {
+export function GroupChatScreen({ group, onBack, onAddAuthMessage }: GroupChatScreenProps) {
   const [isAuthDialogOpen, setIsAuthDialogOpen] = useState(false);
   const [isMembersDialogOpen, setIsMembersDialogOpen] = useState(false);
 
@@ -175,19 +176,24 @@ export function GroupChatScreen({ group, onBack }: GroupChatScreenProps) {
 
     setMessages((prev) => [...prev, newMessage]);
   };
-
-  const handleAuthSubmit = (data: { description: string; image: File | null; isPublic: boolean }) => {
+  const myUserName = '나';
+   const handleAuthSubmit = (data: { description: string; image: File | null; isPublic: boolean }) => {
+    // 1. 그룹 채팅에 바로 표시할 메시지 추가
     const authMessage: Message = {
       id: Date.now(),
-      user: '나',
+      user: myUserName,
       userId: myUserId,
-      message: data.description, 
+      message: data.description,
       time: new Date().toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' }),
       isMe: true,
       type: 'auth',
       reactions: {},
     };
     setMessages((prevMessages) => [...prevMessages, authMessage]);
+    
+    // 2. props로 받은 onAddAuthMessage 함수를 호출하여 필요한 모든 데이터를 전달
+    onAddAuthMessage(group.id, data, myUserName);
+    
     setIsAuthDialogOpen(false);
   };
 
@@ -288,7 +294,7 @@ export function GroupChatScreen({ group, onBack }: GroupChatScreenProps) {
       <GroupChatInput handleSendMessage={handleSendMessage} handleSendImage={handleSendImage} handleSendAlbum={handleSendAlbum} />
       
       {/* GroupRoutineDialog 모달을 조건부 렌더링 */}
-      <GroupRoutineDialog isOpen={isAuthDialogOpen} onOpenChange={setIsAuthDialogOpen} onAuthSubmit={handleAuthSubmit} />
+       <GroupRoutineDialog isOpen={isAuthDialogOpen} onOpenChange={setIsAuthDialogOpen} onAuthSubmit={handleAuthSubmit} />
     </div>
   );
 }

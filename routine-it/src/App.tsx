@@ -193,6 +193,7 @@ export default function App() {
 
   const [UserInfo, setUserInfo] = useState({
       name: '구르미',
+      id:'1',
       email: 'goormida@example.com',
       avatar: '/profile.jpg',
       joinDate: '2024년 1월',
@@ -729,10 +730,10 @@ const handleUpdateGroup = (updatedGroup: Group) => {
       onUpdateGroup={handleUpdateGroup}
       onJoinGroup={handleJoinGroup}
       pendingAuthMessages={pendingAuthMessages}
-              onAddAuthMessage={handleAddAuthMessage}
-              onApproveAuthMessage={handleApproveAuthMessage}
-              onRejectAuthMessage={handleRejectAuthMessage}
-              currentUser={UserInfo} 
+      onAddAuthMessage={handleAddAuthMessage}
+      onApproveAuthMessage={handleApproveAuthMessage}
+      onRejectAuthMessage={handleRejectAuthMessage}
+      currentUser={UserInfo} 
     />
   );
         case "profile-edit":
@@ -751,6 +752,7 @@ const handleUpdateGroup = (updatedGroup: Group) => {
             <GroupChatScreen
               group={currentScreen.params}
               onBack={navigateBack}
+               onAddAuthMessage={handleAddAuthMessage}
             />
           );
         case "create-routine":

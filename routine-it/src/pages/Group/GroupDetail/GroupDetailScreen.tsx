@@ -19,8 +19,9 @@ interface GroupDetailScreenProps {
   
   // 함수 호출 시 groupId를 넘기도록 변경 (App.tsx에서 이미 처리)
   onAddAuthMessage: (groupId: number, data: any, userName: string) => void;
-  onApproveAuthMessage: (id: number) => void;
-  onRejectAuthMessage: (id: number) => void;
+  onApproveAuthMessage: (groupId: number, id: number) => void; 
+  onRejectAuthMessage: (groupId: number, id: number) => void;
+  
   currentUser: { name: string; id: string | number; avatar?: string };
 }
 
