@@ -11,7 +11,7 @@ import { GroupChatInput } from './GroupChatInput';
 interface GroupChatScreenProps {
   group: any;
   onBack: () => void;
-  onAddAuthMessage: (groupId: number, data: any, userName: string) => void;
+  onAddAuthMessage: (groupId: number, data: any, userName: string, userId: string | number, routineId: number) => void;
 }
 
 interface User {
