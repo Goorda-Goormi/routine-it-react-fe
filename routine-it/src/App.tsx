@@ -573,40 +573,9 @@ export default function App() {
   };
   
   // 그룹을 추가하는 함수
-  const handleAddGroup = (newGroupData: any) => {
-     const isMandatory = newGroupData.type === "의무참여"; 
-  const newGroup = {
-    ...newGroupData,
-    id: Date.now(),
-    members: 1,
-    progress: 0,
-    isOwner: true,
-    isJoined: true,
-    time: newGroupData.time, 
-    owner: UserInfo.name,
-    recentMembers: [
-      { id: Number(UserInfo.id), name: UserInfo.name, avatar: UserInfo.avatar, isCertified: false }
-    ],
-    routines: [ // 새로운 그룹에 기본 루틴 추가
-      {
-        id: Date.now(),
-        name: newGroupData.name,
-        description: newGroupData.description,
-        time: newGroupData.time, // 그룹의 루틴에도 time 적용
-        frequency: newGroupData.selectedDays, // 'frequency'로 변경
-        reminder: newGroupData.hasAlarm, // 'reminder'에 hasAlarm 적용
-        goal: newGroupData.goal, // goal 필드 추가 필요
-        category: newGroupData.category,
-        completed: false,
-        streak: 0,
-        difficulty: newGroupData.difficulty,
-        isGroupRoutine: true,
-      }
-    ],
-     isMandatory: isMandatory, 
-  };
-  console.log('새로운 그룹 생성 시 isMandatory:', newGroup.isMandatory);
-  setGroups(prev => [newGroup, ...prev]);
+ const handleAddGroup = (newGroupData: any) => {
+  console.log('새로운 그룹 생성 시 :', newGroupData);
+ setGroups((prev) => [newGroupData, ...prev]);
 };
 
 

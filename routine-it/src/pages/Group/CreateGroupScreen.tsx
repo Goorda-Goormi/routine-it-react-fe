@@ -10,6 +10,7 @@ import { Switch } from '../../components/ui/switch';
 import { Badge } from '../../components/ui/badge';
 import { ArrowLeft, Clock, Users, Target, AlertCircle, CheckSquare } from 'lucide-react';
 import { Alert, AlertDescription } from '../../components/ui/alert';
+import { createGroup, type GroupRequest } from '../../api/group';
 
 interface CreateGroupScreenProps {
   onBack: () => void;
@@ -141,24 +142,47 @@ export function CreateGroupScreen({ onBack, onCreateGroup }: CreateGroupScreenPr
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = () => {
-    if (!validateForm()) {
-      return;
-    }
+const handleSubmit = async () => {
+  if (!validateForm()) return;
 
-    const newGroup = {
-      ...formData,
-      id: Date.now(),
-      type: formData.type === 'mandatory' ? '의무참여' : '자유참여',
-      alarmTime: formData.hasAlarm ? formData.alarmTime : null,
-      maxMembers: parseInt(formData.maxMembers)
-    };
+  const [hour, minute] = formData.time.split(":").map(Number);
 
-    console.log('그룹 생성:', newGroup);
+  //  리터럴 유니온 타입으로 확정
+  const groupType: GroupRequest["groupType"] =
+    formData.type === "mandatory" ? "REQUIRED" : "FREE";
 
-    onCreateGroup(newGroup);
-    onBack();
+  // ^[01]{7}$: 월(0)~일(6) 기준. 필요시 일요일 먼저로 바꿔도 됩니다.
+  const authDays = convertDaysToBinary(formData.selectedDays);
+
+  // API 요청 페이로드 구성
+  const payload: GroupRequest = {
+    groupName: formData.name,
+    groupDescription: formData.description,
+    groupType, 
+    alarmTime: formData.hasAlarm
+      ? { hour, minute, second: 0, nano: 0 }
+      : { hour: 0, minute: 0, second: 0, nano: 0 },
+    authDays,
+    category: formData.category,
+    imageUrl: "/default.png",
+    maxMembers: parseInt(formData.maxMembers, 10),
   };
+
+  try {
+    const created = await createGroup(payload);
+    onCreateGroup(created);
+    onBack();
+  } catch (e) {
+    console.error(e);
+    alert("그룹 생성에 실패했습니다.");
+  }
+};
+
+// 월~일을 0~6으로 보고 선택된 요일을 '^[01]{7}$'로 변환
+function convertDaysToBinary(days: string[]) {
+  const order = ["월", "화", "수", "목", "금", "토", "일"];
+  return order.map((d) => (days.includes(d) ? "1" : "0")).join("");
+}
 
   const getCategoryName = (categoryId: string) => {
     const category = categories.find(c => c.id === categoryId);
