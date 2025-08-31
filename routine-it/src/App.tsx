@@ -33,12 +33,18 @@ interface NavigationState {
 type BadgeType = '첫걸음' | '7일 연속' | '루틴 마스터' | '월간 챔피언';
 //type PendingAuthMap = { [groupId: number]: AuthMessage[] };
 export default function App() {
-  const [isLoggedIn, setIsLoggedIn] = useState<boolean>(true);
+  const [isLoggedIn, setIsLoggedIn] = useState<boolean>(false);
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
+  const [isNewUser, setIsNewUser] = useState(false);
   const [activeTab, setActiveTab] = useState("home");
   const [pendingAuthMessages, setPendingAuthMessages] = useState<PendingAuthMap>({});
    // 루틴 인증 메시지를 추가하는 함수
  
+  const handleKakaoLogin = () => {
+    const kakaoAuthUrl = 'http://54.180.93.1:8080/oauth2/authorization/kakao';
+    window.location.href = kakaoAuthUrl;
+  };
+
   // 루틴 인증 메시지를 추가하는 함수에 groupId 추가
   const handleAddAuthMessage = (
   groupId: number, 
@@ -436,8 +442,29 @@ export default function App() {
     localStorage.setItem("darkMode", isDarkMode.toString());
   }, [isDarkMode]);
 
-  const handleLogin = () => {
+  const handleLogin = (isNew: boolean) => {
+    setIsNewUser(isNew);
+    if (isNew) {
+      setIsLoginModalOpen(false); // 기존 로그인 모달 닫기
+      // NicknameModal을 띄우는 로직을 여기에 추가
+    } else {
+      setIsLoggedIn(true);
+      setIsLoginModalOpen(false);
+    }
+  };
+
+  const handleLoginSuccess = () => {
     setIsLoggedIn(true);
+    setIsLoginModalOpen(false);
+  };
+
+  // 닉네임 설정 완료 후 호출될 함수
+  const handleNicknameSetupComplete = (nickname: string) => {
+    // 닉네임 저장 API 호출 로직
+    // ...
+    // 회원가입 완료 후 로그인 상태로 전환
+    setIsLoggedIn(true);
+    setIsNewUser(false);
   };
 
   const handleLogout = () => {
@@ -746,7 +773,7 @@ const handleUpdateGroup = (updatedGroup: Group) => {
     if (!isLoggedIn) {
       return (
         <div className="w-full h-full flex flex-col justify-center items-center">
-          <LoginScreen onLogin={() => setIsLoginModalOpen(true)} />
+          <LoginScreen onLogin={handleKakaoLogin} />
         </div>
       );
     }
@@ -1060,7 +1087,7 @@ const handleUpdateGroup = (updatedGroup: Group) => {
       <LoginModal // 새로 추가된 로그인 모달
         isOpen={isLoginModalOpen}
         onClose={() => setIsLoginModalOpen(false)}
-        onLoginSuccess={handleLogin}
+        onLoginSuccess={handleNicknameSetupComplete}
       />
 
       <AttendanceModal
