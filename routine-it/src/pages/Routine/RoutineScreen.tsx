@@ -5,7 +5,7 @@ import { Badge } from '../../components/ui/badge';
 import { Progress } from '../../components/ui/progress';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../components/ui/tabs';
 import { Plus, Target, CheckCircle, Clock, Calendar, TrendingUp, Filter, Camera, Users } from 'lucide-react';
-import type { Routine, Group } from '../../App';
+import type { Routine, Group } from '../../interfaces';
 import type { AuthMessage } from '../../interfaces';
 import { GroupRoutineDialog } from '../../pages/Group/GroupChat/GroupRoutineDialog';
 
@@ -39,8 +39,8 @@ interface RoutineScreenProps {
   onOpenAttendanceModal: () => void;
   onOpenStreakModal: (streakDays: number) => void;
   onOpenBadgeModal: (badgeName: string, badgeImage: string) => void;
-  onAddAuthMessage: (groupId: number, data: any, userName: string, userId: string | number, routineId: number) => void;
-  initialUserInfo: { name: string; id: number | string; };
+  onAddAuthMessage: (groupId: number, data: any, userName: string, nickname: string, userId: string | number, routineId: number) => void;
+  initialUserInfo: { name: string; nickname: string; id: number | string; };
   participatingGroups: Group[];
   allGroups: Group[];
   pendingAuthMessages: { [groupId: number]: AuthMessage[] };
@@ -111,7 +111,7 @@ export function RoutineScreen({ onNavigate, allRoutines, recommendedRoutines, on
 
     if (groupId) {
         // App.tsx에서 props로 받은 함수를 호출하여 인증 메시지를 추가합니다.
-        onAddAuthMessage(groupId, data, initialUserInfo.name, initialUserInfo.id, selectedRoutine.id);
+        onAddAuthMessage(groupId, data, initialUserInfo.name, initialUserInfo.nickname, initialUserInfo.id, selectedRoutine.id);
     }
 
     // 모달을 닫습니다.
@@ -351,6 +351,7 @@ export function RoutineScreen({ onNavigate, allRoutines, recommendedRoutines, on
         onOpenChange={setIsGroupDialogOpen}
         onAuthSubmit={handleGroupAuthSubmit}
         selectedRoutine={selectedRoutine}
+        isMandatory={selectedRoutine?.type === '의무참여'}
       />
     </div>
   );

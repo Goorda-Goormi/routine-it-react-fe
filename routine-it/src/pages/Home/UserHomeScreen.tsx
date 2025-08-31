@@ -46,6 +46,7 @@ export function UserHomeScreen({ user, onBack }: UserHomeScreenProps) {
   const [userProfile] = useState<User>({
     id: user.id,
     name: user?.name || '이지영',
+    nickname: user?.nickname || '지영쓰',
     avatar: user?.avatar || 'https://images.unsplash.com/photo-1494790108755-2616b95fcebf?w=80&h=80&fit=crop&crop=face',
     level: 12,
     streakDays: 15,
@@ -92,9 +93,9 @@ export function UserHomeScreen({ user, onBack }: UserHomeScreenProps) {
       name: '아침 운동 챌린지',
       members: 12,
       recentMembers: [
-        { id: 1, name: '김민수', avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=40&h=40&fit=crop&crop=face' },
-        { id: 2, name: '이지영', avatar: userProfile.avatar },
-        { id: 3, name: '박철수', avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=40&h=40&fit=crop&crop=face' }
+        { id: 1, name: '김민수', nickname: '민수민수', avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=40&h=40&fit=crop&crop=face' },
+        { id: 2, name: '이지영', nickname: '지영쓰', avatar: userProfile.avatar },
+        { id: 3, name: '박철수', nickname: '철수박', avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=40&h=40&fit=crop&crop=face' }
       ]
     },
     {
@@ -102,8 +103,8 @@ export function UserHomeScreen({ user, onBack }: UserHomeScreenProps) {
       name: '독서 모임',
       members: 8,
       recentMembers: [
-        { id: 4, name: '정수현', avatar: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=40&h=40&fit=crop&crop=face' },
-        { id: 5, name: '이지영', avatar: userProfile.avatar }
+        { id: 4, name: '정수현', nickname: '수현', avatar: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=40&h=40&fit=crop&crop=face' },
+        { id: 5, name: '이지영', nickname: '지영쓰', avatar: userProfile.avatar }
       ]
     }
   ];
@@ -187,7 +188,7 @@ export function UserHomeScreen({ user, onBack }: UserHomeScreenProps) {
         </Button>
         <div>
           <h1 className="text-lg text-left font-medium text-primary">
-            {userProfile.name}님의 홈
+            {userProfile.nickname}님의 홈
           </h1>
           <p className="text-sm text-muted-foreground">
             {todayString} • 공개된 정보만 표시됩니다
@@ -202,12 +203,12 @@ export function UserHomeScreen({ user, onBack }: UserHomeScreenProps) {
           <div className="flex items-center space-x-4">
             <Avatar className="w-16 h-16">
               <AvatarImage src={userProfile.avatar} alt={userProfile.name} />
-              <AvatarFallback className="text-lg">{userProfile.name.charAt(0)}</AvatarFallback>
+              <AvatarFallback className="text-lg">{userProfile.nickname.charAt(0)}</AvatarFallback>
             </Avatar>
             <div className="flex flex-col flex-1 ml-1">
               <div className="flex items-center justify-between w-90">
                 <div className="flex items-center space-x-2 mb-1">
-                  <h2 className="text-xl font-bold text-muted-foreground">{userProfile.name}</h2>
+                  <h2 className="text-xl font-bold text-muted-foreground">{userProfile.nickname}</h2>
                   <Badge variant="secondary" className="text-xs">Lv.{userProfile.level}</Badge>
                 </div>
                 <p className="text-sm font-semibold text-muted-foreground mt-0.5">{userProfile.joinDate}에 가입</p>
@@ -243,7 +244,7 @@ export function UserHomeScreen({ user, onBack }: UserHomeScreenProps) {
                     <TrendingUp className="h-4 w-4 text-white" />
                   </div>
                   <div className="text-center">
-                    <div className="text-xl font-bold">{userProfile.totalPoints.toLocaleString()}</div>
+                    <div className="text-xl font-bold">{userProfile.totalPoints .toLocaleString()}</div>
                     <div className="text-xs">누적점수</div>
                   </div>
                 </div>
@@ -347,8 +348,8 @@ export function UserHomeScreen({ user, onBack }: UserHomeScreenProps) {
                       <div className="flex -space-x-2 w-20">
                         {group.recentMembers.slice(0, 3).map((member, memberIndex) => (
                           <Avatar key={member.id} className="w-8 h-8 border-2 border-background">
-                            <AvatarImage src={member.avatar} alt={member.name} />
-                            <AvatarFallback className="text-xs">{member.name.charAt(0)}</AvatarFallback>
+                            <AvatarImage src={member.avatar} alt={member.nickname} />
+                            <AvatarFallback className="text-xs">{member.nickname.charAt(0)}</AvatarFallback>
                           </Avatar>
                         ))}
                       </div>

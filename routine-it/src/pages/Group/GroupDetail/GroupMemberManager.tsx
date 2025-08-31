@@ -8,6 +8,7 @@ import { MinusCircle, Crown } from 'lucide-react';
 interface GroupMember {
   id: string;
   name: string;
+  nickname: string;
   isLeader: boolean; // isLeader 속성 추가
 }
 
@@ -82,11 +83,11 @@ export function GroupMemberManager({ open, onOpenChange, members, onKickMember, 
                   <div className="flex items-center space-x-2">
                     <Avatar className="h-7 w-7">
                       <AvatarFallback className="text-xs">
-                        {member.name[0]}
+                        {member.nickname[0]}
                       </AvatarFallback>
                     </Avatar>
                     <span className="text-sm font-medium text-card-foreground">
-                      {member.name}
+                      {member.nickname}
                     </span>
                   </div>
                   {/* 여기를 수정했습니다. member.isLeader 속성을 직접 사용합니다. */}

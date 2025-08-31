@@ -16,16 +16,13 @@ const getTodayDayOfWeek = () => {
   return dayOfWeek[today.getDay()];
 };
 
-
-
 interface UserInfo {
+  id: number;
   name: string;
-  //username: string;
+  nickname?: string;
   avatar: string;
   bio: string;
 }
-
-
 
 interface HomeScreenProps {
   onNavigate: (screen: string, params?: any) => void;
@@ -38,7 +35,7 @@ interface HomeScreenProps {
   onOpenAttendanceModal: () => void;
   onOpenStreakModal: (streakDays: number) => void;
   onOpenBadgeModal: (badgeName: string, badgeImage: string) => void;
-  onAddAuthMessage: (groupId: number, data: any, userName: string, userId: string | number, routineId: number) => void;
+  onAddAuthMessage: (groupId: number, data: any, userName: string, nickname: string, userId: string | number, routineId: number) => void;
   onApproveAuthMessage: (groupId: number, authId: number) => void;
   onRejectAuthMessage: (groupId: number, authId: number) => void;
 }
@@ -216,7 +213,7 @@ export function HomeScreen({
     const groupId = participatingGroups.find(group => group.routines?.some(r => r.id === selectedRoutine.id))?.id;
 
     if (groupId) {
-      onAddAuthMessage(groupId, { ...data, id: Date.now() }, initialUserInfo.name, initialUserInfo.id,selectedRoutine.id);
+      onAddAuthMessage(groupId, { ...data, id: Date.now() }, initialUserInfo.name, initialUserInfo.nickname ?? '', initialUserInfo.id, selectedRoutine.id);
 
       setRoutineStates(prevStates => ({
         ...prevStates,
@@ -244,7 +241,7 @@ export function HomeScreen({
       <div className="space-y-4">
         <div className="flex items-center justify-between">
           <div className="flex flex-col items-start m-2">
-            <h2 className="text-xl font-semibold text-foreground">안녕하세요, {initialUserInfo.name}님!</h2>
+            <h2 className="text-xl font-semibold text-foreground">안녕하세요, {initialUserInfo.nickname}님!</h2>
             <p className="text-sm text-foreground">
               {todayString} • {initialUserInfo.bio}
             </p>
@@ -443,8 +440,8 @@ export function HomeScreen({
                               handleMemberClick(member);
                             }}
                           >
-                            <AvatarImage src={member.avatar} alt={member.name} />
-                            <AvatarFallback className="text-xs">{member.name.charAt(0)}</AvatarFallback>
+                            <AvatarImage src={member.avatar} alt={member.nickname} />
+                            <AvatarFallback className="text-xs">{member.nickname.charAt(0)}</AvatarFallback>
                           </Avatar>
                         ))}
                       </div>

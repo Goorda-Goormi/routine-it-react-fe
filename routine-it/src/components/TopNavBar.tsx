@@ -12,6 +12,7 @@ interface TopNavBarProps {
   userInfo: {
     avatar: string;
     name: string;
+    nickname?: string;
   };
 }
 
@@ -24,8 +25,8 @@ export function TopNavBar({ onSearch, onNewProject, onProfileMenuClick, userInfo
   };
 
   // 아바타의 첫 글자를 가져오는 함수
-  const getInitial = (name: string) => {
-    return name ? name.charAt(0) : '';
+  const getInitial = (nickname?: string) => {
+    return nickname ? nickname.charAt(0) : '';
   };
 
   return (
@@ -59,7 +60,7 @@ export function TopNavBar({ onSearch, onNewProject, onProfileMenuClick, userInfo
               <Button variant="ghost" size="sm" className="rounded-full p-1">
                 <Avatar className="h-7 w-7">
                   <AvatarImage src={userInfo.avatar} alt="프로필" />
-                  <AvatarFallback className="text-xs">{getInitial(userInfo.name)}</AvatarFallback>
+                  <AvatarFallback className="text-xs">{getInitial(userInfo.nickname)}</AvatarFallback>
                 </Avatar>
               </Button>
             </DropdownMenuTrigger>

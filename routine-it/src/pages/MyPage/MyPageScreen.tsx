@@ -34,6 +34,7 @@ interface MyPageScreenProps {
   onToggleDarkMode: () => void;
   user: {
     name: string;
+    nickname: string;
     email: string;
     avatar: string;
     joinDate: string;
@@ -205,13 +206,13 @@ export function MyPageScreen({ onNavigate, isDarkMode, onToggleDarkMode, user, o
         <CardContent className="p-6">
           <div className="flex items-center space-x-4">
             <Avatar className="w-16 h-16">
-              <AvatarImage src={user.avatar} alt={user.name} />
-              <AvatarFallback className="text-lg">{user.name.charAt(0)}</AvatarFallback>
+              <AvatarImage src={user.avatar} alt={user.nickname} />
+              <AvatarFallback className="text-lg">{user.nickname.charAt(0)}</AvatarFallback>
             </Avatar>
             
             <div className="flex-1">
               <div className="flex items-center space-x-2 mb-1">
-                <h2 className="text-lg font-semibold text-card-foreground">{user.name}</h2>
+                <h2 className="text-lg font-semibold text-card-foreground">{user.nickname}</h2>
                 <Badge variant="secondary" className="text-xs">Lv.{user.level}</Badge>
               </div>
               <p className="text-sm text-left text-muted-foreground mb-2">{user.email}</p>

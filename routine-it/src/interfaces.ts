@@ -4,6 +4,7 @@
 export interface Member {
   id: number;
   name: string;
+  nickname: string;
   avatar: string;
   isCertified?: boolean; 
 }
@@ -40,7 +41,7 @@ export interface AuthMessage {
 export interface Routine {
   id: number;
   name: string;
-  category?: string;
+  category: string;
   time: string;
   completed: boolean;
   streak: number;
@@ -64,6 +65,7 @@ export interface PendingAuthMap {
 export interface User {
   id: number;
   name: string;
+  nickname: string;
   avatar: string;
   bio?: string;
   email?: string;
@@ -71,7 +73,7 @@ export interface User {
   streak?: number;
   streakDays: number;
   //아마 여긴 더미에서만 필요한 속성이 아닐까
-  totalPoints?: number;
+  totalPoints: number;
   joinDate?: string;
   //위에 두 개. userhome
 }

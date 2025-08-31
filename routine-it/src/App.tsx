@@ -22,6 +22,7 @@ import { StreakModal } from './components/modules/StreakModal';
 import { getStreakInfo } from './components/utils/streakUtils';
 import { AchievementBadgeModal } from './components/modules/AchievementBadgeModal';
 import type { AuthMessage,Routine,Group,Member,PendingAuthMap } from "./interfaces";
+import { LoginModal } from './components/modules/LoginModal';
 
 
 interface NavigationState {
@@ -32,7 +33,8 @@ interface NavigationState {
 type BadgeType = '첫걸음' | '7일 연속' | '루틴 마스터' | '월간 챔피언';
 //type PendingAuthMap = { [groupId: number]: AuthMessage[] };
 export default function App() {
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [isLoggedIn, setIsLoggedIn] = useState<boolean>(true);
+  const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
   const [activeTab, setActiveTab] = useState("home");
   const [pendingAuthMessages, setPendingAuthMessages] = useState<PendingAuthMap>({});
    // 루틴 인증 메시지를 추가하는 함수
@@ -42,12 +44,14 @@ export default function App() {
   groupId: number, 
   data: { description: string; image: File | null; isPublic: boolean }, 
   userName: string,
+  nickname: string,
   userId: string | number, // userId 추가
   routineId: number // routineId 추가
 ) => {
   const newAuthMessage: AuthMessage = {
     id: Date.now(),
     user: userName,
+    nickname: nickname,
     userId: userId, // userId 저장
     message: data.description,
     imageUrl: data.image ? URL.createObjectURL(data.image) : null,
@@ -198,7 +202,8 @@ export default function App() {
  
 
   const [UserInfo, setUserInfo] = useState({
-      name: '구르미',
+      name: '김구름',
+      nickname: '구르미',
       id:1,
       email: 'goormida@example.com',
       avatar: '/profile.jpg',
@@ -291,9 +296,9 @@ export default function App() {
     category: 'exercise',
     isMandatory: true,
     recentMembers: [
-        { id: 1, name: '김민수', avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=40&h=40&fit=crop&crop=face' },
-        { id: 2, name: '이지영', avatar: 'https://images.unsplash.com/photo-1494790108755-2616b95fcebf?w=40&h=40&fit=crop&crop=face' },
-        { id: 3, name: '박철수', avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=40&h=40&fit=crop&crop=face' }
+        { id: 1, name: '김민수', nickname: '민수민수', avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=40&h=40&fit=crop&crop=face' },
+        { id: 2, name: '이지영', nickname: '지영쓰', avatar: 'https://images.unsplash.com/photo-1494790108755-2616b95fcebf?w=40&h=40&fit=crop&crop=face' },
+        { id: 3, name: '박철수', nickname: '철수박', avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=40&h=40&fit=crop&crop=face' }
     ],
     routines: [ // Example group routine
       {
@@ -324,8 +329,8 @@ export default function App() {
         time: '언제든',
         category: 'study',
         recentMembers: [
-            { id: 4, name: '정수현', avatar: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=40&h=40&fit=crop&crop=face' },
-            { id: 5, name: '최영호', avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=40&h=40&fit=crop&crop=face' }
+            { id: 4, name: '정수현', nickname: '수현', avatar: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=40&h=40&fit=crop&crop=face' },
+            { id: 5, name: '최영호', nickname: '영호호호', avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=40&h=40&fit=crop&crop=face' }
         ]
     }
   ]);
@@ -451,6 +456,7 @@ export default function App() {
       setNavigationStack([]);
       setUserInfo({
         name: '',
+        nickname: '',
         id: 0,
         email: '',
         avatar: '',
@@ -738,7 +744,11 @@ const handleUpdateGroup = (updatedGroup: Group) => {
 
   const renderScreen = () => {
     if (!isLoggedIn) {
-      return <LoginScreen onLogin={handleLogin} />;
+      return (
+        <div className="w-full h-full flex flex-col justify-center items-center">
+          <LoginScreen onLogin={() => setIsLoginModalOpen(true)} />
+        </div>
+      );
     }
 
     if (currentScreen) {
@@ -1047,6 +1057,12 @@ const handleUpdateGroup = (updatedGroup: Group) => {
           </>
         )}
       </div>
+      <LoginModal // 새로 추가된 로그인 모달
+        isOpen={isLoginModalOpen}
+        onClose={() => setIsLoginModalOpen(false)}
+        onLoginSuccess={handleLogin}
+      />
+
       <AttendanceModal
         isOpen={isAttendanceModalOpen}
         onClose={handleCloseAttendanceModal}

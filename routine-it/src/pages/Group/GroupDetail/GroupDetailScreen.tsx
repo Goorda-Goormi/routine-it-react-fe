@@ -16,10 +16,10 @@ interface GroupDetailScreenProps {
   onUpdateGroup: (group: any) => void;
   onJoinGroup: (groupId: number) => void;
   pendingAuthMessages: { [groupId: number]: AuthMessage[] };
-  onAddAuthMessage: (groupId: number, data: any, userName: string, userId: string | number,  routineId: number) => void;
+  onAddAuthMessage: (groupId: number, data: any, userName: string, nickname: string, userId: string | number,  routineId: number) => void;
   onApproveAuthMessage: (groupId: number, id: number) => void; 
   onRejectAuthMessage: (groupId: number, id: number) => void;
-  currentUser: { name: string; id: string | number; avatar?: string };
+  currentUser: { name: string; nickname: string; id: string | number; avatar?: string };
 }
 
 export function GroupDetailScreen({
@@ -46,15 +46,15 @@ export function GroupDetailScreen({
   const isLeader = group?.isOwner ?? false;
 
   const weeklyRanking = [
-    { rank: 1, name: '김루틴', score: 95, change: 'up' },
-    { rank: 2, name: '박습관', score: 88, change: 'same' },
-    { rank: 3, name: '이지속', score: 82, change: 'down' },
+    { rank: 1, name: '김루틴', nickname: '루티니', score: 95, change: 'up' },
+    { rank: 2, name: '박습관', nickname: '관습박', score: 88, change: 'same' },
+    { rank: 3, name: '이지속', nickname: '지속성',score: 82, change: 'down' },
   ];
   
   const recentActivities = [
-    { id: 1, user: '김루틴', action: '운동 인증 완료', time: '10분 전', image: null },
-    { id: 2, user: '박습관', action: '목표 달성!', time: '1시간 전', image: null },
-    { id: 3, user: '이지속', action: '운동 인증 완료', time: '2시간 전', image: null },
+    { id: 1, user: '김루틴', nickname: '루티니', action: '운동 인증 완료', time: '10분 전', image: null },
+    { id: 2, user: '박습관', nickname: '관습박', action: '목표 달성!', time: '1시간 전', image: null },
+    { id: 3, user: '이지속', nickname: '지속성', action: '운동 인증 완료', time: '2시간 전', image: null },
   ];
 
   const handleJoinGroup = () => onJoinGroup(groupId);
@@ -74,7 +74,7 @@ export function GroupDetailScreen({
 
  const handleAuthSubmit = (data: { description: string; image: File | null; isPublic: boolean }) => {
   const routineId = 123; // 테스트용 루틴 ID 또는 실제 값
-  onAddAuthMessage(groupId, data, currentUser.name, currentUser.id, routineId);
+  onAddAuthMessage(groupId, data, currentUser.name, currentUser.nickname,  currentUser.id, routineId);
   setShowRoutineModal(false);
 };
 

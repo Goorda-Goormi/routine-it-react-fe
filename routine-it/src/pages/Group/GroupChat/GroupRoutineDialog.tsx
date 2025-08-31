@@ -5,7 +5,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { Label } from '../../../components/ui/label';
 import { Textarea } from '../../../components/ui/textarea';
 import { Camera, CheckCircle } from 'lucide-react';
-import type { Routine } from '../../../App';
+import type { Routine } from '../../../interfaces';
 
 interface GroupRoutineDialogProps {
   // 모달을 열고 닫는 상태

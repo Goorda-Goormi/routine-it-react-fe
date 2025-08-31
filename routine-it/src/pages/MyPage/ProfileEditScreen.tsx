@@ -13,6 +13,7 @@ interface ProfileEditScreenProps {
   onToggleDarkMode: () => void;
   initialUserInfo: {
     name: string;
+    nickname: string;
     email: string;
     avatar: string;
     bio: string;
@@ -33,6 +34,7 @@ export function ProfileEditScreen({
   // initialUserInfo prop을 사용하여 초기 상태 설정
   const [profileData, setProfileData] = useState({
     name: initialUserInfo.name,
+    nickname: initialUserInfo.nickname,
     email: initialUserInfo.email,
     bio: initialUserInfo.bio,
     // 초기 prop에 없는 필드는 예시 데이터로 추가
@@ -47,6 +49,7 @@ export function ProfileEditScreen({
   useEffect(() => {
     setProfileData({
       name: initialUserInfo.name,
+      nickname: initialUserInfo.nickname,
       email: initialUserInfo.email,
       bio: initialUserInfo.bio,
       phone: '010-1234-5678' // mock data
@@ -59,6 +62,7 @@ export function ProfileEditScreen({
     // onSave 함수를 호출하여 부모 컴포넌트로 데이터 전달
     onSaveProfile({
       name: profileData.name,
+      nickname: profileData.nickname,
       bio: profileData.bio,
       avatar: avatarUrl,
     });
@@ -144,16 +148,25 @@ export function ProfileEditScreen({
           </CardHeader>
           <CardContent className="pt-0 space-y-4">
             <div>
-              <Label htmlFor="name">이름</Label>
+              <Label htmlFor="name" className='ml-3.5'>이름</Label>
               <Input
                 id="name"
                 value={profileData.name}
                 onChange={(e) => setProfileData({...profileData, name: e.target.value})}
               />
             </div>
+
+            <div>
+              <Label htmlFor="nickname" className='ml-3.5'>닉네임</Label>
+              <Input
+                id="nickname"
+                value={profileData.nickname}
+                onChange={(e) => setProfileData({...profileData, nickname: e.target.value})}
+              />
+            </div>
             
             <div>
-              <Label htmlFor="email">이메일</Label>
+              <Label htmlFor="email" className='ml-3.5'>이메일</Label>
               <Input
                 id="email"
                 type="email"
@@ -167,7 +180,7 @@ export function ProfileEditScreen({
             </div>
             
             <div>
-              <Label htmlFor="phone">전화번호</Label>
+              <Label htmlFor="phone" className='ml-3.5'>전화번호</Label>
               <Input
                 id="phone"
                 value={profileData.phone}
@@ -184,7 +197,7 @@ export function ProfileEditScreen({
           </CardHeader>
           <CardContent className="pt-0">
             <div>
-              <Label htmlFor="bio">소개글</Label>
+              <Label htmlFor="bio" className='ml-3.5'>소개글</Label>
               <textarea
                 id="bio"
                 value={profileData.bio}

@@ -38,14 +38,14 @@ export function GroupChatMessages({ messages, myUserId, getUserInfo, handleReact
                 {!isMyMessage && (
                   <Avatar className="h-6 w-6">
                     <AvatarImage src={userInfo.avatar} alt={msg.user} />
-                    <AvatarFallback className="text-xs">{msg.user[0]}</AvatarFallback>
+                    <AvatarFallback className="text-xs">{msg.nickname[0]}</AvatarFallback>
                   </Avatar>
                 )}
                 <div className={`flex flex-col ${isMyMessage ? 'items-end' : 'items-start'}`}>
                   {!isMyMessage && (
                     <div className="flex items-center space-x-1 mb-1">
                       <span className="text-sm">{streakInfo.icon}</span>
-                      <span className="text-xs text-muted-foreground">{msg.user}</span>
+                      <span className="text-xs text-muted-foreground">{msg.nickname}</span>
                       <span className="text-xs text-muted-foreground opacity-70">{userInfo.streakDays}일</span>
                     </div>
                   )}

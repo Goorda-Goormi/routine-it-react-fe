@@ -42,8 +42,8 @@ export const GroupDetailTabs = ({
                     <div className="flex items-center space-x-3">
                       <div className="relative">
                         <Avatar className="h-8 w-8">
-                          <AvatarImage src={member.avatar} alt={member.name} />
-                          <AvatarFallback className="text-xs">{member.name[0]}</AvatarFallback>
+                          <AvatarImage src={member.avatar} alt={member.nickname} />
+                          <AvatarFallback className="text-xs">{member.nickname[0]}</AvatarFallback>
                         </Avatar>
                         {member.isOnline && (
                           <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-green-500 rounded-full border-2 border-background"></div>
@@ -51,7 +51,7 @@ export const GroupDetailTabs = ({
                       </div>
                       <div>
                         <div className="flex items-center space-x-2">
-                          <span className="text-sm font-medium text-card-foreground">{member.name}</span>
+                          <span className="text-sm font-medium text-card-foreground">{member.nickname}</span>
                           {member.isLeader && (
                             <div className="flex items-center space-x-1">
                               <Crown className="h-3 w-3 text-yellow-500" />
@@ -95,7 +95,7 @@ export const GroupDetailTabs = ({
                       <div className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center">
                         <span className="text-xs font-bold text-primary">{item.rank}</span>
                       </div>
-                      <span className="text-sm font-medium text-card-foreground">{item.name}</span>
+                      <span className="text-sm font-medium text-card-foreground">{item.nickname}</span>
                     </div>
                     <div className="flex items-center space-x-2">
                       <span className="text-sm font-bold text-card-foreground">{item.score}%</span>
@@ -127,11 +127,11 @@ export const GroupDetailTabs = ({
                 <div key={activity.id}>
                   <div className="flex items-center space-x-3 p-3 border border-border/50 rounded-lg hover:bg-accent/30 transition-colors">
                     <Avatar className="h-8 w-8">
-                      <AvatarFallback className="text-xs">{activity.user[0]}</AvatarFallback>
+                      <AvatarFallback className="text-xs">{activity.nickname[0]}</AvatarFallback>
                     </Avatar>
                     <div className="flex-1">
                       <div className="text-sm">
-                        <span className="font-medium text-card-foreground">{activity.user}</span>
+                        <span className="font-medium text-card-foreground">{activity.nickname}</span>
                         <span className="text-muted-foreground"> {activity.action}</span>
                       </div>
                       <div className="text-xs text-muted-foreground">{activity.time}</div>
