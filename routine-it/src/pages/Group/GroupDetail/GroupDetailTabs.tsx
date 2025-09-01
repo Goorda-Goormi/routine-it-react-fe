@@ -42,7 +42,7 @@ export const GroupDetailTabs = ({
                     <div className="flex items-center space-x-3">
                       <div className="relative">
                         <Avatar className="h-8 w-8">
-                          <AvatarImage src={member.avatar} alt={member.nickname} />
+                          <AvatarImage src={member.profileImageUrl} alt={member.nickname} />
                           <AvatarFallback className="text-xs">{member.nickname[0]}</AvatarFallback>
                         </Avatar>
                         {member.isOnline && (

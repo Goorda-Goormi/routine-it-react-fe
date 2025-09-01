@@ -19,9 +19,9 @@ const getTodayDayOfWeek = () => {
 interface UserInfo {
   id: number;
   name: string;
-  nickname?: string;
-  avatar: string;
-  bio: string;
+  nickname: string;
+  profileImageUrl: string;
+  profileMessage: string;
 }
 
 interface HomeScreenProps {
@@ -243,7 +243,7 @@ export function HomeScreen({
           <div className="flex flex-col items-start m-2">
             <h2 className="text-xl font-semibold text-foreground">안녕하세요, {initialUserInfo.nickname}님!</h2>
             <p className="text-sm text-foreground">
-              {todayString} • {initialUserInfo.bio}
+              {todayString} • {initialUserInfo.profileMessage}
             </p>
           </div>
           <Button
@@ -440,7 +440,7 @@ export function HomeScreen({
                               handleMemberClick(member);
                             }}
                           >
-                            <AvatarImage src={member.avatar} alt={member.nickname} />
+                            <AvatarImage src={member.profileImageUrl} alt={member.nickname} />
                             <AvatarFallback className="text-xs">{member.nickname.charAt(0)}</AvatarFallback>
                           </Avatar>
                         ))}

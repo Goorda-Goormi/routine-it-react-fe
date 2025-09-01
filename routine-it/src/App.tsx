@@ -21,7 +21,7 @@ import { AttendanceModal } from './components/modules/AttendanceModal';
 import { StreakModal } from './components/modules/StreakModal';
 import { getStreakInfo } from './components/utils/streakUtils';
 import { AchievementBadgeModal } from './components/modules/AchievementBadgeModal';
-import type { AuthMessage,Routine,Group,Member,PendingAuthMap } from "./interfaces";
+import type { AuthMessage,Routine,Group,Member,PendingAuthMap,UserProfile } from "./interfaces";
 import { LoginModal } from './components/modules/LoginModal';
 
 
@@ -207,19 +207,78 @@ export default function App() {
 
  
 
-  const [UserInfo, setUserInfo] = useState({
+  const [UserInfo, setUserInfo] = useState<UserProfile | null>({
+      id:1,
       name: '김구름',
       nickname: '구르미',
-      id:1,
       email: 'goormida@example.com',
-      avatar: '/profile.jpg',
+      profileImageUrl: '/profile.jpg',
+      profileMessage: '우리 함께 습관을 만들어봐요!',
+      isAlarmOn: true,
+      isDarkMode: false,
       joinDate: '2024년 1월',
       level: 15,
       exp: 2450,
       maxExp: 3000,
       streakDays: 28,
-      bio: '우리 함께 습관을 만들어봐요!'
+      
     });
+
+    useEffect(() => {
+    const fetchUserInfo = async () => {
+      const BASE_URL = import.meta.env.VITE_API_BASE_URL;
+      const token = localStorage.getItem('accessToken'); // 인증 토큰을 로컬 스토리지에서 가져옴
+      if (!token) {
+        console.error("인증 토큰이 없습니다.");
+        return;
+      }
+      
+      try {
+        const response = await fetch(`${BASE_URL}/api/users/me`, {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+        });
+
+        if (!response.ok) {
+          throw new Error('사용자 정보 불러오기 실패');
+        }
+
+        const result = await response.json();
+        
+        if (result.success) {
+          // API 응답 객체에서 필요한 데이터만 추출하고, 현재 상태에 맞게 매핑
+          const apiData = result.data;
+          const newUserData: UserProfile = {
+            id: apiData.id,
+            nickname: apiData.nickname,
+            profileMessage: apiData.profileMessage,
+            profileImageUrl: apiData.profileImageUrl,
+            isAlarmOn: apiData.isAlarmOn,
+            isDarkMode: apiData.isDarkMode,
+            // API 응답에 없는 필드는 기본값을 사용하거나 prevUser에서 가져옵니다.
+            name: '', 
+            email: '',
+            joinDate: '',
+            level: 0,
+            exp: 0,
+            maxExp: 0,
+            streakDays: 0,
+          };
+
+          setUserInfo(newUserData);
+        } else {
+          throw new Error(result.message || 'API 응답 실패');
+        }
+      } catch (error) {
+        console.error("사용자 정보 조회 에러:", error);
+      }
+    };
+
+    fetchUserInfo();
+  }, []);
 
   const [personalRoutines, setPersonalRoutines] = useState<Routine[]>([
     {
@@ -302,9 +361,9 @@ export default function App() {
     category: 'exercise',
     isMandatory: true,
     recentMembers: [
-        { id: 1, name: '김민수', nickname: '민수민수', avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=40&h=40&fit=crop&crop=face' },
-        { id: 2, name: '이지영', nickname: '지영쓰', avatar: 'https://images.unsplash.com/photo-1494790108755-2616b95fcebf?w=40&h=40&fit=crop&crop=face' },
-        { id: 3, name: '박철수', nickname: '철수박', avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=40&h=40&fit=crop&crop=face' }
+        { id: 1, name: '김민수', nickname: '민수민수', profileImageUrl: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=40&h=40&fit=crop&crop=face' },
+        { id: 2, name: '이지영', nickname: '지영쓰', profileImageUrl: 'https://images.unsplash.com/photo-1494790108755-2616b95fcebf?w=40&h=40&fit=crop&crop=face' },
+        { id: 3, name: '박철수', nickname: '철수박', profileImageUrl: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=40&h=40&fit=crop&crop=face' }
     ],
     routines: [ // Example group routine
       {
@@ -335,8 +394,8 @@ export default function App() {
         time: '언제든',
         category: 'study',
         recentMembers: [
-            { id: 4, name: '정수현', nickname: '수현', avatar: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=40&h=40&fit=crop&crop=face' },
-            { id: 5, name: '최영호', nickname: '영호호호', avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=40&h=40&fit=crop&crop=face' }
+            { id: 4, name: '정수현', nickname: '수현', profileImageUrl: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=40&h=40&fit=crop&crop=face' },
+            { id: 5, name: '최영호', nickname: '영호호호', profileImageUrl: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=40&h=40&fit=crop&crop=face' }
         ]
     }
   ]);
@@ -445,7 +504,7 @@ export default function App() {
   const handleLogin = (isNew: boolean) => {
     setIsNewUser(isNew);
     if (isNew) {
-      setIsLoginModalOpen(false); // 기존 로그인 모달 닫기
+      setIsLoginModalOpen(true); // 기존 로그인 모달 닫기
       // NicknameModal을 띄우는 로직을 여기에 추가
     } else {
       setIsLoggedIn(true);
@@ -482,17 +541,19 @@ export default function App() {
       setActiveTab("home");
       setNavigationStack([]);
       setUserInfo({
+        id: 0,
         name: '',
         nickname: '',
-        id: 0,
         email: '',
-        avatar: '',
+        profileImageUrl: '',
+        profileMessage: '',
+        isAlarmOn: true,
+        isDarkMode: false,
         joinDate: '',
         level: 0,
         exp: 0,
         maxExp: 0,
-        streakDays: 0,
-        bio: ''
+        streakDays: 0
       });
       setPersonalRoutines([]);
       setGroups([]);
@@ -739,12 +800,12 @@ const handleUpdateGroup = (updatedGroup: Group) => {
       : null;
 
   const renderScreen = () => {
-    if (!isLoggedIn) {
-      return (
-        <div className="w-full h-full flex flex-col justify-center items-center">
-          <LoginScreen onLogin={handleKakaoLogin} />
-        </div>
-      );
+    if (!isLoggedIn || !UserInfo) {
+        return (
+            <div className="w-full h-full flex flex-col justify-center items-center">
+                {isLoggedIn ? <div>사용자 정보를 불러오는 중입니다...</div> : <LoginScreen onLogin={handleKakaoLogin} />}
+            </div>
+        );
     }
 
     if (currentScreen) {
@@ -775,18 +836,17 @@ const handleUpdateGroup = (updatedGroup: Group) => {
             />
           );
         case "profile-edit":
-          return (
-            <ProfileEditScreen 
-              onBack={navigateBack} 
-              onNavigate={navigateTo}
-              isDarkMode={isDarkMode}
-              onToggleDarkMode={toggleDarkMode}
-              initialUserInfo={UserInfo}
-              onSaveProfile={handleSaveProfile}
-              onDeleteAccount={handleDeleteAccount} 
-              
-            />
-          );
+            return (
+              <ProfileEditScreen 
+                onBack={navigateBack} 
+                onNavigate={navigateTo}
+                isDarkMode={isDarkMode}
+                onToggleDarkMode={toggleDarkMode}
+                initialUserInfo={UserInfo}
+                onSaveProfile={handleSaveProfile}
+                onDeleteAccount={handleDeleteAccount} 
+              />
+            );
         case "group-chat":
           return (
             <GroupChatScreen
@@ -835,6 +895,9 @@ const handleUpdateGroup = (updatedGroup: Group) => {
   };
 
   const renderMainScreen = () => {
+    if (!UserInfo) {
+        return <div>사용자 정보를 불러오는 중입니다...</div>;
+    }
     switch (activeTab) {
       case "home":
         return (
@@ -1027,7 +1090,7 @@ const handleUpdateGroup = (updatedGroup: Group) => {
           <div className="w-full h-full">{renderScreen()}</div>
         ) : (
           <>
-            {!currentScreen && (
+            {!currentScreen && UserInfo && (
               <TopNavBar
                 onSearch={handleSearch}
                 onNewProject={handleNewProject}

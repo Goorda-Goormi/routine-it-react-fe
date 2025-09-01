@@ -15,8 +15,8 @@ interface ProfileEditScreenProps {
     name: string;
     nickname: string;
     email: string;
-    avatar: string;
-    bio: string;
+    profileImageUrl: string;
+    profileMessage: string;
   };
   onSaveProfile: (updatedInfo: any) => void;
   onDeleteAccount: () => void;
@@ -36,13 +36,13 @@ export function ProfileEditScreen({
     name: initialUserInfo.name,
     nickname: initialUserInfo.nickname,
     email: initialUserInfo.email,
-    bio: initialUserInfo.bio,
+    profileMessage: initialUserInfo.profileMessage,
     // 초기 prop에 없는 필드는 예시 데이터로 추가
     phone: '010-1234-5678'
   });
 
   // 아바타 URL 상태 추가
-  const [avatarUrl, setAvatarUrl] = useState(initialUserInfo.avatar);
+  const [avatarUrl, setAvatarUrl] = useState(initialUserInfo.profileImageUrl);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // 컴포넌트 마운트 시 initialUserInfo로 상태 초기화
@@ -51,23 +51,47 @@ export function ProfileEditScreen({
       name: initialUserInfo.name,
       nickname: initialUserInfo.nickname,
       email: initialUserInfo.email,
-      bio: initialUserInfo.bio,
+      profileMessage: initialUserInfo.profileMessage,
       phone: '010-1234-5678' // mock data
     });
-    setAvatarUrl(initialUserInfo.avatar);
+    setAvatarUrl(initialUserInfo.profileImageUrl);
   }, [initialUserInfo]);
 
   // 저장 버튼 클릭 핸들러
-  const handleSave = () => {
-    // onSave 함수를 호출하여 부모 컴포넌트로 데이터 전달
-    onSaveProfile({
-      name: profileData.name,
-      nickname: profileData.nickname,
-      bio: profileData.bio,
-      avatar: avatarUrl,
-    });
-    console.log('프로필 저장:', profileData, '아바타:', avatarUrl);
-    onBack();
+  const handleSave = async () => {
+    const BASE_URL = import.meta.env.VITE_API_BASE_URL;
+    const token = localStorage.getItem('accessToken'); // 인증 토큰 가져오기
+    if (!token) {
+      console.error("인증 토큰이 없습니다.");
+      return;
+    }
+
+    try {
+      const response = await fetch(`${BASE_URL}/api/users/me/profile`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          nickname: profileData.nickname,
+          profileMessage: profileData.profileMessage,
+          // 기타 수정 가능한 필드
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('프로필 업데이트 실패');
+      }
+
+      const updatedUser = await response.json();
+      onSaveProfile(updatedUser); // 상위 컴포넌트로 업데이트된 정보 전달
+      onBack(); // 이전 화면으로 돌아가기
+      alert('프로필이 성공적으로 업데이트되었습니다.');
+    } catch (error) {
+      console.error("프로필 업데이트 에러:", error);
+      alert('프로필 업데이트에 실패했습니다.');
+    }
   };
 
   // 아바타 변경 버튼 클릭 시 파일 탐색기 열기
@@ -197,17 +221,17 @@ export function ProfileEditScreen({
           </CardHeader>
           <CardContent className="pt-0">
             <div>
-              <Label htmlFor="bio" className='ml-3.5'>소개글</Label>
+              <Label htmlFor="profileMessage" className='ml-3.5'>소개글</Label>
               <textarea
-                id="bio"
-                value={profileData.bio}
-                onChange={(e) => setProfileData({...profileData, bio: e.target.value})}
+                id="profileMessage"
+                value={profileData.profileMessage}
+                onChange={(e) => setProfileData({...profileData, profileMessage: e.target.value})}
                 placeholder="자신을 소개해주세요"
                 className="w-full min-h-[80px] p-3 text-sm rounded-md border border-input bg-background resize-none focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent"
                 rows={3}
               />
               <p className="text-xs text-muted-foreground mt-1">
-                {profileData.bio.length}/100자
+                {profileData.profileMessage.length}/100자
               </p>
             </div>
           </CardContent>

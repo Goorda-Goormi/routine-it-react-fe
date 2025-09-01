@@ -19,7 +19,7 @@ interface GroupDetailScreenProps {
   onAddAuthMessage: (groupId: number, data: any, userName: string, nickname: string, userId: string | number,  routineId: number) => void;
   onApproveAuthMessage: (groupId: number, id: number) => void; 
   onRejectAuthMessage: (groupId: number, id: number) => void;
-  currentUser: { name: string; nickname: string; id: string | number; avatar?: string };
+  currentUser: { name: string; nickname: string; id: string | number; profileImageUrl?: string };
 }
 
 export function GroupDetailScreen({

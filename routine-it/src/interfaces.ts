@@ -5,7 +5,7 @@ export interface Member {
   id: number;
   name: string;
   nickname: string;
-  avatar: string;
+  profileImageUrl: string;
   isCertified?: boolean; 
 }
 
@@ -32,6 +32,7 @@ export interface Group {
 export interface AuthMessage {
   id: number;
   user: string;
+  nickname: string;
   message: string;
   imageUrl: string | null;
   routineId: number; 
@@ -62,18 +63,18 @@ export interface PendingAuthMap {
 }
 
 
-export interface User {
+export interface UserProfile {
   id: number;
-  name: string;
+  name: string; 
   nickname: string;
-  avatar: string;
-  bio?: string;
-  email?: string;
-  level?: number;
-  streak?: number;
+  email: string;
+  profileMessage: string;
+  profileImageUrl: string;
+  isAlarmOn: boolean;
+  isDarkMode: boolean;
+  joinDate: string;
+  level: number;
+  exp: number;
+  maxExp: number;
   streakDays: number;
-  //아마 여긴 더미에서만 필요한 속성이 아닐까
-  totalPoints: number;
-  joinDate?: string;
-  //위에 두 개. userhome
 }

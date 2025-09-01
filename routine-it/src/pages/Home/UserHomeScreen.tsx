@@ -47,12 +47,12 @@ export function UserHomeScreen({ user, onBack }: UserHomeScreenProps) {
     id: user.id,
     name: user?.name || '이지영',
     nickname: user?.nickname || '지영쓰',
-    avatar: user?.avatar || 'https://images.unsplash.com/photo-1494790108755-2616b95fcebf?w=80&h=80&fit=crop&crop=face',
+    profileImageUrl: user?.profileImageUrl || 'https://images.unsplash.com/photo-1494790108755-2616b95fcebf?w=80&h=80&fit=crop&crop=face',
     level: 12,
     streakDays: 15,
     totalPoints: 1850,
     joinDate: '2024년 3월',
-    bio: '오늘도 으쌰으쌰!'
+    profileMessage: '오늘도 으쌰으쌰!'
   });
 
   // 연속 출석일 정보
@@ -93,9 +93,9 @@ export function UserHomeScreen({ user, onBack }: UserHomeScreenProps) {
       name: '아침 운동 챌린지',
       members: 12,
       recentMembers: [
-        { id: 1, name: '김민수', nickname: '민수민수', avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=40&h=40&fit=crop&crop=face' },
-        { id: 2, name: '이지영', nickname: '지영쓰', avatar: userProfile.avatar },
-        { id: 3, name: '박철수', nickname: '철수박', avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=40&h=40&fit=crop&crop=face' }
+        { id: 1, name: '김민수', nickname: '민수민수', profileImageUrl: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=40&h=40&fit=crop&crop=face' },
+        { id: 2, name: '이지영', nickname: '지영쓰', profileImageUrl: userProfile.profileImageUrl },
+        { id: 3, name: '박철수', nickname: '철수박', profileImageUrl: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=40&h=40&fit=crop&crop=face' }
       ]
     },
     {
@@ -103,8 +103,8 @@ export function UserHomeScreen({ user, onBack }: UserHomeScreenProps) {
       name: '독서 모임',
       members: 8,
       recentMembers: [
-        { id: 4, name: '정수현', nickname: '수현', avatar: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=40&h=40&fit=crop&crop=face' },
-        { id: 5, name: '이지영', nickname: '지영쓰', avatar: userProfile.avatar }
+        { id: 4, name: '정수현', nickname: '수현', profileImageUrl: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=40&h=40&fit=crop&crop=face' },
+        { id: 5, name: '이지영', nickname: '지영쓰', profileImageUrl: userProfile.profileImageUrl }
       ]
     }
   ];
@@ -202,7 +202,7 @@ export function UserHomeScreen({ user, onBack }: UserHomeScreenProps) {
         <div className="space-y-4">
           <div className="flex items-center space-x-4">
             <Avatar className="w-16 h-16">
-              <AvatarImage src={userProfile.avatar} alt={userProfile.name} />
+              <AvatarImage src={userProfile.profileImageUrl} alt={userProfile.name} />
               <AvatarFallback className="text-lg">{userProfile.nickname.charAt(0)}</AvatarFallback>
             </Avatar>
             <div className="flex flex-col flex-1 ml-1">
@@ -214,7 +214,7 @@ export function UserHomeScreen({ user, onBack }: UserHomeScreenProps) {
                 <p className="text-sm font-semibold text-muted-foreground mt-0.5">{userProfile.joinDate}에 가입</p>
               </div>
               <div className="text-sm text-left text-muted-foreground font-semibold">
-                "{userProfile.bio}"
+                "{userProfile.profileMessage}"
               </div>
             </div>
           </div>
@@ -348,7 +348,7 @@ export function UserHomeScreen({ user, onBack }: UserHomeScreenProps) {
                       <div className="flex -space-x-2 w-20">
                         {group.recentMembers.slice(0, 3).map((member, memberIndex) => (
                           <Avatar key={member.id} className="w-8 h-8 border-2 border-background">
-                            <AvatarImage src={member.avatar} alt={member.nickname} />
+                            <AvatarImage src={member.profileImageUrl} alt={member.nickname} />
                             <AvatarFallback className="text-xs">{member.nickname.charAt(0)}</AvatarFallback>
                           </Avatar>
                         ))}

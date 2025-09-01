@@ -36,13 +36,13 @@ interface MyPageScreenProps {
     name: string;
     nickname: string;
     email: string;
-    avatar: string;
+    profileImageUrl: string;
     joinDate: string;
     level: number;
     exp: number;
     maxExp: number;
     streakDays: number;
-    bio: string;
+    profileMessage: string;
   }
   onLogout: () => void;
 }
@@ -206,7 +206,7 @@ export function MyPageScreen({ onNavigate, isDarkMode, onToggleDarkMode, user, o
         <CardContent className="p-6">
           <div className="flex items-center space-x-4">
             <Avatar className="w-16 h-16">
-              <AvatarImage src={user.avatar} alt={user.nickname} />
+              <AvatarImage src={user.profileImageUrl} alt={user.nickname} />
               <AvatarFallback className="text-lg">{user.nickname.charAt(0)}</AvatarFallback>
             </Avatar>
             

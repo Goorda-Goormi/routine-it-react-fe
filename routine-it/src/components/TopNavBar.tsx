@@ -10,7 +10,7 @@ interface TopNavBarProps {
   onNewProject: () => void;
   onProfileMenuClick: (action: string) => void;
   userInfo: {
-    avatar: string;
+    profileImageUrl: string;
     name: string;
     nickname?: string;
   };
@@ -59,7 +59,7 @@ export function TopNavBar({ onSearch, onNewProject, onProfileMenuClick, userInfo
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" size="sm" className="rounded-full p-1">
                 <Avatar className="h-7 w-7">
-                  <AvatarImage src={userInfo.avatar} alt="프로필" />
+                  <AvatarImage src={userInfo.profileImageUrl} alt="프로필" />
                   <AvatarFallback className="text-xs">{getInitial(userInfo.nickname)}</AvatarFallback>
                 </Avatar>
               </Button>

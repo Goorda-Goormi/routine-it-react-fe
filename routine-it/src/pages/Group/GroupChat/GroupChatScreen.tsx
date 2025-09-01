@@ -43,7 +43,7 @@ export function GroupChatScreen({ group, onBack, onAddAuthMessage }: GroupChatSc
       id: 1,
       name: '김루틴',
       nickname: '루티니',
-      avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=40&h=40&fit=crop&crop=face',
+      profileImageUrl: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=40&h=40&fit=crop&crop=face',
       streakDays: 45,
       totalPoints: 1850,
     },
@@ -51,7 +51,7 @@ export function GroupChatScreen({ group, onBack, onAddAuthMessage }: GroupChatSc
       id: myUserId, // '나'의 id
       name: '나',
       nickname: '나',
-      avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=40&h=40&fit=crop&crop=face',
+      profileImageUrl: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=40&h=40&fit=crop&crop=face',
       streakDays: 28,
       totalPoints: 1904,
     },
@@ -59,7 +59,7 @@ export function GroupChatScreen({ group, onBack, onAddAuthMessage }: GroupChatSc
       id: 3,
       name: '박습관',
       nickname: '관습박',
-      avatar: 'https://images.unsplash.com/photo-1494790108755-2616b95fcebf?w=40&h=40&fit=crop&crop=face',
+      profileImageUrl: 'https://images.unsplash.com/photo-1494790108755-2616b95fcebf?w=40&h=40&fit=crop&crop=face',
       streakDays: 3,
       totalPoints: 1850,
     },
@@ -67,7 +67,7 @@ export function GroupChatScreen({ group, onBack, onAddAuthMessage }: GroupChatSc
       id: 4,
       name: '이지속',
       nickname: '지속성',
-      avatar: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=40&h=40&fit=crop&crop=face',
+      profileImageUrl: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=40&h=40&fit=crop&crop=face',
       streakDays: 120,
       totalPoints: 1552,
     },
@@ -75,7 +75,7 @@ export function GroupChatScreen({ group, onBack, onAddAuthMessage }: GroupChatSc
       id: 5,
       name: '최성실',
       nickname: '성실불성실',
-      avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=40&h=40&fit=crop&crop=face',
+      profileImageUrl: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=40&h=40&fit=crop&crop=face',
       streakDays: 8,
       totalPoints: 1643,
     },
@@ -272,7 +272,7 @@ export function GroupChatScreen({ group, onBack, onAddAuthMessage }: GroupChatSc
                     return (
                       <div key={member.id} className="flex items-center space-x-3 p-2 rounded-lg hover:bg-accent/50 transition-colors">
                         <Avatar className="h-10 w-10">
-                          <AvatarImage src={member.avatar} alt={member.nickname} />
+                          <AvatarImage src={member.profileImageUrl} alt={member.nickname} />
                           <AvatarFallback className="text-sm">{member.nickname[0]}</AvatarFallback>
                         </Avatar>
                         <div className="flex-1">

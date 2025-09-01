@@ -12,13 +12,13 @@ import type { Group } from '../../interfaces';
 export function RankingScreen({ groups }: { groups: Group[] }) {
   // 개인별 랭킹 데이터는 그대로 둡니다
   const personalRanking = [
-    { id: 1, rank: 1, name: '김민수', nickname: '민수민수', avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=40&h=40&fit=crop&crop=face', totalScore: 2840, streakDays: 45 },
-    { id: 2, rank: 2, name: '이지영', nickname: '지영쓰', avatar: 'https://images.unsplash.com/photo-1494790108755-2616b95fcebf?w=40&h=40&fit=crop&crop=face', totalScore: 2650, streakDays: 38 },
-    { id: 3, rank: 3, name: '박철수', nickname: '철수박', avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=40&h=40&fit=crop&crop=face', totalScore: 2520, streakDays: 42 },
-    { id: 4, rank: 4, name: '정수현', nickname: '지영쓰', avatar: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=40&h=40&fit=crop&crop=face', totalScore: 2380, streakDays: 35 },
-    { id: 5, rank: 5, name: '최영호', nickname: '영호호호', avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=40&h=40&fit=crop&crop=face', totalScore: 2290, streakDays: 29 },
-    { id: 6, rank: 6, name: '조민아', nickname: '미나리', avatar: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=40&h=40&fit=crop&crop=face', totalScore: 2150, streakDays: 31 },
-    { id: 7, rank: 7, name: '윤태준', nickname: '윤태', avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=40&h=40&fit=crop&crop=face', totalScore: 2080, streakDays: 26 }
+    { id: 1, rank: 1, name: '김민수', nickname: '민수민수', profileImageUrl: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=40&h=40&fit=crop&crop=face', totalScore: 2840, streakDays: 45 },
+    { id: 2, rank: 2, name: '이지영', nickname: '지영쓰', profileImageUrl: 'https://images.unsplash.com/photo-1494790108755-2616b95fcebf?w=40&h=40&fit=crop&crop=face', totalScore: 2650, streakDays: 38 },
+    { id: 3, rank: 3, name: '박철수', nickname: '철수박', profileImageUrl: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=40&h=40&fit=crop&crop=face', totalScore: 2520, streakDays: 42 },
+    { id: 4, rank: 4, name: '정수현', nickname: '지영쓰', profileImageUrl: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=40&h=40&fit=crop&crop=face', totalScore: 2380, streakDays: 35 },
+    { id: 5, rank: 5, name: '최영호', nickname: '영호호호', profileImageUrl: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=40&h=40&fit=crop&crop=face', totalScore: 2290, streakDays: 29 },
+    { id: 6, rank: 6, name: '조민아', nickname: '미나리', profileImageUrl: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=40&h=40&fit=crop&crop=face', totalScore: 2150, streakDays: 31 },
+    { id: 7, rank: 7, name: '윤태준', nickname: '윤태', profileImageUrl: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=40&h=40&fit=crop&crop=face', totalScore: 2080, streakDays: 26 }
   ];
 
 // groups 기반 더미 점수 계산
@@ -93,7 +93,7 @@ const groupRanking = groups
                         {getRankIcon(user.rank)}
                       </div>
                       <Avatar className="w-10 h-10">
-                        <AvatarImage src={user.avatar} alt={user.nickname} />
+                        <AvatarImage src={user.profileImageUrl} alt={user.nickname} />
                         <AvatarFallback>{user.nickname.charAt(0)}</AvatarFallback>
                       </Avatar>
                       <div className='flex flex-col items-start'>

@@ -4,7 +4,7 @@
 export interface RankingMember {
   id: number;
   name: string;
-  avatar?: string;
+  profileImageUrl?: string;
   streakDays: number; // 연속일
   approvals: number; // 리더가 인증 승인해준 횟수
 }

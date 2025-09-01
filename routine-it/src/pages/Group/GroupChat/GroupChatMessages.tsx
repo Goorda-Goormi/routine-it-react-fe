@@ -37,7 +37,7 @@ export function GroupChatMessages({ messages, myUserId, getUserInfo, handleReact
               <div className={`relative flex items-end space-x-2 max-w-[80%] ${isMyMessage ? 'flex-row-reverse space-x-reverse' : ''}`}>
                 {!isMyMessage && (
                   <Avatar className="h-6 w-6">
-                    <AvatarImage src={userInfo.avatar} alt={msg.user} />
+                    <AvatarImage src={userInfo.profileImageUrl} alt={msg.user} />
                     <AvatarFallback className="text-xs">{msg.nickname[0]}</AvatarFallback>
                   </Avatar>
                 )}
