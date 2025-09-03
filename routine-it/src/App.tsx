@@ -216,95 +216,96 @@ export default function App() {
       
     });
 
-    // const fetchUserInfo = async () => {
-    //   const BASE_URL = import.meta.env.VITE_API_BASE_URL;
-    //   const token = localStorage.getItem('accessToken'); // 인증 토큰을 로컬 스토리지에서 가져옴
-    //   if (!token) {
-    //     console.error("인증 토큰이 없습니다.");
-    //     return;
-    //   }
+    const fetchUserInfo = async () => {
+      const BASE_URL = import.meta.env.VITE_API_BASE_URL;
+      const token = localStorage.getItem('accessToken'); // 인증 토큰을 로컬 스토리지에서 가져옴
+      if (!token) {
+        console.error("인증 토큰이 없습니다.");
+        return;
+      }
       
-    //   try {
-    //     const response = await fetch(`${BASE_URL}/api/users/me`, {
-    //       method: 'GET',
-    //       headers: {
-    //         'Content-Type': 'application/json',
-    //         'Authorization': `Bearer ${token}`
-    //       },
-    //     });
+      try {
+        const response = await fetch(`${BASE_URL}/api/users/me`, {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+        });
 
-    //     if (!response.ok) {
-    //       throw new Error('사용자 정보 불러오기 실패');
-    //     }
+        if (!response.ok) {
+          throw new Error('사용자 정보 불러오기 실패');
+        }
 
-    //     const result = await response.json();
+        const result = await response.json();
           
-    //     if (result.success) {
-    //       // API 응답 객체에서 필요한 데이터만 추출하고, 현재 상태에 맞게 매핑
-    //       const apiData = result.data;
-    //       const newUserData: UserProfile = {
-    //        id: apiData.id,
-    //         nickname: apiData.nickname,
-    //         profileMessage: apiData.profileMessage,
-    //         profileImageUrl: apiData.profileImageUrl,
-    //         isAlarmOn: apiData.isAlarmOn,
-    //         isDarkMode: apiData.isDarkMode,
-    //         // API 응답에 없는 필드는 기본값을 사용하거나 prevUser에서 가져옵니다.
-    //         email: '',
-    //         joinDate: '',
-    //         level: 0,
-    //         exp: 0,
-    //         maxExp: 0,
-    //         streakDays: 0,
-    //       };
+        if (result.success) {
+          // API 응답 객체에서 필요한 데이터만 추출하고, 현재 상태에 맞게 매핑
+          const apiData = result.data;
+          const newUserData: UserProfile = {
+           id: apiData.id,
+            nickname: apiData.nickname,
+            profileMessage: apiData.profileMessage,
+            profileImageUrl: apiData.profileImageUrl,
+            isAlarmOn: apiData.isAlarmOn,
+            isDarkMode: apiData.isDarkMode,
+            // API 응답에 없는 필드는 기본값을 사용하거나 prevUser에서 가져옵니다.
+            email: '',
+            joinDate: '',
+            level: 0,
+            exp: 0,
+            maxExp: 0,
+            streakDays: 0,
+          };
 
-    //       setUserInfo(newUserData);
-    //     } else {
-    //       throw new Error(result.message || 'API 응답 실패');
-    //     }
-    //   } catch (error) {
-    //     console.error("사용자 정보 조회 에러:", error);
-    //     localStorage.removeItem('accessToken');
-    //     setIsLoggedIn(false);
-    //     setUserInfo(null);
-    //   }
-    // };
+          setUserInfo(newUserData);
+        } else {
+          throw new Error(result.message || 'API 응답 실패');
+        }
+      } catch (error) {
+        console.error("사용자 정보 조회 에러:", error);
+        localStorage.removeItem('accessToken');
+        setIsLoggedIn(false);
+        setUserInfo(null);
+      }
+    };
 
-    // useEffect(() => {
-    //   const params = new URLSearchParams(window.location.search);
-    //   const accessToken = params.get('accessToken');
-    //   const isNewUserParam = params.get('isNewUser');
+    useEffect(() => {
+      const params = new URLSearchParams(window.location.search);
+      const accessToken = params.get('accessToken');
+      const isNewUserParam = params.get('isNewUser');
 
-    //   if (accessToken) {
-    //     localStorage.setItem('accessToken', accessToken);
-    //     setIsLoggedIn(true);
-    //     fetchUserInfo(); // 로그인 성공 시 사용자 정보 즉시 불러오기
+      if (accessToken) {
+        localStorage.setItem('accessToken', accessToken);
+        setIsLoggedIn(true);
+        fetchUserInfo(); // 로그인 성공 시 사용자 정보 즉시 불러오기
         
-    //     if (isNewUserParam === 'true') {
-    //       setIsNewUser(true);
-    //       setIsLoginModalOpen(true);
-    //     }
-    //     window.history.replaceState({}, document.title, window.location.pathname);
+        if (isNewUserParam === 'true') {
+          setIsNewUser(true);
+          setIsLoginModalOpen(true);
+        }
+        window.history.replaceState({}, document.title, window.location.pathname);
       
-    //   } else {
-    //     const storedToken = localStorage.getItem('accessToken');
-    //     if (storedToken) {
-    //       setIsLoggedIn(true);
-    //       fetchUserInfo(); // 로컬 스토리지에 토큰이 있을 경우 사용자 정보 불러오기
-    //     }
-    //   }
-    // }, []);
+      } else {
+        const storedToken = localStorage.getItem('accessToken');
+        if (storedToken) {
+          setIsLoggedIn(true);
+          fetchUserInfo(); // 로컬 스토리지에 토큰이 있을 경우 사용자 정보 불러오기
+        }
+      }
+    }, []);
 
     const handleKakaoLogin = () => {
-    //   const BACKEND_KAKAO_LOGIN_URL = 'http://localhost:8080/oauth2/authorization/kakao';
-    //   window.location.href = BACKEND_KAKAO_LOGIN_URL;
+      const BACKEND_KAKAO_LOGIN_URL = 'http://54.180.93.1:8080/oauth2/authorization/kakao';
+      window.location.href = BACKEND_KAKAO_LOGIN_URL;
       
-    //   //const KAKAO_CLIENT_ID = 'ee96ad39f5b99ab6237942c0ad7bedd1';
-    //   //const REDIRECT_URI = 'http://localhost:8080/login/oauth2/code/kakao';
-    //   //const REDIRECT_URI = 'http://54.180.93.1:8080/login/oauth2/code/kakao';
-    //   //const kakaoAuthUrl = `https://kauth.kakao.com/oauth/authorize?client_id=${KAKAO_CLIENT_ID}&redirect_uri=${REDIRECT_URI}&response_type=code`;
-    //   //window.location.href = kakaoAuthUrl;
-      setIsLoggedIn(true);
+      //const KAKAO_CLIENT_ID = 'ee96ad39f5b99ab6237942c0ad7bedd1';
+      //const REDIRECT_URI = 'http://localhost:8080/login/oauth2/code/kakao';
+      //const REDIRECT_URI = 'http://54.180.93.1:8080/login/oauth2/code/kakao';
+      //const kakaoAuthUrl = `https://kauth.kakao.com/oauth/authorize?client_id=${KAKAO_CLIENT_ID}&redirect_uri=${REDIRECT_URI}&response_type=code`;
+      //window.location.href = kakaoAuthUrl;
+      
+      //setIsLoggedIn(true);
     };
 
   const [personalRoutines, setPersonalRoutines] = useState<Routine[]>([

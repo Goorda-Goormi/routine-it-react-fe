@@ -166,14 +166,6 @@ export function ProfileEditScreen({
             <CardTitle className="text-base">기본 정보</CardTitle>
           </CardHeader>
           <CardContent className="pt-0 space-y-4">
-            <div>
-              <Label htmlFor="name" className='ml-3.5'>이름</Label>
-              <Input
-                id="name"
-                value={profileData.nickname}
-                onChange={(e) => setProfileData({...profileData, nickname: e.target.value})}
-              />
-            </div>
 
             <div>
               <Label htmlFor="nickname" className='ml-3.5'>닉네임</Label>
@@ -230,9 +222,6 @@ export function ProfileEditScreen({
             <CardTitle className="text-base">계정 설정</CardTitle>
           </CardHeader>
           <CardContent className="pt-0 space-y-3">
-            <Button variant="outline" className="w-full justify-start">
-              비밀번호 변경
-            </Button>
             <Button variant="outline" className="w-full justify-start">
               계정 연동 관리
             </Button>
