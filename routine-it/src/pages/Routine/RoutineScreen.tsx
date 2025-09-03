@@ -39,8 +39,8 @@ interface RoutineScreenProps {
   onOpenAttendanceModal: () => void;
   onOpenStreakModal: (streakDays: number) => void;
   onOpenBadgeModal: (badgeName: string, badgeImage: string) => void;
-  onAddAuthMessage: (groupId: number, data: any, userName: string, nickname: string, userId: string | number, routineId: number) => void;
-  initialUserInfo: { name: string; nickname: string; id: number | string; };
+  onAddAuthMessage: (groupId: number, data: any, nickname: string, userId: string | number, routineId: number) => void;
+  initialUserInfo: { nickname: string; id: number | string; };
   participatingGroups: Group[];
   allGroups: Group[];
   pendingAuthMessages: { [groupId: number]: AuthMessage[] };
@@ -111,7 +111,7 @@ export function RoutineScreen({ onNavigate, allRoutines, recommendedRoutines, on
 
     if (groupId) {
         // App.tsx에서 props로 받은 함수를 호출하여 인증 메시지를 추가합니다.
-        onAddAuthMessage(groupId, data, initialUserInfo.name, initialUserInfo.nickname, initialUserInfo.id, selectedRoutine.id);
+        onAddAuthMessage(groupId, data, initialUserInfo.nickname, initialUserInfo.id, selectedRoutine.id);
     }
 
     // 모달을 닫습니다.

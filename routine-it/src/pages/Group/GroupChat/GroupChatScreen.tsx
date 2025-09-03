@@ -7,18 +7,17 @@ import { getStreakInfo } from '../../../components/utils/streakUtils';
 import { GroupRoutineDialog } from './GroupRoutineDialog';
 import { GroupChatMessages } from './GroupChatMessages';
 import { GroupChatInput } from './GroupChatInput';
-import type { User } from '../../../interfaces';
+import type { UserProfile } from '../../../interfaces';
 
 interface GroupChatScreenProps {
   group: any;
   onBack: () => void;
-  onAddAuthMessage: (groupId: number, data: any, userName: string, nickname: string, userId: string | number, routineId: number) => void;
+  onAddAuthMessage: (groupId: number, data: any, nickname: string, userId: string | number, routineId: number) => void;
 }
 
 
 export interface Message {
   id: number;
-  user: string;
   nickname: string;
   userId: number;
   message: string;
@@ -38,53 +37,47 @@ export function GroupChatScreen({ group, onBack, onAddAuthMessage }: GroupChatSc
   const myNickname = '나';
 
   // 그룹 멤버 데이터
-  const groupMembers: User[] = [
+  const groupMembers: UserProfile[] = [
     {
       id: 1,
-      name: '김루틴',
       nickname: '루티니',
       profileImageUrl: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=40&h=40&fit=crop&crop=face',
       streakDays: 45,
-      totalPoints: 1850,
+      exp: 1850,
     },
     {
       id: myUserId, // '나'의 id
-      name: '나',
       nickname: '나',
       profileImageUrl: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=40&h=40&fit=crop&crop=face',
       streakDays: 28,
-      totalPoints: 1904,
+      exp: 1904,
     },
     {
       id: 3,
-      name: '박습관',
       nickname: '관습박',
       profileImageUrl: 'https://images.unsplash.com/photo-1494790108755-2616b95fcebf?w=40&h=40&fit=crop&crop=face',
       streakDays: 3,
-      totalPoints: 1850,
+      exp: 1850,
     },
     {
       id: 4,
-      name: '이지속',
       nickname: '지속성',
       profileImageUrl: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=40&h=40&fit=crop&crop=face',
       streakDays: 120,
-      totalPoints: 1552,
+      exp: 1552,
     },
     {
       id: 5,
-      name: '최성실',
       nickname: '성실불성실',
       profileImageUrl: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=40&h=40&fit=crop&crop=face',
       streakDays: 8,
-      totalPoints: 1643,
+      exp: 1643,
     },
   ];
 
   const [messages, setMessages] = useState<Message[]>([
     {
       id: 1,
-      user: '김루틴',
       nickname: '루티니',
       userId: 1,
       message: '오늘도 운동 완료! 💪',
@@ -95,7 +88,6 @@ export function GroupChatScreen({ group, onBack, onAddAuthMessage }: GroupChatSc
     },
     {
       id: 2,
-      user: '나',
       nickname: '나',
       userId: 2,
       message: '저도 방금 끝냈어요! 같이 운동하니까 더 동기부여 되는 것 같아요',
@@ -106,7 +98,6 @@ export function GroupChatScreen({ group, onBack, onAddAuthMessage }: GroupChatSc
     },
     {
       id: 3,
-      user: '박습관',
       nickname: '관습박',
       userId: 3,
       message: '다들 대단하시네요! 저는 내일부터 시작할게요 😅',
@@ -117,7 +108,6 @@ export function GroupChatScreen({ group, onBack, onAddAuthMessage }: GroupChatSc
     },
     {
       id: 4,
-      user: '이지속',
       nickname: '지속성',
       userId: 4,
       message: '화이팅! 함께하면 더 오래 지속할 수 있어요',
@@ -128,7 +118,6 @@ export function GroupChatScreen({ group, onBack, onAddAuthMessage }: GroupChatSc
     },
     {
       id: 5,
-      user: '최성실',
       nickname: '성실불성실',
       userId: 5,
       message: '오늘 첫 운동이에요! 긴장되네요 ㅎㅎ',
@@ -143,7 +132,6 @@ export function GroupChatScreen({ group, onBack, onAddAuthMessage }: GroupChatSc
     if (text.trim()) {
       const newMessage: Message = {
         id: Date.now(),
-        user: '나',
         nickname: '나',
         userId: myUserId,
         message: text.trim(),
@@ -160,7 +148,6 @@ export function GroupChatScreen({ group, onBack, onAddAuthMessage }: GroupChatSc
     const imageUrl = URL.createObjectURL(file);
     const newMessage: Message = {
       id: Date.now(),
-      user: '나',
       nickname: '나',
       userId: myUserId,
       message: '',
@@ -178,7 +165,6 @@ export function GroupChatScreen({ group, onBack, onAddAuthMessage }: GroupChatSc
 
     const newMessage: Message = {
       id: Date.now(),
-      user: '나',
       nickname: '나',
       userId: myUserId,
       message: '',
@@ -196,7 +182,6 @@ export function GroupChatScreen({ group, onBack, onAddAuthMessage }: GroupChatSc
     // 1. 그룹 채팅에 바로 표시할 메시지 추가
     const authMessage: Message = {
       id: Date.now(),
-      user: myUserName,
       nickname: myNickname,
       userId: myUserId,
       message: data.description,
@@ -209,7 +194,7 @@ export function GroupChatScreen({ group, onBack, onAddAuthMessage }: GroupChatSc
      
     const routineId = group.routines?.[0]?.id || 0;
     // 2. props로 받은 onAddAuthMessage 함수를 호출하여 필요한 모든 데이터를 전달
-    onAddAuthMessage(group.id, data, myUserName, myNickname, myUserId, routineId);
+    onAddAuthMessage(group.id, data, myNickname, myUserId, routineId);
     
     setIsAuthDialogOpen(false);
   };
@@ -234,7 +219,7 @@ export function GroupChatScreen({ group, onBack, onAddAuthMessage }: GroupChatSc
     );
   };
 
-  const getUserInfo = (userId: number): User => {
+  const getUserInfo = (userId: number): UserProfile => {
     return groupMembers.find((member) => member.id === userId) || groupMembers[1];
   };
 

@@ -1,13 +1,12 @@
 //모든 파일에서 다 같은 변수 사용하면 그냥 "변수명 : 타입"
 //일부 파일에서는 몇 변수가 필요없으면 "변수명? : 타입""
-
-export interface Member {
-  id: number;
-  name: string;
-  nickname: string;
-  profileImageUrl: string;
-  isCertified?: boolean; 
+export interface AlarmTime {
+  hour: number;
+  minute: number;
+  second: number;
+  nano: number;
 }
+
 
 export interface Group {
   id: number;
@@ -25,13 +24,42 @@ export interface Group {
   isJoined?: boolean;
   isMandatory?: boolean;
 
+/*api버전으로 수정한 변수
+ groupId: number;
+  leaderName: string; 
+  groupName: string; 
+  groupDescription: string; 
+  groupType: 'FREE' | 'REQUIRED'; 
+  alarmTime: AlarmTime; 
+  authDays: string; 
+  category: string;
+  groupImageUrl: string; 
+  maxMembers: number;
+  currentMemberCount: number; 
+  createdAt: string; 
+  updatedAt: string; 
+  active: boolean; 
+
+  // API 응답에는 없지만, 앱 로직에서 필요한 변수
+  progress?: number;
+  isOwner?: boolean;
+  isJoined?: boolean;
+  recentMembers?: Member[];
+  routines?: Routine[];
+*/
 }
 
 
+export interface Member {
+  id: number;
+  nickname: string;
+  profileImageUrl: string;
+  isCertified?: boolean; 
+}
 
 export interface AuthMessage {
   id: number;
-  user: string;
+  //user: string;
   nickname: string;
   message: string;
   imageUrl: string | null;
@@ -65,16 +93,31 @@ export interface PendingAuthMap {
 
 export interface UserProfile {
   id: number;
-  name: string; 
   nickname: string;
-  email: string;
-  profileMessage: string;
+  email?: string;
+  profileMessage?: string;
   profileImageUrl: string;
-  isAlarmOn: boolean;
-  isDarkMode: boolean;
-  joinDate: string;
-  level: number;
-  exp: number;
-  maxExp: number;
+  isAlarmOn?: boolean;
+  isDarkMode?: boolean;
+  joinDate?: string;
+  level?: number;
+  exp?: number;
+  maxExp?: number;
+  maxStreakDays?: number;
   streakDays: number;
 }
+
+// export interface User {
+//   id: number;
+//   nickname: string;
+//   profileImageUrl: string;
+//   profileMessage?: string;
+//   email?: string;
+//   level?: number;
+//   streak?: number;
+//   streakDays: number;
+//   //아마 여긴 더미에서만 필요한 속성이 아닐까
+//   totalPoints: number;
+//   joinDate?: string;
+//   //위에 두 개. userhome
+// }

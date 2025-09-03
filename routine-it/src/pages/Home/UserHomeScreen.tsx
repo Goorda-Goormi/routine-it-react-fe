@@ -7,7 +7,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '../../components/ui/avatar'
 import { ArrowLeft, ChevronLeft, ChevronRight, X, Camera, Flame, TrendingUp, Calendar, Trophy, Users, CheckCircle, Target, Clock, Lock } from 'lucide-react';
 import { ImageWithFallback } from '../../components/figma/ImageWithFallback';
 import { getStreakInfo, getStreakMessage } from '../../components/utils/streakUtils';
-import type {Routine, User} from '../../interfaces';
+import type {Routine, UserProfile} from '../../interfaces';
 
 
 
@@ -43,16 +43,16 @@ export function UserHomeScreen({ user, onBack }: UserHomeScreenProps) {
   };
 
   // 다른 유저의 정보 (공개 정보)
-  const [userProfile] = useState<User>({
+  const [userProfile] = useState<UserProfile>({
     id: user.id,
-    name: user?.name || '이지영',
     nickname: user?.nickname || '지영쓰',
     profileImageUrl: user?.profileImageUrl || 'https://images.unsplash.com/photo-1494790108755-2616b95fcebf?w=80&h=80&fit=crop&crop=face',
+    profileMessage: user?.profileMessage || '오늘도 으쌰으쌰!',
+    email: user?.email,
     level: 12,
     streakDays: 15,
-    totalPoints: 1850,
+    exp: 1850,
     joinDate: '2024년 3월',
-    profileMessage: '오늘도 으쌰으쌰!'
   });
 
   // 연속 출석일 정보
@@ -93,9 +93,9 @@ export function UserHomeScreen({ user, onBack }: UserHomeScreenProps) {
       name: '아침 운동 챌린지',
       members: 12,
       recentMembers: [
-        { id: 1, name: '김민수', nickname: '민수민수', profileImageUrl: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=40&h=40&fit=crop&crop=face' },
-        { id: 2, name: '이지영', nickname: '지영쓰', profileImageUrl: userProfile.profileImageUrl },
-        { id: 3, name: '박철수', nickname: '철수박', profileImageUrl: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=40&h=40&fit=crop&crop=face' }
+        { id: 1, nickname: '민수민수', profileImageUrl: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=40&h=40&fit=crop&crop=face' },
+        { id: 2, nickname: '지영쓰', profileImageUrl: userProfile.profileImageUrl },
+        { id: 3, nickname: '철수박', profileImageUrl: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=40&h=40&fit=crop&crop=face' }
       ]
     },
     {
@@ -103,8 +103,8 @@ export function UserHomeScreen({ user, onBack }: UserHomeScreenProps) {
       name: '독서 모임',
       members: 8,
       recentMembers: [
-        { id: 4, name: '정수현', nickname: '수현', profileImageUrl: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=40&h=40&fit=crop&crop=face' },
-        { id: 5, name: '이지영', nickname: '지영쓰', profileImageUrl: userProfile.profileImageUrl }
+        { id: 4, nickname: '수현', profileImageUrl: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=40&h=40&fit=crop&crop=face' },
+        { id: 5, nickname: '지영쓰', profileImageUrl: userProfile.profileImageUrl }
       ]
     }
   ];
@@ -162,7 +162,7 @@ export function UserHomeScreen({ user, onBack }: UserHomeScreenProps) {
 
   const completedRoutines = userRoutines.filter(routine => routine.completed).length;
   const totalRoutines = userRoutines.length;
-  const completionRate = Math.round((completedRoutines / totalRoutines) * 100);
+  const completionRate = totalRoutines > 0 ? Math.round((completedRoutines / totalRoutines) * 100) : 0;
 
   const getCategoryEmoji = (category: string) => {
     switch (category) {
@@ -202,7 +202,7 @@ export function UserHomeScreen({ user, onBack }: UserHomeScreenProps) {
         <div className="space-y-4">
           <div className="flex items-center space-x-4">
             <Avatar className="w-16 h-16">
-              <AvatarImage src={userProfile.profileImageUrl} alt={userProfile.name} />
+              <AvatarImage src={userProfile.profileImageUrl} alt={userProfile.nickname} />
               <AvatarFallback className="text-lg">{userProfile.nickname.charAt(0)}</AvatarFallback>
             </Avatar>
             <div className="flex flex-col flex-1 ml-1">
@@ -244,7 +244,7 @@ export function UserHomeScreen({ user, onBack }: UserHomeScreenProps) {
                     <TrendingUp className="h-4 w-4 text-white" />
                   </div>
                   <div className="text-center">
-                    <div className="text-xl font-bold">{userProfile.totalPoints .toLocaleString()}</div>
+                    <div className="text-xl font-bold">{(userProfile.exp ?? 0) .toLocaleString()}</div>
                     <div className="text-xs">누적점수</div>
                   </div>
                 </div>

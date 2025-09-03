@@ -12,11 +12,10 @@ interface ProfileEditScreenProps {
   isDarkMode: boolean;
   onToggleDarkMode: () => void;
   initialUserInfo: {
-    name: string;
     nickname: string;
-    email: string;
+    email?: string;
     profileImageUrl: string;
-    profileMessage: string;
+    profileMessage?: string;
   };
   onSaveProfile: (updatedInfo: any) => void;
   onDeleteAccount: () => void;
@@ -33,12 +32,10 @@ export function ProfileEditScreen({
 }: ProfileEditScreenProps) {
   // initialUserInfo prop을 사용하여 초기 상태 설정
   const [profileData, setProfileData] = useState({
-    name: initialUserInfo.name,
     nickname: initialUserInfo.nickname,
     email: initialUserInfo.email,
     profileMessage: initialUserInfo.profileMessage,
     // 초기 prop에 없는 필드는 예시 데이터로 추가
-    phone: '010-1234-5678'
   });
 
   // 아바타 URL 상태 추가
@@ -48,11 +45,9 @@ export function ProfileEditScreen({
   // 컴포넌트 마운트 시 initialUserInfo로 상태 초기화
   useEffect(() => {
     setProfileData({
-      name: initialUserInfo.name,
       nickname: initialUserInfo.nickname,
       email: initialUserInfo.email,
       profileMessage: initialUserInfo.profileMessage,
-      phone: '010-1234-5678' // mock data
     });
     setAvatarUrl(initialUserInfo.profileImageUrl);
   }, [initialUserInfo]);
@@ -175,8 +170,8 @@ export function ProfileEditScreen({
               <Label htmlFor="name" className='ml-3.5'>이름</Label>
               <Input
                 id="name"
-                value={profileData.name}
-                onChange={(e) => setProfileData({...profileData, name: e.target.value})}
+                value={profileData.nickname}
+                onChange={(e) => setProfileData({...profileData, nickname: e.target.value})}
               />
             </div>
 
@@ -203,14 +198,6 @@ export function ProfileEditScreen({
               </p>
             </div>
             
-            <div>
-              <Label htmlFor="phone" className='ml-3.5'>전화번호</Label>
-              <Input
-                id="phone"
-                value={profileData.phone}
-                onChange={(e) => setProfileData({...profileData, phone: e.target.value})}
-              />
-            </div>
           </CardContent>
         </Card>
 
@@ -224,14 +211,14 @@ export function ProfileEditScreen({
               <Label htmlFor="profileMessage" className='ml-3.5'>소개글</Label>
               <textarea
                 id="profileMessage"
-                value={profileData.profileMessage}
+                value={profileData.profileMessage ?? ''}
                 onChange={(e) => setProfileData({...profileData, profileMessage: e.target.value})}
                 placeholder="자신을 소개해주세요"
                 className="w-full min-h-[80px] p-3 text-sm rounded-md border border-input bg-background resize-none focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent"
                 rows={3}
               />
               <p className="text-xs text-muted-foreground mt-1">
-                {profileData.profileMessage.length}/100자
+                {(profileData.profileMessage ?? '').length}/100자
               </p>
             </div>
           </CardContent>

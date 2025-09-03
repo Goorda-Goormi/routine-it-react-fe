@@ -11,7 +11,6 @@ interface TopNavBarProps {
   onProfileMenuClick: (action: string) => void;
   userInfo: {
     profileImageUrl: string;
-    name: string;
     nickname?: string;
   };
 }

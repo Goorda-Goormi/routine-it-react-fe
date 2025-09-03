@@ -18,10 +18,9 @@ const getTodayDayOfWeek = () => {
 
 interface UserInfo {
   id: number;
-  name: string;
   nickname: string;
   profileImageUrl: string;
-  profileMessage: string;
+  profileMessage?: string;
 }
 
 interface HomeScreenProps {
@@ -35,7 +34,7 @@ interface HomeScreenProps {
   onOpenAttendanceModal: () => void;
   onOpenStreakModal: (streakDays: number) => void;
   onOpenBadgeModal: (badgeName: string, badgeImage: string) => void;
-  onAddAuthMessage: (groupId: number, data: any, userName: string, nickname: string, userId: string | number, routineId: number) => void;
+  onAddAuthMessage: (groupId: number, data: any, nickname: string, userId: string | number, routineId: number) => void;
   onApproveAuthMessage: (groupId: number, authId: number) => void;
   onRejectAuthMessage: (groupId: number, authId: number) => void;
 }
@@ -105,7 +104,7 @@ export function HomeScreen({
     setIsGroupDialogOpen(true);
   };
 
-  const currentStreak = 0;
+  const currentStreak = 7;
   const streakInfo = getStreakInfo(streakDays);
 
   const todayDay = getTodayDayOfWeek();
@@ -213,7 +212,7 @@ export function HomeScreen({
     const groupId = participatingGroups.find(group => group.routines?.some(r => r.id === selectedRoutine.id))?.id;
 
     if (groupId) {
-      onAddAuthMessage(groupId, { ...data, id: Date.now() }, initialUserInfo.name, initialUserInfo.nickname ?? '', initialUserInfo.id, selectedRoutine.id);
+      onAddAuthMessage(groupId, { ...data, id: Date.now() }, initialUserInfo.nickname ?? '', initialUserInfo.id, selectedRoutine.id);
 
       setRoutineStates(prevStates => ({
         ...prevStates,
@@ -513,6 +512,58 @@ export function HomeScreen({
         selectedRoutine={selectedRoutine}
         isMandatory={selectedRoutine?.type === '의무참여'}
       />
+
+      {/* 갤러리 모달 */}
+            {selectedPhotoIndex !== null && (
+              <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80">
+                <div className="relative h-full w-full max-w-lg flex flex-col items-center justify-center">
+                  {/* 닫기 버튼 */}
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="absolute top-4 right-4 z-50 text-white hover:bg-black/50 hover:text-white hover:border-none rounded-full"
+                    onClick={handleCloseGallery}
+                  >
+                    <X className="h-6 w-6" />
+                  </Button>
+                  {/* 사진 */}
+                  <div className="flex-1 w-full flex items-center justify-center p-4">
+                    <img 
+                      src={publicVerificationPhotos[selectedPhotoIndex].image} 
+                      alt={publicVerificationPhotos[selectedPhotoIndex].routine} 
+                      className="max-w-full max-h-full object-contain"
+                    />
+                  </div>
+                  {/* 사진 설명 */}
+                  <div className="absolute bottom-16 w-full text-center text-white text-lg font-semibold">
+                    {publicVerificationPhotos[selectedPhotoIndex].routine}
+                  </div>
+                  <div className="absolute inset-y-0 flex items-center justify-between w-full px-6">
+                    {/* 이전 사진 버튼 */}
+                    <Button 
+                      variant="ghost"
+                      size="icon"
+                      className="text-white opacity-80 rounded-full hover:bg-black/50  hover:text-white hover:border-none"
+                      onClick={handlePrevPhoto} 
+                      disabled={selectedPhotoIndex === 0}
+                    >
+                      <ChevronLeft className="h-10 w-10" />
+                    </Button>
+                    
+                    {/* 다음 사진 버튼 */}
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="text-white opacity-80 rounded-full hover:bg-black/50  hover:text-white hover:border-none"
+                      onClick={handleNextPhoto} 
+                      disabled={selectedPhotoIndex === publicVerificationPhotos.length - 1}
+                    >
+                      <ChevronRight className="h-6 w-6" />
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            )}
     </div>
   );
 }
