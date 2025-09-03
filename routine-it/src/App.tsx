@@ -23,7 +23,7 @@ import { getStreakInfo } from './components/utils/streakUtils';
 import { AchievementBadgeModal } from './components/modules/AchievementBadgeModal';
 import type { AuthMessage,Routine,Group,Member,PendingAuthMap,UserProfile } from "./interfaces";
 import { LoginModal } from './components/modules/LoginModal';
-
+import { LoadingSpinner } from "./components/ui/loading-spinner";
 
 interface NavigationState {
   screen: string;
@@ -38,6 +38,160 @@ export default function App() {
   const [isNewUser, setIsNewUser] = useState(false);
   const [activeTab, setActiveTab] = useState("home");
   const [pendingAuthMessages, setPendingAuthMessages] = useState<PendingAuthMap>({});
+  const [navigationStack, setNavigationStack] = useState<NavigationState[]>([]);
+  const [isDarkMode, setIsDarkMode] = useState(() => {
+    if (typeof window !== "undefined") {
+      return localStorage.getItem("darkMode") === "true";
+    }
+    return false;
+  });
+  const [isAttendanceModalOpen, setAttendanceModalOpen] = useState(false);
+  const [isStreakModalOpen, setStreakModalOpen] = useState(false);
+  const [isBadgeModalOpen, setBadgeModalOpen] = useState(false);
+  const [badgeName, setBadgeName] = useState('');
+  const [badgeImage, setBadgeImage] = useState('');
+  const [pendingBadges, setPendingBadges] = useState<{ name: string; image: string; }[]>([]);
+  const [lastCompletionDate, setLastCompletionDate] = useState<string | null>(() => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('lastCompletionDate');
+    }
+    return null;
+  });
+
+  const [routineCompletionCount, setRoutineCompletionCount] = useState<number>(() => {
+    return Number(localStorage.getItem('routineCompletionCount')) || 0;
+  });
+  const [attendanceCount, setAttendanceCount] = useState(() => {
+    const savedCount = localStorage.getItem('attendanceCount');
+    return savedCount ? Number(savedCount) : 0;
+  });
+  const [earnedBadges, setEarnedBadges] = useState<BadgeType[]>(() => {
+    const storedBadges = localStorage.getItem('earnedBadges');
+    return storedBadges ? JSON.parse(storedBadges) : [];
+  });
+  
+  const [streakDays, setStreakDays] = useState(() => {
+    const savedStreak = localStorage.getItem('streakDays');
+    return savedStreak ? Number(savedStreak) : 0;
+  });
+
+  const [UserInfo, setUserInfo] = useState<UserProfile | null>(null); // 초기 상태를 null로 변경
+  const [isLoading, setIsLoading] = useState<boolean>(false);
+
+  const badgeInfo = {
+    '첫걸음': {
+      image: 'https://i.ibb.co/6P0D6kX/first-step-badge.png',
+      message: '첫 번째 루틴 완료를 축하합니다!'
+    },
+    '7일 연속': {
+      image: 'https://i.ibb.co/wJv0P2H/7-day-streak-badge.png',
+      message: '7일 연속 출석! 당신의 꾸준함을 응원합니다!'
+    },
+    '루틴 마스터': {
+      image: 'https://i.ibb.co/hK8xN2Y/routine-master-badge.png',
+      message: '총 100개 루틴을 완료했습니다! 당신은 진정한 루틴 마스터!'
+    },
+    '월간 챔피언': {
+      image: 'https://i.ibb.co/5c9dK9y/monthly-champion-badge.png',
+      message: '이번 달 30번 출석! 루틴잇 월간 챔피언입니다!'
+    }
+  };
+
+
+  const fetchUserInfo = async () => {
+    setIsLoading(true);
+    const BASE_URL = import.meta.env.VITE_API_BASE_URL;
+    const token = localStorage.getItem('accessToken'); // 인증 토큰을 로컬 스토리지에서 가져옴
+    if (!token) {
+      console.error("인증 토큰이 없습니다.");
+      return;
+    }
+      
+    try {
+      const response = await fetch(`${BASE_URL}/api/auth/me`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error('사용자 정보 불러오기 실패');
+      }
+
+      const result = await response.json();
+          
+      if (result.success) {
+        // API 응답 객체에서 필요한 데이터만 추출하고, 현재 상태에 맞게 매핑
+        const apiData = result.data;
+        const newUserData: UserProfile = {
+         id: apiData.id,
+          nickname: apiData.nickname,
+          profileMessage: apiData.profileMessage,
+          profileImageUrl: apiData.profileImageUrl,
+          isAlarmOn: apiData.isAlarmOn,
+          isDarkMode: apiData.isDarkMode,
+          // API 응답에 없는 필드는 기본값을 사용하거나 prevUser에서 가져옵니다.
+          email: apiData.email,
+          joinDate: apiData.joinDate,
+          level: 0,
+          exp: 0,
+          maxExp: 3000,
+          streakDays: 0,
+        };
+
+        setUserInfo(newUserData);
+      } else {
+        throw new Error(result.message || 'API 응답 실패');
+      }
+    } catch (error) {
+      console.error("사용자 정보 조회 에러:", error);
+      localStorage.removeItem('accessToken');
+      setIsLoggedIn(false);
+      setUserInfo(null);
+    } finally {
+      setIsLoading(false); // API 호출 완료 시 로딩 상태 false
+    }
+  };
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const accessToken = params.get('accessToken');
+    const isNewUserParam = params.get('isNewUser');
+
+    if (accessToken) {
+      localStorage.setItem('accessToken', accessToken);
+      setIsLoggedIn(true);
+      fetchUserInfo(); // 로그인 성공 시 사용자 정보 즉시 불러오기
+        
+      if (isNewUserParam === 'true') {
+        setIsNewUser(true);
+        setIsLoginModalOpen(true);
+      }
+      window.history.replaceState({}, document.title, window.location.pathname);
+      
+    } else {
+      const storedToken = localStorage.getItem('accessToken');
+      if (storedToken) {
+        setIsLoggedIn(true);
+        fetchUserInfo(); // 로컬 스토리지에 토큰이 있을 경우 사용자 정보 불러오기
+      }
+    }
+  }, []);
+
+  const handleKakaoLogin = () => {
+    const BACKEND_KAKAO_LOGIN_URL = 'http://54.180.93.1:8080/oauth2/authorization/kakao';
+    window.location.href = BACKEND_KAKAO_LOGIN_URL;
+      
+    //const KAKAO_CLIENT_ID = 'ee96ad39f5b99ab6237942c0ad7bedd1';
+    //const REDIRECT_URI = 'http://localhost:8080/login/oauth2/code/kakao';
+    //const REDIRECT_URI = 'http://54.180.93.1:8080/login/oauth2/code/kakao';
+    //const kakaoAuthUrl = `https://kauth.kakao.com/oauth/authorize?client_id=${KAKAO_CLIENT_ID}&redirect_uri=${REDIRECT_URI}&response_type=code`;
+    //window.location.href = kakaoAuthUrl;
+      
+    //setIsLoggedIn(true);
+  };
 
   // 루틴 인증 메시지를 추가하는 함수에 groupId 추가
   const handleAddAuthMessage = (
@@ -132,181 +286,6 @@ export default function App() {
     console.log(`${id}번 인증을 거절했습니다.`);
     alert(`${id}번 인증이 거절되었습니다.`);
   };
-  
-  
-  
-  const [navigationStack, setNavigationStack] = useState<
-    NavigationState[]
-  >([]);
-  const [isDarkMode, setIsDarkMode] = useState(() => {
-    if (typeof window !== "undefined") {
-      return localStorage.getItem("darkMode") === "true";
-    }
-    return false;
-  });
-  const [isAttendanceModalOpen, setAttendanceModalOpen] = useState(false);
-  const [isStreakModalOpen, setStreakModalOpen] = useState(false);
-  
-  
-  const [isBadgeModalOpen, setBadgeModalOpen] = useState(false);
-  const [badgeName, setBadgeName] = useState('');
-  const [badgeImage, setBadgeImage] = useState('');
-  const [pendingBadges, setPendingBadges] = useState<{ name: string; image: string; }[]>([]);
-  const [lastCompletionDate, setLastCompletionDate] = useState<string | null>(() => {
-    if (typeof window !== 'undefined') {
-      return localStorage.getItem('lastCompletionDate');
-    }
-    return null;
-  });
-
-  // 루틴 완료 횟수 및 획득 뱃지 상태 (localStorage에 저장)
-  const [routineCompletionCount, setRoutineCompletionCount] = useState<number>(() => {
-    return Number(localStorage.getItem('routineCompletionCount')) || 0;
-  });
-  const [attendanceCount, setAttendanceCount] = useState(() => {
-    const savedCount = localStorage.getItem('attendanceCount');
-    return savedCount ? Number(savedCount) : 0;
-  });
-  const [earnedBadges, setEarnedBadges] = useState<BadgeType[]>(() => {
-    const storedBadges = localStorage.getItem('earnedBadges');
-    return storedBadges ? JSON.parse(storedBadges) : [];
-  });
-  
-  // 스트릭 일수 상태 (AttendanceModal과 연동되어야 함)
-  const [streakDays, setStreakDays] = useState(() => {
-    const savedStreak = localStorage.getItem('streakDays');
-    return savedStreak ? Number(savedStreak) : 0;
-  });
-
-  const badgeInfo = {
-    '첫걸음': {
-      image: 'https://i.ibb.co/6P0D6kX/first-step-badge.png',
-      message: '첫 번째 루틴 완료를 축하합니다!'
-    },
-    '7일 연속': {
-      image: 'https://i.ibb.co/wJv0P2H/7-day-streak-badge.png',
-      message: '7일 연속 출석! 당신의 꾸준함을 응원합니다!'
-    },
-    '루틴 마스터': {
-      image: 'https://i.ibb.co/hK8xN2Y/routine-master-badge.png',
-      message: '총 100개 루틴을 완료했습니다! 당신은 진정한 루틴 마스터!'
-    },
-    '월간 챔피언': {
-      image: 'https://i.ibb.co/5c9dK9y/monthly-champion-badge.png',
-      message: '이번 달 30번 출석! 루틴잇 월간 챔피언입니다!'
-    }
-  };
-
- 
-
-  const [UserInfo, setUserInfo] = useState<UserProfile | null>({
-      id:1,
-      nickname: '구르미',
-      email: 'goormida@example.com',
-      profileImageUrl: '/profile.jpg',
-      profileMessage: '우리 함께 습관을 만들어봐요!',
-      isAlarmOn: true,
-      isDarkMode: false,
-      joinDate: '2024년 1월',
-      level: 15,
-      exp: 2450,
-      maxExp: 3000,
-      maxStreakDays: 28,
-      streakDays: 28,
-      
-    });
-
-    const fetchUserInfo = async () => {
-      const BASE_URL = import.meta.env.VITE_API_BASE_URL;
-      const token = localStorage.getItem('accessToken'); // 인증 토큰을 로컬 스토리지에서 가져옴
-      if (!token) {
-        console.error("인증 토큰이 없습니다.");
-        return;
-      }
-      
-      try {
-        const response = await fetch(`${BASE_URL}/api/users/me`, {
-          method: 'GET',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`
-          },
-        });
-
-        if (!response.ok) {
-          throw new Error('사용자 정보 불러오기 실패');
-        }
-
-        const result = await response.json();
-          
-        if (result.success) {
-          // API 응답 객체에서 필요한 데이터만 추출하고, 현재 상태에 맞게 매핑
-          const apiData = result.data;
-          const newUserData: UserProfile = {
-           id: apiData.id,
-            nickname: apiData.nickname,
-            profileMessage: apiData.profileMessage,
-            profileImageUrl: apiData.profileImageUrl,
-            isAlarmOn: apiData.isAlarmOn,
-            isDarkMode: apiData.isDarkMode,
-            // API 응답에 없는 필드는 기본값을 사용하거나 prevUser에서 가져옵니다.
-            email: '',
-            joinDate: '',
-            level: 0,
-            exp: 0,
-            maxExp: 0,
-            streakDays: 0,
-          };
-
-          setUserInfo(newUserData);
-        } else {
-          throw new Error(result.message || 'API 응답 실패');
-        }
-      } catch (error) {
-        console.error("사용자 정보 조회 에러:", error);
-        localStorage.removeItem('accessToken');
-        setIsLoggedIn(false);
-        setUserInfo(null);
-      }
-    };
-
-    useEffect(() => {
-      const params = new URLSearchParams(window.location.search);
-      const accessToken = params.get('accessToken');
-      const isNewUserParam = params.get('isNewUser');
-
-      if (accessToken) {
-        localStorage.setItem('accessToken', accessToken);
-        setIsLoggedIn(true);
-        fetchUserInfo(); // 로그인 성공 시 사용자 정보 즉시 불러오기
-        
-        if (isNewUserParam === 'true') {
-          setIsNewUser(true);
-          setIsLoginModalOpen(true);
-        }
-        window.history.replaceState({}, document.title, window.location.pathname);
-      
-      } else {
-        const storedToken = localStorage.getItem('accessToken');
-        if (storedToken) {
-          setIsLoggedIn(true);
-          fetchUserInfo(); // 로컬 스토리지에 토큰이 있을 경우 사용자 정보 불러오기
-        }
-      }
-    }, []);
-
-    const handleKakaoLogin = () => {
-      const BACKEND_KAKAO_LOGIN_URL = 'http://54.180.93.1:8080/oauth2/authorization/kakao';
-      window.location.href = BACKEND_KAKAO_LOGIN_URL;
-      
-      //const KAKAO_CLIENT_ID = 'ee96ad39f5b99ab6237942c0ad7bedd1';
-      //const REDIRECT_URI = 'http://localhost:8080/login/oauth2/code/kakao';
-      //const REDIRECT_URI = 'http://54.180.93.1:8080/login/oauth2/code/kakao';
-      //const kakaoAuthUrl = `https://kauth.kakao.com/oauth/authorize?client_id=${KAKAO_CLIENT_ID}&redirect_uri=${REDIRECT_URI}&response_type=code`;
-      //window.location.href = kakaoAuthUrl;
-      
-      //setIsLoggedIn(true);
-    };
 
   const [personalRoutines, setPersonalRoutines] = useState<Routine[]>([
     {
@@ -546,20 +525,83 @@ export default function App() {
   };
 
   // 닉네임 설정 완료 후 호출될 함수
-  const handleNicknameSetupComplete = (nickname: string) => {
-    // 닉네임 저장 API 호출 로직
-    // ...
-    // 회원가입 완료 후 로그인 상태로 전환
+  const handleNicknameSetupComplete = async (nickname: string) => {
+    const BASE_URL = import.meta.env.VITE_API_BASE_URL;
+    const token = localStorage.getItem('accessToken');
+
+    if (!token) {
+    console.error("인증 토큰이 없습니다.");
+    return;
+  }
+
+  try {
+    const response = await fetch(`${BASE_URL}/api/auth/signup`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify({ nickname: nickname })
+    });
+
+    if (!response.ok) {
+      throw new Error('회원가입 실패');
+    }
+
+    const result = await response.json();
+    const updatedUserInfo = result.data;
+
+    // API 응답으로 받은 전체 사용자 정보로 상태 업데이트
+    setUserInfo(updatedUserInfo);
+
     setIsLoggedIn(true);
     setIsNewUser(false);
-  };
+    alert('회원가입이 완료되었습니다.');
 
-  const handleLogout = () => {
+  } catch (error) {
+    console.error("회원가입 에러:", error);
+    alert('회원가입에 실패했습니다.');
+  }
+};
+
+  const handleLogout = async() => {
+    const BASE_URL = import.meta.env.VITE_API_BASE_URL;
+
+    const token = localStorage.getItem('accessToken');
+  if (!token) {
+    console.error("인증 토큰이 없어 로그아웃을 진행할 수 없습니다.");
+    setIsLoggedIn(false); // 토큰이 없으므로 클라이언트 상태만 초기화
+    return;
+  }
+
+  try {
+    const response = await fetch(`${BASE_URL}/api/auth/logout`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error('로그아웃 실패');
+    }
+
+    // 로컬 스토리지에서 토큰 제거
+    localStorage.removeItem('accessToken');
+    localStorage.removeItem('refreshToken');
+    
+    // 클라이언트 상태 초기화
     setIsLoggedIn(false);
     setActiveTab("home");
     setNavigationStack([]);
-    alert("로그아웃 되었습니다.");
-  };
+    
+    alert('로그아웃 되었습니다.');
+
+  } catch (error) {
+    console.error("로그아웃 에러:", error);
+    alert('로그아웃에 실패했습니다.');
+  }
+};
 
   const handleDeleteAccount = () => {
     const isConfirmed = window.confirm("계정 탈퇴 시 모든 정보가 삭제되며 복구할 수 없습니다. 정말로 탈퇴하시겠습니까?");
@@ -579,7 +621,7 @@ export default function App() {
         joinDate: '',
         level: 0,
         exp: 0,
-        maxExp: 0,
+        maxExp: 3000,
         maxStreakDays: 0,
         streakDays: 0
       });
@@ -790,11 +832,16 @@ const handleUpdateGroup = (updatedGroup: Group) => {
     setPersonalRoutines(prevRoutines => [...prevRoutines, newRoutine]);
   };
 
-
-
-  const handleSaveProfile = (updatedInfo: any) => {
-      setUserInfo(prev => ({ ...prev, ...updatedInfo }));
+  const handleSaveProfile = (updatedInfo: { nickname: string; profileMessage: string; profileImageUrl: string; }) => {
+    setUserInfo(prevUserInfo => {
+      if (!prevUserInfo) return null;
+      return {
+        ...prevUserInfo,
+        ...updatedInfo
+      };
+    });
   };
+
 
   const handleDeleteRoutine = (routineId: number, isGroupRoutine?: boolean) => {
     if (isGroupRoutine) {
@@ -828,14 +875,15 @@ const handleUpdateGroup = (updatedGroup: Group) => {
       : null;
 
   const renderScreen = () => {
-    if (!isLoggedIn || !UserInfo) {
-        return (
-            <div className="w-full h-full flex flex-col justify-center items-center">
-                {isLoggedIn ? <div>사용자 정보를 불러오는 중입니다...</div> : <LoginScreen onLogin={handleKakaoLogin} />}
-            </div>
-        );
+    if (!isLoggedIn) {
+      return <LoginScreen onLogin={handleKakaoLogin} />;
     }
 
+    if (isLoading || !UserInfo) {
+        return <div className="flex justify-center items-center h-screen"><LoadingSpinner /></div>;
+    }
+    
+    const currentScreen = navigationStack[navigationStack.length - 1];
     if (currentScreen) {
       switch (currentScreen.screen) {
         case "routine-detail":
@@ -871,8 +919,8 @@ const handleUpdateGroup = (updatedGroup: Group) => {
                 isDarkMode={isDarkMode}
                 onToggleDarkMode={toggleDarkMode}
                 initialUserInfo={UserInfo}
-                onSaveProfile={handleSaveProfile}
                 onDeleteAccount={handleDeleteAccount} 
+                onSaveProfile={handleSaveProfile}
               />
             );
         case "group-chat":
@@ -941,8 +989,8 @@ const handleUpdateGroup = (updatedGroup: Group) => {
             onOpenBadgeModal={handleOpenBadgeModal}
             onAddAuthMessage={handleAddAuthMessage}
             pendingAuthMessages={pendingAuthMessages}
-              onApproveAuthMessage={handleApproveAuthMessage}
-                    onRejectAuthMessage={handleRejectAuthMessage}
+            onApproveAuthMessage={handleApproveAuthMessage}
+            onRejectAuthMessage={handleRejectAuthMessage}
           />
         );
       case "routine":
@@ -984,6 +1032,7 @@ const handleUpdateGroup = (updatedGroup: Group) => {
             onLogout={handleLogout}
           />
         );
+      
       default:
         return (
           <HomeScreen 
@@ -999,7 +1048,7 @@ const handleUpdateGroup = (updatedGroup: Group) => {
             onAddAuthMessage={handleAddAuthMessage}
             pendingAuthMessages={pendingAuthMessages}
             onApproveAuthMessage={handleApproveAuthMessage}
-                    onRejectAuthMessage={handleRejectAuthMessage}
+            onRejectAuthMessage={handleRejectAuthMessage}
              
           />
         );
@@ -1142,6 +1191,7 @@ const handleUpdateGroup = (updatedGroup: Group) => {
               )}
             </main>
           </>
+          
         )}
       </div>
       <LoginModal // 새로 추가된 로그인 모달

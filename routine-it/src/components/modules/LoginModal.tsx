@@ -19,22 +19,30 @@ export function LoginModal({ isOpen, onClose, onLoginSuccess }: LoginModalProps)
 
   // 닉네임 중복 확인 함수
   const handleCheckNickname = async () => {
+    const BASE_URL = import.meta.env.VITE_API_BASE_URL;
+
     if (!nickname) return;
 
     setIsChecking(true);
     setIsNicknameAvailable(null);
 
     try {
-      // 실제 API 호출 로직을 여기에 추가
-      // 예시: const response = await fetch(`/api/check-nickname?name=${nickname}`);
-      // 예시: const data = await response.json();
-      
-      // 임시로 1초 후 중복 여부 판정
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      const isDuplicatedFromServer = ['김구름', '루틴이'].includes(nickname);
+      const response = await fetch(`${BASE_URL}/api/auth/check-nickname`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ nickname: nickname }),
+      });
+
+      if (!response.ok) {
+        throw new Error('닉네임 중복 확인 실패');
+      }
+
+      const result = await response.json();
+      const isDuplicatedFromServer = result.data; // true: 중복, false: 사용 가능
+
       setIsDuplicate(isDuplicatedFromServer);
       setIsNicknameAvailable(!isDuplicatedFromServer);
+      
     } catch (error) {
       console.error('닉네임 중복 확인 중 오류 발생:', error);
       setIsNicknameAvailable(false); // 오류 발생 시 사용 불가로 표시
@@ -44,19 +52,40 @@ export function LoginModal({ isOpen, onClose, onLoginSuccess }: LoginModalProps)
   };
 
   // 회원가입 완료 함수
-  const handleCompleteSignup = () => {
-    // 닉네임 유효성 검사
-    if (!nickname || isDuplicate || isNicknameAvailable === null || !isNicknameAvailable) {
-      alert('닉네임을 확인해주세요.');
+  const handleCompleteSignup = async () => {
+    const BASE_URL = import.meta.env.VITE_API_BASE_URL;
+    const token = localStorage.getItem('accessToken'); // 토큰 가져오기
+
+    if (!nickname || isDuplicate || isNicknameAvailable === null || !isNicknameAvailable || !token) {
+      alert('닉네임을 확인하거나 로그인 상태를 확인해주세요.');
       return;
     }
 
-    // 서버에 닉네임 전송 및 회원가입 완료 처리
-    // 예시: await fetch('/api/signup', { method: 'POST', body: JSON.stringify({ nickname }) });
+    try {
+      const response = await fetch(`${BASE_URL}/api/auth/signup`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`, // 토큰 포함
+        },
+        body: JSON.stringify({ nickname }),
+      });
 
-    // 로그인 성공 상태로 전환 (신규 회원임을 알리기 위해 true 전달)
-    onLoginSuccess(nickname);
-    onClose();
+      if (!response.ok) {
+        throw new Error('회원가입 실패');
+      }
+
+      const result = await response.json();
+      const loggedInUserInfo = result.data; // API 응답에서 전체 사용자 정보(email 포함) 추출
+
+      onLoginSuccess(loggedInUserInfo); // 👈 전체 사용자 정보를 App.tsx로 전달
+      onClose();
+      alert('회원가입이 완료되었습니다.');
+      
+    } catch (error) {
+      console.error('회원가입 완료 중 오류 발생:', error);
+      alert('회원가입에 실패했습니다.');
+    }
   };
 
   return (

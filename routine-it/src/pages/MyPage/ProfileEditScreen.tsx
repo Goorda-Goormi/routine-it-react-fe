@@ -35,6 +35,7 @@ export function ProfileEditScreen({
     nickname: initialUserInfo.nickname,
     email: initialUserInfo.email,
     profileMessage: initialUserInfo.profileMessage,
+    profileImageUrl: initialUserInfo.profileImageUrl
     // 초기 prop에 없는 필드는 예시 데이터로 추가
   });
 
@@ -48,6 +49,7 @@ export function ProfileEditScreen({
       nickname: initialUserInfo.nickname,
       email: initialUserInfo.email,
       profileMessage: initialUserInfo.profileMessage,
+      profileImageUrl: initialUserInfo.profileImageUrl
     });
     setAvatarUrl(initialUserInfo.profileImageUrl);
   }, [initialUserInfo]);
@@ -71,7 +73,7 @@ export function ProfileEditScreen({
         body: JSON.stringify({
           nickname: profileData.nickname,
           profileMessage: profileData.profileMessage,
-          // 기타 수정 가능한 필드
+          profileImageUrl: profileData.profileImageUrl,
         }),
       });
 
@@ -80,8 +82,14 @@ export function ProfileEditScreen({
       }
 
       const updatedUser = await response.json();
-      onSaveProfile(updatedUser); // 상위 컴포넌트로 업데이트된 정보 전달
-      onBack(); // 이전 화면으로 돌아가기
+      
+      if (updatedUser.success) {
+        onSaveProfile(updatedUser.data);
+      } else {
+        throw new Error(updatedUser.message || 'API 응답 실패');
+      }
+
+      onBack();
       alert('프로필이 성공적으로 업데이트되었습니다.');
     } catch (error) {
       console.error("프로필 업데이트 에러:", error);

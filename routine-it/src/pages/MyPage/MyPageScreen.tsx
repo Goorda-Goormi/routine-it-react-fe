@@ -196,7 +196,7 @@ export function MyPageScreen({ onNavigate, isDarkMode, onToggleDarkMode, user, o
     }
   ];
 
-  const expProgress = Math.round(((user.exp ?? 0) / (user.maxExp ?? 1)) * 100);
+  const expProgress = Math.round(((user.exp ?? 0) / user.maxExp) * 100);
 
   return (
     <div className="space-y-6 h-full p-4">
