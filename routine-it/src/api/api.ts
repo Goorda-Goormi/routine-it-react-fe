@@ -1,3 +1,4 @@
+
 import axios from "axios";
 
 console.log("VITE_API_BASE_URL:", import.meta.env.VITE_API_BASE_URL);
@@ -12,7 +13,7 @@ const api = axios.create({
 
 // 요청 시 JWT 토큰 자동 추가
 api.interceptors.request.use((config) => {
-  const token = localStorage.getItem("token"); // 로그인 후 저장한 JWT
+  const token = localStorage.getItem("accessToken"); 
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
   }

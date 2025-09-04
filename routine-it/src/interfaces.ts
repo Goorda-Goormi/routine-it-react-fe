@@ -9,22 +9,9 @@ export interface AlarmTime {
 
 
 export interface Group {
-  id: number;
-  name: string;
-  description: string;
-  members: number;
-  type: string;
-  progress?: number;
-  isOwner?: boolean;
-  time: string;
-  category: string;
-  recentMembers?: Member[];
-  owner?: string;
-  routines?: Routine[];
-  isJoined?: boolean;
-  isMandatory?: boolean;
+ 
 
-/*api버전으로 수정한 변수
+//api버전으로 수정한 변수
  groupId: number;
   leaderName: string; 
   groupName: string; 
@@ -46,7 +33,7 @@ export interface Group {
   isJoined?: boolean;
   recentMembers?: Member[];
   routines?: Routine[];
-*/
+
 }
 
 

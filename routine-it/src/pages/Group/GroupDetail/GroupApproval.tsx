@@ -91,7 +91,7 @@ export function GroupApproval({
             >
               <div className="flex justify-between items-center">
                 <span className="text-sm font-medium">
-                  {auth.user} - {auth.message}
+                  {auth.nickname} - {auth.message}
                 </span>
                 <div className="space-x-1">
                   <Button

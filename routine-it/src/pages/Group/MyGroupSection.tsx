@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/ca
 import { Button } from '../../components/ui/button';
 import { Badge } from '../../components/ui/badge';
 import { Plus, Users, Crown, MessageCircle, ChevronDown, ChevronUp } from 'lucide-react';
-import type { Group } from '../../interfaces';
+import type { Group,AlarmTime } from '../../interfaces';
 
 interface MyGroupsSectionProps {
   myGroups: Group[];
@@ -52,25 +52,25 @@ export function MyGroupsSection({ myGroups, onNavigate, onNewGroup }: MyGroupsSe
           <div className="max-h-64 overflow-y-auto scrollbar-hide">
             <div className="space-y-0">
               {groupsToShow.map((group, index) => (
-                <div key={group.id} className={`${index < groupsToShow.length - 1 ? 'border-b border-border/30' : ''}`}>
+                <div key={group.groupId} className={`${index < groupsToShow.length - 1 ? 'border-b border-border/30' : ''}`}>
                   <div className="p-5 rounded-lg cursor-pointer hover:bg-accent/50 transition-colors" onClick={() => onNavigate('group-detail', group)}>
                     <div className="flex items-center justify-between mb-1">
                       <div className="flex items-center space-x-2 flex-1">
-                        <span className="text-sm font-medium text-card-foreground">{group.name}</span>
+                        <span className="text-sm font-medium text-card-foreground">{group.groupName}</span>
                         {group.isOwner && <Crown className="h-3 w-3 text-yellow-400 icon-accent" />}
-                        <Badge variant={group.type === '의무참여' ? 'destructive' : 'secondary'} className="text-xs">
-                          {group.type}
+                        <Badge variant={group.groupType === 'REQUIRED' ? 'destructive' : 'secondary'} className="text-xs">
+                          {group.groupType}
                         </Badge>
                       </div>
                       <Button variant="ghost" size="sm" className="p-1 h-auto text-card-foreground hover:text-card-foreground" onClick={(e) => { e.stopPropagation(); onNavigate('group-chat', group); }}>
                         <MessageCircle className="h-4 w-4 icon-secondary" />
                       </Button>
                     </div>
-                    <p className="text-xs text-left text-muted-foreground mb-2">{group.description}</p>
+                    <p className="text-xs text-left text-muted-foreground mb-2">{group.groupDescription}</p>
                     <div className="flex items-center justify-between text-xs text-muted-foreground">
                       <span>{getCategoryEmoji(group.category)} {getCategoryName(group.category)}</span>
-                      <span>👥 {group.members}명</span>
-                      <span>⏰ {group.time}</span>
+                      <span>👥 {group.maxMembers}명</span>
+                      <span>⏰ {String(group.alarmTime.hour).padStart(2, '0')}:{String(group.alarmTime.minute).padStart(2, '0')} </span>
                     </div>
                   </div>
                 </div>
