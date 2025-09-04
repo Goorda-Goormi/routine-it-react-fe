@@ -407,7 +407,6 @@ export default function GroupEdit({ open, onOpenChange, group, onSave }: GroupEd
 
           <Alert className="rounded-xl border-l-4 border-primary">
             <AlertCircle className="h-4 w-4 text-primary" />
-            <AlertTitle className="font-semibold text-sm">정보</AlertTitle>
             <AlertDescription className="text-xs text-muted-foreground">
               그룹을 편집한 후에도 언제든지 설정을 다시 변경할 수 있습니다. 
               {formData.groupType === 'REQUIRED' && ' 의무참여 그룹은 멤버들이 정해진 시간에 참여해야 합니다.'}

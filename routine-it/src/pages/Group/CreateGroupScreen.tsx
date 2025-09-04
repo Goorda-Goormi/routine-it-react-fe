@@ -11,42 +11,13 @@ import { Badge } from '../../components/ui/badge';
 import { ArrowLeft, Clock, Users, Target, AlertCircle, CheckSquare } from 'lucide-react';
 import { Alert, AlertDescription } from '../../components/ui/alert';
 import { createGroup, type GroupRequest } from '../../api/group';
-
+import type { Group,AlarmTime } from '../../interfaces';
 interface CreateGroupScreenProps {
   onBack: () => void;
   onCreateGroup: (groupData: any) => void;
 }
 
-export function CreateGroupScreen({ onBack, onCreateGroup }: CreateGroupScreenProps) {
-  // 루틴 관련 필드 추가
-  const daysOfWeek = ['월', '화', '수', '목', '금', '토', '일'];
-  const [formData, setFormData] = useState<{
-    name: string;
-    description: string;
-    category: string;
-    difficulty: string;
-    time: string;
-    selectedDays: string[]; 
-    type: string;
-    hasAlarm: boolean;
-    alarmTime: string;
-    maxMembers: string;
-  }>({
-    name: '',
-    description: '',
-    category: '',
-    difficulty: '쉬움', // 난이도 기본값
-    time: '09:00', // 시간 기본값
-    selectedDays: [], // 선택된 요일
-    type: 'optional',
-    hasAlarm: false,
-    alarmTime: '09:00',
-    maxMembers: '30'
-  });
-
-  const [errors, setErrors] = useState<{ [key: string]: string }>({});
-
-  const categories = [
+const categories = [
     {
       id: 'health',
       name: '건강',
@@ -83,42 +54,59 @@ export function CreateGroupScreen({ onBack, onCreateGroup }: CreateGroupScreenPr
       hoverColor: 'hover:bg-purple-100/70 hover:text-purple-800 hover:border-purple-300/50'
     }
   ];
+export function CreateGroupScreen({ onBack, onCreateGroup }: CreateGroupScreenProps) {
+  const daysOfWeek = ['월', '화', '수', '목', '금', '토', '일'];
+  const [formData, setFormData] = useState({
+    groupName: '',
+    groupDescription: '',
+    category: '',
+    groupType: 'FREE',
+    hasAlarm: false,
+    alarmTime: '09:00', // 'time' 필드를 'alarmTime'으로 통합
+    maxMembers: 30,
+    authDays: [] as string[],
+    difficulty: '쉬움',
+  });
+
+  const [errors, setErrors] = useState<{ [key: string]: string }>({});
+
+  
 
   const handleDayToggle = (day: string) => {
     setFormData(prevData => {
-      const isSelected = prevData.selectedDays.includes(day);
+      const isSelected = prevData.authDays.includes(day);
       const newSelectedDays = isSelected
-        ? prevData.selectedDays.filter(d => d !== day)
-        : [...prevData.selectedDays, day].sort((a, b) => daysOfWeek.indexOf(a) - daysOfWeek.indexOf(b));
-      return { ...prevData, selectedDays: newSelectedDays };
+        ? prevData.authDays.filter(d => d !== day)
+        : [...prevData.authDays, day].sort((a, b) => daysOfWeek.indexOf(a) - daysOfWeek.indexOf(b));
+      return { ...prevData, authDays: newSelectedDays };
     });
   };
 
   const getFrequencyText = () => {
-    if (formData.selectedDays.length === 0) return '요일 선택';
-    if (formData.selectedDays.length === 7) return '매일';
-    if (['토', '일'].every(day => formData.selectedDays.includes(day)) && formData.selectedDays.length === 2) {
+    if (formData.authDays.length === 0) return '요일 선택';
+    if (formData.authDays.length === 7) return '매일';
+    if (['토', '일'].every(day => formData.authDays.includes(day)) && formData.authDays.length === 2) {
       return '주말';
     }
-    if (['월', '화', '수', '목', '금'].every(day => formData.selectedDays.includes(day)) && formData.selectedDays.length === 5) {
+    if (['월', '화', '수', '목', '금'].every(day => formData.authDays.includes(day)) && formData.authDays.length === 5) {
       return '평일';
     }
-    return formData.selectedDays.join(', ');
+    return formData.authDays.join(', ');
   };
 
   const validateForm = () => {
     const newErrors: { [key: string]: string } = {};
 
-    if (!formData.name.trim()) {
-      newErrors.name = '그룹 이름을 입력해주세요';
-    } else if (formData.name.length > 30) {
-      newErrors.name = '그룹 이름은 30자 이내로 입력해주세요';
+    if (!formData.groupName.trim()) {
+      newErrors.groupName = '그룹 이름을 입력해주세요';
+    } else if (formData.groupName.length > 30) {
+      newErrors.groupName = '그룹 이름은 30자 이내로 입력해주세요';
     }
 
-    if (!formData.description.trim()) {
-      newErrors.description = '그룹 설명을 입력해주세요';
-    } else if (formData.description.length > 100) {
-      newErrors.description = '그룹 설명은 100자 이내로 입력해주세요';
+    if (!formData.groupDescription.trim()) {
+      newErrors.groupDescription = '그룹 설명을 입력해주세요';
+    } else if (formData.groupDescription.length > 100) {
+      newErrors.groupDescription = '그룹 설명은 100자 이내로 입력해주세요';
     }
 
     if (!formData.category) {
@@ -126,14 +114,14 @@ export function CreateGroupScreen({ onBack, onCreateGroup }: CreateGroupScreenPr
     }
 
     if (!formData.difficulty) {
-        newErrors.difficulty = '난이도를 선택해주세요';
-    }
-    
-    if (formData.selectedDays.length === 0) {
-        newErrors.selectedDays = '반복 주기를 1개 이상 선택해주세요';
+      newErrors.difficulty = '난이도를 선택해주세요';
     }
 
-    const maxMembers = parseInt(formData.maxMembers);
+    if (formData.authDays.length === 0) {
+      newErrors.authDays = '반복 주기를 1개 이상 선택해주세요';
+    }
+
+    const maxMembers = parseInt(formData.maxMembers.toString(), 10);
     if (isNaN(maxMembers) || maxMembers < 2 || maxMembers > 50) {
       newErrors.maxMembers = '최대 인원은 2명~50명 사이로 설정해주세요';
     }
@@ -142,52 +130,49 @@ export function CreateGroupScreen({ onBack, onCreateGroup }: CreateGroupScreenPr
     return Object.keys(newErrors).length === 0;
   };
 
-const handleSubmit = async () => {
-  if (!validateForm()) return;
+  const handleSubmit = async () => {
+    if (!validateForm()) return;
 
-  // 1. localStorage에서 JWT 토큰을 확인합니다.
-  const token = localStorage.getItem("accessToken");
-  if (!token) {
-    alert("그룹 생성을 위해서는 로그인이 필요합니다.");
-    return;
-  }
+    const token = localStorage.getItem("accessToken");
+    if (!token) {
+      alert("그룹 생성을 위해서는 로그인이 필요합니다.");
+      return;
+    }
 
-  const [hour, minute] = formData.time.split(":").map(Number);
-  const groupType: GroupRequest["groupType"] =
-    formData.type === "mandatory" ? "REQUIRED" : "FREE";
-  
-  const authDays = convertDaysToBinary(formData.selectedDays);
-  
-  const payload: GroupRequest = {
-    groupName: formData.name,
-    groupDescription: formData.description,
-    groupType,
-    alarmTime: formData.hasAlarm
-      ? { hour, minute, second: 0, nano: 0 }
-      : { hour: 0, minute: 0, second: 0, nano: 0 },
-    authDays,
-    category: formData.category,
-    imageUrl: "./default.png",
-    maxMembers: parseInt(formData.maxMembers, 10),
+    const [hour, minute] = formData.alarmTime.split(":").map(Number);
+    const groupType: GroupRequest["groupType"] =
+      formData.groupType === "MANDATORY" ? "REQUIRED" : "FREE";
+    
+    const authDays = convertDaysToBinary(formData.authDays);
+
+    const payload: GroupRequest = {
+      groupName: formData.groupName,
+      groupDescription: formData.groupDescription,
+      groupType,
+      alarmTime: { hour, minute, second: 0, nano: 0 },
+      authDays,
+      category: formData.category,
+      imageUrl: "./default.png",
+      maxMembers: parseInt(formData.maxMembers.toString(), 10),
+      //difficulty: formData.difficulty === '쉬움' ? 'EASY' : formData.difficulty === '보통' ? 'NORMAL' : 'HARD',
+    };
+    console.log("API로 전송되는 Payload:", payload);
+    console.log("사용할 토큰:", token);
+
+    try {
+      const created = await createGroup(payload);
+      onCreateGroup(created);
+      onBack();
+    } catch (e) {
+      console.error(e);
+      alert("그룹 생성에 실패했습니다.");
+    }
   };
-  console.log("API로 전송되는 Payload:", payload);
-  console.log("사용할 토큰:", token);
 
-  try {
-    const created = await createGroup(payload);
-    onCreateGroup(created);
-    onBack();
-  } catch (e) {
-    console.error(e);
-    alert("그룹 생성에 실패했습니다.");
+  function convertDaysToBinary(days: string[]) {
+    const order = ["월", "화", "수", "목", "금", "토", "일"];
+    return order.map((d) => (days.includes(d) ? "1" : "0")).join("");
   }
-};
-
-// 월~일을 0~6으로 보고 선택된 요일을 '^[01]{7}$'로 변환
-function convertDaysToBinary(days: string[]) {
-  const order = ["월", "화", "수", "목", "금", "토", "일"];
-  return order.map((d) => (days.includes(d) ? "1" : "0")).join("");
-}
 
   const getCategoryName = (categoryId: string) => {
     const category = categories.find(c => c.id === categoryId);
@@ -238,16 +223,16 @@ function convertDaysToBinary(days: string[]) {
               <Input
                 id="groupName"
                 placeholder="그룹 이름을 입력하세요"
-                value={formData.name}
-                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                className={`bg-input-background border-border text-foreground ${errors.name ? 'border-destructive' : ''}`}
+                value={formData.groupName}
+                onChange={(e) => setFormData({ ...formData, groupName: e.target.value })}
+                className={`bg-input-background border-border text-foreground ${errors.groupName ? 'border-destructive' : ''}`}
                 maxLength={30}
               />
-              {errors.name && (
-                <p className="text-xs text-destructive">{errors.name}</p>
+              {errors.groupName && (
+                <p className="text-xs text-destructive">{errors.groupName}</p>
               )}
               <div className="text-xs text-muted-foreground text-right">
-                {formData.name.length}/30
+                {formData.groupName.length}/30
               </div>
             </div>
 
@@ -257,16 +242,16 @@ function convertDaysToBinary(days: string[]) {
               <Textarea
                 id="groupDescription"
                 placeholder="그룹에 대한 설명을 입력하세요"
-                value={formData.description}
-                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                className={`bg-input-background border-border text-foreground resize-none h-20 ${errors.description ? 'border-destructive' : ''}`}
+                value={formData.groupDescription}
+                onChange={(e) => setFormData({ ...formData, groupDescription: e.target.value })}
+                className={`bg-input-background border-border text-foreground resize-none h-20 ${errors.groupDescription ? 'border-destructive' : ''}`}
                 maxLength={100}
               />
-              {errors.description && (
-                <p className="text-xs text-destructive">{errors.description}</p>
+              {errors.groupDescription && (
+                <p className="text-xs text-destructive">{errors.groupDescription}</p>
               )}
               <div className="text-xs text-muted-foreground text-right">
-                {formData.description.length}/100
+                {formData.groupDescription.length}/100
               </div>
             </div>
 
@@ -303,7 +288,7 @@ function convertDaysToBinary(days: string[]) {
           </CardContent>
         </Card>
 
-        {/* 루틴 정보 (새로 추가된 부분) */}
+        {/* 루틴 정보 */}
         <Card>
           <CardHeader className="pb-4">
             <CardTitle className="text-base text-card-foreground flex items-center space-x-2">
@@ -333,18 +318,6 @@ function convertDaysToBinary(days: string[]) {
               )}
             </div>
 
-            {/* 시간 선택 */}
-            <div className="space-y-2">
-              <Label htmlFor="time" className="text-card-foreground">시간</Label>
-              <Input
-                id="time"
-                type="time"
-                value={formData.time}
-                onChange={(e) => setFormData({...formData, time: e.target.value})}
-                className="bg-input-background border-border text-foreground"
-              />
-            </div>
-
             {/* 반복 주기 */}
             <div className="space-y-2">
               <Label className="text-card-foreground">
@@ -354,18 +327,18 @@ function convertDaysToBinary(days: string[]) {
                 {daysOfWeek.map((day) => (
                   <Button
                     key={day}
-                    variant={formData.selectedDays.includes(day) ? 'default' : 'outline'}
+                    variant={formData.authDays.includes(day) ? 'default' : 'outline'}
                     onClick={() => handleDayToggle(day)}
                     className={`w-10 h-10 rounded-full text-card-foreground ${
-                      formData.selectedDays.includes(day) ? 'bg-primary text-primary-foreground' : 'bg-background border-border'
+                      formData.authDays.includes(day) ? 'bg-primary text-primary-foreground' : 'bg-background border-border'
                     } hover:bg-accent hover:text-card-foreground`}
                   >
                     {day}
                   </Button>
                 ))}
               </div>
-              {errors.selectedDays && (
-                <p className="text-xs text-destructive">{errors.selectedDays}</p>
+              {errors.authDays && (
+                <p className="text-xs text-destructive">{errors.authDays}</p>
               )}
             </div>
           </CardContent>
@@ -384,15 +357,15 @@ function convertDaysToBinary(days: string[]) {
             <div className="space-y-3">
               <Label className="text-card-foreground">참여 유형</Label>
               <RadioGroup
-                value={formData.type}
-                onValueChange={(value) => setFormData({ ...formData, type: value })}
+                value={formData.groupType}
+                onValueChange={(value) => setFormData({ ...formData, groupType: value })}
                 className="space-y-3"
               >
                 <Label
                   htmlFor="optional"
                   className="flex items-start space-x-3 p-3 rounded-lg border hover:bg-green-100/70 hover:text-green-800 hover:border-green-300/50 cursor-pointer transition-colors"
                 >
-                  <RadioGroupItem value="optional" id="optional" className="mt-1" />
+                  <RadioGroupItem value="FREE" id="optional" className="mt-1" />
                   <div className="flex flex-1 items-start justify-between">
                     <div className="flex flex-col items-start">
                       <div className="text-card-foreground font-medium">
@@ -410,7 +383,7 @@ function convertDaysToBinary(days: string[]) {
                   htmlFor="mandatory"
                   className="flex items-start space-x-3 p-3 rounded-lg border hover:bg-red-100/70 hover:text-red-800 hover:border-red-300/50 cursor-pointer transition-colors"
                 >
-                  <RadioGroupItem value="mandatory" id="mandatory" className="mt-1" />
+                  <RadioGroupItem value="MANDATORY" id="mandatory" className="mt-1" />
                   <div className="flex flex-1 items-start justify-between">
                     <div className="flex flex-col items-start">
                       <div className="text-card-foreground font-medium">
@@ -429,7 +402,7 @@ function convertDaysToBinary(days: string[]) {
             {/* 최대 인원 */}
             <div className="space-y-2">
               <Label htmlFor="maxMembers" className="text-card-foreground">최대 인원</Label>
-              <Select value={formData.maxMembers} onValueChange={(value) => setFormData({ ...formData, maxMembers: value })}>
+              <Select value={String(formData.maxMembers)} onValueChange={(value) => setFormData({ ...formData, maxMembers: parseInt(value, 10) })}>
                 <SelectTrigger className={`bg-input-background border-border text-foreground ${errors.maxMembers ? 'border-destructive' : ''}`}>
                   <SelectValue />
                 </SelectTrigger>
@@ -485,59 +458,51 @@ function convertDaysToBinary(days: string[]) {
         </Card>
 
         {/* 미리보기 */}
-        {formData.name && formData.category && (
-          <Card>
-            <CardHeader className="pb-4">
-              <CardTitle className="text-base text-card-foreground">미리보기</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="p-3 rounded-lg border">
-                <div className="flex items-center justify-between mb-2">
-                  <div className="flex items-center space-x-2">
-                    <span className="text-sm font-medium text-card-foreground">{formData.name}</span>
-                    <Badge variant={formData.type === 'mandatory' ? 'destructive' : 'secondary'} className="text-xs">
-                      {formData.type === 'mandatory' ? '의무참여' : '자유참여'}
-                    </Badge>
-                  </div>
-                </div>
-
-                {formData.description && (
-                  <p className="text-xs text-muted-foreground mb-2">{formData.description}</p>
-                )}
-
-                <div className="flex items-center justify-between text-xs text-muted-foreground flex-wrap gap-y-1">
-                  <span className="flex items-center gap-1">
-                    {getCategoryEmoji(formData.category)} {getCategoryName(formData.category)}
-                  </span>
-                  <span className="flex items-center gap-1">
-                    <Users className="w-3 h-3" /> 최대 {formData.maxMembers}명
-                  </span>
-                  <span className="flex items-center gap-1">
-                    <Target className="w-3 h-3" /> {formData.difficulty}
-                  </span>
-                  <span className="flex items-center gap-1">
-                    <Clock className="w-3 h-3" /> {formData.time}
-                  </span>
-                  <span className="flex items-center gap-1">
-                    <CheckSquare className="w-3 h-3" /> {getFrequencyText()}
-                  </span>
-                  {formData.hasAlarm && (
-                    <span className="flex items-center gap-1">
-                      <Clock className="w-3 h-3" /> 알림: {formData.alarmTime}
-                    </span>
+                  {formData.groupName && formData.category && (
+                    <Card className="shadow-none border-none">
+                      <CardHeader className="pb-4">
+                        <CardTitle className="text-base text-card-foreground font-semibold">미리보기</CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="p-4 rounded-xl border-2 border-primary/20 bg-background/50 shadow-sm transition-all duration-300">
+                          <div className="flex items-center justify-between mb-2">
+                            <div className="flex items-center space-x-2">
+                              <span className="text-lg font-bold text-card-foreground">{formData.groupName}</span>
+                              <Badge variant={formData.groupType === 'REQUIRED' ? 'destructive' : 'secondary'} className="text-xs px-2 py-0.5 rounded-full font-normal">
+                                {formData.groupType === 'REQUIRED' ? '의무참여' : '자유참여'}
+                              </Badge>
+                            </div>
+                          </div>
+                          {formData.groupDescription && (
+                            <p className="text-sm text-muted-foreground mb-2">{formData.groupDescription}</p>
+                          )}
+                          <div className="flex items-center space-x-4 text-xs text-muted-foreground">
+                            <span className="flex items-center space-x-1">
+                              <span>{getCategoryEmoji(formData.category)}</span>
+                              <span className="font-medium">{getCategoryName(formData.category)}</span>
+                            </span>
+                            <span className="flex items-center space-x-1">
+                              <Users className="h-3 w-3" />
+                              <span>최대 {formData.maxMembers}명</span>
+                            </span>
+                            {formData.hasAlarm && (
+                              <span className="flex items-center space-x-1">
+                                <Clock className="h-3 w-3" />
+                                <span>{formData.alarmTime}</span>
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
                   )}
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        )}
 
         {/* 안내 메시지 */}
         <Alert>
           <AlertCircle className="h-4 w-4 icon-muted" />
           <AlertDescription className="text-xs">
             그룹을 생성한 후에도 설정을 변경할 수 있습니다.
-            {formData.type === 'mandatory' && ' 의무참여 그룹은 멤버들이 정해진 시간에 참여해야 합니다.'}
+            {formData.groupType === 'REQUIRED' && ' 의무참여 그룹은 멤버들이 정해진 시간에 참여해야 합니다.'}
           </AlertDescription>
         </Alert>
       </div>
