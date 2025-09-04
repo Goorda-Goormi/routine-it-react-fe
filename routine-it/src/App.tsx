@@ -233,7 +233,7 @@ export default function App() {
   setGroups(prevGroups => 
     prevGroups.map(group => {
       // 해당 그룹인지 확인
-      if (group.id === groupId) {
+      if (group.groupId === groupId) {
         // 그룹 내에서 해당 루틴 찾기
         const updatedRoutines = group.routines?.map(routine => {
           if (routine.id === messageToApprove.routineId) {
@@ -329,83 +329,7 @@ export default function App() {
     },
   ]);
 
-  const [groups, setGroups] = useState<Group[]>([
-    // GroupScreen에서 옮겨온 데이터
-    {
-      id: 101,
-      name: '아침 기상 챌린지',
-      description: '일찍 일어나서 하루를 길게 사용하기',
-      members: 5,
-      type: '의무참여',
-      time: '05:30',
-      category: 'lifestyle',
-      owner: '임시소유자',
-      isJoined: false,
-      isMandatory: true,
-    },
-    {
-      id: 102,
-      name: '매일 1시간 운동',
-      description: '집에서 꾸준히 운동하기',
-      members: 8,
-      type: '자유참여',
-      time: '19:00',
-      category: 'exercise',
-      owner: '임시소유자',
-      isJoined: true,
-      isMandatory: false,
-    },
-    {
-    id: 1,
-    name: '아침 운동 챌린지',
-    description: '매일 아침 운동하고 인증하기',
-    members: 12,
-    type: '의무참여',
-    progress: 80,
-    isOwner: true,
-    isJoined: false,
-    time: '06:00-09:00',
-    category: 'exercise',
-    isMandatory: true,
-    recentMembers: [
-        { id: 1, nickname: '민수민수', profileImageUrl: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=40&h=40&fit=crop&crop=face' },
-        { id: 2, nickname: '지영쓰', profileImageUrl: 'https://images.unsplash.com/photo-1494790108755-2616b95fcebf?w=40&h=40&fit=crop&crop=face' },
-        { id: 3, nickname: '철수박', profileImageUrl: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=40&h=40&fit=crop&crop=face' }
-    ],
-    routines: [ // Example group routine
-      {
-        id: 1001,
-        name: '아침 운동 인증',
-        description: '6시-9시 사이에 운동 인증샷 올리기',
-        time: '06:00',
-        frequency: ["월", "화", "수", "목", "금", "토", "일"],
-        reminder: true,
-        goal: "30",
-        category: "exercise",
-        completed: false,
-        streak: 12,
-        difficulty: "보통",
-        isGroupRoutine: true,
-      }
-    ]
-  },
-    {
-        id: 2,
-        name: '독서 모임',
-        description: '책 읽고 후기 공유하기',
-        members: 8,
-        type: '자유참여',
-        progress: 65,
-        isOwner: false,
-        isJoined: true,
-        time: '언제든',
-        category: 'study',
-        recentMembers: [
-            { id: 4,  nickname: '수현', profileImageUrl: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=40&h=40&fit=crop&crop=face' },
-            { id: 5,  nickname: '영호호호', profileImageUrl: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=40&h=40&fit=crop&crop=face' }
-        ]
-    }
-  ]);
+ const [groups, setGroups] = useState<Group[]>([]);
 
   const [groupRoutines, setGroupRoutines] = useState<Routine[]>([]);
 
@@ -420,7 +344,7 @@ export default function App() {
   const handleJoinGroup = (groupId: number) => {
   setGroups(prevGroups =>
     prevGroups.map(group =>
-      group.id === groupId ? { ...group, isJoined: true } : group
+      group.groupId === groupId ? { ...group, isJoined: true } : group
     )
   );
 };
@@ -712,10 +636,10 @@ export default function App() {
 
 
 const handleUpdateGroup = (updatedGroup: Group) => {
-  const isMandatory = updatedGroup.type === '의무참여';
+  const isMandatory = updatedGroup.groupType === 'REQUIRED';
   setGroups(prevGroups =>
     prevGroups.map(group =>
-      group.id === updatedGroup.id 
+      group.groupId === updatedGroup.groupId
       ? { 
         ...group, 
         ...updatedGroup, 

@@ -145,28 +145,33 @@ export function CreateGroupScreen({ onBack, onCreateGroup }: CreateGroupScreenPr
 const handleSubmit = async () => {
   if (!validateForm()) return;
 
-  const [hour, minute] = formData.time.split(":").map(Number);
+  // 1. localStorage에서 JWT 토큰을 확인합니다.
+  const token = localStorage.getItem("accessToken");
+  if (!token) {
+    alert("그룹 생성을 위해서는 로그인이 필요합니다.");
+    return;
+  }
 
-  //  리터럴 유니온 타입으로 확정
+  const [hour, minute] = formData.time.split(":").map(Number);
   const groupType: GroupRequest["groupType"] =
     formData.type === "mandatory" ? "REQUIRED" : "FREE";
-
-  // ^[01]{7}$: 월(0)~일(6) 기준. 필요시 일요일 먼저로 바꿔도 됩니다.
+  
   const authDays = convertDaysToBinary(formData.selectedDays);
-
-  // API 요청 페이로드 구성
+  
   const payload: GroupRequest = {
     groupName: formData.name,
     groupDescription: formData.description,
-    groupType, 
+    groupType,
     alarmTime: formData.hasAlarm
       ? { hour, minute, second: 0, nano: 0 }
       : { hour: 0, minute: 0, second: 0, nano: 0 },
     authDays,
     category: formData.category,
-    imageUrl: "/default.png",
+    imageUrl: "./default.png",
     maxMembers: parseInt(formData.maxMembers, 10),
   };
+  console.log("API로 전송되는 Payload:", payload);
+  console.log("사용할 토큰:", token);
 
   try {
     const created = await createGroup(payload);
