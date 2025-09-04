@@ -11,13 +11,13 @@ interface ProfileEditScreenProps {
   onNavigate: (screen: string, params?: any) => void;
   isDarkMode: boolean;
   onToggleDarkMode: () => void;
-  initialUserInfo: {
+  userInfo: {
     nickname: string;
     email?: string;
     profileImageUrl: string;
     profileMessage?: string;
   };
-  onSaveProfile: (updatedInfo: any) => void;
+  onSaveProfile: () => Promise<void>; 
   onDeleteAccount: () => void;
 }
 
@@ -26,38 +26,38 @@ export function ProfileEditScreen({
   onNavigate, 
   isDarkMode, 
   onToggleDarkMode, 
-  initialUserInfo, 
+  userInfo, 
   onSaveProfile,
   onDeleteAccount
 }: ProfileEditScreenProps) {
   // initialUserInfo prop을 사용하여 초기 상태 설정
   const [profileData, setProfileData] = useState({
-    nickname: initialUserInfo.nickname,
-    email: initialUserInfo.email,
-    profileMessage: initialUserInfo.profileMessage,
-    profileImageUrl: initialUserInfo.profileImageUrl
+    nickname: userInfo.nickname,
+    email: userInfo.email,
+    profileMessage: userInfo.profileMessage,
+    profileImageUrl: userInfo.profileImageUrl
     // 초기 prop에 없는 필드는 예시 데이터로 추가
   });
 
   // 아바타 URL 상태 추가
-  const [avatarUrl, setAvatarUrl] = useState(initialUserInfo.profileImageUrl);
+  const [avatarUrl, setAvatarUrl] = useState(userInfo.profileImageUrl);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // 컴포넌트 마운트 시 initialUserInfo로 상태 초기화
   useEffect(() => {
     setProfileData({
-      nickname: initialUserInfo.nickname,
-      email: initialUserInfo.email,
-      profileMessage: initialUserInfo.profileMessage,
-      profileImageUrl: initialUserInfo.profileImageUrl
+      nickname: userInfo.nickname,
+      email: userInfo.email,
+      profileMessage: userInfo.profileMessage,
+      profileImageUrl: userInfo.profileImageUrl
     });
-    setAvatarUrl(initialUserInfo.profileImageUrl);
-  }, [initialUserInfo]);
+    setAvatarUrl(userInfo.profileImageUrl);
+  }, [userInfo]);
 
   // 저장 버튼 클릭 핸들러
   const handleSave = async () => {
     const BASE_URL = import.meta.env.VITE_API_BASE_URL;
-    const token = localStorage.getItem('accessToken'); // 인증 토큰 가져오기
+    const token = localStorage.getItem('accessToken'); 
     if (!token) {
       console.error("인증 토큰이 없습니다.");
       return;
@@ -81,13 +81,7 @@ export function ProfileEditScreen({
         throw new Error('프로필 업데이트 실패');
       }
 
-      const updatedUser = await response.json();
-      
-      if (updatedUser.success) {
-        onSaveProfile(updatedUser.data);
-      } else {
-        throw new Error(updatedUser.message || 'API 응답 실패');
-      }
+      await onSaveProfile();
 
       onBack();
       alert('프로필이 성공적으로 업데이트되었습니다.');

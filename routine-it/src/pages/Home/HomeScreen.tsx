@@ -25,7 +25,7 @@ interface UserInfo {
 
 interface HomeScreenProps {
   onNavigate: (screen: string, params?: any) => void;
-  initialUserInfo: UserInfo;
+  userInfo: UserInfo;
   personalRoutines: Routine[];
   onToggleCompletion: (routineId: number, isGroupRoutine?: boolean) => void;
   streakDays: number;
@@ -49,7 +49,7 @@ interface VerificationPhoto {
 
 export function HomeScreen({
   onNavigate,
-  initialUserInfo,
+  userInfo,
   personalRoutines,
   onToggleCompletion,
   streakDays,
@@ -212,7 +212,7 @@ export function HomeScreen({
     const groupId = participatingGroups.find(group => group.routines?.some(r => r.id === selectedRoutine.id))?.id;
 
     if (groupId) {
-      onAddAuthMessage(groupId, { ...data, id: Date.now() }, initialUserInfo.nickname ?? '', initialUserInfo.id, selectedRoutine.id);
+      onAddAuthMessage(groupId, { ...data, id: Date.now() }, userInfo.nickname ?? '', userInfo.id, selectedRoutine.id);
 
       setRoutineStates(prevStates => ({
         ...prevStates,
@@ -240,9 +240,9 @@ export function HomeScreen({
       <div className="space-y-4">
         <div className="flex items-center justify-between">
           <div className="flex flex-col items-start m-2">
-            <h2 className="text-xl font-semibold text-foreground">안녕하세요, {initialUserInfo.nickname}님!</h2>
+            <h2 className="text-xl font-semibold text-foreground">안녕하세요, {userInfo.nickname}님!</h2>
             <p className="text-sm text-foreground">
-              {todayString} • {initialUserInfo.profileMessage}
+              {todayString} • {userInfo.profileMessage}
             </p>
           </div>
           <Button

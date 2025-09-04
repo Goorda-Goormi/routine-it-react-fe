@@ -24,6 +24,7 @@ import { AchievementBadgeModal } from './components/modules/AchievementBadgeModa
 import type { AuthMessage,Routine,Group,Member,PendingAuthMap,UserProfile } from "./interfaces";
 import { LoginModal } from './components/modules/LoginModal';
 import { LoadingSpinner } from "./components/ui/loading-spinner";
+import { startKakaoLogin, getUserInfo } from "./api/login"; 
 
 interface NavigationState {
   screen: string;
@@ -100,58 +101,27 @@ export default function App() {
 
   const fetchUserInfo = async () => {
     setIsLoading(true);
-    const BASE_URL = import.meta.env.VITE_API_BASE_URL;
-    const token = localStorage.getItem('accessToken'); // 인증 토큰을 로컬 스토리지에서 가져옴
+    const token = localStorage.getItem('accessToken');
     if (!token) {
       console.error("인증 토큰이 없습니다.");
+      setIsLoading(false); // 로딩 상태 해제
       return;
     }
       
     try {
-      const response = await fetch(`${BASE_URL}/api/auth/me`, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-      });
+      const userInfoData = await getUserInfo();
+      setUserInfo(prevUserInfo => ({
+        ...prevUserInfo,
+        ...userInfoData,
+      }));
 
-      if (!response.ok) {
-        throw new Error('사용자 정보 불러오기 실패');
-      }
-
-      const result = await response.json();
-          
-      if (result.success) {
-        // API 응답 객체에서 필요한 데이터만 추출하고, 현재 상태에 맞게 매핑
-        const apiData = result.data;
-        const newUserData: UserProfile = {
-         id: apiData.id,
-          nickname: apiData.nickname,
-          profileMessage: apiData.profileMessage,
-          profileImageUrl: apiData.profileImageUrl,
-          isAlarmOn: apiData.isAlarmOn,
-          isDarkMode: apiData.isDarkMode,
-          // API 응답에 없는 필드는 기본값을 사용하거나 prevUser에서 가져옵니다.
-          email: apiData.email,
-          joinDate: apiData.joinDate,
-          level: 0,
-          exp: 0,
-          maxExp: 3000,
-          streakDays: 0,
-        };
-
-        setUserInfo(newUserData);
-      } else {
-        throw new Error(result.message || 'API 응답 실패');
-      }
     } catch (error) {
       console.error("사용자 정보 조회 에러:", error);
       localStorage.removeItem('accessToken');
       setIsLoggedIn(false);
       setUserInfo(null);
     } finally {
-      setIsLoading(false); // API 호출 완료 시 로딩 상태 false
+      setIsLoading(false);
     }
   };
 
@@ -181,16 +151,7 @@ export default function App() {
   }, []);
 
   const handleKakaoLogin = () => {
-    const BACKEND_KAKAO_LOGIN_URL = 'http://54.180.93.1:8080/oauth2/authorization/kakao';
-    window.location.href = BACKEND_KAKAO_LOGIN_URL;
-      
-    //const KAKAO_CLIENT_ID = 'ee96ad39f5b99ab6237942c0ad7bedd1';
-    //const REDIRECT_URI = 'http://localhost:8080/login/oauth2/code/kakao';
-    //const REDIRECT_URI = 'http://54.180.93.1:8080/login/oauth2/code/kakao';
-    //const kakaoAuthUrl = `https://kauth.kakao.com/oauth/authorize?client_id=${KAKAO_CLIENT_ID}&redirect_uri=${REDIRECT_URI}&response_type=code`;
-    //window.location.href = kakaoAuthUrl;
-      
-    //setIsLoggedIn(true);
+    startKakaoLogin();
   };
 
   // 루틴 인증 메시지를 추가하는 함수에 groupId 추가
@@ -832,14 +793,8 @@ const handleUpdateGroup = (updatedGroup: Group) => {
     setPersonalRoutines(prevRoutines => [...prevRoutines, newRoutine]);
   };
 
-  const handleSaveProfile = (updatedInfo: { nickname: string; profileMessage: string; profileImageUrl: string; }) => {
-    setUserInfo(prevUserInfo => {
-      if (!prevUserInfo) return null;
-      return {
-        ...prevUserInfo,
-        ...updatedInfo
-      };
-    });
+  const handleSaveProfile = async () => {
+    await fetchUserInfo();
   };
 
 
@@ -918,7 +873,7 @@ const handleUpdateGroup = (updatedGroup: Group) => {
                 onNavigate={navigateTo}
                 isDarkMode={isDarkMode}
                 onToggleDarkMode={toggleDarkMode}
-                initialUserInfo={UserInfo}
+                userInfo={UserInfo}
                 onDeleteAccount={handleDeleteAccount} 
                 onSaveProfile={handleSaveProfile}
               />
@@ -982,7 +937,7 @@ const handleUpdateGroup = (updatedGroup: Group) => {
             personalRoutines={personalRoutines}
             onToggleCompletion={handleToggleCompletion}
             streakDays={streakDays}
-            initialUserInfo={UserInfo}
+            userInfo={UserInfo}
             participatingGroups={groups}
             onOpenAttendanceModal={handleOpenAttendanceModal}
             onOpenStreakModal={handleOpenStreakModal}
@@ -1040,7 +995,7 @@ const handleUpdateGroup = (updatedGroup: Group) => {
             personalRoutines={personalRoutines}
             onToggleCompletion={handleToggleCompletion}
             streakDays={streakDays}
-            initialUserInfo={UserInfo}
+            userInfo={UserInfo}
             participatingGroups={groups}   
             onOpenAttendanceModal={handleOpenAttendanceModal}
             onOpenStreakModal={handleOpenStreakModal}
