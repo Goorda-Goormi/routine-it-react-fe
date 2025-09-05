@@ -38,6 +38,14 @@ const GroupCard = ({ group, onNavigate, onJoinGroup }: { group: Group, onNavigat
   <div className="p-5 rounded-lg hover:bg-accent/50 transition-colors cursor-pointer" onClick={() => onNavigate('group-detail', group)}>
     <div className="flex items-center justify-between mb-1">
       <div className="flex items-center space-x-2 flex-1">
+         {group.groupImageUrl && (
+          <img 
+            src={group.groupImageUrl} 
+            alt={group.groupName} 
+            className="w-8 h-8 rounded-full object-cover mr-2 " 
+          />
+        )}
+        
         <span className="text-sm font-medium text-card-foreground">{group.groupName}</span>
         <Badge variant={group.groupType === 'REQUIRED' ? 'destructive' : 'secondary'} className="text-xs">
           {group.groupType === 'REQUIRED' ? '의무참여' : '자유참여'}

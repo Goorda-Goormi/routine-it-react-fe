@@ -57,6 +57,15 @@ export function MyGroupsSection({ myGroups, onNavigate, onNewGroup }: MyGroupsSe
                   <div className="p-5 rounded-lg cursor-pointer hover:bg-accent/50 transition-colors" onClick={() => onNavigate('group-detail', group)}>
                     <div className="flex items-center justify-between mb-1">
                       <div className="flex items-center space-x-2 flex-1">
+                         {group.groupImageUrl && (
+                            <img 
+                              src={group.groupImageUrl} 
+                              alt={group.groupName} 
+                              className="w-8 h-8 rounded-full object-cover mr-2" 
+                            />
+                          )}
+                        
+                        
                         <span className="text-sm font-medium text-card-foreground">{group.groupName}</span>
                         {group.isOwner && <Crown className="h-3 w-3 text-yellow-400 icon-accent" />}
                         <Badge variant={group.groupType === 'REQUIRED' ? 'destructive' : 'secondary'} className="text-xs">
