@@ -290,6 +290,7 @@ export default function App() {
     const params = new URLSearchParams(window.location.search);
     const accessToken = params.get('accessToken');
     //const isNewUserParam = params.get('isNewUser');
+    const storedToken = localStorage.getItem('accessToken');
 
     if (accessToken) {
       localStorage.setItem('accessToken', accessToken);
@@ -300,19 +301,22 @@ export default function App() {
       //   setIsNewUser(true);
       //   setIsLoginModalOpen(true);
       // }
+       fetchGroupData();
       setIsNewUser(true);
       setIsLoginModalOpen(true);
       window.history.replaceState({}, document.title, window.location.pathname);
       
     } else {
-      const storedToken = localStorage.getItem('accessToken');
+      //const storedToken = localStorage.getItem('accessToken');
       if (storedToken) {
         setIsLoggedIn(true);
         fetchUserInfo(); // 로컬 스토리지에 토큰이 있을 경우 사용자 정보 불러오기
+        fetchGroupData();
       }
     }
   }, []);
 
+   //groups 상태가 변경될 때마다 groupRoutines 업데이트
    useEffect(() => {
     const newGroupRoutines: Routine[] = groups.flatMap(group => 
       group.routines?.map(routine => ({ ...routine, isGroupRoutine: true })) || []
@@ -321,30 +325,7 @@ export default function App() {
   }, [groups]);
 
 
-  useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const accessToken = params.get('accessToken');
-
-    if (accessToken) {
-      localStorage.setItem('accessToken', accessToken);
-      setIsLoggedIn(true);
-      fetchUserInfo();
-      fetchGroupData();
-      
-      setIsNewUser(true);
-      setIsLoginModalOpen(true);
-      window.history.replaceState({}, document.title, window.location.pathname);
-      
-    } else {
-      const storedToken = localStorage.getItem('accessToken');
-      if (storedToken) {
-        setIsLoggedIn(true);
-        fetchUserInfo();
-        fetchGroupData();
-      }
-    }
-  }, []);
-
+  //다크 모드 상태 관리
   useEffect(() => {
     if (isDarkMode) {
       document.documentElement.classList.add("dark");
@@ -461,9 +442,6 @@ export default function App() {
    const handleSaveProfile = async () => {
     await fetchUserInfo();
   };
-
-
-
 
 
   //6.루틴 관리 =============================================================
@@ -707,39 +685,35 @@ export default function App() {
     alert(`${id}번 인증이 거절되었습니다.`);
   };
 
- 
- 
-
-
-  const handleAddGroup = async (newGroupData) => {
+const handleAddGroup = async (newGroupData: any) => {
     try {
-      const createdGroup = await createGroup(newGroupData);
-      setGroups((prev) => [createdGroup, ...prev]);
-      setMyGroups((prev) => [createdGroup, ...prev]);
-      navigateTo("group-detail", createdGroup);
+      await fetchGroupData(); 
+      
+      navigateTo("group");
+
       alert('그룹이 성공적으로 생성되었습니다.');
-    } catch (error) {
+    } catch (error: any) {
       console.error("그룹 생성 실패:", error);
       alert(error.message);
     }
   };
+
   const handleUpdateGroup = (updatedGroup: Group) => {
-  const isMandatory = updatedGroup.groupType === 'REQUIRED';
-  setGroups(prevGroups =>
-    prevGroups.map(group =>
-      group.groupId === updatedGroup.groupId
-      ? { 
-        ...group, 
-        ...updatedGroup, 
-        isMandatory: isMandatory, 
-      }
-       : group
-    )
-  );
+    const isMandatory = updatedGroup.groupType === 'REQUIRED';
+    setGroups(prevGroups =>
+      prevGroups.map(group =>
+        group.groupId === updatedGroup.groupId
+          ? {
+              ...group,
+              ...updatedGroup,
+              isMandatory: isMandatory,
+            }
+          : group
+      )
+    );
+  };
 
-  
-};
-
+ 
 
  
 // 8. ui/네비게이션 관련 =============================================================
@@ -767,7 +741,7 @@ export default function App() {
     }
   };
 
-  const navigateTo = (screen: string, params?: any) => {
+ /* const navigateTo = (screen: string, params?: any) => {
     const tabs = [
       "home",
       "routine",
@@ -785,7 +759,30 @@ export default function App() {
       ...navigationStack,
       { screen, params },
     ]);
-  };
+  };*/
+  // navigationStack을 관리하는 부모 컴포넌트 (예: App.tsx)
+// ...
+
+const navigateTo = (screen: string, params?: any, options?: { replace?: boolean }) => {
+  const tabs = ["home", "routine", "group", "ranking", "mypage"];
+  if (tabs.includes(screen)) {
+    setActiveTab(screen);
+    setNavigationStack([]);
+    return;
+  }
+
+  // ✨ 여기를 수정합니다.
+  setNavigationStack(prevStack => {
+    // replace 옵션이 true일 경우, 스택의 마지막 요소를 새 화면으로 교체
+    if (options?.replace) {
+      // 기존 스택에서 마지막 요소를 제거하고 새로운 화면을 추가
+      return [...prevStack.slice(0, -1), { screen, params }];
+    } else {
+      // 일반적인 경우, 스택에 새로운 화면을 추가
+      return [...prevStack, { screen, params }];
+    }
+  });
+};
 
   const navigateBack = () => {
     setNavigationStack(navigationStack.slice(0, -1));

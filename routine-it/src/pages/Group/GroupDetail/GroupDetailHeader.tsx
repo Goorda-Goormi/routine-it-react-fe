@@ -117,16 +117,16 @@ export const GroupDetailHeader = ({
                 <Users className="h-8 w-8 text-primary" />
               </div>
               <div>
-                <h2 className="font-bold text-lg text-card-foreground">{group.name}</h2>
-                <p className="text-sm text-muted-foreground mt-1">{group.description}</p>
+                <h2 className="font-bold text-lg text-card-foreground">{group.groupName}</h2>
+                <p className="text-sm text-muted-foreground mt-1">{group.groupDescription}</p>
               </div>
               <div className="flex items-center justify-center space-x-4">
                 <div className="text-center">
-                  <div className="font-bold text-card-foreground">{group.members}</div>
+                  <div className="font-bold text-card-foreground">{group.currentMemberCount}</div>
                   <div className="text-xs text-muted-foreground">참여자</div>
                 </div>
                 <div className="text-center">
-                  <Badge variant={group.type === '의무참여' ? 'destructive' : 'secondary'}>{group.type}</Badge>
+                  <Badge variant={group.type === '의무참여' ? 'destructive' : 'secondary'}>{group.type === "REQUIRED" ? "의무참여":"자유참여"}</Badge>
                   <div className="text-xs text-muted-foreground mt-1">그룹 유형</div>
                 </div>
                 <div className="text-center">

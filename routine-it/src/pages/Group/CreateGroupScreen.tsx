@@ -157,10 +157,11 @@ export function CreateGroupScreen({ onBack, onCreateGroup }: CreateGroupScreenPr
     console.log("사용할 토큰:", token);
 
     try {
-       // const created = await createGroup(payload);
-        //onCreateGroup(created);
-        await createGroup(payload);
-        onBack();
+       const createdGroup = await createGroup(payload);
+        onCreateGroup(createdGroup);
+        //await createGroup(payload);
+        //onCreateGroup();
+        //onBack();
     } catch (e) {
        console.error("그룹 생성 실패 오류:", e);
         alert("그룹 생성에 실패했습니다.");
