@@ -9,10 +9,10 @@ import { checkNicknameAvailability, completeSignup } from '../../api/auth';
 interface LoginModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onLoginSuccess: (userInfo: any) => void;
+  onComplete: (nickname: string) => void; 
 }
 
-export function LoginModal({ isOpen, onClose, onLoginSuccess }: LoginModalProps) {
+export function LoginModal({ isOpen, onClose, onComplete }: LoginModalProps) {
   const [nickname, setNickname] = useState('');
   const [isChecking, setIsChecking] = useState(false);
   const [isNicknameAvailable, setIsNicknameAvailable] = useState<boolean | null>(null);
@@ -41,23 +41,12 @@ export function LoginModal({ isOpen, onClose, onLoginSuccess }: LoginModalProps)
 
   const handleCompleteSignup = async () => {
   if (isNicknameAvailable !== true) {
-    alert('닉네임 중복 확인을 완료해주세요.');
-    return;
-  }
+      alert('닉네임 중복 확인을 완료해주세요.');
+      return;
+    }
 
-  try {
-    // 분리된 회원가입 API 함수를 호출합니다.
-    const loggedInUserInfo = await completeSignup(nickname);
-
-    onLoginSuccess(loggedInUserInfo); // 부모 컴포넌트로 사용자 정보 전달
-    onClose(); // 모달 닫기
-    alert('회원가입이 완료되었습니다.');
-    
-  } catch (error) {
-    console.error('회원가입 완료 중 오류 발생:', error);
-    alert((error as Error).message || '회원가입에 실패했습니다.');
-  }
-};
+    onComplete(nickname);
+  };
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>

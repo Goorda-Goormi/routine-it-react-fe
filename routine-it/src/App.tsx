@@ -139,17 +139,19 @@ export default function App() {
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const accessToken = params.get('accessToken');
-    const isNewUserParam = params.get('isNewUser');
+    //const isNewUserParam = params.get('isNewUser');
 
     if (accessToken) {
       localStorage.setItem('accessToken', accessToken);
       setIsLoggedIn(true);
       fetchUserInfo(); // 로그인 성공 시 사용자 정보 즉시 불러오기
         
-      if (isNewUserParam === 'true') {
-        setIsNewUser(true);
-        setIsLoginModalOpen(true);
-      }
+      // if (isNewUserParam === 'true') {
+      //   setIsNewUser(true);
+      //   setIsLoginModalOpen(true);
+      // }
+      setIsNewUser(true);
+      setIsLoginModalOpen(true);
       window.history.replaceState({}, document.title, window.location.pathname);
       
     } else {
@@ -415,7 +417,9 @@ export default function App() {
     }
   };
 
+  
   const handleLoginSuccess = () => {
+    localStorage.setItem('accessToken', token);
     setIsLoggedIn(true);
     setIsLoginModalOpen(false);
   };
@@ -428,6 +432,7 @@ export default function App() {
       setUserInfo(updatedUserInfo);
       setIsLoggedIn(true);
       setIsNewUser(false);
+      setIsLoginModalOpen(false);
       alert('회원가입이 완료되었습니다.');
 
     } catch (error) {
@@ -1070,7 +1075,7 @@ const handleUpdateGroup = (updatedGroup: Group) => {
       <LoginModal // 새로 추가된 로그인 모달
         isOpen={isLoginModalOpen}
         onClose={() => setIsLoginModalOpen(false)}
-        onLoginSuccess={handleNicknameSetupComplete}
+        onComplete={handleNicknameSetupComplete}
       />
 
       <AttendanceModal
