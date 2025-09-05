@@ -13,7 +13,7 @@ export interface GroupRequest {
 }
 
 //그룹 생성
-
+/*
 export async function createGroup(data: GroupRequest) {
   const response = await apiFetch("/groups", {
     method: "POST",
@@ -43,10 +43,23 @@ export async function createGroup(data: GroupRequest) {
   // 실패 응답인 경우
   const errorData = await response.json().catch(() => ({ message: "그룹 생성에 실패했습니다." }));
   throw new Error(errorData.message);
+}*/
+export async function createGroup(data: GroupRequest) {
+  try {
+    const createdData = await apiFetch("/groups", {
+      method: "POST",
+      body: JSON.stringify(data),
+    });
+    return createdData;
+  } catch (error) {
+    console.error("그룹 생성 실패:", error);
+    throw error;
+  }
 }
 
 
 //그룹 편집
+/*
 export async function updateGroup(groupId: number, data: GroupRequest) {
   const response = await apiFetch(`/groups/${groupId}`, {
     method: 'PUT',
@@ -59,4 +72,43 @@ export async function updateGroup(groupId: number, data: GroupRequest) {
   }
 
   return response.json();
+}*/
+export async function updateGroup(groupId: number, data: GroupRequest) {
+  try {
+    const updatedData = await apiFetch(`/groups/${groupId}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    });
+    return updatedData;
+  } catch (error) {
+    console.error("그룹 편집 실패:", error);
+    throw error;
+  }
+}
+
+
+// 전체 그룹 리스트 조회
+export async function getAllGroups() {
+  // apiFetch가 이미 JSON을 반환하므로, 바로 변수에 할당합니다.
+  try {
+    const allGroups = await apiFetch("/groups", { method: "GET" });
+    return allGroups; // JSON 데이터가 담긴 배열을 반환
+  } catch (error) {
+    // apiFetch에서 이미 에러를 throw하므로, 여기서는 단순히 다시 던지거나
+    // 특정 에러 메시지를 추가하면 됩니다.
+    console.error("Failed to fetch all groups:", error);
+    throw new Error("전체 그룹 조회 실패");
+  }
+}
+
+
+// 가입된 그룹 리스트 조회
+export async function getJoinedGroups() {
+  try {
+    const joinedGroups = await apiFetch("/groups/joined", { method: "GET" });
+    return joinedGroups; // JSON 데이터가 담긴 배열을 반환
+  } catch (error) {
+    console.error("Failed to fetch joined groups:", error);
+    throw new Error("가입된 그룹 조회 실패");
+  }
 }

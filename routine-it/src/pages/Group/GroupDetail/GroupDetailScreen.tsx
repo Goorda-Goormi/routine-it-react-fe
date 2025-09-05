@@ -14,7 +14,7 @@ interface GroupDetailScreenProps {
   onBack: () => void;
   onNavigate: (screen: string, params?: any) => void;
   onUpdateGroup: (group: any) => void;
-  onJoinGroup: (groupId: number) => void;
+  //onJoinGroup: (groupId: number) => void;
   pendingAuthMessages: { [groupId: number]: AuthMessage[] };
   onAddAuthMessage: (groupId: number, data: any, nickname: string, userId: string | number,  routineId: number) => void;
   onApproveAuthMessage: (groupId: number, id: number) => void; 
@@ -28,7 +28,7 @@ export function GroupDetailScreen({
   onBack,
   onNavigate,
   onUpdateGroup,
-  onJoinGroup,
+ // onJoinGroup,
   pendingAuthMessages,
   onAddAuthMessage,
   onApproveAuthMessage,
@@ -57,7 +57,7 @@ export function GroupDetailScreen({
     { id: 3, nickname: '지속성', action: '운동 인증 완료', time: '2시간 전', image: null },
   ];
 
-  const handleJoinGroup = () => onJoinGroup(groupId);
+  //const handleJoinGroup = () => onJoinGroup(groupId);
   const handleChatClick = () => onNavigate('group-chat', group);
   const handleRoutineAuthClick = () => setShowRoutineModal(true);
   const handleMemberClick = (member: any) => onNavigate('user-home', member);
@@ -95,7 +95,7 @@ export function GroupDetailScreen({
         isJoined={group?.isJoined}
         isLeader={isLeader}
         onBack={onBack}
-        onJoinGroup={handleJoinGroup}
+       // onJoinGroup={handleJoinGroup}
         onChatClick={handleChatClick}
         onRoutineAuthClick={handleRoutineAuthClick}
         onOpenEdit={() => setIsEditing(true)}

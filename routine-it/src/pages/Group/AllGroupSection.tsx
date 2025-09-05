@@ -38,20 +38,23 @@ const GroupCard = ({ group, onNavigate, onJoinGroup }: { group: Group, onNavigat
   <div className="p-5 rounded-lg hover:bg-accent/50 transition-colors cursor-pointer" onClick={() => onNavigate('group-detail', group)}>
     <div className="flex items-center justify-between mb-1">
       <div className="flex items-center space-x-2 flex-1">
-        <span className="text-sm font-medium text-card-foreground">{group.name}</span>
-        <Badge variant={group.type === '의무참여' ? 'destructive' : 'secondary'} className="text-xs">
-          {group.type}
+        <span className="text-sm font-medium text-card-foreground">{group.groupName}</span>
+        <Badge variant={group.groupType === 'REQUIRED' ? 'destructive' : 'secondary'} className="text-xs">
+          {group.groupType === 'REQUIRED' ? '의무참여' : '자유참여'}
         </Badge>
       </div>
-      <Button size="sm" variant="outline" onClick={(e) => { e.stopPropagation(); onJoinGroup(group.id); }} className="text-card-foreground border-border hover:bg-accent hover:text-card-foreground text-xs px-2 py-1">
+      <Button size="sm" variant="outline" 
+        onClick={(e) => {e.stopPropagation(); onJoinGroup(group.groupId);}} 
+        className="text-card-foreground border-border hover:bg-accent hover:text-card-foreground text-xs px-2 py-1"
+        >
         참여하기
       </Button>
     </div>
-    <p className="text-xs text-left text-muted-foreground mb-2">{group.description}</p>
+    <p className="text-xs text-left text-muted-foreground mb-2">{group.groupDescription}</p>
     <div className="flex items-center justify-between text-xs text-muted-foreground">
       <span>{getCategoryEmoji(group.category)} {getCategoryName(group.category)}</span>
-      <span>👥 {group.members}명</span>
-      <span>⏰ {group.time}</span>
+      <span>👥 {group.currentMemberCount}명</span>
+      <span>⏰ {group.alarmTime.slice(0, 5)}</span>
     </div>
   </div>
 );
@@ -61,8 +64,9 @@ export function AllGroupsSection({ groups, onNavigate, onJoinGroup }: AllGroupsS
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [selectedType, setSelectedType] = useState('all');
 
-  const filteredGroups = groups.filter(group => {
-    const matchesType = selectedType === 'all' || group.type === (selectedType === 'mandatory' ? '의무참여' : '자유참여');
+  const sortedGroups = [...groups].sort((a, b) => b.groupId - a.groupId);
+  const filteredGroups = sortedGroups.filter(group => {
+    const matchesType = selectedType === 'all' || group.groupType  === 'REQUIRED' ? '의무참여' : '자유참여';
     const matchesCategory = selectedCategory === 'all' || group.category === selectedCategory;
     return matchesType && matchesCategory;
   });
@@ -76,6 +80,8 @@ export function AllGroupsSection({ groups, onNavigate, onJoinGroup }: AllGroupsS
   const handleShowLess = () => {
     setVisibleCount(2); // 간략히 보기 시 다시 2개로 변경
   };
+
+  
 
   return (
     <Card>
@@ -108,8 +114,8 @@ export function AllGroupsSection({ groups, onNavigate, onJoinGroup }: AllGroupsS
           {filteredGroups.length > 0 ? (
             <>
               <div className="px-4 pb-4 mt-4 space-y-0 max-h-64 overflow-y-auto scrollbar-hide">
-                {filteredGroups.slice(0, visibleCount).map((group, index) => (
-                  <div key={group.id} className={`${index < filteredGroups.slice(0, visibleCount).length - 1 ? 'border-b border-border/30' : ''}`}>
+                {filteredGroups.slice(0, visibleCount).map((group) => (
+                  <div key={group.groupId} className="...">
                     <GroupCard group={group} onNavigate={onNavigate} onJoinGroup={onJoinGroup} />
                   </div>
                 ))}

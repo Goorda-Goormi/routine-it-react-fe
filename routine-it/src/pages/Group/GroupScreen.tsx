@@ -10,7 +10,7 @@ interface GroupScreenProps {
   groups: Group[]; // 전체 그룹 데이터
   myGroups: Group[]; // 내가 참여 중인 그룹 데이터
   onNewGroup: () => void;
-  onJoinGroup: (groupId: number) => void;
+  //onJoinGroup: (groupId: number) => void;
 }
 
 export function GroupScreen({ onNavigate, groups, myGroups, onNewGroup, onJoinGroup }: GroupScreenProps) {

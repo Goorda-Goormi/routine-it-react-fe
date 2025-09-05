@@ -26,6 +26,7 @@ import { LoginModal } from './components/modules/LoginModal';
 import { LoadingSpinner } from "./components/ui/loading-spinner";
 import { startKakaoLogin, getUserInfo } from "./api/login"; 
 import { completeSignup, logoutUser, deleteAccount } from './api/auth';
+import { createGroup, getAllGroups,getJoinedGroups } from "./api/group";
 
 interface NavigationState {
   screen: string;
@@ -35,6 +36,8 @@ interface NavigationState {
 type BadgeType = '첫걸음' | '7일 연속' | '루틴 마스터' | '월간 챔피언';
 //type PendingAuthMap = { [groupId: number]: AuthMessage[] };
 export default function App() {
+  
+  //1. 상태관리 변수===================================================
   const [isLoggedIn, setIsLoggedIn] = useState<boolean>(false);
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
   const [isNewUser, setIsNewUser] = useState(false);
@@ -90,178 +93,7 @@ export default function App() {
   const [UserInfo, setUserInfo] = useState<UserProfile | null>(null); // 초기 상태를 null로 변경
   const [isLoading, setIsLoading] = useState<boolean>(false);
 
-  const badgeInfo = {
-    '첫걸음': {
-      image: 'https://i.ibb.co/6P0D6kX/first-step-badge.png',
-      message: '첫 번째 루틴 완료를 축하합니다!'
-    },
-    '7일 연속': {
-      image: 'https://i.ibb.co/wJv0P2H/7-day-streak-badge.png',
-      message: '7일 연속 출석! 당신의 꾸준함을 응원합니다!'
-    },
-    '루틴 마스터': {
-      image: 'https://i.ibb.co/hK8xN2Y/routine-master-badge.png',
-      message: '총 100개 루틴을 완료했습니다! 당신은 진정한 루틴 마스터!'
-    },
-    '월간 챔피언': {
-      image: 'https://i.ibb.co/5c9dK9y/monthly-champion-badge.png',
-      message: '이번 달 30번 출석! 루틴잇 월간 챔피언입니다!'
-    }
-  };
-
-
-  const fetchUserInfo = async () => {
-    setIsLoading(true);
-    const token = localStorage.getItem('accessToken');
-    if (!token) {
-      console.error("인증 토큰이 없습니다.");
-      setIsLoading(false); // 로딩 상태 해제
-      return;
-    }
-      
-    try {
-      const userInfoData = await getUserInfo();
-      setUserInfo(prevUserInfo => ({
-        ...prevUserInfo,
-        ...userInfoData,
-      }));
-
-    } catch (error) {
-      console.error("사용자 정보 조회 에러:", error);
-      localStorage.removeItem('accessToken');
-      setIsLoggedIn(false);
-      setUserInfo(null);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const accessToken = params.get('accessToken');
-    //const isNewUserParam = params.get('isNewUser');
-
-    if (accessToken) {
-      localStorage.setItem('accessToken', accessToken);
-      setIsLoggedIn(true);
-      fetchUserInfo(); // 로그인 성공 시 사용자 정보 즉시 불러오기
-        
-      // if (isNewUserParam === 'true') {
-      //   setIsNewUser(true);
-      //   setIsLoginModalOpen(true);
-      // }
-      setIsNewUser(true);
-      setIsLoginModalOpen(true);
-      window.history.replaceState({}, document.title, window.location.pathname);
-      
-    } else {
-      const storedToken = localStorage.getItem('accessToken');
-      if (storedToken) {
-        setIsLoggedIn(true);
-        fetchUserInfo(); // 로컬 스토리지에 토큰이 있을 경우 사용자 정보 불러오기
-      }
-    }
-  }, []);
-
-  const handleKakaoLogin = () => {
-    startKakaoLogin();
-  };
-
-  // 루틴 인증 메시지를 추가하는 함수에 groupId 추가
-  const handleAddAuthMessage = (
-  groupId: number, 
-  data: { description: string; image: File | null; isPublic: boolean }, 
-  nickname: string,
-  userId: string | number, // userId 추가
-  routineId: number // routineId 추가
-) => {
-  const newAuthMessage: AuthMessage = {
-    id: Date.now(),
-    nickname: nickname,
-    userId: userId, // userId 저장
-    message: data.description,
-    imageUrl: data.image ? URL.createObjectURL(data.image) : null,
-    routineId: routineId, // routineId 저장
-  };
-  
-  setPendingAuthMessages(prevMessages => ({
-    ...prevMessages,
-    [groupId]: [...(prevMessages[groupId] || []), newAuthMessage]
-  }));
-  
-  console.log('인증 데이터 제출:', data);
-  alert('인증이 제출되었습니다!');
-};
-
-  // 루틴 인증을 승인하는 함수에 groupId 추가
-  const handleApproveAuthMessage = (groupId: number, id: number) => {
-  // 1. 승인할 인증 메시지 찾기
-  const messageToApprove = pendingAuthMessages[groupId]?.find(msg => msg.id === id);
-
-  if (!messageToApprove) {
-    console.log("승인할 인증 메시지를 찾을 수 없습니다.");
-    return;
-  }
-  
-  // 2. 그룹 상태를 업데이트하는 로직
-  setGroups(prevGroups => 
-    prevGroups.map(group => {
-      // 해당 그룹인지 확인
-      if (group.groupId === groupId) {
-        // 그룹 내에서 해당 루틴 찾기
-        const updatedRoutines = group.routines?.map(routine => {
-          if (routine.id === messageToApprove.routineId) {
-            return {
-              ...routine,
-              // 루틴 완료 상태 업데이트 (예: isCertified를 true로 설정)
-              completed: true, // 또는 별도의 인증 상태 필드 사용
-            };
-          }
-          return routine;
-        });
-
-        // 멤버 상태 업데이트 (예: '인증' 뱃지 표시)
-        const updatedMembers = group.recentMembers?.map(member => {
-          if (member.id === messageToApprove.userId) {
-            return {
-              ...member,
-              isCertified: true, // 인증 상태를 나타내는 필드 추가
-            };
-          }
-          return member;
-        });
-
-        return { 
-          ...group, 
-          routines: updatedRoutines,
-          recentMembers: updatedMembers 
-        };
-      }
-      return group;
-    })
-  );
-
-  // 3. pendingAuthMessages 상태에서 승인된 메시지 제거
-  setPendingAuthMessages(prevMessages => ({
-    ...prevMessages,
-    [groupId]: (prevMessages[groupId] || []).filter(msg => msg.id !== id)
-  }));
-  
-  console.log(`${id}번 인증을 승인했습니다.`);
-  alert(`${id}번 인증이 승인되었습니다.`);
-};
-
-  // 루틴 인증을 거절하는 함수에 groupId 추가
-  const handleRejectAuthMessage = (groupId: number, id: number) => {
-    setPendingAuthMessages(prevMessages => ({
-      ...prevMessages,
-      [groupId]: (prevMessages[groupId] || []).filter(msg => msg.id !== id)
-    }));
-    console.log(`${id}번 인증을 거절했습니다.`);
-    alert(`${id}번 인증이 거절되었습니다.`);
-  };
-
-  const [personalRoutines, setPersonalRoutines] = useState<Routine[]>([
+   const [personalRoutines, setPersonalRoutines] = useState<Routine[]>([
     {
       id: 1,
       name: '아침 식단 챙기기',
@@ -304,26 +136,13 @@ export default function App() {
   ]);
 
  const [groups, setGroups] = useState<Group[]>([]);
+ const [myGroups, setMyGroups] = useState<Group[]>([]);
+  const [isLoadingGroups, setIsLoadingGroups] = useState(true);
 
   const [groupRoutines, setGroupRoutines] = useState<Routine[]>([]);
+  const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    const newGroupRoutines: Routine[] = groups.flatMap(group => 
-      group.routines?.map(routine => ({ ...routine, isGroupRoutine: true })) || []
-    );
-    setGroupRoutines(newGroupRoutines);
-  }, [groups]);
-
-  
-  const handleJoinGroup = (groupId: number) => {
-  setGroups(prevGroups =>
-    prevGroups.map(group =>
-      group.groupId === groupId ? { ...group, isJoined: true } : group
-    )
-  );
-};
-
-  
+   
   const [recommendedRoutines, setRecommendedRoutines] = useState([
     {
       id: 7,
@@ -397,6 +216,135 @@ export default function App() {
     }
   ]);
 
+  //2. 유틸리티 함수 ============================================
+  const badgeInfo = {
+    '첫걸음': {
+      image: 'https://i.ibb.co/6P0D6kX/first-step-badge.png',
+      message: '첫 번째 루틴 완료를 축하합니다!'
+    },
+    '7일 연속': {
+      image: 'https://i.ibb.co/wJv0P2H/7-day-streak-badge.png',
+      message: '7일 연속 출석! 당신의 꾸준함을 응원합니다!'
+    },
+    '루틴 마스터': {
+      image: 'https://i.ibb.co/hK8xN2Y/routine-master-badge.png',
+      message: '총 100개 루틴을 완료했습니다! 당신은 진정한 루틴 마스터!'
+    },
+    '월간 챔피언': {
+      image: 'https://i.ibb.co/5c9dK9y/monthly-champion-badge.png',
+      message: '이번 달 30번 출석! 루틴잇 월간 챔피언입니다!'
+    }
+  };
+
+  //3.api통신 및 데이터 로딩 =============================================================
+
+  const fetchUserInfo = async () => {
+    setIsLoading(true);
+    const token = localStorage.getItem('accessToken');
+    if (!token) {
+      console.error("인증 토큰이 없습니다.");
+      setIsLoading(false); // 로딩 상태 해제
+      return;
+    }
+      
+    try {
+      const userInfoData = await getUserInfo();
+      setUserInfo(prevUserInfo => ({
+        ...prevUserInfo,
+        ...userInfoData,
+      }));
+
+    } catch (error) {
+      console.error("사용자 정보 조회 에러:", error);
+      localStorage.removeItem('accessToken');
+      setIsLoggedIn(false);
+      setUserInfo(null);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  
+  const fetchGroupData = async () => {
+    setIsLoadingGroups(true);
+    setError(null);
+    try {
+      const allGroups = await getAllGroups();
+      const joinedGroups = await getJoinedGroups();
+
+      setGroups(allGroups);
+      setMyGroups(joinedGroups);
+      
+    } catch (err) {
+      console.error("Failed to fetch groups:", err);
+      setError("그룹 데이터를 불러오는 데 실패했습니다.");
+    } finally {
+      setIsLoadingGroups(false);
+    }
+  };
+
+  //4.useEffect  =============================================================
+
+  //웹 페이지 로드 시 로그인 상태 확인
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const accessToken = params.get('accessToken');
+    //const isNewUserParam = params.get('isNewUser');
+
+    if (accessToken) {
+      localStorage.setItem('accessToken', accessToken);
+      setIsLoggedIn(true);
+      fetchUserInfo(); // 로그인 성공 시 사용자 정보 즉시 불러오기
+        
+      // if (isNewUserParam === 'true') {
+      //   setIsNewUser(true);
+      //   setIsLoginModalOpen(true);
+      // }
+      setIsNewUser(true);
+      setIsLoginModalOpen(true);
+      window.history.replaceState({}, document.title, window.location.pathname);
+      
+    } else {
+      const storedToken = localStorage.getItem('accessToken');
+      if (storedToken) {
+        setIsLoggedIn(true);
+        fetchUserInfo(); // 로컬 스토리지에 토큰이 있을 경우 사용자 정보 불러오기
+      }
+    }
+  }, []);
+
+   useEffect(() => {
+    const newGroupRoutines: Routine[] = groups.flatMap(group => 
+      group.routines?.map(routine => ({ ...routine, isGroupRoutine: true })) || []
+    );
+    setGroupRoutines(newGroupRoutines);
+  }, [groups]);
+
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const accessToken = params.get('accessToken');
+
+    if (accessToken) {
+      localStorage.setItem('accessToken', accessToken);
+      setIsLoggedIn(true);
+      fetchUserInfo();
+      fetchGroupData();
+      
+      setIsNewUser(true);
+      setIsLoginModalOpen(true);
+      window.history.replaceState({}, document.title, window.location.pathname);
+      
+    } else {
+      const storedToken = localStorage.getItem('accessToken');
+      if (storedToken) {
+        setIsLoggedIn(true);
+        fetchUserInfo();
+        fetchGroupData();
+      }
+    }
+  }, []);
+
   useEffect(() => {
     if (isDarkMode) {
       document.documentElement.classList.add("dark");
@@ -405,6 +353,13 @@ export default function App() {
     }
     localStorage.setItem("darkMode", isDarkMode.toString());
   }, [isDarkMode]);
+
+  //5. 사용자/계정 관리 =============================================================
+
+  const handleKakaoLogin = () => {
+    startKakaoLogin();
+  };
+
 
   const handleLogin = (isNew: boolean) => {
     setIsNewUser(isNew);
@@ -416,7 +371,6 @@ export default function App() {
       setIsLoginModalOpen(false);
     }
   };
-
   
   const handleLoginSuccess = () => {
     localStorage.setItem('accessToken', token);
@@ -504,58 +458,16 @@ export default function App() {
     }
   };
 
-  const handleSearch = (query: string) => {
-    console.log("검색:", query);
+   const handleSaveProfile = async () => {
+    await fetchUserInfo();
   };
 
-  const handleNewProject = () => {
-    navigateTo("create-routine");
-  };
 
-  const handleProfileMenuClick = (action: string) => {
-    switch (action) {
-      case "settings":
-        navigateTo("settings");
-        break;
-      case "help":
-        navigateTo("help");
-        break;
-      case "logout":
-        setIsLoggedIn(false);
-        setActiveTab("home");
-        setNavigationStack([]);
-        break;
-    }
-  };
 
-  const navigateTo = (screen: string, params?: any) => {
-    const tabs = [
-      "home",
-      "routine",
-      "group",
-      "ranking",
-      "mypage",
-    ];
-    if (tabs.includes(screen)) {
-      setActiveTab(screen);
-      setNavigationStack([]);
-      return;
-    }
 
-    setNavigationStack([
-      ...navigationStack,
-      { screen, params },
-    ]);
-  };
 
-  const navigateBack = () => {
-    setNavigationStack(navigationStack.slice(0, -1));
-  };
-
-  const toggleDarkMode = () => {
-    setIsDarkMode(!isDarkMode);
-  };
-
+  //6.루틴 관리 =============================================================
+  
   const handleAddRoutine = (newRoutineData: any) => {
     const newRoutine = {
       ...newRoutineData,
@@ -566,33 +478,8 @@ export default function App() {
     };
     setPersonalRoutines(prev => [...prev, newRoutine]);
   };
-  
-  // 그룹을 추가하는 함수
- const handleAddGroup = (newGroupData: any) => {
-  console.log('새로운 그룹 생성 시 :', newGroupData);
- setGroups((prev) => [newGroupData, ...prev]);
-};
-
-
-
-const handleUpdateGroup = (updatedGroup: Group) => {
-  const isMandatory = updatedGroup.groupType === 'REQUIRED';
-  setGroups(prevGroups =>
-    prevGroups.map(group =>
-      group.groupId === updatedGroup.groupId
-      ? { 
-        ...group, 
-        ...updatedGroup, 
-        isMandatory: isMandatory, 
-      }
-       : group
-    )
-  );
 
   
-};
-
-
   const handleUpdateRoutine = (updatedRoutine: Routine) => {
     if (updatedRoutine.isGroupRoutine) {
       setGroups(prevGroups => 
@@ -694,10 +581,7 @@ const handleUpdateGroup = (updatedGroup: Group) => {
     setPersonalRoutines(prevRoutines => [...prevRoutines, newRoutine]);
   };
 
-  const handleSaveProfile = async () => {
-    await fetchUserInfo();
-  };
-
+ 
 
   const handleDeleteRoutine = (routineId: number, isGroupRoutine?: boolean) => {
     if (isGroupRoutine) {
@@ -724,6 +608,195 @@ const handleUpdateGroup = (updatedGroup: Group) => {
     // 삭제 후 이전 화면으로 돌아가기
     navigateBack();
   };
+
+  
+   //7.그룹 관련 =============================================================
+  
+  // 루틴 인증 메시지를 추가하는 함수에 groupId 추가
+  const handleAddAuthMessage = (
+  groupId: number, 
+  data: { description: string; image: File | null; isPublic: boolean }, 
+  nickname: string,
+  userId: string | number, // userId 추가
+  routineId: number // routineId 추가
+) => {
+  const newAuthMessage: AuthMessage = {
+    id: Date.now(),
+    nickname: nickname,
+    userId: userId, // userId 저장
+    message: data.description,
+    imageUrl: data.image ? URL.createObjectURL(data.image) : null,
+    routineId: routineId, // routineId 저장
+  };
+  
+  setPendingAuthMessages(prevMessages => ({
+    ...prevMessages,
+    [groupId]: [...(prevMessages[groupId] || []), newAuthMessage]
+  }));
+  
+  console.log('인증 데이터 제출:', data);
+  alert('인증이 제출되었습니다!');
+};
+
+  // 루틴 인증을 승인하는 함수에 groupId 추가
+  const handleApproveAuthMessage = (groupId: number, id: number) => {
+  // 1. 승인할 인증 메시지 찾기
+  const messageToApprove = pendingAuthMessages[groupId]?.find(msg => msg.id === id);
+
+  if (!messageToApprove) {
+    console.log("승인할 인증 메시지를 찾을 수 없습니다.");
+    return;
+  }
+
+ 
+  // 2. 그룹 상태를 업데이트하는 로직
+  setGroups(prevGroups => 
+    prevGroups.map(group => {
+      // 해당 그룹인지 확인
+      if (group.groupId === groupId) {
+        // 그룹 내에서 해당 루틴 찾기
+        const updatedRoutines = group.routines?.map(routine => {
+          if (routine.id === messageToApprove.routineId) {
+            return {
+              ...routine,
+              // 루틴 완료 상태 업데이트 (예: isCertified를 true로 설정)
+              completed: true, // 또는 별도의 인증 상태 필드 사용
+            };
+          }
+          return routine;
+        });
+
+        // 멤버 상태 업데이트 (예: '인증' 뱃지 표시)
+        const updatedMembers = group.recentMembers?.map(member => {
+          if (member.id === messageToApprove.userId) {
+            return {
+              ...member,
+              isCertified: true, // 인증 상태를 나타내는 필드 추가
+            };
+          }
+          return member;
+        });
+
+        return { 
+          ...group, 
+          routines: updatedRoutines,
+          recentMembers: updatedMembers 
+        };
+      }
+      return group;
+    })
+  );
+
+  // pendingAuthMessages 상태에서 승인된 메시지 제거
+  setPendingAuthMessages(prevMessages => ({
+    ...prevMessages,
+    [groupId]: (prevMessages[groupId] || []).filter(msg => msg.id !== id)
+  }));
+  
+  console.log(`${id}번 인증을 승인했습니다.`);
+  alert(`${id}번 인증이 승인되었습니다.`);
+};
+
+  // 루틴 인증을 거절하는 함수에 groupId 추가
+  const handleRejectAuthMessage = (groupId: number, id: number) => {
+    setPendingAuthMessages(prevMessages => ({
+      ...prevMessages,
+      [groupId]: (prevMessages[groupId] || []).filter(msg => msg.id !== id)
+    }));
+    console.log(`${id}번 인증을 거절했습니다.`);
+    alert(`${id}번 인증이 거절되었습니다.`);
+  };
+
+ 
+ 
+
+
+  const handleAddGroup = async (newGroupData) => {
+    try {
+      const createdGroup = await createGroup(newGroupData);
+      setGroups((prev) => [createdGroup, ...prev]);
+      setMyGroups((prev) => [createdGroup, ...prev]);
+      navigateTo("group-detail", createdGroup);
+      alert('그룹이 성공적으로 생성되었습니다.');
+    } catch (error) {
+      console.error("그룹 생성 실패:", error);
+      alert(error.message);
+    }
+  };
+  const handleUpdateGroup = (updatedGroup: Group) => {
+  const isMandatory = updatedGroup.groupType === 'REQUIRED';
+  setGroups(prevGroups =>
+    prevGroups.map(group =>
+      group.groupId === updatedGroup.groupId
+      ? { 
+        ...group, 
+        ...updatedGroup, 
+        isMandatory: isMandatory, 
+      }
+       : group
+    )
+  );
+
+  
+};
+
+
+ 
+// 8. ui/네비게이션 관련 =============================================================
+  const handleSearch = (query: string) => {
+    console.log("검색:", query);
+  };
+
+  const handleNewProject = () => {
+    navigateTo("create-routine");
+  };
+
+  const handleProfileMenuClick = (action: string) => {
+    switch (action) {
+      case "settings":
+        navigateTo("settings");
+        break;
+      case "help":
+        navigateTo("help");
+        break;
+      case "logout":
+        setIsLoggedIn(false);
+        setActiveTab("home");
+        setNavigationStack([]);
+        break;
+    }
+  };
+
+  const navigateTo = (screen: string, params?: any) => {
+    const tabs = [
+      "home",
+      "routine",
+      "group",
+      "ranking",
+      "mypage",
+    ];
+    if (tabs.includes(screen)) {
+      setActiveTab(screen);
+      setNavigationStack([]);
+      return;
+    }
+
+    setNavigationStack([
+      ...navigationStack,
+      { screen, params },
+    ]);
+  };
+
+  const navigateBack = () => {
+    setNavigationStack(navigationStack.slice(0, -1));
+  };
+
+  const toggleDarkMode = () => {
+    setIsDarkMode(!isDarkMode);
+  };
+
+
+// 9. 화면 렌더링 및 모달 =============================================================
 
   const currentScreen =
     navigationStack.length > 0
@@ -759,7 +832,7 @@ const handleUpdateGroup = (updatedGroup: Group) => {
               onBack={navigateBack}
               onNavigate={navigateTo}
               onUpdateGroup={handleUpdateGroup}
-              onJoinGroup={handleJoinGroup}
+              //onJoinGroup={handleJoinGroup}
               pendingAuthMessages={pendingAuthMessages}
               onAddAuthMessage={handleAddAuthMessage}
               onApproveAuthMessage={handleApproveAuthMessage}
@@ -870,9 +943,9 @@ const handleUpdateGroup = (updatedGroup: Group) => {
         return <GroupScreen 
                   onNavigate={navigateTo} 
                   groups={groups} 
-                  myGroups={groups}   // 임시로 참여중 그룹 = 전체 그룹
+                  myGroups={myGroups}   // 임시로 참여중 그룹 = 전체 그룹
                   onNewGroup={() => navigateTo("create-group")}
-                  onJoinGroup={handleJoinGroup}
+                  //onJoinGroup={handleJoinGroup}
                 />
       case "ranking":
         return <RankingScreen 
@@ -912,6 +985,8 @@ const handleUpdateGroup = (updatedGroup: Group) => {
         );
     }
   };
+
+  //10. 출석, 스트릭, 배지 모달 관련 =============================================================
 
   const handleOpenAttendanceModal = () => {
     const today = new Date().toDateString();
@@ -1033,9 +1108,8 @@ const handleUpdateGroup = (updatedGroup: Group) => {
         }
     }
   };
-
+//====================================================================
   return (
-    
     <div
       className={`min-h-screen w-full bg-[var(--root-background)] flex items-center justify-center `}
     >

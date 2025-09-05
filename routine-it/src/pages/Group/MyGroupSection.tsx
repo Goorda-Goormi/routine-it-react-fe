@@ -33,10 +33,11 @@ const getCategoryEmoji = (categoryId: string) => {
 
 export function MyGroupsSection({ myGroups, onNavigate, onNewGroup }: MyGroupsSectionProps) {
   const [showAll, setShowAll] = useState(false);
-  const groupsToShow = showAll ? myGroups : myGroups.slice(0, 2); // 2개씩 표시
-  const hasMore = myGroups.length > 2 && !showAll;
-
-  return (
+  
+ // const hasMore = myGroups.length > 2 && !showAll;
+   const sortedGroups = [...myGroups].sort((a, b) => b.groupId - a.groupId);
+  const groupsToShow = showAll ? sortedGroups : sortedGroups.slice(0, 2); // 2개씩 표시
+   return (
     <Card>
       <CardHeader className="pb-3">
         <div className="flex items-center justify-between">
@@ -59,7 +60,7 @@ export function MyGroupsSection({ myGroups, onNavigate, onNewGroup }: MyGroupsSe
                         <span className="text-sm font-medium text-card-foreground">{group.groupName}</span>
                         {group.isOwner && <Crown className="h-3 w-3 text-yellow-400 icon-accent" />}
                         <Badge variant={group.groupType === 'REQUIRED' ? 'destructive' : 'secondary'} className="text-xs">
-                          {group.groupType}
+                          {group.groupType === 'REQUIRED' ? '의무참여' : '자유참여'}
                         </Badge>
                       </div>
                       <Button variant="ghost" size="sm" className="p-1 h-auto text-card-foreground hover:text-card-foreground" onClick={(e) => { e.stopPropagation(); onNavigate('group-chat', group); }}>
@@ -69,8 +70,8 @@ export function MyGroupsSection({ myGroups, onNavigate, onNewGroup }: MyGroupsSe
                     <p className="text-xs text-left text-muted-foreground mb-2">{group.groupDescription}</p>
                     <div className="flex items-center justify-between text-xs text-muted-foreground">
                       <span>{getCategoryEmoji(group.category)} {getCategoryName(group.category)}</span>
-                      <span>👥 {group.maxMembers}명</span>
-                      <span>⏰ {String(group.alarmTime.hour).padStart(2, '0')}:{String(group.alarmTime.minute).padStart(2, '0')} </span>
+                      <span>👥 {group.currentMemberCount}명</span>
+                      <span>⏰ {group.alarmTime.slice(0, 5)}</span>
                     </div>
                   </div>
                 </div>

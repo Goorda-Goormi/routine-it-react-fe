@@ -22,7 +22,7 @@ interface GroupDetailHeaderProps {
   isJoined: boolean;
   isLeader: boolean;
   onBack: () => void;
-  onJoinGroup: () => void;
+ // onJoinGroup: () => void;
   onChatClick: () => void;
   onRoutineAuthClick: () => void;
   onOpenEdit: () => void;
@@ -36,7 +36,7 @@ export const GroupDetailHeader = ({
   isJoined,
   isLeader,
   onBack,
-  onJoinGroup,
+ // onJoinGroup,
   onChatClick,
   onRoutineAuthClick,
   onOpenEdit,
@@ -135,7 +135,7 @@ export const GroupDetailHeader = ({
                 </div>
               </div>
               {!isJoined ? (
-                <Button onClick={onJoinGroup} className="w-full">그룹 참여하기</Button>
+                <Button /*onClick={onJoinGroup}*/ className="w-full">그룹 참여하기</Button>
               ) : (
                 <div className="flex space-x-2">
                   <Button onClick={onChatClick} className="flex-1">
