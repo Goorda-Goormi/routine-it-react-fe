@@ -1,11 +1,11 @@
 //모든 파일에서 다 같은 변수 사용하면 그냥 "변수명 : 타입"
 //일부 파일에서는 몇 변수가 필요없으면 "변수명? : 타입""
-export interface AlarmTime {
+/*export interface AlarmTime {
   hour: number;
   minute: number;
   second: number;
   nano: number;
-}
+}*/
 
 
 export interface Group {
@@ -17,7 +17,7 @@ export interface Group {
   groupName: string; 
   groupDescription: string; 
   groupType: 'FREE' | 'REQUIRED'; 
-  alarmTime: AlarmTime; 
+  alarmTime: string; 
   authDays: string; 
   category: string;
   groupImageUrl: string; 

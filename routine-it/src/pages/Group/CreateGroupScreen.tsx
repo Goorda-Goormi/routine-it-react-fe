@@ -11,7 +11,7 @@ import { Badge } from '../../components/ui/badge';
 import { ArrowLeft, Clock, Users, Target, AlertCircle, CheckSquare } from 'lucide-react';
 import { Alert, AlertDescription } from '../../components/ui/alert';
 import { createGroup, type GroupRequest } from '../../api/group';
-import type { Group,AlarmTime } from '../../interfaces';
+import type { Group} from '../../interfaces';
 interface CreateGroupScreenProps {
   onBack: () => void;
   onCreateGroup: (groupData: any) => void;
@@ -60,9 +60,9 @@ export function CreateGroupScreen({ onBack, onCreateGroup }: CreateGroupScreenPr
     groupName: '',
     groupDescription: '',
     category: '',
-    groupType: 'FREE',
+    groupType: 'FREE'  as 'FREE' | 'REQUIRED',
     hasAlarm: false,
-    alarmTime: '09:00', // 'time' 필드를 'alarmTime'으로 통합
+    alarmTime: '09:00', 
     maxMembers: 30,
     authDays: [] as string[],
     difficulty: '쉬움',
@@ -135,39 +135,37 @@ export function CreateGroupScreen({ onBack, onCreateGroup }: CreateGroupScreenPr
 
     const token = localStorage.getItem("accessToken");
     if (!token) {
-      alert("그룹 생성을 위해서는 로그인이 필요합니다.");
-      return;
+        alert("그룹 생성을 위해서는 로그인이 필요합니다.");
+        return;
     }
 
-    const [hour, minute] = formData.alarmTime.split(":").map(Number);
-    const groupType: GroupRequest["groupType"] =
-      formData.groupType === "MANDATORY" ? "REQUIRED" : "FREE";
-    
     const authDays = convertDaysToBinary(formData.authDays);
 
     const payload: GroupRequest = {
-      groupName: formData.groupName,
-      groupDescription: formData.groupDescription,
-      groupType,
-      alarmTime: { hour, minute, second: 0, nano: 0 },
-      authDays,
-      category: formData.category,
-      imageUrl: "./default.png",
-      maxMembers: parseInt(formData.maxMembers.toString(), 10),
-      //difficulty: formData.difficulty === '쉬움' ? 'EASY' : formData.difficulty === '보통' ? 'NORMAL' : 'HARD',
+        groupName: formData.groupName,
+        groupDescription: formData.groupDescription,
+        groupType: formData.groupType,
+        alarmTime: formData.alarmTime,
+        
+        authDays,
+        category: formData.category,
+        imageUrl: "./default.png",
+        maxMembers: parseInt(formData.maxMembers.toString(), 10),
     };
+    
     console.log("API로 전송되는 Payload:", payload);
     console.log("사용할 토큰:", token);
 
     try {
-      const created = await createGroup(payload);
-      onCreateGroup(created);
-      onBack();
+       // const created = await createGroup(payload);
+        //onCreateGroup(created);
+        await createGroup(payload);
+        onBack();
     } catch (e) {
-      console.error(e);
-      alert("그룹 생성에 실패했습니다.");
+       console.error("그룹 생성 실패 오류:", e);
+        alert("그룹 생성에 실패했습니다.");
     }
-  };
+};
 
   function convertDaysToBinary(days: string[]) {
     const order = ["월", "화", "수", "목", "금", "토", "일"];
@@ -298,7 +296,7 @@ export function CreateGroupScreen({ onBack, onCreateGroup }: CreateGroupScreenPr
           </CardHeader>
           <CardContent className="space-y-4">
             {/* 난이도 선택 */}
-            <div className="space-y-2">
+            {/*<div className="space-y-2">
               <Label htmlFor="difficulty" className="text-card-foreground">난이도</Label>
               <Select 
                 value={formData.difficulty} 
@@ -316,7 +314,7 @@ export function CreateGroupScreen({ onBack, onCreateGroup }: CreateGroupScreenPr
               {errors.difficulty && (
                 <p className="text-xs text-destructive">{errors.difficulty}</p>
               )}
-            </div>
+            </div>*/}
 
             {/* 반복 주기 */}
             <div className="space-y-2">
@@ -383,7 +381,7 @@ export function CreateGroupScreen({ onBack, onCreateGroup }: CreateGroupScreenPr
                   htmlFor="mandatory"
                   className="flex items-start space-x-3 p-3 rounded-lg border hover:bg-red-100/70 hover:text-red-800 hover:border-red-300/50 cursor-pointer transition-colors"
                 >
-                  <RadioGroupItem value="MANDATORY" id="mandatory" className="mt-1" />
+                  <RadioGroupItem value="REQUIRED" id="mandatory" className="mt-1" />
                   <div className="flex flex-1 items-start justify-between">
                     <div className="flex flex-col items-start">
                       <div className="text-card-foreground font-medium">
