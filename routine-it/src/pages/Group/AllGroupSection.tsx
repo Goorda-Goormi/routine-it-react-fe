@@ -73,10 +73,22 @@ export function AllGroupsSection({ groups, onNavigate, onJoinGroup }: AllGroupsS
   const [selectedType, setSelectedType] = useState('all');
 
   const sortedGroups = [...groups].sort((a, b) => b.groupId - a.groupId);
-  const filteredGroups = sortedGroups.filter(group => {
+  /*const filteredGroups = sortedGroups.filter(group => {
     const matchesType = selectedType === 'all' || group.groupType  === 'REQUIRED' ? '의무참여' : '자유참여';
     const matchesCategory = selectedCategory === 'all' || group.category === selectedCategory;
     return matchesType && matchesCategory;
+  });*/
+  const filteredGroups = sortedGroups.filter(group => {
+  // 카테고리 필터링
+  const matchesCategory = selectedCategory === 'all' || group.category === selectedCategory;
+
+  // 타입 필터링
+  const matchesType = 
+    selectedType === 'all' || 
+    (selectedType === 'mandatory' && group.groupType === 'REQUIRED') || 
+    (selectedType === 'optional' && group.groupType === 'FREE');
+
+  return matchesCategory && matchesType;
   });
 
   const hasMore = visibleCount < filteredGroups.length;

@@ -78,15 +78,6 @@ export function GroupDetailScreen({
   setShowRoutineModal(false);
 };
 
-  const handleApprove = (id: number) => {
-    onApproveAuthMessage(groupId, id);
-    setShowApprovalModal(false);
-  };
-
-  const handleReject = (id: number) => {
-    onRejectAuthMessage(groupId, id);
-    setShowApprovalModal(false);
-  };
 
   return (
     <div className="min-h-screen relative">
