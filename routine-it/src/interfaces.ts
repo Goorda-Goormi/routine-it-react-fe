@@ -94,17 +94,15 @@ export interface UserProfile {
   streakDays: number;
 }
 
-// export interface User {
-//   id: number;
-//   nickname: string;
-//   profileImageUrl: string;
-//   profileMessage?: string;
-//   email?: string;
-//   level?: number;
-//   streak?: number;
-//   streakDays: number;
-//   //아마 여긴 더미에서만 필요한 속성이 아닐까
-//   totalPoints: number;
-//   joinDate?: string;
-//   //위에 두 개. userhome
-// }
+export interface UpdateProfilePayload {
+  nickname: string;
+  profileMessage: string;
+  profileImageUrl: string;
+  isAlarmOn?: boolean;
+  isDarkMode?: boolean;
+  // level: number;
+  // joinDate: string;
+  // exp: number;
+  // streakDays: number;
+}
+

@@ -25,6 +25,7 @@ import type { AuthMessage,Routine,Group,Member,PendingAuthMap,UserProfile } from
 import { LoginModal } from './components/modules/LoginModal';
 import { LoadingSpinner } from "./components/ui/loading-spinner";
 import { startKakaoLogin, getUserInfo } from "./api/login"; 
+import { completeSignup, logoutUser, deleteAccount } from './api/auth';
 
 interface NavigationState {
   screen: string;
@@ -66,9 +67,19 @@ export default function App() {
     const savedCount = localStorage.getItem('attendanceCount');
     return savedCount ? Number(savedCount) : 0;
   });
+  const [attendanceDates, setAttendanceDates] = useState<string[]>(() => {
+    if (typeof window !== 'undefined') {
+      const savedDates = localStorage.getItem('attendanceDates');
+      return savedDates ? JSON.parse(savedDates) : [];
+    }
+    return [];
+  });
   const [earnedBadges, setEarnedBadges] = useState<BadgeType[]>(() => {
-    const storedBadges = localStorage.getItem('earnedBadges');
-    return storedBadges ? JSON.parse(storedBadges) : [];
+    if (typeof window !== 'undefined') {
+      const storedBadges = localStorage.getItem('earnedBadges');
+      return storedBadges ? JSON.parse(storedBadges) : [];
+    }
+    return [];
   });
   
   const [streakDays, setStreakDays] = useState(() => {
@@ -411,71 +422,26 @@ export default function App() {
 
   // 닉네임 설정 완료 후 호출될 함수
   const handleNicknameSetupComplete = async (nickname: string) => {
-    const BASE_URL = import.meta.env.VITE_API_BASE_URL;
-    const token = localStorage.getItem('accessToken');
+    try { 
+      const updatedUserInfo = await completeSignup(nickname);
 
-    if (!token) {
-    console.error("인증 토큰이 없습니다.");
-    return;
-  }
+      setUserInfo(updatedUserInfo);
+      setIsLoggedIn(true);
+      setIsNewUser(false);
+      alert('회원가입이 완료되었습니다.');
 
-  try {
-    const response = await fetch(`${BASE_URL}/api/auth/signup`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`
-      },
-      body: JSON.stringify({ nickname: nickname })
-    });
-
-    if (!response.ok) {
-      throw new Error('회원가입 실패');
-    }
-
-    const result = await response.json();
-    const updatedUserInfo = result.data;
-
-    // API 응답으로 받은 전체 사용자 정보로 상태 업데이트
-    setUserInfo(updatedUserInfo);
-
-    setIsLoggedIn(true);
-    setIsNewUser(false);
-    alert('회원가입이 완료되었습니다.');
-
-  } catch (error) {
+    } catch (error) {
     console.error("회원가입 에러:", error);
-    alert('회원가입에 실패했습니다.');
+    alert((error as Error).message);
   }
 };
 
   const handleLogout = async() => {
-    const BASE_URL = import.meta.env.VITE_API_BASE_URL;
+    try {
+    // 분리된 로그아웃 API 함수를 호출합니다.
+    await logoutUser();
 
-    const token = localStorage.getItem('accessToken');
-  if (!token) {
-    console.error("인증 토큰이 없어 로그아웃을 진행할 수 없습니다.");
-    setIsLoggedIn(false); // 토큰이 없으므로 클라이언트 상태만 초기화
-    return;
-  }
-
-  try {
-    const response = await fetch(`${BASE_URL}/api/auth/logout`, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${token}`
-      },
-    });
-
-    if (!response.ok) {
-      throw new Error('로그아웃 실패');
-    }
-
-    // 로컬 스토리지에서 토큰 제거
-    localStorage.removeItem('accessToken');
-    localStorage.removeItem('refreshToken');
-    
-    // 클라이언트 상태 초기화
+    // 클라이언트 상태를 초기화합니다.
     setIsLoggedIn(false);
     setActiveTab("home");
     setNavigationStack([]);
@@ -484,44 +450,52 @@ export default function App() {
 
   } catch (error) {
     console.error("로그아웃 에러:", error);
-    alert('로그아웃에 실패했습니다.');
+    // API 모듈에서 전달된 에러 메시지를 사용자에게 보여줍니다.
+    alert((error as Error).message);
   }
 };
 
-  const handleDeleteAccount = () => {
+  const handleDeleteAccount = async () => {
     const isConfirmed = window.confirm("계정 탈퇴 시 모든 정보가 삭제되며 복구할 수 없습니다. 정말로 탈퇴하시겠습니까?");
     if (isConfirmed) {
-      // 실제 API 호출 로직은 여기에 추가
-      setIsLoggedIn(false);
-      setActiveTab("home");
-      setNavigationStack([]);
-      setUserInfo({
-        id: 0,
-        nickname: '',
-        email: '',
-        profileImageUrl: '',
-        profileMessage: '',
-        isAlarmOn: true,
-        isDarkMode: false,
-        joinDate: '',
-        level: 0,
-        exp: 0,
-        maxExp: 3000,
-        maxStreakDays: 0,
-        streakDays: 0
-      });
-      setPersonalRoutines([]);
-      setGroups([]);
-      setPendingAuthMessages({});
-      setLastCompletionDate(null);
-      setRoutineCompletionCount(0);
-      setAttendanceCount(0);
-      setEarnedBadges([]);
-      setStreakDays(0);
+      try {
+        await deleteAccount();
 
-      localStorage.clear();
-      
-      alert("계정이 성공적으로 탈퇴되었습니다.");
+        setIsLoggedIn(false);
+        setActiveTab("home");
+        setNavigationStack([]);
+        setUserInfo({
+          id: 0,
+          nickname: '',
+          email: '',
+          profileImageUrl: '',
+          profileMessage: '',
+          isAlarmOn: true,
+          isDarkMode: false,
+          joinDate: '',
+          level: 0,
+          exp: 0,
+          maxExp: 3000,
+          maxStreakDays: 0,
+          streakDays: 0
+        });
+        setPersonalRoutines([]);
+        setGroups([]);
+        setPendingAuthMessages({});
+        setLastCompletionDate(null);
+        setRoutineCompletionCount(0);
+        setAttendanceCount(0);
+        setEarnedBadges([]);
+        setStreakDays(0);
+        setAttendanceDates([]);
+
+        localStorage.clear();
+        
+        alert("계정이 성공적으로 탈퇴되었습니다.");
+      } catch (error) {
+        console.error("회원 탈퇴 에러:", error);
+        alert((error as Error).message);
+      }
     }
   };
 
@@ -649,51 +623,49 @@ const handleUpdateGroup = (updatedGroup: Group) => {
 
   const handleToggleCompletion = (routineId: number, isGroupRoutine?: boolean) => {
     let isCompleted = false;
+    let routineOwner = isGroupRoutine ? 'group' : 'personal';
+
+    const updateCompletionState = (routines: Routine[]) => {
+    return routines.map(routine => {
+      if (routine.id === routineId) {
+        isCompleted = !routine.completed;
+        return { ...routine, completed: !routine.completed };
+      }
+      return routine;
+    });
+  };
 
     if (isGroupRoutine) {
-    setGroups(prevGroups => {
-      const updatedGroups = prevGroups.map(group => ({
+      setGroups(prevGroups => prevGroups.map(group => ({
         ...group,
-        routines: group.routines?.map(routine => {
-          if (routine.id === routineId) {
-            // 루틴 완료 상태를 확인하여 변수에 저장
-            isCompleted = !routine.completed;
-            return { ...routine, completed: !routine.completed };
-          }
-          return routine;
-        }),
-      }));
-      if (isCompleted) {
-          // 루틴 완료 횟수 증가 및 localStorage 업데이트
-          const newRoutineCount = routineCompletionCount + 1;
-          setRoutineCompletionCount(newRoutineCount);
-          localStorage.setItem('routineCompletionCount', String(newRoutineCount));
-
-      }
-      return updatedGroups;
-    });
+        routines: updateCompletionState(group.routines || [])
+      })));
     } else {
-    setPersonalRoutines(prev => {
-      const updatedRoutines = prev.map(routine => {
-        if (routine.id === routineId) {
-          // 루틴 완료 상태를 확인하여 변수에 저장
-          isCompleted = !routine.completed;
-          return { ...routine, completed: !routine.completed };
-        }
-        return routine;
-      });
-      // 루틴 완료 시에만 상태를 업데이트하고, isCompleted를 true로 설정합니다.
-      if (isCompleted) {
-        // AttendanceModal을 띄우는 함수 호출
+      setPersonalRoutines(prev => updateCompletionState(prev));
+    }
+     if (isCompleted) {
+      // 개인 루틴 완료 시에만 출석 모달 호출
+      if (routineOwner === 'personal') {
         handleOpenAttendanceModal();
-
-        // 루틴 완료 횟수 증가 및 localStorage 업데이트
-        const newRoutineCount = routineCompletionCount + 1;
-        setRoutineCompletionCount(newRoutineCount);
-        localStorage.setItem('routineCompletionCount', String(newRoutineCount));
       }
-      return updatedRoutines;
-    });
+
+      const newRoutineCount = routineCompletionCount + 1;
+      setRoutineCompletionCount(newRoutineCount);
+      localStorage.setItem('routineCompletionCount', String(newRoutineCount));
+
+      if (newRoutineCount >= 100 && !earnedBadges.includes('루틴 마스터')) {
+      const badgeName: BadgeType = '루틴 마스터';
+      // 상태와 로컬스토리지에 즉시 저장
+      setEarnedBadges(prev => {
+        const newEarned = [...prev, badgeName];
+        localStorage.setItem('earnedBadges', JSON.stringify(newEarned));
+        return newEarned;
+      });
+      
+      setBadgeName(badgeName);
+      setBadgeImage(badgeInfo[badgeName].image);
+      setBadgeModalOpen(true);
+    }
   }
 };
 
@@ -909,6 +881,8 @@ const handleUpdateGroup = (updatedGroup: Group) => {
             onToggleDarkMode={toggleDarkMode}
             user={UserInfo}
             onLogout={handleLogout}
+            attendanceDates={attendanceDates}
+            earnedBadges={earnedBadges}
           />
         );
       
@@ -970,39 +944,59 @@ const handleUpdateGroup = (updatedGroup: Group) => {
 
   const checkAndShowAllBadges = (currentStreak: number, currentAttendance: number) => {
     const badgesToShow = [];
-    
-    // 첫걸음 배지 조건 (첫 출석)
-    if (currentAttendance === 1) {
-        badgesToShow.push({ name: '첫걸음', image: '/images/badges/first-step.png' });
+    const newlyEarned: BadgeType[] = [];
+
+    if (currentAttendance >= 1 && !earnedBadges.includes('첫걸음')) {
+    newlyEarned.push('첫걸음');
     }
-    
-    // 7일 연속 배지 조건
-    if (currentStreak === 7) {
-        badgesToShow.push({ name: '7일 연속', image: '/images/badges/seven-day-streak.png' });
+    if (currentStreak >= 7 && !earnedBadges.includes('7일 연속')) {
+      newlyEarned.push('7일 연속');
     }
-    
-    // 월간 챔피언 배지 조건
-    if (currentAttendance === 30) {
-        badgesToShow.push({ name: '월간 챔피언', image: '/images/badges/monthly-champion.png' });
+    if (currentAttendance >= 30 && !earnedBadges.includes('월간 챔피언')) {
+      newlyEarned.push('월간 챔피언');
     }
-    
-    // 만약 보여줄 배지가 있다면
-    if (badgesToShow.length > 0) {
-        // 첫 번째 배지 정보를 상태에 저장하고 모달을 엽니다.
-        const firstBadge = badgesToShow.shift();
-        if (firstBadge) {
-          setBadgeName(firstBadge.name);
-          setBadgeImage(firstBadge.image);
-          setBadgeModalOpen(true);
-          
-          // 다음 배지들이 있다면, 상태에 저장해 둡니다. (이후에 사용할 수 있도록)
-          setPendingBadges(badgesToShow);
-        }
+
+    // 새로 획득한 배지가 있을 경우에만 실행
+    if (newlyEarned.length > 0) {
+      // 1. 주(main) 상태와 localStorage 업데이트
+      setEarnedBadges(prev => {
+        const updatedBadges = [...prev, ...newlyEarned];
+        localStorage.setItem('earnedBadges', JSON.stringify(updatedBadges));
+        return updatedBadges;
+      });
+
+      // 2. 모달 띄울 준비
+      const badgesToShow = newlyEarned.map(badgeName => ({
+        name: badgeName,
+        image: badgeInfo[badgeName].image,
+      }));
+
+      // 3. 첫 번째 획득 배지 모달 띄우기
+      const firstBadge = badgesToShow.shift();
+      if (firstBadge) {
+        setBadgeName(firstBadge.name);
+        setBadgeImage(firstBadge.image);
+        setBadgeModalOpen(true);
+        // 남은 배지가 있다면 대기열에 추가
+        setPendingBadges(badgesToShow);
+      }
     }
   };
 
   const handleCloseAttendanceModal = () => {
     setAttendanceModalOpen(false);
+    const today = new Date();
+    const todayString = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+
+    // 중복 체크 후 출석 날짜 추가 및 localStorage 업데이트
+    setAttendanceDates(prevDates => {
+      if (!prevDates.includes(todayString)) {
+        const newDates = [...prevDates, todayString];
+        localStorage.setItem('attendanceDates', JSON.stringify(newDates));
+        return newDates;
+      }
+      return prevDates;
+    });
 
     // 출석 인증 횟수 증가 및 localStorage 업데이트
     const newAttendanceCount = attendanceCount + 1;

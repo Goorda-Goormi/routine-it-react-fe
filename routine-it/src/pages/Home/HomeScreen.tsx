@@ -82,7 +82,7 @@ export function HomeScreen({
           newRoutineStates[routine.id] = 'completed';
         } else if (
           participatingGroups.some(group =>
-            pendingAuthMessages[group.id]?.some(msg => msg.routineId === routine.id)
+            pendingAuthMessages[group.groupId]?.some(msg => msg.routineId === routine.id)
           )
         ) {
           newRoutineStates[routine.id] = 'pending';
@@ -104,7 +104,6 @@ export function HomeScreen({
     setIsGroupDialogOpen(true);
   };
 
-  const currentStreak = 7;
   const streakInfo = getStreakInfo(streakDays);
 
   const todayDay = getTodayDayOfWeek();
@@ -128,42 +127,7 @@ export function HomeScreen({
       date: '오늘',
       isPublic: true,
     },
-    {
-      id: 2,
-      routine: '독서 30분',
-      image: 'https://images.unsplash.com/photo-1506126613408-eca07ce68773?fit=crop',
-      date: '어제',
-      isPublic: true,
-    },
-    {
-      id: 3,
-      routine: '물 2L 마시기',
-      image: 'https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?fit=crop',
-      date: '11월 13일',
-      isPublic: false,
-    },
-    {
-      id: 4,
-      routine: '명상 10분',
-      image: 'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?fit=crop',
-      date: '11월 12일',
-      isPublic: true,
-    },
-    {
-      id: 5,
-      routine: '일기 쓰기',
-      image: 'https://images.unsplash.com/photo-1455390582262-044cdead277a?fit=crop',
-      date: '11월 11일',
-      isPublic: false,
-    },
-    {
-      id: 6,
-      routine: '스트레칭',
-      image: 'https://images.unsplash.com/photo-1518611012118-696072aa579a?fit=crop',
-      date: '11월 10일',
-      isPublic: true,
-    },
-  ];
+  ]
 
   const publicVerificationPhotos = myVerificationPhotos.filter(photo => photo.isPublic);
 
@@ -209,7 +173,7 @@ export function HomeScreen({
   const handleGroupAuthSubmit = (data: { description: string; image: File | null; isPublic: boolean }) => {
     if (!selectedRoutine) return;
 
-    const groupId = participatingGroups.find(group => group.routines?.some(r => r.id === selectedRoutine.id))?.id;
+    const groupId = participatingGroups.find(group => group.routines?.some(r => r.id === selectedRoutine.id))?.groupId;
 
     if (groupId) {
       onAddAuthMessage(groupId, { ...data, id: Date.now() }, userInfo.nickname ?? '', userInfo.id, selectedRoutine.id);
@@ -240,7 +204,7 @@ export function HomeScreen({
       <div className="space-y-4">
         <div className="flex items-center justify-between">
           <div className="flex flex-col items-start m-2">
-            <h2 className="text-xl font-semibold text-foreground">안녕하세요, {userInfo.nickname}님!</h2>
+            <h2 className="text-xl bg-font-semibold text-foreground">안녕하세요, {userInfo.nickname}님!</h2>
             <p className="text-sm text-foreground">
               {todayString} • {userInfo.profileMessage}
             </p>
@@ -310,7 +274,7 @@ export function HomeScreen({
           <div className="flex items-center space-x-2 ml-3">
             <span className="text-lg">{streakInfo.icon}</span>
             <span className={`text-sm ${streakInfo.textColor}`}>
-              {getStreakMessage(currentStreak)}
+              {getStreakMessage(streakDays)}
             </span>
           </div>
         </div>
@@ -421,7 +385,7 @@ export function HomeScreen({
           <div className="space-y-0">
             {participatingGroups.length > 0 ? (
               participatingGroups.map((group: Group, index: number) => (
-                <div key={group.id}>
+                <div key={group.groupId}>
                   <div
                     className={`flex items-center justify-between p-3 cursor-pointer hover:bg-accent/50 transition-colors ${
                       index < participatingGroups.length - 1 ? 'border-b border-border/60' : ''
@@ -445,8 +409,8 @@ export function HomeScreen({
                         ))}
                       </div>
                       <div className='flex flex-col items-start ml-2'>
-                        <div className="text-sm font-medium text-foreground">{group.name}</div>
-                        <div className="text-xs text-foreground dark:opacity-75">{group.members}명 참여</div>
+                        <div className="text-sm font-medium text-foreground">{group.groupName}</div>
+                        <div className="text-xs text-foreground dark:opacity-75">{group.maxMembers}명 참여</div>
                       </div>
                     </div>
 

@@ -28,6 +28,8 @@ import {
   ChevronRight
 } from 'lucide-react';
 
+type BadgeType = '첫걸음' | '7일 연속' | '루틴 마스터' | '월간 챔피언';
+
 interface MyPageScreenProps {
   onNavigate: (screen: string, params?: any) => void;
   isDarkMode: boolean;
@@ -44,9 +46,58 @@ interface MyPageScreenProps {
     profileMessage?: string;
   }
   onLogout: () => void;
+  attendanceDates: string[];
+  earnedBadges: BadgeType[];
 }
 
-export function MyPageScreen({ onNavigate, isDarkMode, onToggleDarkMode, user, onLogout }: MyPageScreenProps) {
+export function MyPageScreen({ onNavigate, isDarkMode, onToggleDarkMode, user, onLogout, attendanceDates = [], earnedBadges = [] }: MyPageScreenProps) {
+  const allBadgesInfo = [
+    { 
+      id: 1, 
+      name: '첫걸음' as BadgeType, 
+      description: '첫 루틴 완료', 
+      date: '2024.01.15', // 획득 날짜는 예시로 남겨두거나, 실제 데이터를 저장해야 함
+      icon: Zap,
+      bgColor: 'bg-amber-200/70',
+      borderColor: 'border-amber-200/50',
+      textColor: 'text-amber-800',
+      subTextColor: 'text-amber-700'
+    },
+    { 
+      id: 2, 
+      name: '7일 연속' as BadgeType,
+      description: '7일 연속 완료', 
+      date: '2024.01.22',
+      icon: Heart,
+      bgColor: 'bg-lime-600/30',
+      borderColor: 'border-green-200/50',
+      textColor: 'text-green-800',
+      subTextColor: 'text-green-700'
+    },
+    { 
+      id: 3, 
+      name: '루틴 마스터' as BadgeType, 
+      description: '100개 루틴 완료', 
+      date: '2024.03.10',
+      icon: Shield,
+      bgColor: 'bg-blue-300/60',
+      borderColor: 'border-blue-200/50',
+      textColor: 'text-blue-800',
+      subTextColor: 'text-blue-700'
+    },
+    { 
+      id: 4, 
+      name: '월간 챔피언' as BadgeType, 
+      description: '한 달 출석', 
+      date: '2024.05.30',
+      icon: Trophy,
+      bgColor: 'bg-red-300/60',
+      borderColor: 'border-red-300/50',
+      textColor: 'text-red-800',
+      subTextColor: 'text-red-600'
+    }
+  ];
+  
   const [currentDate, setCurrentDate] = useState(new Date());
 
   const getCalendarData = (date: Date) => {
@@ -104,9 +155,9 @@ export function MyPageScreen({ onNavigate, isDarkMode, onToggleDarkMode, user, o
       value: '127', 
       unit: '일',
       icon: Calendar,
-      bgColor: 'bg-purple-500/70',
+      bgColor: 'bg-purple-500/40',
       borderColor: 'border-purple-200/50',
-      iconBgColor: 'bg-purple-500',
+      iconBgColor: 'bg-purple-500/70',
       textColor: 'text-purple-800',
       subTextColor: 'text-purple-700'
     },
@@ -115,88 +166,38 @@ export function MyPageScreen({ onNavigate, isDarkMode, onToggleDarkMode, user, o
       value: '1,245', 
       unit: '개',
       icon: CheckCircle,
-      bgColor: 'bg-emerald-500/70',
-      borderColor: 'border-emerald-200/50',
-      iconBgColor: 'bg-emerald-500',
-      textColor: 'text-emerald-800',
-      subTextColor: 'text-emerald-700'
+      bgColor: 'bg-pink-500/20',
+      borderColor: 'border-pink-200/50',
+      iconBgColor: 'bg-pink-500/50',
+      textColor: 'text-pink-800',
+      subTextColor: 'text-pink-700'
     },
     { 
       label: '누적 점수', 
       value: '2,450', 
       unit: '점',
       icon: TrendingUp,
-      bgColor: 'bg-blue-500/70',
-      borderColor: 'border-blue-200/50',
-      iconBgColor: 'bg-blue-500',
-      textColor: 'text-blue-800',
-      subTextColor: 'text-blue-700'
+      bgColor: 'bg-orange-500/40',
+      borderColor: 'border-orange-200/50',
+      iconBgColor: 'bg-orange-500/70',
+      textColor: 'text-orange-800',
+      subTextColor: 'text-orange-700'
     },
     { 
       label: '최대 연속', 
       value: '28', 
       unit: '일',
       icon: Flame,
-      bgColor: 'bg-orange-500/70',
-      borderColor: 'border-orange-200/50',
-      iconBgColor: 'bg-orange-500',
-      textColor: 'text-orange-800',
-      subTextColor: 'text-orange-700'
+      bgColor: 'bg-yellow-500/40',
+      borderColor: 'border-yellow-200/50',
+      iconBgColor: 'bg-yellow-500',
+      textColor: 'text-yellow-800',
+      subTextColor: 'text-yellow-700'
     }
   ];
 
-  const achievements = [
-    { 
-      id: 1, 
-      name: '첫 걸음', 
-      description: '첫 루틴 완료', 
-      earned: true, 
-      date: '2024.01.15',
-      icon: Zap,
-      bgColor: 'bg-amber-200/70',
-      borderColor: 'border-amber-200/50',
-      textColor: 'text-amber-800',
-      subTextColor: 'text-amber-700'
-    },
-    { 
-      id: 2, 
-      name: '꾸준함', 
-      description: '7일 연속 완료', 
-      earned: true, 
-      date: '2024.01.22',
-      icon: Heart,
-      bgColor: 'bg-lime-600/30',
-      borderColor: 'border-green-200/50',
-      textColor: 'text-green-800',
-      subTextColor: 'text-green-700'
-    },
-    { 
-      id: 3, 
-      name: '루틴 마스터', 
-      description: '100개 루틴 완료', 
-      earned: true, 
-      date: '2024.03.10',
-      icon: Shield,
-      bgColor: 'bg-blue-300/60',
-      borderColor: 'border-blue-200/50',
-      textColor: 'text-blue-800',
-      subTextColor: 'text-blue-700'
-    },
-    { 
-      id: 4, 
-      name: '월간 챔피언', 
-      description: '한 달 완주', 
-      earned: true, 
-      date: '2024.05.30',
-      icon: Trophy,
-      bgColor: 'bg-red-300/60',
-      borderColor: 'border-red-300/50',
-      textColor: 'text-red-800',
-      subTextColor: 'text-red-600'
-    }
-  ];
 
-  const expProgress = Math.round(((user.exp ?? 0) / user.maxExp) * 100);
+  const expProgress = user.maxExp ? Math.round(((user.exp ?? 0) / user.maxExp) * 100) : 0;;
 
   return (
     <div className="space-y-6 h-full p-4">
@@ -269,24 +270,33 @@ export function MyPageScreen({ onNavigate, isDarkMode, onToggleDarkMode, user, o
             {/* 달력 본체 */}
             <div className="grid grid-cols-7 gap-1">
               {calendarData.days.map((day, i) => {
-                const isToday = day !== null && new Date().getFullYear() === calendarData.year && new Date().getMonth() + 1 === calendarData.month && day === calendarData.today;
-                const isPast = day !== null && (currentDate.getFullYear() < new Date().getFullYear() || (currentDate.getFullYear() === new Date().getFullYear() && currentDate.getMonth() < new Date().getMonth()) || (currentDate.getFullYear() === new Date().getFullYear() && currentDate.getMonth() === new Date().getMonth() && day < new Date().getDate()));
-                const hasAttendance = isPast && Math.random() > 0.2; // 80% 확률로 출석
+                if (day === null) {
+                  return <div key={i} className="h-8 w-8"></div>;
+                }
+
+                const today = new Date();
+                today.setHours(0, 0, 0, 0); // 시간, 분, 초, 밀리초를 0으로 설정
+                const dateInLoop = new Date(calendarData.year, calendarData.month - 1, day);
                 
+                const isToday = dateInLoop.getTime() === today.getTime();
+                const isPast = dateInLoop < today;
+
+                const dayString = `${calendarData.year}-${String(calendarData.month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+                const hasAttended = attendanceDates.includes(dayString);
+
+                let dayClassName = 'text-muted-foreground'; // 미래 날짜 기본값
+                if (isToday) {
+                  dayClassName = 'bg-primary text-primary-foreground font-medium'; // 오늘
+                } else if (hasAttended) {
+                  dayClassName = 'bg-green-500 text-white'; // 출석한 날
+                } else if (isPast) {
+                  dayClassName = 'bg-gray-200 text-gray-400'; // 미출석한 과거
+                }
+
                 return (
                   <div
                     key={i}
-                    className={`h-8 w-8 flex items-center justify-center text-xs rounded-full ${
-                      day === null
-                        ? '' // 빈 칸
-                        : isToday
-                        ? 'bg-primary text-primary-foreground font-medium'
-                        : hasAttendance
-                        ? 'bg-green-500 text-white'
-                        : isPast
-                        ? 'bg-gray-200 text-gray-400'
-                        : 'text-muted-foreground'
-                    }`}
+                    className={`h-8 w-8 flex items-center justify-center text-xs rounded-full ${dayClassName}`}
                   >
                     {day}
                   </div>
@@ -359,38 +369,40 @@ export function MyPageScreen({ onNavigate, isDarkMode, onToggleDarkMode, user, o
         </CardHeader>
         <CardContent className="pt-0">
           <div className="grid grid-cols-2 gap-3">
-            {achievements.map((achievement) => {
-              const IconComponent = achievement.icon;
+            {allBadgesInfo.map((badge) => {
+              const isEarned = earnedBadges.includes(badge.name);
+              const IconComponent = badge.icon;
+
               return (
                 <Card 
-                  key={achievement.id} 
+                  key={badge.id} 
                   className={
-                    achievement.earned 
-                      ? `${achievement.bgColor} ${achievement.borderColor}`
+                    isEarned 
+                      ? `${badge.bgColor} ${badge.borderColor}`
                       : 'bg-gray-200/70 border-gray-300/50'
                   }>
                   <CardContent className="p-4 mt-1.5">
                     <div className="flex items-start space-x-4.5">
                       <div className={`flex items-center justify-center w-10 h-10 rounded-full border-2 ${
-                        achievement.earned ? 'bg-yellow-400 border-yellow-500/80' : 'bg-gray-300 border-gray-400/40'
+                        isEarned ? 'bg-yellow-400 border-yellow-500/80' : 'bg-gray-300 border-gray-400/40'
                       }`}>
                         <IconComponent className="h-5 w-5 text-white" />
                       </div>
                       <div className="flex flex-col items-start min-w-0">
                         <div className={`text-sm font-medium truncate ${
-                          achievement.earned ? achievement.textColor : 'text-gray-700'
+                          isEarned ? badge.textColor : 'text-gray-700'
                         }`}>
-                          {achievement.name}
+                          {badge.name}
                         </div>
                         <div className={`text-xs mb-1 ${
-                          achievement.earned ? achievement.subTextColor : 'text-gray-600'
+                          isEarned ? badge.subTextColor : 'text-gray-600'
                         }`}>
-                          {achievement.description}
+                          {badge.description}
                         </div>
                         <div className={`text-xs ${
-                          achievement.earned ? achievement.subTextColor : 'text-gray-600'
+                          isEarned ? badge.subTextColor : 'text-gray-600'
                         }`}>
-                          {achievement.earned && achievement.date ? achievement.date : '미획득'}
+                          {isEarned ? '획득 완료' : '미획득'}
                         </div>
                       </div>
                     </div>

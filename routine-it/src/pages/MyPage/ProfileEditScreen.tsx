@@ -5,6 +5,8 @@ import { Input } from '../../components/ui/input';
 import { Label } from '../../components/ui/label';
 import { Avatar, AvatarFallback, AvatarImage } from '../../components/ui/avatar';
 import { ArrowLeft, Save, Camera, User } from 'lucide-react';
+import { updateUserProfile} from '../../api/user';
+import type { UpdateProfilePayload } from '../../interfaces';
 
 interface ProfileEditScreenProps {
   onBack: () => void;
@@ -56,40 +58,28 @@ export function ProfileEditScreen({
 
   // 저장 버튼 클릭 핸들러
   const handleSave = async () => {
-    const BASE_URL = import.meta.env.VITE_API_BASE_URL;
-    const token = localStorage.getItem('accessToken'); 
-    if (!token) {
-      console.error("인증 토큰이 없습니다.");
-      return;
-    }
-
     try {
-      const response = await fetch(`${BASE_URL}/api/users/me/profile`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify({
-          nickname: profileData.nickname,
-          profileMessage: profileData.profileMessage,
-          profileImageUrl: profileData.profileImageUrl,
-        }),
-      });
+    // API 함수에 전달할 데이터를 준비합니다.
+    const payload: UpdateProfilePayload = {
+      nickname: profileData.nickname,
+      profileMessage: profileData.profileMessage ?? '', 
+      profileImageUrl: profileData.profileImageUrl,
+    };
 
-      if (!response.ok) {
-        throw new Error('프로필 업데이트 실패');
-      }
+    // 분리된 API 함수를 호출합니다.
+    await updateUserProfile(payload);
 
-      await onSaveProfile();
+    // 부모 컴포넌트에 프로필이 저장되었음을 알리는 함수를 호출합니다.
+    await onSaveProfile();
 
-      onBack();
-      alert('프로필이 성공적으로 업데이트되었습니다.');
-    } catch (error) {
-      console.error("프로필 업데이트 에러:", error);
-      alert('프로필 업데이트에 실패했습니다.');
-    }
-  };
+    onBack(); // 이전 화면으로 돌아갑니다.
+    alert('프로필이 성공적으로 업데이트되었습니다.');
+
+  } catch (error) {
+    console.error("프로필 업데이트 에러:", error);
+    alert((error as Error).message);
+  }
+};
 
   // 아바타 변경 버튼 클릭 시 파일 탐색기 열기
   const handleAvatarChangeClick = () => {

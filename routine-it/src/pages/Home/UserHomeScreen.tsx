@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card';
 import { Button } from '../../components/ui/button';
 import { Progress } from '../../components/ui/progress';
@@ -8,11 +8,11 @@ import { ArrowLeft, ChevronLeft, ChevronRight, X, Camera, Flame, TrendingUp, Cal
 import { ImageWithFallback } from '../../components/figma/ImageWithFallback';
 import { getStreakInfo, getStreakMessage } from '../../components/utils/streakUtils';
 import type {Routine, UserProfile} from '../../interfaces';
-
+import { getUserProfile, type PublicUserProfile } from '../../api/user';
 
 
 interface UserHomeScreenProps {
-  user: any;
+  user: { id: number; };
   onBack: () => void;
 }
 
@@ -20,7 +20,32 @@ export function UserHomeScreen({ user, onBack }: UserHomeScreenProps) {
   const today = new Date();
   const todayString = today.toLocaleDateString('ko-KR', { month: 'long', day: 'numeric' });
 
-  const [selectedPhotoIndex, setSelectedPhotoIndex] = useState<number | null>(null);
+  const [userProfile, setUserProfile] = useState<PublicUserProfile | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchProfile = async () => {
+      // user.id가 없는 경우 API 호출을 방지합니다.
+      if (!user?.id) {
+        setError("사용자 ID가 제공되지 않았습니다.");
+        setIsLoading(false);
+        return;
+      }
+
+      try {
+        const profileData = await getUserProfile(user.id);
+        setUserProfile(profileData);
+      } catch (err) {
+        setError((err as Error).message);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchProfile();
+  }, [user.id]);
+
 
   const openGallery = (index: number) => {
     setSelectedPhotoIndex(index);
@@ -41,22 +66,6 @@ export function UserHomeScreen({ user, onBack }: UserHomeScreenProps) {
       setSelectedPhotoIndex((selectedPhotoIndex - 1 + allVerificationPhotos.length) % allVerificationPhotos.length);
     }
   };
-
-  // 다른 유저의 정보 (공개 정보)
-  const [userProfile] = useState<UserProfile>({
-    id: user.id,
-    nickname: user?.nickname || '지영쓰',
-    profileImageUrl: user?.profileImageUrl || 'https://images.unsplash.com/photo-1494790108755-2616b95fcebf?w=80&h=80&fit=crop&crop=face',
-    profileMessage: user?.profileMessage || '오늘도 으쌰으쌰!',
-    email: user?.email,
-    level: 12,
-    streakDays: 15,
-    exp: 1850,
-    joinDate: '2024년 3월',
-  });
-
-  // 연속 출석일 정보
-  const streakInfo = getStreakInfo(userProfile.streakDays);
 
   // 상대방의 오늘 루틴 (공개)
   const userRoutines: Routine[] = [
@@ -94,7 +103,7 @@ export function UserHomeScreen({ user, onBack }: UserHomeScreenProps) {
       members: 12,
       recentMembers: [
         { id: 1, nickname: '민수민수', profileImageUrl: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=40&h=40&fit=crop&crop=face' },
-        { id: 2, nickname: '지영쓰', profileImageUrl: userProfile.profileImageUrl },
+        { id: 2, nickname: '지영쓰', profileImageUrl: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=40&h=40&fit=crop&crop=face' },
         { id: 3, nickname: '철수박', profileImageUrl: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=40&h=40&fit=crop&crop=face' }
       ]
     },
@@ -104,7 +113,7 @@ export function UserHomeScreen({ user, onBack }: UserHomeScreenProps) {
       members: 8,
       recentMembers: [
         { id: 4, nickname: '수현', profileImageUrl: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=40&h=40&fit=crop&crop=face' },
-        { id: 5, nickname: '지영쓰', profileImageUrl: userProfile.profileImageUrl }
+        { id: 5, nickname: '지영쓰', profileImageUrl: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=40&h=40&fit=crop&crop=face' }
       ]
     }
   ];
@@ -155,7 +164,21 @@ export function UserHomeScreen({ user, onBack }: UserHomeScreenProps) {
     }
   ];
 
-  // 공개된 인증사진만 필터링
+
+  if (isLoading) {
+    return <div>프로필을 불러오는 중...</div>;
+  }
+
+  if (error) {
+    return <div>오류가 발생했습니다: {error}</div>;
+  }
+
+  if (!userProfile) {
+    return <div>사용자 정보를 찾을 수 없습니다.</div>;
+  }
+
+  const streakInfo = getStreakInfo(0);
+  const [selectedPhotoIndex, setSelectedPhotoIndex] = useState<number | null>(null);
   const publicVerificationPhotos = allVerificationPhotos.filter(photo => photo.isPublic);
   const totalPhotos = allVerificationPhotos.length;
   const publicPhotosCount = publicVerificationPhotos.length;
@@ -209,9 +232,9 @@ export function UserHomeScreen({ user, onBack }: UserHomeScreenProps) {
               <div className="flex items-center justify-between w-90">
                 <div className="flex items-center space-x-2 mb-1">
                   <h2 className="text-xl font-bold text-muted-foreground">{userProfile.nickname}</h2>
-                  <Badge variant="secondary" className="text-xs">Lv.{userProfile.level}</Badge>
+                  {/*<Badge variant="secondary" className="text-xs">Lv.{userProfile.level}</Badge>*/}
                 </div>
-                <p className="text-sm font-semibold text-muted-foreground mt-0.5">{userProfile.joinDate}에 가입</p>
+                {/*<p className="text-sm font-semibold text-muted-foreground mt-0.5">{userProfile.joinDate}에 가입</p>*/}
               </div>
               <div className="text-sm text-left text-muted-foreground font-semibold">
                 "{userProfile.profileMessage}"
@@ -244,7 +267,7 @@ export function UserHomeScreen({ user, onBack }: UserHomeScreenProps) {
                     <TrendingUp className="h-4 w-4 text-white" />
                   </div>
                   <div className="text-center">
-                    <div className="text-xl font-bold">{(userProfile.exp ?? 0) .toLocaleString()}</div>
+                    {/*<div className="text-xl font-bold">{(userProfile.exp ?? 0) .toLocaleString()}</div>*/}
                     <div className="text-xs">누적점수</div>
                   </div>
                 </div>
@@ -259,7 +282,7 @@ export function UserHomeScreen({ user, onBack }: UserHomeScreenProps) {
                     {streakInfo.icon}
                   </div>
                   <div className="text-center">
-                    <div className={`text-xl font-bold ${streakInfo.textColor}`}>{userProfile.streakDays}</div>
+                    {/*<div className={`text-xl font-bold ${streakInfo.textColor}`}>{userProfile.streakDays}</div>*/}
                     <div className={`text-xs ${streakInfo.subTextColor}`}>{streakInfo.stage}</div>
                   </div>
                 </div>
@@ -272,7 +295,7 @@ export function UserHomeScreen({ user, onBack }: UserHomeScreenProps) {
             <div className="flex items-center space-x-2">
               <span className="text-lg">{streakInfo.icon}</span>
               <span className={`text-sm ${streakInfo.textColor}`}>
-                {getStreakMessage(userProfile.streakDays)}
+                {/*{getStreakMessage(userProfile.streakDays)}*/}
               </span>
             </div>
           </div>

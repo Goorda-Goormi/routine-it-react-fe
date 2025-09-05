@@ -26,7 +26,7 @@ const groupRanking = groups
   .map((group) => ({
     ...group,
     totalScore: 5000 + Math.floor(Math.random() * 5000), // 더미 점수
-    avgScore: (5000 + Math.floor(Math.random() * 5000)) / (group.members || 1),
+    avgScore: (5000 + Math.floor(Math.random() * 5000)) / (group.maxMembers || 1),
   }))
   .sort((a, b) => b.totalScore - a.totalScore) // 점수 내림차순 정렬
   .map((group, index) => ({ ...group, rank: index + 1 })); // 순위 부여
@@ -142,7 +142,7 @@ const groupRanking = groups
             <CardContent className="pt-0">
               <div className="space-y-3">
                 {groupRanking.map((group) => (
-                  <div key={group.id} className="p-3 rounded-lg border border-border dark:border-border">
+                  <div key={group.groupId} className="p-3 rounded-lg border border-border dark:border-border">
                     <div className="flex items-center justify-between mb-2">
                       <div className="flex items-center space-x-3">
                         <div className="flex items-center justify-center w-8">
@@ -150,15 +150,15 @@ const groupRanking = groups
                         </div>
                         <div className="flex-1">
                           <div className="flex items-center space-x-2">
-                            <span className="text-sm font-medium text-foreground">{group.name}</span>
-                            <Badge variant={group.type === '의무참여' ? 'destructive' : 'secondary'} className="text-xs">
-                              {group.type}
+                            <span className="text-sm font-medium text-foreground">{group.groupName}</span>
+                            <Badge variant={group.groupType === 'REQUIRED' ? 'destructive' : 'secondary'} className="text-xs">
+                              {group.groupType}
                             </Badge>
                           </div>
                           <div className="flex items-center space-x-2 text-xs text-foreground dark:opacity-75 mt-1">
                             <span>{group.category}</span>
                             <span>•</span>
-                            <span>{group.members}명</span>
+                            <span>{group.maxMembers}명</span>
                           </div>
                         </div>
                       </div>

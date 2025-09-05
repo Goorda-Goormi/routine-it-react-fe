@@ -1,95 +1,70 @@
 import React, { useState } from 'react';
 import { Button } from '../ui/button';
-import { Dialog, DialogContent } from '../ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../ui/dialog';
 import { Input } from '../ui/input'; // Input 컴포넌트 추가
 import { Card, CardContent } from '../ui/card';
 import { CircleCheckBig, XCircle } from 'lucide-react'; // 아이콘 추가
+import { checkNicknameAvailability, completeSignup } from '../../api/auth';
 
 interface LoginModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onLoginSuccess: (nickname: string) => void;
+  onLoginSuccess: (userInfo: any) => void;
 }
 
 export function LoginModal({ isOpen, onClose, onLoginSuccess }: LoginModalProps) {
   const [nickname, setNickname] = useState('');
-  const [isDuplicate, setIsDuplicate] = useState(false);
   const [isChecking, setIsChecking] = useState(false);
   const [isNicknameAvailable, setIsNicknameAvailable] = useState<boolean | null>(null);
 
   // 닉네임 중복 확인 함수
   const handleCheckNickname = async () => {
-    const BASE_URL = import.meta.env.VITE_API_BASE_URL;
-
-    if (!nickname) return;
+    if (!nickname.trim()) {
+      alert("닉네임을 입력해주세요.");
+      return;
+    }
 
     setIsChecking(true);
     setIsNicknameAvailable(null);
 
     try {
-      const response = await fetch(`${BASE_URL}/api/auth/check-nickname`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ nickname: nickname }),
-      });
-
-      if (!response.ok) {
-        throw new Error('닉네임 중복 확인 실패');
-      }
-
-      const result = await response.json();
-      const isDuplicatedFromServer = result.data; // true: 중복, false: 사용 가능
-
-      setIsDuplicate(isDuplicatedFromServer);
-      setIsNicknameAvailable(!isDuplicatedFromServer);
-      
+      const isAvailable = await checkNicknameAvailability(nickname);
+      setIsNicknameAvailable(isAvailable);
     } catch (error) {
       console.error('닉네임 중복 확인 중 오류 발생:', error);
       setIsNicknameAvailable(false); // 오류 발생 시 사용 불가로 표시
+      alert((error as Error).message);
     } finally {
       setIsChecking(false);
     }
   };
 
-  // 회원가입 완료 함수
   const handleCompleteSignup = async () => {
-    const BASE_URL = import.meta.env.VITE_API_BASE_URL;
-    const token = localStorage.getItem('accessToken'); // 토큰 가져오기
+  if (isNicknameAvailable !== true) {
+    alert('닉네임 중복 확인을 완료해주세요.');
+    return;
+  }
 
-    if (!nickname || isDuplicate || isNicknameAvailable === null || !isNicknameAvailable || !token) {
-      alert('닉네임을 확인하거나 로그인 상태를 확인해주세요.');
-      return;
-    }
+  try {
+    // 분리된 회원가입 API 함수를 호출합니다.
+    const loggedInUserInfo = await completeSignup(nickname);
 
-    try {
-      const response = await fetch(`${BASE_URL}/api/auth/signup`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`, // 토큰 포함
-        },
-        body: JSON.stringify({ nickname }),
-      });
-
-      if (!response.ok) {
-        throw new Error('회원가입 실패');
-      }
-
-      const result = await response.json();
-      const loggedInUserInfo = result.data; // API 응답에서 전체 사용자 정보(email 포함) 추출
-
-      onLoginSuccess(loggedInUserInfo); // 👈 전체 사용자 정보를 App.tsx로 전달
-      onClose();
-      alert('회원가입이 완료되었습니다.');
-      
-    } catch (error) {
-      console.error('회원가입 완료 중 오류 발생:', error);
-      alert('회원가입에 실패했습니다.');
-    }
-  };
+    onLoginSuccess(loggedInUserInfo); // 부모 컴포넌트로 사용자 정보 전달
+    onClose(); // 모달 닫기
+    alert('회원가입이 완료되었습니다.');
+    
+  } catch (error) {
+    console.error('회원가입 완료 중 오류 발생:', error);
+    alert((error as Error).message || '회원가입에 실패했습니다.');
+  }
+};
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
+      <DialogHeader>
+          {/* 👇 이렇게 DialogTitle을 추가하세요 */}
+          <DialogTitle className="sr-only">닉네임 설정</DialogTitle>
+      </DialogHeader>
       <DialogContent className="p-0 border-none max-w-sm rounded-xl">
         <div className="bg-gradient-to-br from-green-400 via-green-500 to-green-600 flex flex-col items-center justify-center p-8 rounded-xl shadow-2xl">
           {/* 제목 및 설명 */}
