@@ -68,16 +68,12 @@ const GroupCard = ({ group, onNavigate, onJoinGroup }: { group: Group, onNavigat
 );
 
 export function AllGroupsSection({ groups, onNavigate, onJoinGroup }: AllGroupsSectionProps) {
-  const [visibleCount, setVisibleCount] = useState(2); // 초기값 2로 변경
+  //const [visibleCount, setVisibleCount] = useState(2); // 초기값 2로 변경
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [selectedType, setSelectedType] = useState('all');
-
+  const [showAll, setShowAll] = useState(false);
   const sortedGroups = [...groups].sort((a, b) => b.groupId - a.groupId);
-  /*const filteredGroups = sortedGroups.filter(group => {
-    const matchesType = selectedType === 'all' || group.groupType  === 'REQUIRED' ? '의무참여' : '자유참여';
-    const matchesCategory = selectedCategory === 'all' || group.category === selectedCategory;
-    return matchesType && matchesCategory;
-  });*/
+
   const filteredGroups = sortedGroups.filter(group => {
   // 카테고리 필터링
   const matchesCategory = selectedCategory === 'all' || group.category === selectedCategory;
@@ -91,16 +87,11 @@ export function AllGroupsSection({ groups, onNavigate, onJoinGroup }: AllGroupsS
   return matchesCategory && matchesType;
   });
 
-  const hasMore = visibleCount < filteredGroups.length;
+ // MyGroupsSection처럼 showAll 상태에 따라 렌더링할 그룹 목록을 결정
+  const groupsToShow = showAll ? filteredGroups : filteredGroups.slice(0, 2);
 
-  const handleShowMore = () => {
-    setVisibleCount(prevCount => prevCount + 2); // 2개씩 추가로 보이게 변경
-  };
-
-  const handleShowLess = () => {
-    setVisibleCount(2); // 간략히 보기 시 다시 2개로 변경
-  };
-
+  // 버튼을 렌더링할지 결정하는 변수
+  const shouldShowToggleButton = filteredGroups.length > 2;
   
 
   return (
@@ -134,28 +125,22 @@ export function AllGroupsSection({ groups, onNavigate, onJoinGroup }: AllGroupsS
           {filteredGroups.length > 0 ? (
             <>
               <div className="px-4 pb-4 mt-4 space-y-0 max-h-64 overflow-y-auto scrollbar-hide">
-                {filteredGroups.slice(0, visibleCount).map((group) => (
-                  <div key={group.groupId} className="...">
+                {groupsToShow.map((group, index) => (
+                  // 마지막 카드에만 경계선 없애는 로직 추가
+                  <div key={group.groupId} className={`${index < groupsToShow.length - 1 ? 'border-b border-border/30' : ''}`}>
                     <GroupCard group={group} onNavigate={onNavigate} onJoinGroup={onJoinGroup} />
                   </div>
                 ))}
               </div>
-              {hasMore && (
+              {shouldShowToggleButton && (
                 <div className="flex justify-center mt-4">
-                  <Button variant="ghost" className="text-sm text-muted-foreground" onClick={handleShowMore}>
-                    더보기
-                    <ChevronDown className="w-4 h-4 ml-1" />
+                  <Button variant="ghost" className="text-sm text-muted-foreground" onClick={() => setShowAll(!showAll)}>
+                    {showAll ? '간략히 보기' : '더보기'}
+                    {showAll ? <ChevronUp className="w-4 h-4 ml-1" /> : <ChevronDown className="w-4 h-4 ml-1" />}
                   </Button>
                 </div>
               )}
-              {!hasMore && visibleCount > 2 && (
-                <div className="flex justify-center mt-4">
-                  <Button variant="ghost" className="text-sm text-muted-foreground" onClick={handleShowLess}>
-                    간략히 보기
-                    <ChevronUp className="w-4 h-4 ml-1" />
-                  </Button>
-                </div>
-              )}
+              
             </>
           ) : (
             <div className="text-center py-8">

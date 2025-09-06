@@ -216,6 +216,9 @@ export default function App() {
     }
   ]);
 
+   const [groupMembers, setGroupMembers] = useState<Record<number, GroupMemberResponse[]>>({});
+  
+
   //2. 유틸리티 함수 ============================================
   const badgeInfo = {
     '첫걸음': {
@@ -272,9 +275,18 @@ export default function App() {
       const allGroups = await getAllGroups();
       const joinedGroups = await getJoinedGroups();
 
+      /*
       setGroups(allGroups);
       setMyGroups(joinedGroups);
-      
+      */
+     const joinedGroupIds = new Set(joinedGroups.map(g => g.groupId));
+
+      // allGroups 중에서 joinedGroupIds에 포함된 그룹만 필터링합니다.
+      const filteredJoinedGroups = allGroups.filter(g => joinedGroupIds.has(g.groupId));
+
+      setGroups(allGroups);
+       setMyGroups(filteredJoinedGroups); 
+
     } catch (err) {
       console.error("Failed to fetch groups:", err);
       setError("그룹 데이터를 불러오는 데 실패했습니다.");
@@ -284,31 +296,7 @@ export default function App() {
   };
 
 
-  ///const [groupMembers, setGroupMembers] = useState({});
-  const [groupMembers, setGroupMembers] = useState<Record<number, GroupMemberResponse[]>>({});
-  useEffect(() => {
-  const fetchMembers = async () => {
-    // 현재 화면이 group-detail이고, groupId가 존재하는지 확인
-    if (currentScreen && currentScreen.screen === "group-detail" && currentScreen.params.groupId) {
-      const groupId = currentScreen.params.groupId;
-      try {
-        const members = await getGroupMembers(groupId);
-        console.log(`그룹 ID ${groupId}의 멤버:`, members); // ✨ 콘솔 출력 추가
-        
-        // 상태에 멤버 정보 저장
-        setGroupMembers(prevMembers => ({
-          ...prevMembers,
-          [groupId]: members,
-        }));
-      } catch (error) {
-        console.error("그룹 멤버 조회 실패:", error);
-      }
-    }
-  };
-
-  fetchMembers();
-}, [navigationStack]);
-  
+ 
 
   //4.useEffect  =============================================================
 
@@ -361,6 +349,30 @@ export default function App() {
     }
     localStorage.setItem("darkMode", isDarkMode.toString());
   }, [isDarkMode]);
+
+  useEffect(() => {
+  const fetchMembers = async () => {
+    // 현재 화면이 group-detail이고, groupId가 존재하는지 확인
+    if (currentScreen && currentScreen.screen === "group-detail" && currentScreen.params.groupId) {
+      const groupId = currentScreen.params.groupId;
+      try {
+        const members = await getGroupMembers(groupId);
+        console.log(`그룹 ID ${groupId}의 멤버:`, members); // ✨ 콘솔 출력 추가
+        
+        // 상태에 멤버 정보 저장
+        setGroupMembers(prevMembers => ({
+          ...prevMembers,
+          [groupId]: members,
+        }));
+      } catch (error) {
+        console.error("그룹 멤버 조회 실패:", error);
+      }
+    }
+  };
+
+  fetchMembers();
+}, [navigationStack]);
+  
 
   //5. 사용자/계정 관리 =============================================================
 
@@ -740,14 +752,20 @@ const handleAddGroup = async (newGroupData: any) => {
     );
   };
 
+  /*
   const handleDeleteGroupSuccess = (deletedGroupId : number) => {
     // groups 상태에서 삭제된 그룹을 제외하고 업데이트합니다.
     setGroups(prevGroups => prevGroups.filter(g => g.groupId !== deletedGroupId));
     setMyGroups(prevMyGroups => prevMyGroups.filter(g => g.groupId !== deletedGroupId));
     // 삭제 후 이전 화면으로 돌아갑니다.
     navigateBack();
-  };
+  };*/
 
+const handleDeleteGroupSuccess = () => {
+  // 그룹 삭제 성공 후 모든 그룹 목록을 다시 불러와서 최신 상태로 동기화
+  fetchGroupData();
+  navigateBack();
+};
  
 
  
