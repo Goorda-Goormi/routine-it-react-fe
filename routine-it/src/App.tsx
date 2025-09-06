@@ -21,12 +21,12 @@ import { AttendanceModal } from './components/modules/AttendanceModal';
 import { StreakModal } from './components/modules/StreakModal';
 import { getStreakInfo } from './components/utils/streakUtils';
 import { AchievementBadgeModal } from './components/modules/AchievementBadgeModal';
-import type { AuthMessage,Routine,Group,Member,PendingAuthMap,UserProfile } from "./interfaces";
+import type { AuthMessage,Routine,Group,Member,PendingAuthMap,UserProfile,GroupMemberResponse } from "./interfaces";
 import { LoginModal } from './components/modules/LoginModal';
 import { LoadingSpinner } from "./components/ui/loading-spinner";
 import { startKakaoLogin, getUserInfo } from "./api/login"; 
 import { completeSignup, logoutUser, deleteAccount } from './api/auth';
-import { createGroup, getAllGroups,getJoinedGroups } from "./api/group";
+import { createGroup, getAllGroups,getJoinedGroups,getGroupMembers } from "./api/group";
 
 interface NavigationState {
   screen: string;
@@ -282,6 +282,33 @@ export default function App() {
       setIsLoadingGroups(false);
     }
   };
+
+
+  ///const [groupMembers, setGroupMembers] = useState({});
+  const [groupMembers, setGroupMembers] = useState<Record<number, GroupMemberResponse[]>>({});
+  useEffect(() => {
+  const fetchMembers = async () => {
+    // 현재 화면이 group-detail이고, groupId가 존재하는지 확인
+    if (currentScreen && currentScreen.screen === "group-detail" && currentScreen.params.groupId) {
+      const groupId = currentScreen.params.groupId;
+      try {
+        const members = await getGroupMembers(groupId);
+        console.log(`그룹 ID ${groupId}의 멤버:`, members); // ✨ 콘솔 출력 추가
+        
+        // 상태에 멤버 정보 저장
+        setGroupMembers(prevMembers => ({
+          ...prevMembers,
+          [groupId]: members,
+        }));
+      } catch (error) {
+        console.error("그룹 멤버 조회 실패:", error);
+      }
+    }
+  };
+
+  fetchMembers();
+}, [navigationStack]);
+  
 
   //4.useEffect  =============================================================
 
@@ -821,9 +848,12 @@ const navigateTo = (screen: string, params?: any, options?: { replace?: boolean 
               onDeleteRoutine={handleDeleteRoutine}
             />
           );
+          /*
         case "group-detail":
           console.log('넘어온 params:', currentScreen.params);
           console.log('넘어온 groupId:', currentScreen.params.groupId);
+
+          
           return (
             <GroupDetailScreen
               groupId={currentScreen.params.groupId}  // group 객체 대신 id만 전달
@@ -837,9 +867,32 @@ const navigateTo = (screen: string, params?: any, options?: { replace?: boolean 
               onApproveAuthMessage={handleApproveAuthMessage}
               onRejectAuthMessage={handleRejectAuthMessage}
               currentUser={UserInfo} 
+              groupMembers={members}
               
             />
-          );
+          );*/
+          case "group-detail": { // ✨ 여기에 중괄호를 추가합니다.
+        const groupId = currentScreen.params.groupId;
+        const members = groupMembers[groupId] || [];
+           console.log('넘어온 params:', currentScreen.params);
+          console.log('넘어온 groupId:', groupId);
+          console.log('해당 그룹의 멤버:', members);
+        return (
+          <GroupDetailScreen
+            groupId={groupId}
+            groups={groups}
+            onBack={navigateBack}
+            onNavigate={navigateTo}
+            onUpdateGroup={handleUpdateGroup}
+            pendingAuthMessages={pendingAuthMessages}
+            onAddAuthMessage={handleAddAuthMessage}
+            onApproveAuthMessage={handleApproveAuthMessage}
+            onRejectAuthMessage={handleRejectAuthMessage}
+            currentUser={UserInfo} 
+            groupMembers={members}
+          />
+        );
+      } 
         case "profile-edit":
             return (
               <ProfileEditScreen 

@@ -8,6 +8,7 @@ import { GroupApproval } from './GroupApproval';
 import { GroupRoutineDialog } from '../GroupChat/GroupRoutineDialog';
 import type { AuthMessage } from "../../../interfaces";
 import { getGroupMembers } from '../../../api/group';
+import type { GroupMemberResponse } from "../../../interfaces";
 
 interface GroupDetailScreenProps {
   groupId: number;
@@ -21,6 +22,7 @@ interface GroupDetailScreenProps {
   onApproveAuthMessage: (groupId: number, id: number) => void; 
   onRejectAuthMessage: (groupId: number, id: number) => void;
   currentUser: { nickname: string; id: string | number; profileImageUrl?: string };
+  groupMembers: GroupMemberResponse[];
 }
 
 export function GroupDetailScreen({
@@ -35,6 +37,7 @@ export function GroupDetailScreen({
   onApproveAuthMessage,
   onRejectAuthMessage,
   currentUser,
+  groupMembers,
 }: GroupDetailScreenProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [showExMembersModal, setShowExMembersModal] = useState(false);
@@ -159,4 +162,5 @@ export function GroupDetailScreen({
     </div>
   );
 }
+
 

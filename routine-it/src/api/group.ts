@@ -139,7 +139,7 @@ export async function getGroupDetail(groupId: number) {
 }*/
 export async function getGroupMembers(groupId: number): Promise<GroupMemberResponse[]> {
   try {
-    const members = await apiFetch(`/groups/${groupId}/members`, {
+    const members = await apiFetch(`/group/${groupId}/members`, {
       method: "GET",
     });
     return members;
