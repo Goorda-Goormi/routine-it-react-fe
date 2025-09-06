@@ -130,7 +130,7 @@ export const GroupDetailHeader = ({
                   <div className="text-xs text-muted-foreground mt-1">그룹 유형</div>
                 </div>
                 <div className="text-center">
-                  <div className="font-bold text-card-foreground">{group.time}</div>
+                  <div className="font-bold text-card-foreground">{group.alarmTime ? group.alarmTime.slice(0,5) : ''}</div>
                   <div className="text-xs text-muted-foreground">인증 시간</div>
                 </div>
               </div>
