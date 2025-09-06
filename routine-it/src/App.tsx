@@ -27,6 +27,7 @@ import { LoadingSpinner } from "./components/ui/loading-spinner";
 import { startKakaoLogin, getUserInfo } from "./api/login"; 
 import { completeSignup, logoutUser, deleteAccount } from './api/auth';
 import { createGroup, getAllGroups,getJoinedGroups,getGroupMembers } from "./api/group";
+import { getPersonalRankings } from "./api/ranking";
 
 interface NavigationState {
   screen: string;
@@ -752,24 +753,41 @@ const handleAddGroup = async (newGroupData: any) => {
     );
   };
 
-  /*
-  const handleDeleteGroupSuccess = (deletedGroupId : number) => {
-    // groups 상태에서 삭제된 그룹을 제외하고 업데이트합니다.
-    setGroups(prevGroups => prevGroups.filter(g => g.groupId !== deletedGroupId));
-    setMyGroups(prevMyGroups => prevMyGroups.filter(g => g.groupId !== deletedGroupId));
-    // 삭제 후 이전 화면으로 돌아갑니다.
-    navigateBack();
-  };*/
 
 const handleDeleteGroupSuccess = () => {
-  // 그룹 삭제 성공 후 모든 그룹 목록을 다시 불러와서 최신 상태로 동기화
+ 
   fetchGroupData();
   navigateBack();
 };
- 
+ // 8. 랭킹 관련 =============================================================
 
+const [personalRankingData, setPersonalRankingData] = useState<IPersonalRankingResponse | null>(null);
+const handleRankingTabClick = async () => {
+    // 로그인 상태가 아니면 함수를 종료
+    if (!isLoggedIn) { 
+        console.log("로그인 상태가 아닙니다. 랭킹 데이터를 가져올 수 없습니다.");
+        setActiveTab('ranking');
+        return; 
+    }
+
+    // 랭킹 탭을 눌렀을 때 API 호출
+    setIsLoading(true);
+    try {
+        const rankingResponse = await getPersonalRankings();
+        
+        console.log('개인 랭킹 데이터:', rankingResponse);
+        
+        setPersonalRankingData(rankingResponse);
+    } catch (error) {
+        console.error('랭킹 데이터 로딩 실패:', error);
+        setPersonalRankingData(null); 
+    } finally {
+        setIsLoading(false);
+        setActiveTab('ranking');
+    }
+};
  
-// 8. ui/네비게이션 관련 =============================================================
+// 9. ui/네비게이션 관련 =============================================================
   const handleSearch = (query: string) => {
     console.log("검색:", query);
   };
@@ -793,28 +811,6 @@ const handleDeleteGroupSuccess = () => {
         break;
     }
   };
-
- /* const navigateTo = (screen: string, params?: any) => {
-    const tabs = [
-      "home",
-      "routine",
-      "group",
-      "ranking",
-      "mypage",
-    ];
-    if (tabs.includes(screen)) {
-      setActiveTab(screen);
-      setNavigationStack([]);
-      return;
-    }
-
-    setNavigationStack([
-      ...navigationStack,
-      { screen, params },
-    ]);
-  };*/
-  // navigationStack을 관리하는 부모 컴포넌트 (예: App.tsx)
-// ...
 
 const navigateTo = (screen: string, params?: any, options?: { replace?: boolean }) => {
   const tabs = ["home", "routine", "group", "ranking", "mypage"];
@@ -1021,8 +1017,10 @@ const navigateTo = (screen: string, params?: any, options?: { replace?: boolean 
                 />
       case "ranking":{
         console.log('그룹 목록 (랭킹):', groups);
+        console.log('개인 랭킹 데이터 (랭킹):', personalRankingData);
         return <RankingScreen 
                   groups={groups}
+                  personalRankingData={personalRankingData}
                 />;}
       case "mypage":
         return (
@@ -1059,7 +1057,7 @@ const navigateTo = (screen: string, params?: any, options?: { replace?: boolean 
     }
   };
 
-  //10. 출석, 스트릭, 배지 모달 관련 =============================================================
+  //11. 출석, 스트릭, 배지 모달 관련 =============================================================
 
   const handleOpenAttendanceModal = () => {
     const today = new Date().toDateString();
@@ -1206,13 +1204,18 @@ const navigateTo = (screen: string, params?: any, options?: { replace?: boolean 
                 {renderScreen()}
               </div>
 
-              {!currentScreen && (
-                <div className="bg-background border-t border-border">
-                  <BottomTabNav
-                    activeTab={activeTab}
-                    onTabChange={setActiveTab}
-                  />
-                </div>
+               {!currentScreen && (
+      <div className="bg-background border-t border-border">
+        <BottomTabNav
+          activeTab={activeTab}
+          onTabChange={(tabName: string) => {
+    if (tabName === 'ranking' && personalRankingData === null && !isLoading) {
+      handleRankingTabClick();
+    }
+    setActiveTab(tabName);
+}}
+        />
+      </div>
               )}
             </main>
           </>

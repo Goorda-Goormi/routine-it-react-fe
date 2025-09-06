@@ -6,10 +6,17 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../components/ui/ta
 import { Avatar, AvatarFallback, AvatarImage } from '../../components/ui/avatar';
 import { Trophy, Users, Medal, Crown, Star, Target } from 'lucide-react';
 import { rankGroups } from '../../components/utils/rankingUtils';
+import type { IPersonalRankingResponse } from '../../interfaces';
+
 import type { Group } from '../../interfaces';
 import type { PersonalRankingData, GlobalGroupRankingData, GroupRanking } from '../../interfaces';
 
-export function RankingScreen({ groups }: { groups: Group[] }) {
+interface RankingScreenProps {
+  groups: Group[];
+  personalRankingData: IPersonalRankingResponse | null;
+}
+
+export function RankingScreen({ groups, personalRankingData }: RankingScreenProps) {
   // 개인별 랭킹 데이터는 그대로 둡니다
   const personalRanking = [
     { id: 1, rank: 1, name: '김민수', nickname: '민수민수', profileImageUrl: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=40&h=40&fit=crop&crop=face', totalScore: 2840, streakDays: 45 },

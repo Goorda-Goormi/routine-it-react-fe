@@ -126,8 +126,19 @@ export interface UpdateProfilePayload {
 
 
 //================= 랭킹 관련 인터페이스 =================//
-// 개인별 랭킹 응답 데이터 타입
-export interface PersonalRankingData {
+export interface IGroupDetail {
+  groupId: number;
+  groupName: string;
+  groupImageUrl: string;
+  groupType: string;
+  score: number;
+  rankInGroup: number;
+  totalMembers: number;
+  authCount: number;
+  groupWeightMultiplier: number;
+}
+
+export interface IPersonalRankingData {
   userId: number;
   nickname: string;
   profileImageUrl: string;
@@ -136,42 +147,14 @@ export interface PersonalRankingData {
   totalParticipants: number;
   monthYear: string;
   consecutiveDays: number;
-  groupDetails: GroupDetail[];
-  updatedAt: string;
+  groupDetails: IGroupDetail[];
+  updatedAt: string; // ISO 8601 형식의 날짜 문자열
 }
 
-export interface GroupDetail {
-  groupId: number;
-  groupName: string;
-  groupImageUrl: string;
-  groupType: 'OPTIONAL' | 'MANDATORY';
-  score: number;
-  rankInGroup: number;
-  totalMembers: number;
-  authCount: number;
-  groupWeightMultiplier: number;
+export interface IPersonalRankingResponse {
+  success: boolean;
+  message: string;
+  data: IPersonalRankingData[];
 }
 
-// 그룹별 랭킹 응답 데이터 타입
-export interface GlobalGroupRankingData {
-  rankings: GroupRanking[];
-  monthYear: string;
-  totalGroups: number;
-  updatedAt: string;
-}
-
-export interface GroupRanking {
-  rank: number;
-  groupId: number;
-  groupName: string;
-  groupImageUrl: string;
-  category: string;
-  groupType: 'OPTIONAL' | 'MANDATORY';
-  totalScore: number;
-  memberCount: number;
-  activeMembers: number;
-  participationRate: number;
-  totalAuthCount: number;
-  averageAuthPerMember: number;
-}
 //==================================================//
