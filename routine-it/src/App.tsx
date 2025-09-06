@@ -763,9 +763,9 @@ const handleDeleteGroupSuccess = () => {
 
 const [personalRankingData, setPersonalRankingData] = useState<IPersonalRankingResponse | null>(null);
 const handleRankingTabClick = async () => {
-    // 로그인 상태가 아니면 함수를 종료
-    if (!isLoggedIn) { 
-        console.log("로그인 상태가 아닙니다. 랭킹 데이터를 가져올 수 없습니다.");
+    // 로그인 상태가 아니거나 사용자 정보가 없으면 함수를 종료합니다.
+    if (!isLoggedIn || !UserInfo) { 
+        console.log("로그인 상태가 아니거나 사용자 정보가 없습니다.");
         setActiveTab('ranking');
         return; 
     }
@@ -773,7 +773,8 @@ const handleRankingTabClick = async () => {
     // 랭킹 탭을 눌렀을 때 API 호출
     setIsLoading(true);
     try {
-        const rankingResponse = await getPersonalRankings();
+        // UserProfile.id를 getPersonalRankings 함수에 전달
+        const rankingResponse = await getPersonalRankings(UserInfo.id);
         
         console.log('개인 랭킹 데이터:', rankingResponse);
         

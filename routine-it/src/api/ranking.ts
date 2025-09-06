@@ -20,34 +20,27 @@ export async function updateRankingScore(
     throw error;
   }
 }
-
-/**
- * 개인 랭킹을 조회하는 함수
- * @param monthYear 조회할 월 (YYYY-MM 형식), 선택적 매개변수
- * @returns IPersonalRankingResponse 형태의 Promise
- */
+// 수정된 getPersonalRankings 함수
 export const getPersonalRankings = async (
+  userId: number, // userId를 필수 매개변수로 추가
   monthYear?: string
 ): Promise<IPersonalRankingResponse> => {
   try {
     const path = '/api/rankings/personal';
-    const params = new URLSearchParams(); // 쿼리 파라미터를 위한 URLSearchParams 객체 사용
+    const params = new URLSearchParams();
+
+    // 필수 파라미터인 userId를 추가합니다.
+    params.append('userId', userId.toString());
 
     if (monthYear) {
       params.append('monthYear', monthYear);
     }
     
-    // apiFetch 함수를 사용하여 GET 요청을 보냅니다.
-    // URLSearchParams.toString()을 사용하여 'monthYear=YYYY-MM' 형식으로 변환
     const responseData = await apiFetch(`${path}?${params.toString()}`);
-
-    // apiFetch는 이미 성공적인 응답의 JSON을 파싱하여 반환하므로,
-    // 바로 반환 타입에 맞게 캐스팅하여 사용하면 됩니다.
     return responseData as IPersonalRankingResponse;
   } catch (error) {
-    // apiFetch에서 이미 에러를 throw하므로, 여기서는 에러를 로깅만 합니다.
     console.error('개인 랭킹 조회 실패:', error);
-    throw error; // 에러를 다시 throw하여 호출한 곳에서 처리할 수 있게 합니다.
+    throw error;
   }
 };
 

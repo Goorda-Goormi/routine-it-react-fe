@@ -5,11 +5,7 @@ import { Badge } from '../../components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../components/ui/tabs';
 import { Avatar, AvatarFallback, AvatarImage } from '../../components/ui/avatar';
 import { Trophy, Users, Medal, Crown, Star, Target } from 'lucide-react';
-import { rankGroups } from '../../components/utils/rankingUtils';
-import type { IPersonalRankingResponse } from '../../interfaces';
-
-import type { Group } from '../../interfaces';
-import type { PersonalRankingData, GlobalGroupRankingData, GroupRanking } from '../../interfaces';
+import type { Group, IPersonalRankingResponse, IPersonalRankingData } from '../../interfaces';
 
 interface RankingScreenProps {
   groups: Group[];
@@ -17,27 +13,18 @@ interface RankingScreenProps {
 }
 
 export function RankingScreen({ groups, personalRankingData }: RankingScreenProps) {
-  // 개인별 랭킹 데이터는 그대로 둡니다
-  const personalRanking = [
-    { id: 1, rank: 1, name: '김민수', nickname: '민수민수', profileImageUrl: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=40&h=40&fit=crop&crop=face', totalScore: 2840, streakDays: 45 },
-    { id: 2, rank: 2, name: '이지영', nickname: '지영쓰', profileImageUrl: 'https://images.unsplash.com/photo-1494790108755-2616b95fcebf?w=40&h=40&fit=crop&crop=face', totalScore: 2650, streakDays: 38 },
-    { id: 3, rank: 3, name: '박철수', nickname: '철수박', profileImageUrl: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=40&h=40&fit=crop&crop=face', totalScore: 2520, streakDays: 42 },
-    { id: 4, rank: 4, name: '정수현', nickname: '지영쓰', profileImageUrl: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=40&h=40&fit=crop&crop=face', totalScore: 2380, streakDays: 35 },
-    { id: 5, rank: 5, name: '최영호', nickname: '영호호호', profileImageUrl: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=40&h=40&fit=crop&crop=face', totalScore: 2290, streakDays: 29 },
-    { id: 6, rank: 6, name: '조민아', nickname: '미나리', profileImageUrl: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=40&h=40&fit=crop&crop=face', totalScore: 2150, streakDays: 31 },
-    { id: 7, rank: 7, name: '윤태준', nickname: '윤태', profileImageUrl: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=40&h=40&fit=crop&crop=face', totalScore: 2080, streakDays: 26 }
-  ];
+  // 그룹 랭킹 더미 데이터 (기존과 동일)
+  const groupRanking = groups
+    .map((group) => ({
+      ...group,
+      totalScore: 5000 + Math.floor(Math.random() * 5000),
+      avgScore: (5000 + Math.floor(Math.random() * 5000) / (group.maxMembers || 1)),
+    }))
+    .sort((a, b) => b.totalScore - a.totalScore)
+    .map((group, index) => ({ ...group, rank: index + 1 }));
 
-// groups 기반 더미 점수 계산
-const groupRanking = groups
-  .map((group) => ({
-    ...group,
-    totalScore: 5000 + Math.floor(Math.random() * 5000), // 더미 점수
-    avgScore: (5000 + Math.floor(Math.random() * 5000)) / (group.maxMembers || 1),
-  }))
-  .sort((a, b) => b.totalScore - a.totalScore) // 점수 내림차순 정렬
-  .map((group, index) => ({ ...group, rank: index + 1 })); // 순위 부여
-
+  // `IPersonalRankingResponse`의 `data` 속성을 사용합니다.
+  const personalRankings: IPersonalRankingData[] = personalRankingData?.data || [];
 
   const getRankIcon = (rank: number) => {
     switch (rank) {
@@ -68,7 +55,6 @@ const groupRanking = groups
 
         {/* 개인별 */}
         <TabsContent value="personal" className="space-y-4">
-          {/* 안내 카드 */}
           <Card className="dark:card-shadow">
             <CardContent className="p-4">
               <div className="flex items-center space-x-3 p-3 rounded-lg bg-gradient-to-br bg-card-yellow-bg dark:bg-card-yellow-bg dark:border-none">
@@ -83,7 +69,6 @@ const groupRanking = groups
             </CardContent>
           </Card>
 
-          {/* 개인 랭킹 리스트 */}
           <Card className="dark:card-shadow">
             <CardHeader className="pb-3">
               <CardTitle className="text-base text-foreground flex items-center space-x-2">
@@ -93,29 +78,35 @@ const groupRanking = groups
             </CardHeader>
             <CardContent className="pt-0">
               <div className="space-y-3">
-                {personalRanking.map((user) => (
-                  <div key={user.id} className="flex items-center justify-between p-3 rounded-lg border border-border dark:border-border">
-                    <div className="flex items-center space-x-3">
-                      <div className="flex items-center justify-center w-8">
-                        {getRankIcon(user.rank)}
+                {personalRankings.length > 0 ? (
+                  personalRankings.map((user) => (
+                    <div key={user.userId} className="flex items-center justify-between p-3 rounded-lg border border-border dark:border-border">
+                      <div className="flex items-center space-x-3">
+                        <div className="flex items-center justify-center w-8">
+                          {getRankIcon(user.currentRank)}
+                        </div>
+                        <Avatar className="w-10 h-10">
+                          <AvatarImage src={user.profileImageUrl || undefined} alt={user.nickname} />
+                          <AvatarFallback>{user.nickname.charAt(0)}</AvatarFallback>
+                        </Avatar>
+                        <div className='flex flex-col items-start'>
+                          <div className="text-sm font-medium text-foreground">{user.nickname}</div>
+                          <div className="text-xs text-foreground dark:opacity-75">연속 {user.consecutiveDays}일</div>
+                        </div>
                       </div>
-                      <Avatar className="w-10 h-10">
-                        <AvatarImage src={user.profileImageUrl} alt={user.nickname} />
-                        <AvatarFallback>{user.nickname.charAt(0)}</AvatarFallback>
-                      </Avatar>
-                      <div className='flex flex-col items-start'>
-                        <div className="text-sm font-medium text-foreground">{user.nickname}</div>
-                        <div className="text-xs text-foreground dark:opacity-75">연속 {user.streakDays}일</div>
+                      <div className="text-right">
+                        <div className={`text-lg font-bold ${getScoreColor(user.currentRank)}`}>
+                          {user.totalScore.toLocaleString()}
+                        </div>
+                        <div className="text-xs text-foreground dark:opacity-75">총점</div>
                       </div>
                     </div>
-                    <div className="text-right">
-                      <div className={`text-lg font-bold ${getScoreColor(user.rank)}`}>
-                        {user.totalScore.toLocaleString()}
-                      </div>
-                      <div className="text-xs text-foreground dark:opacity-75">총점</div>
-                    </div>
+                  ))
+                ) : (
+                  <div className="text-center text-sm text-gray-500 py-8">
+                    랭킹 데이터를 불러오는 중이거나 데이터가 없습니다.
                   </div>
-                ))}
+                )}
               </div>
             </CardContent>
           </Card>
@@ -123,7 +114,6 @@ const groupRanking = groups
 
         {/* 그룹별 */}
         <TabsContent value="group" className="space-y-4">
-          {/* 안내 카드 */}
           <Card className="dark:card-shadow">
             <CardContent className="p-4">
               <div className="flex items-center space-x-3 p-3 rounded-lg bg-gradient-to-br bg-card-peach-bg dark:bg-card-peach-bg dark:border-none">
@@ -138,7 +128,6 @@ const groupRanking = groups
             </CardContent>
           </Card>
 
-          {/* 그룹 랭킹 리스트 */}
           <Card className="dark:card-shadow">
             <CardHeader className="pb-3">
               <CardTitle className="text-base text-foreground flex items-center space-x-2">
