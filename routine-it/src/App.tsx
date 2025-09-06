@@ -740,6 +740,14 @@ const handleAddGroup = async (newGroupData: any) => {
     );
   };
 
+  const handleDeleteGroupSuccess = (deletedGroupId : number) => {
+    // groups 상태에서 삭제된 그룹을 제외하고 업데이트합니다.
+    setGroups(prevGroups => prevGroups.filter(g => g.groupId !== deletedGroupId));
+    setMyGroups(prevMyGroups => prevMyGroups.filter(g => g.groupId !== deletedGroupId));
+    // 삭제 후 이전 화면으로 돌아갑니다.
+    navigateBack();
+  };
+
  
 
  
@@ -819,6 +827,13 @@ const navigateTo = (screen: string, params?: any, options?: { replace?: boolean 
     setIsDarkMode(!isDarkMode);
   };
 
+   const handleLeaveGroup = () => {
+    
+    // 그룹을 떠난 후 그룹 목록 화면으로 바로 이동하도록 합니다.
+    setNavigationStack([{ screen: "group", params: {} }]);
+    setActiveTab("group");
+  };
+
 
 // 9. 화면 렌더링 및 모달 =============================================================
 
@@ -848,35 +863,14 @@ const navigateTo = (screen: string, params?: any, options?: { replace?: boolean 
               onDeleteRoutine={handleDeleteRoutine}
             />
           );
-          /*
-        case "group-detail":
-          console.log('넘어온 params:', currentScreen.params);
-          console.log('넘어온 groupId:', currentScreen.params.groupId);
-
-          
-          return (
-            <GroupDetailScreen
-              groupId={currentScreen.params.groupId}  // group 객체 대신 id만 전달
-              groups={groups}                   // 전체 그룹 전달
-              onBack={navigateBack}
-              onNavigate={navigateTo}
-              onUpdateGroup={handleUpdateGroup}
-              //onJoinGroup={handleJoinGroup}
-              pendingAuthMessages={pendingAuthMessages}
-              onAddAuthMessage={handleAddAuthMessage}
-              onApproveAuthMessage={handleApproveAuthMessage}
-              onRejectAuthMessage={handleRejectAuthMessage}
-              currentUser={UserInfo} 
-              groupMembers={members}
-              
-            />
-          );*/
+       
           case "group-detail": { // ✨ 여기에 중괄호를 추가합니다.
         const groupId = currentScreen.params.groupId;
         const members = groupMembers[groupId] || [];
            console.log('넘어온 params:', currentScreen.params);
           console.log('넘어온 groupId:', groupId);
-          console.log('해당 그룹의 멤버:', members);
+          console.log('해당 그룹의 멤버 groupmembers:', members);
+          console.log('그룹상세 groups:', groups);
         return (
           <GroupDetailScreen
             groupId={groupId}
@@ -890,6 +884,7 @@ const navigateTo = (screen: string, params?: any, options?: { replace?: boolean 
             onRejectAuthMessage={handleRejectAuthMessage}
             currentUser={UserInfo} 
             groupMembers={members}
+            onDeleteGroupSuccess={handleDeleteGroupSuccess}
           />
         );
       } 
@@ -905,14 +900,20 @@ const navigateTo = (screen: string, params?: any, options?: { replace?: boolean 
                 onSaveProfile={handleSaveProfile}
               />
             );
-        case "group-chat":
+        case "group-chat":{
+          const groupId = currentScreen.params.groupId;
+           console.log('chat groupId:', groupId);
+           console.log('chat params:', currentScreen.params);
           return (
             <GroupChatScreen
               group={currentScreen.params}
               onBack={navigateBack}
                onAddAuthMessage={handleAddAuthMessage}
+               //groupMembers={groupMembers}
+                onLeaveGroup={handleLeaveGroup}
             />
           );
+        }
         case "create-routine":
           return (
             <CreateRoutineScreen 

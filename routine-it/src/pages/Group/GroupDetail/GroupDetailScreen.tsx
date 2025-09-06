@@ -9,6 +9,7 @@ import { GroupRoutineDialog } from '../GroupChat/GroupRoutineDialog';
 import type { AuthMessage } from "../../../interfaces";
 import { getGroupMembers } from '../../../api/group';
 import type { GroupMemberResponse } from "../../../interfaces";
+import { deleteGroup } from '../../../api/group';
 
 interface GroupDetailScreenProps {
   groupId: number;
@@ -23,6 +24,7 @@ interface GroupDetailScreenProps {
   onRejectAuthMessage: (groupId: number, id: number) => void;
   currentUser: { nickname: string; id: string | number; profileImageUrl?: string };
   groupMembers: GroupMemberResponse[];
+  onDeleteGroupSuccess: (deletedGroupId: number) => void;
 }
 
 export function GroupDetailScreen({
@@ -38,6 +40,7 @@ export function GroupDetailScreen({
   onRejectAuthMessage,
   currentUser,
   groupMembers,
+  onDeleteGroupSuccess,
 }: GroupDetailScreenProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [showExMembersModal, setShowExMembersModal] = useState(false);
@@ -82,13 +85,28 @@ export function GroupDetailScreen({
   setShowRoutineModal(false);
 };
 
+// 그룹 삭제 로직을 GroupDetailScreen에 통합
+  const handleGroupDeleted = async () => {
+    if (group?.groupId) {
+      try {
+        await deleteGroup(group.groupId); // API 호출
+        alert("그룹이 성공적으로 삭제되었습니다.");
+        onDeleteGroupSuccess(group.groupId); // 부모 컴포넌트에 삭제 완료 알림
+        onBack(); // 이전 화면으로 돌아가기
+      } catch (error) {
+        console.error("그룹 삭제 실패:", error);
+        alert("그룹 삭제에 실패했습니다.");
+      }
+    }
+  };
+
 
   return (
     <div className="min-h-screen relative">
       <GroupDetailHeader
         group={group}
-        isJoined={group?.isJoined}
-        isLeader={isLeader}
+        //isJoined={group?.isJoined}
+        //isLeader={isLeader}
         onBack={onBack}
        // onJoinGroup={handleJoinGroup}
         onChatClick={handleChatClick}
@@ -97,6 +115,8 @@ export function GroupDetailScreen({
         onOpenApproval={() => setShowApprovalModal(true)}
         onOpenExMembers={() => setShowExMembersModal(true)}
         pendingAuthCount={pendingGroupAuthMessages.length}
+        groupMembers={groupMembers}
+        onGroupDeleted={handleGroupDeleted}
       />
 
       <div className="p-4 space-y-4">
@@ -105,6 +125,7 @@ export function GroupDetailScreen({
           weeklyRanking={weeklyRanking}
           recentActivities={recentActivities}
           onMemberClick={handleMemberClick}
+           groupMembers={groupMembers}
         />
       </div>
 

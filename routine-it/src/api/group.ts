@@ -14,37 +14,7 @@ export interface GroupRequest {
 }
 
 //그룹 생성
-/*
-export async function createGroup(data: GroupRequest) {
-  const response = await apiFetch("/groups", {
-    method: "POST",
-    body: JSON.stringify(data),
-  });
 
-  // 201 Created 응답인 경우, 정상 처리
-  if (response.status === 201) {
-    // 백엔드가 본문을 반환하는 경우를 대비해 JSON 파싱을 시도
-    try {
-      const createdData = await response.json();
-      return createdData;
-    } catch {
-      // 본문이 없거나 파싱에 실패하면, 성공 메시지만 전달
-      // 이 경우, 'onCreateGroup'에 넘길 데이터가 없으므로 필요에 따라 로직 수정이 필요합니다.
-      return { message: "그룹이 성공적으로 생성되었습니다." };
-    }
-  }
-
-  // 성공 응답이지만 201이 아닌 경우 (예: 200 OK)
-  if (response.ok) {
-    // 200 OK 등 다른 성공 응답도 처리할 수 있도록 추가
-    const text = await response.text();
-    return text ? JSON.parse(text) : true;
-  }
-  
-  // 실패 응답인 경우
-  const errorData = await response.json().catch(() => ({ message: "그룹 생성에 실패했습니다." }));
-  throw new Error(errorData.message);
-}*/
 export async function createGroup(data: GroupRequest) {
   try {
     const createdData = await apiFetch("/groups", {
@@ -126,17 +96,7 @@ export async function getGroupDetail(groupId: number) {
   }
 }
 // 그룹 멤버 목록 조회
-/*export async function getGroupMembers(groupId: number) {
-  try {
-    const members = await apiFetch(`/groups/${groupId}/members`, {
-      method: "GET",
-    });
-    return members;
-  } catch (error) {
-    console.error(`Failed to fetch group members for ID ${groupId}:`, error);
-    throw new Error("그룹 멤버 조회 실패");
-  }
-}*/
+
 export async function getGroupMembers(groupId: number): Promise<GroupMemberResponse[]> {
   try {
     const members = await apiFetch(`/group/${groupId}/members`, {
@@ -146,5 +106,20 @@ export async function getGroupMembers(groupId: number): Promise<GroupMemberRespo
   } catch (error) {
     console.error(`Failed to fetch group members for ID ${groupId}:`, error);
     throw new Error("그룹 멤버 조회 실패");
+  }
+}
+
+// 그룹 탈퇴 (그룹 삭제)
+
+export async function deleteGroup(groupId: number) {
+  try {
+    await apiFetch(`/groups/${groupId}`, {
+      method: "DELETE",
+    });
+    console.log(`그룹 ${groupId} 탈퇴 성공`);
+    return true; // 성공적으로 탈퇴했음을 알리기 위해 true 반환
+  } catch (error) {
+    console.error(`그룹 ${groupId} 탈퇴 실패:`, error);
+    throw new Error("그룹 탈퇴 실패");
   }
 }

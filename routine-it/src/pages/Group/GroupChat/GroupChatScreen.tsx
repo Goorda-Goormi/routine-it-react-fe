@@ -8,11 +8,13 @@ import { GroupRoutineDialog } from './GroupRoutineDialog';
 import { GroupChatMessages } from './GroupChatMessages';
 import { GroupChatInput } from './GroupChatInput';
 import type { UserProfile } from '../../../interfaces';
-
+//import { deleteGroup } from '../../../api/group';
+import { leaveGroup } from '../../../api/chat';
 interface GroupChatScreenProps {
   group: any;
   onBack: () => void;
   onAddAuthMessage: (groupId: number, data: any, nickname: string, userId: string | number, routineId: number) => void;
+  onLeaveGroup: () => void;
 }
 
 
@@ -29,9 +31,11 @@ export interface Message {
   albumImages?: string[];
 }
 
-export function GroupChatScreen({ group, onBack, onAddAuthMessage }: GroupChatScreenProps) {
+export function GroupChatScreen({ group, onBack, onAddAuthMessage, onLeaveGroup }: GroupChatScreenProps) {
   const [isAuthDialogOpen, setIsAuthDialogOpen] = useState(false);
   const [isMembersDialogOpen, setIsMembersDialogOpen] = useState(false);
+
+
 
   const myUserId = 2; // '나'의 userId를 상수로 정의
   const myNickname = '나';
@@ -127,6 +131,41 @@ export function GroupChatScreen({ group, onBack, onAddAuthMessage }: GroupChatSc
       reactions: {},
     },
   ]);
+
+  /*
+  const handleDeleteGroup = async () => {
+    // 사용자에게 한 번 더 확인할 수 있는 로직을 추가하면 더 안전합니다.
+    if (!window.confirm("정말로 이 그룹에서 나가시겠습니까?")) {
+      return;
+    }
+
+    try {
+      await deleteGroup(group.groupId);
+      alert("성공적으로 그룹에서 탈퇴했습니다.");
+      //onBack(); // 그룹 목록 화면으로 돌아가기
+    onLeaveGroup();
+    //onBack();
+    } catch (error) {
+      console.error("그룹 탈퇴 오류:", error);
+      alert("그룹 탈퇴에 실패했습니다.");
+    }
+  };*/
+  const handleDeleteGroup = async () => {
+  // 사용자에게 한 번 더 확인할 수 있는 로직을 추가하면 더 안전합니다.
+  if (!window.confirm("정말로 이 그룹에서 나가시겠습니까?")) {
+    return;
+  }
+
+  try {
+    // leaveGroup API를 호출하고 group.groupId를 전달합니다.
+    await leaveGroup(group.groupId);
+    alert("성공적으로 그룹에서 탈퇴했습니다.");
+    onLeaveGroup(); // 그룹 목록 화면으로 돌아가는 함수 호출
+  } catch (error) {
+    console.error("그룹 탈퇴 오류:", error);
+    alert("그룹 탈퇴에 실패했습니다.");
+  }
+};
 
   const handleSendMessage = (text: string) => {
     if (text.trim()) {
@@ -278,11 +317,7 @@ export function GroupChatScreen({ group, onBack, onAddAuthMessage }: GroupChatSc
                 <Button
                   variant="destructive"
                   className="w-full"
-                  onClick={() => {
-                    // 실제 그룹 나가기 로직을 여기에 구현
-                    // onBack 함수를 호출하여 이전 화면(그룹 목록)으로 돌아갑니다.
-                    onBack();
-                  }}
+                  onClick={handleDeleteGroup} 
                 >
                   그룹 나가기
                 </Button>

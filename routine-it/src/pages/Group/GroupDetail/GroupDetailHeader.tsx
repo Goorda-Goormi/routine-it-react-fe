@@ -17,10 +17,13 @@ import {
   DropdownMenuTrigger,
 } from '../../../components/ui/dropdown-menu';
 
+import type { GroupMemberResponse } from '../../../interfaces';
+import { deleteGroup } from '../../../api/group';
+
 interface GroupDetailHeaderProps {
   group: any;
-  isJoined: boolean;
-  isLeader: boolean;
+  //isJoined: boolean;
+  //isLeader: boolean;
   onBack: () => void;
  // onJoinGroup: () => void;
   onChatClick: () => void;
@@ -29,12 +32,14 @@ interface GroupDetailHeaderProps {
   onOpenApproval: () => void;
   onOpenExMembers: () => void;
   pendingAuthCount: number;
+  groupMembers: GroupMemberResponse[];
+  onGroupDeleted: () => void; 
 }
 
 export const GroupDetailHeader = ({
   group,
-  isJoined,
-  isLeader,
+  //isJoined,
+  //isLeader,
   onBack,
  // onJoinGroup,
   onChatClick,
@@ -43,13 +48,13 @@ export const GroupDetailHeader = ({
   onOpenApproval,
   onOpenExMembers,
   pendingAuthCount,
+  groupMembers,
+  onGroupDeleted,
 }: GroupDetailHeaderProps) => {
-  const handleMenuClick = (action: string) => {
-    if (!isLeader) {
-      // 이 부분은 이미 드롭다운이 비활성화되어 접근할 수 없지만, 혹시 모를 상황에 대비해 남겨둡니다.
-      alert('리더만 권한이 있습니다');
-      return;
-    }
+  const isLeader = groupMembers.some(member => member.role === 'LEADER');
+   const isJoined = groupMembers.some(member => member.status === 'JOINED');
+  
+   const handleMenuClick = async (action: string) => {
 
     switch (action) {
       case 'edit':
@@ -60,6 +65,11 @@ export const GroupDetailHeader = ({
         break;
       case 'ex-members':
         onOpenExMembers();
+        break;
+      case 'delete':
+        if (window.confirm("정말로 그룹을 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.")) {
+          onGroupDeleted();
+        }
         break;
       default:
         break;
@@ -105,6 +115,9 @@ export const GroupDetailHeader = ({
               
               <DropdownMenuSeparator />
               <DropdownMenuItem onClick={() => handleMenuClick('ex-members')}>멤버 관리하기</DropdownMenuItem>
+              
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={() => handleMenuClick('delete')}>그룹 삭제하기</DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
