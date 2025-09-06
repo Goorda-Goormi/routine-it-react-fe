@@ -1019,10 +1019,11 @@ const navigateTo = (screen: string, params?: any, options?: { replace?: boolean 
                   onNewGroup={() => navigateTo("create-group")}
                   //onJoinGroup={handleJoinGroup}
                 />
-      case "ranking":
+      case "ranking":{
+        console.log('그룹 목록 (랭킹):', groups);
         return <RankingScreen 
                   groups={groups}
-                />;
+                />;}
       case "mypage":
         return (
           <MyPageScreen

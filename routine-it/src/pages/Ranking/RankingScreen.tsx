@@ -7,7 +7,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '../../components/ui/avatar'
 import { Trophy, Users, Medal, Crown, Star, Target } from 'lucide-react';
 import { rankGroups } from '../../components/utils/rankingUtils';
 import type { Group } from '../../interfaces';
-
+import type { PersonalRankingData, GlobalGroupRankingData, GroupRanking } from '../../interfaces';
 
 export function RankingScreen({ groups }: { groups: Group[] }) {
   // 개인별 랭킹 데이터는 그대로 둡니다
@@ -152,13 +152,13 @@ const groupRanking = groups
                           <div className="flex items-center space-x-2">
                             <span className="text-sm font-medium text-foreground">{group.groupName}</span>
                             <Badge variant={group.groupType === 'REQUIRED' ? 'destructive' : 'secondary'} className="text-xs">
-                              {group.groupType}
+                              {group.groupType === 'REQUIRED' ? '의무참여' : '자유참여'}
                             </Badge>
                           </div>
                           <div className="flex items-center space-x-2 text-xs text-foreground dark:opacity-75 mt-1">
                             <span>{group.category}</span>
                             <span>•</span>
-                            <span>{group.maxMembers}명</span>
+                            <span>{group.currentMemberCount}명</span>
                           </div>
                         </div>
                       </div>

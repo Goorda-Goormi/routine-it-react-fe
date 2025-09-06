@@ -123,3 +123,55 @@ export interface UpdateProfilePayload {
   // streakDays: number;
 }
 
+
+
+//================= 랭킹 관련 인터페이스 =================//
+// 개인별 랭킹 응답 데이터 타입
+export interface PersonalRankingData {
+  userId: number;
+  nickname: string;
+  profileImageUrl: string;
+  totalScore: number;
+  currentRank: number;
+  totalParticipants: number;
+  monthYear: string;
+  consecutiveDays: number;
+  groupDetails: GroupDetail[];
+  updatedAt: string;
+}
+
+export interface GroupDetail {
+  groupId: number;
+  groupName: string;
+  groupImageUrl: string;
+  groupType: 'OPTIONAL' | 'MANDATORY';
+  score: number;
+  rankInGroup: number;
+  totalMembers: number;
+  authCount: number;
+  groupWeightMultiplier: number;
+}
+
+// 그룹별 랭킹 응답 데이터 타입
+export interface GlobalGroupRankingData {
+  rankings: GroupRanking[];
+  monthYear: string;
+  totalGroups: number;
+  updatedAt: string;
+}
+
+export interface GroupRanking {
+  rank: number;
+  groupId: number;
+  groupName: string;
+  groupImageUrl: string;
+  category: string;
+  groupType: 'OPTIONAL' | 'MANDATORY';
+  totalScore: number;
+  memberCount: number;
+  activeMembers: number;
+  participationRate: number;
+  totalAuthCount: number;
+  averageAuthPerMember: number;
+}
+//==================================================//

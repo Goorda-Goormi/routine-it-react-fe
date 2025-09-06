@@ -1,22 +1,6 @@
 // 랭킹 점수 계산 로직
 // src/components/utils/rankingUtils.tsx
 
-export interface RankingMember {
-  id: number;
-  name: string;
-  profileImageUrl?: string;
-  streakDays: number; // 연속일
-  approvals: number; // 리더가 인증 승인해준 횟수
-}
-
-export interface RankingGroup {
-  id: number;
-  name: string;
-  type: '자유참여' | '의무참여';
-  members: number;
-  category: string;
-  membersData: RankingMember[];
-}
 
 /**
  * 개별 멤버 점수 계산
