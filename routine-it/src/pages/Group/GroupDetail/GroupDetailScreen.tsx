@@ -7,6 +7,7 @@ import GroupEdit from './GroupEdit';
 import { GroupApproval } from './GroupApproval';
 import { GroupRoutineDialog } from '../GroupChat/GroupRoutineDialog';
 import type { AuthMessage } from "../../../interfaces";
+import { getGroupMembers } from '../../../api/group';
 
 interface GroupDetailScreenProps {
   groupId: number;
@@ -40,7 +41,7 @@ export function GroupDetailScreen({
   const [showApprovalModal, setShowApprovalModal] = useState(false);
   const [showRoutineModal, setShowRoutineModal] = useState(false);
 
-  const group = groups.find((g) => g.id === groupId);
+  const group = groups.find((g) => g.groupId === groupId);
   const pendingGroupAuthMessages = pendingAuthMessages[groupId] || [];
   
   const isLeader = group?.isOwner ?? false;
@@ -158,3 +159,4 @@ export function GroupDetailScreen({
     </div>
   );
 }
+

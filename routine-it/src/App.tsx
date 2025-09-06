@@ -822,9 +822,11 @@ const navigateTo = (screen: string, params?: any, options?: { replace?: boolean 
             />
           );
         case "group-detail":
+          console.log('넘어온 params:', currentScreen.params);
+          console.log('넘어온 groupId:', currentScreen.params.groupId);
           return (
             <GroupDetailScreen
-              groupId={currentScreen.params.id}  // group 객체 대신 id만 전달
+              groupId={currentScreen.params.groupId}  // group 객체 대신 id만 전달
               groups={groups}                   // 전체 그룹 전달
               onBack={navigateBack}
               onNavigate={navigateTo}
@@ -835,6 +837,7 @@ const navigateTo = (screen: string, params?: any, options?: { replace?: boolean 
               onApproveAuthMessage={handleApproveAuthMessage}
               onRejectAuthMessage={handleRejectAuthMessage}
               currentUser={UserInfo} 
+              
             />
           );
         case "profile-edit":

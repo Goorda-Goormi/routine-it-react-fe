@@ -27,6 +27,7 @@ export interface Group {
   updatedAt: string; 
   active: boolean; 
 
+ 
   // API 응답에는 없지만, 앱 로직에서 필요한 변수
   progress?: number;
   isOwner?: boolean;
@@ -42,6 +43,22 @@ export interface Member {
   nickname: string;
   profileImageUrl: string;
   isCertified?: boolean; 
+  //status?: string; // 'JOINED', 'PENDING', 'NOT_JOINED' 등
+  //role?: string; // 'LEADER', 'MEMBER', 'NONE' 등
+  status?: 'PENDING' | 'JOINED' | 'BLOCKED' | 'LEFT';
+  role?: 'LEADER' | 'MEMBER';
+}
+
+// API 응답에 정확히 매핑되는 인터페이스
+export interface GroupMemberResponse {
+  groupMemberId: number;
+  groupName: string;
+  memberName: string;
+  status: 'PENDING' | 'JOINED' | 'BLOCKED' | 'LEFT';
+  role: 'LEADER' | 'MEMBER';
+  message: string;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface AuthMessage {

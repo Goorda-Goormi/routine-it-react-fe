@@ -1,5 +1,6 @@
 //import api from "./api";
 import { apiFetch } from "./client";
+import type { GroupMemberResponse } from "../interfaces";
 
 export interface GroupRequest {
   groupName: string;
@@ -110,5 +111,40 @@ export async function getJoinedGroups() {
   } catch (error) {
     console.error("Failed to fetch joined groups:", error);
     throw new Error("가입된 그룹 조회 실패");
+  }
+}
+
+
+// 그룹 상세 조회
+export async function getGroupDetail(groupId: number) {
+  try {
+    const groupDetail = await apiFetch(`/groups/${groupId}`, { method: "GET" });
+    return groupDetail;
+  } catch (error) {
+    console.error(`Failed to fetch group detail for ID ${groupId}:`, error);
+    throw new Error("그룹 상세 조회 실패");
+  }
+}
+// 그룹 멤버 목록 조회
+/*export async function getGroupMembers(groupId: number) {
+  try {
+    const members = await apiFetch(`/groups/${groupId}/members`, {
+      method: "GET",
+    });
+    return members;
+  } catch (error) {
+    console.error(`Failed to fetch group members for ID ${groupId}:`, error);
+    throw new Error("그룹 멤버 조회 실패");
+  }
+}*/
+export async function getGroupMembers(groupId: number): Promise<GroupMemberResponse[]> {
+  try {
+    const members = await apiFetch(`/groups/${groupId}/members`, {
+      method: "GET",
+    });
+    return members;
+  } catch (error) {
+    console.error(`Failed to fetch group members for ID ${groupId}:`, error);
+    throw new Error("그룹 멤버 조회 실패");
   }
 }
