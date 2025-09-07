@@ -134,7 +134,9 @@ useEffect(() => {
   };
 
   fetchRanking();
-}, [groupId, currentUser.id]); 
+}, [groupId, currentUser.id]);
+
+
 
 // 리더 위임 비동기 함수를 GroupDetailScreen에서 구현합니다.
   const handleDelegateLeader = async (targetMemberId: number, targetMemberName: string) => {
