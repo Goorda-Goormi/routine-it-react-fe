@@ -28,6 +28,7 @@ interface GroupDetailScreenProps {
   onDeleteGroupSuccess: () => void;
   myid: string | number;
   onGroupJoined: () => void;
+  isJoined: boolean;
 }
 
 export function GroupDetailScreen({
@@ -46,6 +47,7 @@ export function GroupDetailScreen({
   onDeleteGroupSuccess,
   myid,
   onGroupJoined,
+  isJoined,
 }: GroupDetailScreenProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [showExMembersModal, setShowExMembersModal] = useState(false);
@@ -57,8 +59,8 @@ export function GroupDetailScreen({
   
   const isLeader = group?.isOwner ?? false;
 
-  const [isJoined, setIsJoined] = useState(false);
-  useEffect(() => {
+  //const [isJoined, setIsJoined] = useState(false);
+  /*useEffect(() => {
     const checkJoinStatus = async () => {
       try {
         const joinedGroups = await getJoinedGroups();
@@ -69,7 +71,7 @@ export function GroupDetailScreen({
       }
     };
     checkJoinStatus();
-  }, [groupId]);
+  }, [groupId]);*/
 
   const weeklyRanking = [
     { rank: 1, nickname: '루티니', score: 95, change: 'up' },

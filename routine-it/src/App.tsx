@@ -895,11 +895,13 @@ const navigateTo = (screen: string, params?: any, options?: { replace?: boolean 
         const groupId = currentScreen.params.groupId;
         const members = groupMembers[groupId] || [];
         const myId = UserInfo?.id; 
+        const isJoined = myGroups.some(joinedGroup => joinedGroup.groupId === groupId);
            console.log('넘어온 params:', currentScreen.params);
           console.log('넘어온 groupId:', groupId);
           console.log('해당 그룹의 멤버 groupmembers:', members);
           console.log('그룹상세 groups:', groups);
           console.log('내 아이디 myId:', myId);
+          console.log("isJoined:", isJoined);
         return (
           <GroupDetailScreen
             groupId={groupId}
@@ -916,6 +918,7 @@ const navigateTo = (screen: string, params?: any, options?: { replace?: boolean 
             onDeleteGroupSuccess={handleDeleteGroupSuccess}
             myid={myId}
             onGroupJoined={fetchGroupData}
+            isJoined={isJoined}
           />
         );
       } 
