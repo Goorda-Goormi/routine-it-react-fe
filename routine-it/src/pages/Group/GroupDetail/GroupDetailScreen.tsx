@@ -175,12 +175,14 @@ useEffect(() => {
         }}
       />
 
+
       <GroupMemberManager
         open={showExMembersModal}
         onOpenChange={setShowExMembersModal}
-        members={group?.recentMembers || []} // 그룹 상태에서 직접 가져오기
+        members={groupMembers} // 그룹 상태에서 직접 가져오기
         onKickMember={handleKickMember}
         onDelegateLeader={handleDelegateLeader} 
+        isLeader={isLeader}
       />
 
       <Dialog open={showApprovalModal} onOpenChange={setShowApprovalModal}>

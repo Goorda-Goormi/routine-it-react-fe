@@ -3,36 +3,38 @@ import { Button } from '../../../components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from '../../../components/ui/dialog';
 import { Avatar, AvatarFallback } from '../../../components/ui/avatar';
 import { MinusCircle, Crown } from 'lucide-react';
-
+import type { GroupMemberResponse } from '../../../interfaces';
 // 그룹 멤버 데이터 타입을 정의합니다. isLeader 속성을 추가합니다.
-interface GroupMember {
+/*interface GroupMember {
   id: string;
   name: string;
   nickname: string;
   isLeader: boolean; // isLeader 속성 추가
-}
+}*/
 
 // 컴포넌트 prop 인터페이스를 업데이트합니다.
 interface GroupMemberManagerProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  members: GroupMember[];
-  onKickMember: (memberId: string) => void;
-  onDelegateLeader: (memberId: string) => void;
+  members: GroupMemberResponse[];
+  onKickMember: (memberId: number) => void;
+  onDelegateLeader: (memberId: number) => void;
+  isLeader: boolean;
 }
 
 export function GroupMemberManager({ open, onOpenChange, members, onKickMember, onDelegateLeader }: GroupMemberManagerProps) {
   const [showKickConfirmDialog, setShowKickConfirmDialog] = useState(false);
   const [showDelegateConfirmDialog, setShowDelegateConfirmDialog] = useState(false);
-  const [memberToKickId, setMemberToKickId] = useState<string | null>(null);
-  const [memberToDelegateId, setMemberToDelegateId] = useState<string | null>(null);
+  const [memberToKickId, setMemberToKickId] = useState<number | null>(null);
+  //const [memberToDelegateId, setMemberToDelegateId] = useState<string | null>(null);
+ const [memberToDelegateId, setMemberToDelegateId] = useState<number | null>(null);
 
-  const handleKickClick = (memberId: string) => {
+  const handleKickClick = (memberId: number) => {
     setMemberToKickId(memberId);
     setShowKickConfirmDialog(true);
   };
 
-  const handleDelegateClick = (memberId: string) => {
+  const handleDelegateClick = (memberId: number) => {
     setMemberToDelegateId(memberId);
     setShowDelegateConfirmDialog(true);
   };
@@ -64,7 +66,7 @@ export function GroupMemberManager({ open, onOpenChange, members, onKickMember, 
     setShowDelegateConfirmDialog(false);
   };
 
-  const delegateMemberName = members.find(m => m.id === memberToDelegateId)?.name;
+  const delegateMemberName = members.find(m => m.groupMemberId === memberToDelegateId)?.groupName;
 
   return (
     <>
@@ -79,19 +81,19 @@ export function GroupMemberManager({ open, onOpenChange, members, onKickMember, 
           <div className="space-y-2 max-h-60 overflow-y-auto">
             {members.length > 0 ? (
               members.map(member => (
-                <div key={member.id} className="flex items-center justify-between space-x-2 p-2 rounded-md bg-secondary/30">
+                <div key={member.groupMemberId} className="flex items-center justify-between space-x-2 p-2 rounded-md bg-secondary/30">
                   <div className="flex items-center space-x-2">
                     <Avatar className="h-7 w-7">
                       <AvatarFallback className="text-xs">
-                        {member.nickname[0]}
+                        {member.memberName[0]}
                       </AvatarFallback>
                     </Avatar>
                     <span className="text-sm font-medium text-card-foreground">
-                      {member.nickname}
+                      {member.memberName}
                     </span>
                   </div>
-                  {/* 여기를 수정했습니다. member.isLeader 속성을 직접 사용합니다. */}
-                  {member.isLeader ? (
+                 
+                  {member.role === 'LEADER'? (
                     <div className="flex items-center space-x-1 text-yellow-500 font-bold text-sm">
                       <Crown className="h-4 w-4" />
                       <span>그룹 리더</span>
@@ -101,7 +103,7 @@ export function GroupMemberManager({ open, onOpenChange, members, onKickMember, 
                        <Button 
                          variant="ghost" 
                          size="icon" 
-                         onClick={() => handleDelegateClick(member.id)} 
+                         onClick={() => handleDelegateClick(member.groupMemberId)} 
                          className="hover:text-yellow-500"
                          title="리더 위임"
                        >
@@ -110,7 +112,7 @@ export function GroupMemberManager({ open, onOpenChange, members, onKickMember, 
                        <Button 
                          variant="ghost" 
                          size="icon" 
-                         onClick={() => handleKickClick(member.id)} 
+                         onClick={() => handleKickClick(member.groupMemberId)} 
                          className="hover:text-destructive"
                          title="멤버 내보내기"
                        >
