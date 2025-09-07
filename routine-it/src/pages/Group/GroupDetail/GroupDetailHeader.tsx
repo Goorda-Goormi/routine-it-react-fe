@@ -23,7 +23,7 @@ import { deleteGroup, requestJoinGroup } from '../../../api/group';
 interface GroupDetailHeaderProps {
   group: any;
   isJoined: boolean;
-  //isLeader: boolean;
+  isLeader: boolean;
   onBack: () => void;
  // onJoinGroup: () => void;
   onChatClick: () => void;
@@ -41,7 +41,7 @@ interface GroupDetailHeaderProps {
 export const GroupDetailHeader = ({
   group,
   isJoined,
-  //isLeader,
+  isLeader,
   onBack,
  // onJoinGroup,
   onChatClick,
@@ -57,7 +57,7 @@ export const GroupDetailHeader = ({
 }: GroupDetailHeaderProps) => {
   const myIdAsNumber = typeof myid === 'string' ? parseInt(myid, 10) : myid;
   
-  const isLeader = groupMembers.some(member => member.role === 'LEADER' && member.groupMemberId === myIdAsNumber);
+  //const isLeader = groupMembers.some(member => member.role === 'LEADER' && member.groupMemberId === myIdAsNumber);
   //const isJoined = groupMembers.some(
   //(member) => member.status === 'JOINED' && member.groupMemberId === myid
 //);

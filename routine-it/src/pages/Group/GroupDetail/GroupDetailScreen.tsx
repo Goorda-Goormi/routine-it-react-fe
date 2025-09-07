@@ -29,6 +29,7 @@ interface GroupDetailScreenProps {
   myid: string | number;
   onGroupJoined: () => void;
   isJoined: boolean;
+  myGroups: any[];
 }
 
 export function GroupDetailScreen({
@@ -48,6 +49,7 @@ export function GroupDetailScreen({
   myid,
   onGroupJoined,
   isJoined,
+  myGroups,
 }: GroupDetailScreenProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [showExMembersModal, setShowExMembersModal] = useState(false);
@@ -56,10 +58,10 @@ export function GroupDetailScreen({
 
   const group = groups.find((g) => g.groupId === groupId);
   const pendingGroupAuthMessages = pendingAuthMessages[groupId] || [];
+  const isLeader = group?.leaderName === currentUser.nickname;
   
-  const isLeader = group?.isOwner ?? false;
+   console.log('GroupDetailScreen: isLeader 계산 결과:', isLeader);//  console.log('GroupDetailScreen: isLeader 계산 결과:', isLeader);
 
-  //const [isJoined, setIsJoined] = useState(false);
   /*useEffect(() => {
     const checkJoinStatus = async () => {
       try {
@@ -126,7 +128,7 @@ export function GroupDetailScreen({
       <GroupDetailHeader
         group={group}
         isJoined={isJoined}
-        //isLeader={isLeader}
+        isLeader={isLeader}
         onBack={onBack}
        // onJoinGroup={handleJoinGroup}
         onChatClick={handleChatClick}

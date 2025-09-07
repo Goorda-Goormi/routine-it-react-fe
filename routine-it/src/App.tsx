@@ -891,7 +891,7 @@ const navigateTo = (screen: string, params?: any, options?: { replace?: boolean 
             />
           );
        
-          case "group-detail": { // ✨ 여기에 중괄호를 추가합니다.
+          case "group-detail": { 
         const groupId = currentScreen.params.groupId;
         const members = groupMembers[groupId] || [];
         const myId = UserInfo?.id; 
@@ -919,6 +919,7 @@ const navigateTo = (screen: string, params?: any, options?: { replace?: boolean 
             myid={myId}
             onGroupJoined={fetchGroupData}
             isJoined={isJoined}
+            myGroups={myGroups} 
           />
         );
       } 
@@ -1031,7 +1032,7 @@ const navigateTo = (screen: string, params?: any, options?: { replace?: boolean 
         return <GroupScreen 
                   onNavigate={navigateTo} 
                   groups={groups} 
-                  myGroups={myGroups}   // 임시로 참여중 그룹 = 전체 그룹
+                  myGroups={myGroups}   
                   onNewGroup={() => navigateTo("create-group")}
                   //onJoinGroup={handleJoinGroup}
                 />
