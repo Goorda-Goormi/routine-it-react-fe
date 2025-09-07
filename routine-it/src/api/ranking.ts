@@ -1,5 +1,5 @@
 import { apiFetch } from './client';
-import type { IPersonalRankingResponse } from '../interfaces';
+import type { IPersonalRankingResponse, UserTotalScoreResponse } from '../interfaces';
 import type { GlobalGroupRankingData } from '../pages/Ranking/RankingScreen';
 
 export interface RankingResponse {
@@ -64,6 +64,7 @@ export const getPersonalRankings = async (
 
 // 사용자 총 점수 조회
 // GET /api/rankings/me/total-score
+/*
 export async function getUserTotalScore(userId: number) {
   try {
     const params = new URLSearchParams({
@@ -77,7 +78,10 @@ export async function getUserTotalScore(userId: number) {
     console.error("사용자 총 점수 조회 실패:", error);
     throw error;
   }
-}
+}*/
+
+
+//==================================================//
 
 // 그룹 랭킹 상위 3명 조회
 /**
@@ -162,6 +166,20 @@ export async function getGlobalGroupRanking(
     return response.data[0]; // 배열의 첫 번째 요소를 반환
   } catch (error) {
     console.error("그룹별 전체 랭킹 조회 실패:", error);
+    throw error;
+  }
+}
+
+/**
+ * 현재 로그인한 사용자의 총 점수를 조회합니다.
+ * @returns 모든 그룹의 활동 점수를 합산한 총 점수
+ */
+export async function getUserTotalScore(): Promise<UserTotalScoreResponse> {
+  try {
+    const responseData = await apiFetch("/api/rankings/me/total-score");
+    return responseData as UserTotalScoreResponse;
+  } catch (error) {
+    console.error("사용자 총 점수 조회 실패:", error);
     throw error;
   }
 }

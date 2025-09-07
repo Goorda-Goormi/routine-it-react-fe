@@ -158,4 +158,11 @@ export interface IPersonalRankingResponse {
   data: IPersonalRankingData[];
 }
 
+// 사용자 총 점수 조회 시 필요한 로직 
+export interface UserTotalScoreResponse {
+  success: boolean;
+  message: string;
+  data: number; 
+}
+
 //==================================================//

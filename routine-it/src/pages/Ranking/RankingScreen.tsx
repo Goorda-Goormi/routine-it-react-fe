@@ -1,11 +1,13 @@
 // RankingScreen.tsx
-import React,{useState,useEffect} from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card';
 import { Badge } from '../../components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../components/ui/tabs';
 import { Avatar, AvatarFallback, AvatarImage } from '../../components/ui/avatar';
 import { Trophy, Users, Medal, Crown, Star, Target } from 'lucide-react';
 import type { Group, IPersonalRankingResponse, IPersonalRankingData } from '../../interfaces';
+import { getGlobalGroupRanking, getUserTotalScore } from '../../api/ranking';
+
 // API 연동 추가: 그룹 랭킹 인터페이스 정의
 export interface IGroupRankingItem {
   rank: number;
@@ -29,48 +31,21 @@ export interface GlobalGroupRankingData {
   updatedAt: string;
 }
 
-// API 연동 추가: getGlobalGroupRanking 함수를 가져옵니다.
-import { getGlobalGroupRanking } from '../../api/ranking';
 
 interface RankingScreenProps {
   groups: Group[];
   personalRankingData: IPersonalRankingResponse | null;
+  groupRankingData: GlobalGroupRankingData | null;
+  userTotalScore: number | null;
+  loadingGroupRanking: boolean;
+  loadingUserTotalScore: boolean;
 }
 
-export function RankingScreen({ groups, personalRankingData }: RankingScreenProps) {
-  const currentMonth = new Date().getMonth() + 1; 
+export function RankingScreen({ groups, personalRankingData,groupRankingData, userTotalScore, loadingGroupRanking, loadingUserTotalScore }: RankingScreenProps) {
+  const currentMonth = new Date().getMonth() + 1;
 
   // personalRankingData에서 데이터를 추출하여 personalRankings 변수 정의
   const personalRankings: IPersonalRankingData[] = personalRankingData?.data || [];
-
-  // API 연동 추가: 그룹 랭킹 데이터를 위한 상태
-  const [groupRankingData, setGroupRankingData] = useState<GlobalGroupRankingData | null>(null);
-  const [loadingGroupRanking, setLoadingGroupRanking] = useState(true);
-
-  // API 연동 추가: useEffect를 사용해 그룹 랭킹 데이터를 가져옵니다.
-  useEffect(() => {
-    const fetchGroupRanking = async () => {
-      try {
-        setLoadingGroupRanking(true);
-        const now = new Date();
-        const year = now.getFullYear();
-        const month = String(now.getMonth() + 1).padStart(2, '0');
-        const monthYear = `${year}-${month}`;
-
-        const data = await getGlobalGroupRanking(monthYear);
-        //const data = await getGlobalGroupRanking();
-        console.log("그룹 랭킹 데이터 조회 성공:", data);
-        setGroupRankingData(data);
-      } catch (error) {
-        console.error("그룹 랭킹 데이터를 불러오는데 실패했습니다.", error);
-        setGroupRankingData(null);
-      } finally {
-        setLoadingGroupRanking(false);
-      }
-    };
-
-    fetchGroupRanking();
-  }, []); // 빈 배열을 넣어 컴포넌트 마운트 시 한 번만 실행되도록 합니다.
 
   const getRankIcon = (rank: number) => {
     switch (rank) {
@@ -99,8 +74,10 @@ export function RankingScreen({ groups, personalRankingData }: RankingScreenProp
           <TabsTrigger value="group">그룹별</TabsTrigger>
         </TabsList>
 
-        {/* 개인별 */}
+        {/* 개인별 탭 */}
         <TabsContent value="personal" className="space-y-4">
+          
+
           <Card className="dark:card-shadow">
             <CardContent className="p-4">
               <div className="flex items-center space-x-3 p-3 rounded-lg bg-gradient-to-br bg-card-yellow-bg dark:bg-card-yellow-bg dark:border-none">
@@ -158,7 +135,7 @@ export function RankingScreen({ groups, personalRankingData }: RankingScreenProp
           </Card>
         </TabsContent>
 
-        {/* 그룹별 */}
+        {/* 그룹별 탭 */}
         <TabsContent value="group" className="space-y-4">
           <Card className="dark:card-shadow">
             <CardContent className="p-4">
@@ -183,7 +160,7 @@ export function RankingScreen({ groups, personalRankingData }: RankingScreenProp
             </CardHeader>
             <CardContent className="pt-0">
               <div className="space-y-3">
-                {/* API 연동 추가: 로딩 상태 확인 */}
+                {/* 로딩 상태 확인 */}
                 {loadingGroupRanking ? (
                   <div className="text-center text-sm text-gray-500 py-8">그룹 랭킹을 불러오는 중입니다...</div>
                 ) : (groupRankingData && groupRankingData.rankings.length > 0) ? (
