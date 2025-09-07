@@ -21,13 +21,14 @@ import { AttendanceModal } from './components/modules/AttendanceModal';
 import { StreakModal } from './components/modules/StreakModal';
 import { getStreakInfo } from './components/utils/streakUtils';
 import { AchievementBadgeModal } from './components/modules/AchievementBadgeModal';
-import type { AuthMessage,Routine,Group,Member,PendingAuthMap,UserProfile,GroupMemberResponse } from "./interfaces";
+import type { AuthMessage,Routine,Group,Member,PendingAuthMap,UserProfile,GroupMemberResponse, IPersonalRankingResponse } from "./interfaces";
 import { LoginModal } from './components/modules/LoginModal';
 import { LoadingSpinner } from "./components/ui/loading-spinner";
 import { startKakaoLogin, getUserInfo } from "./api/login"; 
 import { completeSignup, logoutUser, deleteAccount } from './api/auth';
 import { createGroup, getAllGroups,getJoinedGroups,getGroupMembers } from "./api/group";
 import { getPersonalRankings } from "./api/ranking";
+import { toggleDarkMode as toggleDarkModeAPI, toggleAlarm as toggleAlarmAPI } from './api/setting';
 
 interface NavigationState {
   screen: string;
@@ -45,12 +46,7 @@ export default function App() {
   const [activeTab, setActiveTab] = useState("home");
   const [pendingAuthMessages, setPendingAuthMessages] = useState<PendingAuthMap>({});
   const [navigationStack, setNavigationStack] = useState<NavigationState[]>([]);
-  const [isDarkMode, setIsDarkMode] = useState(() => {
-    if (typeof window !== "undefined") {
-      return localStorage.getItem("darkMode") === "true";
-    }
-    return false;
-  });
+  const [isDarkMode, setIsDarkMode] = useState(false);
   const [isAttendanceModalOpen, setAttendanceModalOpen] = useState(false);
   const [isStreakModalOpen, setStreakModalOpen] = useState(false);
   const [isBadgeModalOpen, setBadgeModalOpen] = useState(false);
@@ -280,10 +276,10 @@ export default function App() {
       setGroups(allGroups);
       setMyGroups(joinedGroups);
       */
-     const joinedGroupIds = new Set(joinedGroups.map(g => g.groupId));
+     const joinedGroupIds = new Set(joinedGroups.map((g: Group) => g.groupId));
 
       // allGroups 중에서 joinedGroupIds에 포함된 그룹만 필터링합니다.
-      const filteredJoinedGroups = allGroups.filter(g => joinedGroupIds.has(g.groupId));
+      const filteredJoinedGroups = allGroups.filter((g: Group) => joinedGroupIds.has(g.groupId));
 
       setGroups(allGroups);
        setMyGroups(filteredJoinedGroups); 
@@ -340,6 +336,12 @@ export default function App() {
     setGroupRoutines(newGroupRoutines);
   }, [groups]);
 
+  // UserInfo(서버) 상태와 isDarkMode(UI) 상태를 동기화
+  useEffect(() => {
+    if (UserInfo) {
+      setIsDarkMode(UserInfo.isDarkMode ?? false);
+    }
+  }, [UserInfo]);
 
   //다크 모드 상태 관리
   useEffect(() => {
@@ -348,7 +350,6 @@ export default function App() {
     } else {
       document.documentElement.classList.remove("dark");
     }
-    localStorage.setItem("darkMode", isDarkMode.toString());
   }, [isDarkMode]);
 
   useEffect(() => {
@@ -393,7 +394,7 @@ export default function App() {
     }
   };
   
-  const handleLoginSuccess = () => {
+  const handleLoginSuccess = (token: string) => {
     localStorage.setItem('accessToken', token);
     setIsLoggedIn(true);
     setIsLoginModalOpen(false);
@@ -588,7 +589,7 @@ export default function App() {
         category: recommendedRoutine.category,
         difficulty: recommendedRoutine.difficulty,
         time: '09:00',
-        frequency: ["월", "화", "수", "목", "금"],
+        frequency: ["월", "화", "수", "목", "금", "토", "일"],
         reminder: true,
         goal: '30',
         completed: false,
@@ -838,8 +839,41 @@ const navigateTo = (screen: string, params?: any, options?: { replace?: boolean 
     setNavigationStack(navigationStack.slice(0, -1));
   };
 
-  const toggleDarkMode = () => {
-    setIsDarkMode(!isDarkMode);
+  const toggleDarkMode = async () => {
+    if (!UserInfo) return;
+
+    // 1. 예상되는 다음 상태를 먼저 UI에 반영 (Optimistic Update)
+    const nextDarkModeState = !UserInfo.isDarkMode;
+    setUserInfo({ ...UserInfo, isDarkMode: nextDarkModeState });
+
+    try {
+      // 2. API를 호출하여 서버의 상태를 변경
+      await toggleDarkModeAPI(nextDarkModeState);
+      // 성공 시, UI는 이미 반영되었으므로 추가 작업 불필요
+    } catch (error) {
+      // 3. API 호출 실패 시, UI를 원래 상태로 되돌림 (Rollback)
+      console.error("다크 모드 변경 실패:", error);
+      setUserInfo({ ...UserInfo, isDarkMode: !nextDarkModeState });
+      alert("다크 모드 설정에 실패했습니다. 다시 시도해주세요.");
+    }
+  };
+
+  const handleToggleAlarm = async () => {
+    if (!UserInfo) return;
+
+    // 1. Optimistic UI Update
+    const nextAlarmState = !UserInfo.isAlarmOn;
+    setUserInfo({ ...UserInfo, isAlarmOn: nextAlarmState });
+
+    try {
+      // 2. API 호출
+      await toggleAlarmAPI(nextAlarmState);
+    } catch (error) {
+      // 3. Rollback on error
+      console.error("알림 설정 변경 실패:", error);
+      setUserInfo({ ...UserInfo, isAlarmOn: !nextAlarmState });
+      alert("알림 설정에 실패했습니다. 다시 시도해주세요.");
+    }
   };
 
    const handleLeaveGroup = () => {
@@ -980,7 +1014,7 @@ const navigateTo = (screen: string, params?: any, options?: { replace?: boolean 
             personalRoutines={personalRoutines}
             onToggleCompletion={handleToggleCompletion}
             streakDays={streakDays}
-            userInfo={UserInfo}
+            userInfo={{...UserInfo, exp: UserInfo.exp ?? 0 }}
             participatingGroups={groups}
             onOpenAttendanceModal={handleOpenAttendanceModal}
             onOpenStreakModal={handleOpenStreakModal}
@@ -1029,7 +1063,8 @@ const navigateTo = (screen: string, params?: any, options?: { replace?: boolean 
             onNavigate={navigateTo}
             isDarkMode={isDarkMode}
             onToggleDarkMode={toggleDarkMode}
-            user={UserInfo}
+            onToggleAlarm={handleToggleAlarm}
+            user={{...UserInfo, isAlarmOn: UserInfo.isAlarmOn ?? true }}
             onLogout={handleLogout}
             attendanceDates={attendanceDates}
             earnedBadges={earnedBadges}
@@ -1043,7 +1078,7 @@ const navigateTo = (screen: string, params?: any, options?: { replace?: boolean 
             personalRoutines={personalRoutines}
             onToggleCompletion={handleToggleCompletion}
             streakDays={streakDays}
-            userInfo={UserInfo}
+            userInfo={{...UserInfo, exp: UserInfo.exp ?? 0}}
             participatingGroups={groups}   
             onOpenAttendanceModal={handleOpenAttendanceModal}
             onOpenStreakModal={handleOpenStreakModal}

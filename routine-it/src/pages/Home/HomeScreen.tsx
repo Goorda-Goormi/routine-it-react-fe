@@ -21,6 +21,7 @@ interface UserInfo {
   nickname: string;
   profileImageUrl: string;
   profileMessage?: string;
+  exp: number;
 }
 
 interface HomeScreenProps {
@@ -244,7 +245,7 @@ export function HomeScreen({
                   <TrendingUp className="h-4 w-4 text-white" />
                 </div>
                 <div className="text-center">
-                  <div className="text-xl font-bold text-card-lavender-text">2,450</div>
+                  <div className="text-xl font-bold text-card-lavender-text">{userInfo.exp.toLocaleString()}</div>
                   <div className="text-xs font-normal text-card-lavender-text/80">누적점수</div>
                 </div>
               </div>

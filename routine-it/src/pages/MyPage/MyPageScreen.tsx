@@ -25,7 +25,9 @@ import {
   Heart,
   Shield,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  Bell,
+  Moon 
 } from 'lucide-react';
 
 type BadgeType = '첫걸음' | '7일 연속' | '루틴 마스터' | '월간 챔피언';
@@ -34,6 +36,7 @@ interface MyPageScreenProps {
   onNavigate: (screen: string, params?: any) => void;
   isDarkMode: boolean;
   onToggleDarkMode: () => void;
+  onToggleAlarm: () => void;
   user: {
     nickname: string;
     email?: string;
@@ -44,13 +47,14 @@ interface MyPageScreenProps {
     maxExp?: number;
     streakDays: number;
     profileMessage?: string;
+    isAlarmOn: boolean;
   }
   onLogout: () => void;
   attendanceDates: string[];
   earnedBadges: BadgeType[];
 }
 
-export function MyPageScreen({ onNavigate, isDarkMode, onToggleDarkMode, user, onLogout, attendanceDates = [], earnedBadges = [] }: MyPageScreenProps) {
+export function MyPageScreen({ onNavigate, isDarkMode, onToggleDarkMode, onToggleAlarm, user, onLogout, attendanceDates = [], earnedBadges = [] }: MyPageScreenProps) {
   const allBadgesInfo = [
     { 
       id: 1, 
@@ -424,11 +428,25 @@ export function MyPageScreen({ onNavigate, isDarkMode, onToggleDarkMode, user, o
         </CardHeader>
         <CardContent className="pt-0">
           <div className="space-y-1">
+            {/* 알림 설정 토글 (신규 추가) */}
+            <div className="flex items-center justify-between p-3 rounded-lg hover:bg-accent/50 transition-colors">
+              <div className="flex items-center space-x-3">
+                <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-accent">
+                  <Bell className="h-4 w-4 icon-secondary" />
+                </div>
+                <span className="text-sm font-medium text-card-foreground">알림 설정</span>
+              </div>
+              <Switch
+                checked={user.isAlarmOn}
+                onCheckedChange={onToggleAlarm}
+              />
+            </div>
+
             {/* 다크모드 토글 */}
             <div className="flex items-center justify-between p-3 rounded-lg hover:bg-accent/50 transition-colors">
               <div className="flex items-center space-x-3">
                 <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-accent">
-                  <Settings className="h-4 w-4 icon-secondary" />
+                  <Moon className="h-4 w-4 icon-secondary" />
                 </div>
                 <span className="text-sm font-medium text-card-foreground">다크 모드</span>
               </div>

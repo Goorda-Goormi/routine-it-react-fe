@@ -1,6 +1,25 @@
 import { apiFetch } from './client';
 import type { UpdateProfilePayload } from '../interfaces';
 
+export interface MyProfileResponse {
+  id: number;
+  nickname: string;
+  profileMessage: string;
+  profileImageUrl: string;
+  totalScore: number;
+}
+
+/**
+ * 현재 로그인된 사용자의 프로필 정보를 조회합니다.
+ * @returns {Promise<MyProfileResponse>} 현재 사용자의 프로필 정보
+ */
+export const getMyProfile = async (): Promise<MyProfileResponse> => {
+  // 명세서에 따라 엔드포인트를 '/api/users/me'로 수정합니다.
+  const response = await apiFetch('/api/users/me'); 
+  return response.data;
+};
+
+
 //프로필 수정
 /**
  * 사용자의 프로필 정보(닉네임, 자기소개, 프로필 이미지)를 업데이트합니다.
@@ -38,14 +57,5 @@ export interface PublicUserProfile {
  * @returns 사용자의 공개 프로필 정보
  */
 export const getUserProfile = async (userId: number): Promise<PublicUserProfile> => {
-  // GET 요청은 body가 필요 없습니다.
-  const response = await apiFetch(`/api/users/${userId}`);
-
-  if (!response.ok) {
-    const errorData = await response.json().catch(() => ({ message: '사용자 정보 조회에 실패했습니다.' }));
-    throw new Error(errorData.message || '사용자 정보를 불러오는 중 오류가 발생했습니다.');
-  }
-
-  const result = await response.json();
-  return result.data;
+  return await apiFetch(`/api/users/${userId}`);
 };
