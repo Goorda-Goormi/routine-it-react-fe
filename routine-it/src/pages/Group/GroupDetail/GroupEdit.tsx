@@ -8,28 +8,19 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 import { RadioGroup, RadioGroupItem } from '../../../components/ui/radio-group';
 import { Switch } from '../../../components/ui/switch';
 import { Badge } from '../../../components/ui/badge';
-import { Alert, AlertDescription } from '../../../components/ui/alert';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '../../../components/ui/dialog';
-import { ArrowLeft, Clock, Users, Target, AlertCircle } from 'lucide-react';
-
+import { Alert, AlertDescription, AlertTitle } from '../../../components/ui/alert';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '../../../components/ui/dialog';
+import { Clock, Users, Target, AlertCircle, Loader2 } from 'lucide-react';
+import { updateGroup, type GroupRequest } from '../../../api/group';
+import type { Group } from '../../../interfaces';
 
 interface GroupEditProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onSave: (group: any) => void;
-  group?: {
-    groupName: string;
-    groupDescription: string;
-    category: string;
-    groupType: 'FREE' | 'REQUIRED'; // 'FREE' or 'REQUIRED'로 통일
-    hasAlarm?: boolean;
-    alarmTime?: string;
-    maxMembers: number;
-    authDays: string; // 0과 1로 구성된 문자열로 통일
-  };
+  onSave: (group: Group) => void;
+  group: Group;
 }
 
-// category 데이터는 컴포넌트 외부로 이동하여 불필요한 재렌더링을 방지합니다.
 const categories = [
   { id: 'health', name: '건강', emoji: '🏥', description: '건강 관련 습관들', hoverColor: 'hover:bg-red-100/70 hover:text-red-800 hover:border-red-300/50' },
   { id: 'exercise', name: '운동', emoji: '💪', description: '운동과 피트니스', hoverColor: 'hover:bg-orange-100/70 hover:text-orange-800 hover:border-orange-300/50' },
@@ -52,27 +43,29 @@ export default function GroupEdit({ open, onOpenChange, group, onSave }: GroupEd
     authDays: [] as string[],
   });
 
-  const [errors, setErrors] = useState<{[key: string]: string}>({});
-  
-  // 그룹 데이터가 변경되거나 모달이 열릴 때마다 폼 데이터를 초기화합니다.
+  const [errors, setErrors] = useState<{ [key: string]: string }>({});
+  const [isSaving, setIsSaving] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
+
   useEffect(() => {
     if (group) {
-      // group.authDays 문자열 ('0110000')을 요일 이름 배열로 변환합니다.
       const authDaysArray = group.authDays
         .split('')
         .map((val, index) => val === '1' ? daysOfWeek[index] : '')
         .filter(day => day !== '');
-      
+
       setFormData({
         groupName: group.groupName || '',
-        groupDescription: group.groupDescription || '',
+        groupDescription: group.description || '',
         category: group.category || '',
         groupType: group.groupType || 'FREE',
-        hasAlarm: group.hasAlarm || false,
-        alarmTime: group.alarmTime || '09:00',
+        hasAlarm: group.alarmTime !== undefined && group.alarmTime !== null,
+        alarmTime: group.alarmTime ? group.alarmTime.slice(0, 5) : '09:00',
         maxMembers: group.maxMembers || 30,
-        authDays: authDaysArray, // 변환된 배열을 state에 저장
+        authDays: authDaysArray,
       });
+      setErrors({});
+      setSaveError(null);
     }
   }, [group, open]);
 
@@ -82,7 +75,7 @@ export default function GroupEdit({ open, onOpenChange, group, onSave }: GroupEd
       const newDays = isSelected
         ? prev.authDays.filter(d => d !== day)
         : [...prev.authDays, day].sort((a, b) => daysOfWeek.indexOf(a) - daysOfWeek.indexOf(b));
-      return { ...prev, authDays: newDays }; // 'selectedDays'를 'authDays'로 수정
+      return { ...prev, authDays: newDays };
     });
   };
 
@@ -95,7 +88,7 @@ export default function GroupEdit({ open, onOpenChange, group, onSave }: GroupEd
   };
 
   const validateForm = () => {
-    const newErrors: {[key: string]: string} = {};
+    const newErrors: { [key: string]: string } = {};
 
     if (!formData.groupName.trim()) {
       newErrors.name = '그룹 이름을 입력해주세요';
@@ -113,12 +106,11 @@ export default function GroupEdit({ open, onOpenChange, group, onSave }: GroupEd
       newErrors.category = '카테고리를 선택해주세요';
     }
 
-    const maxMembers = Number(formData.maxMembers); // number로 변환
+    const maxMembers = Number(formData.maxMembers);
     if (isNaN(maxMembers) || maxMembers < 2 || maxMembers > 50) {
       newErrors.maxMembers = '최대 인원은 2명~50명 사이로 설정해주세요';
     }
-    
-    // 알림 스위치가 켜져있는데 시간이 비어있을 경우
+
     if (formData.hasAlarm && !formData.alarmTime) {
       newErrors.alarmTime = '알림 시간을 설정해주세요';
     }
@@ -127,36 +119,44 @@ export default function GroupEdit({ open, onOpenChange, group, onSave }: GroupEd
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!validateForm()) {
       return;
     }
 
-    // authDays 배열을 '0001100' 같은 문자열로 변환합니다.
-    const authDaysString = daysOfWeek.map(day => 
+    const authDaysString = daysOfWeek.map(day =>
       formData.authDays.includes(day) ? '1' : '0'
     ).join('');
 
-    const [hour, minute] = formData.alarmTime.split(':');
-
-    const payload = {
+    const payload: GroupRequest = {
       groupName: formData.groupName,
       groupDescription: formData.groupDescription,
       category: formData.category,
-      groupType: formData.groupType,
+      groupType: formData.groupType as "FREE" | "REQUIRED",
       maxMembers: Number(formData.maxMembers),
       authDays: authDaysString,
-      alarmTime: formData.hasAlarm ? { 
-        hour: parseInt(hour), 
-        minute: parseInt(minute), 
-        second: 0, 
-        nano: 0 
-      } : null,
+      alarmTime: formData.alarmTime,
+      imageUrl: group.groupImageUrl || '' 
     };
     
-    console.log('그룹 수정 페이로드:', payload);
-    onSave(payload); 
-    onOpenChange(false);
+    setIsSaving(true);
+    setSaveError(null);
+
+    try {
+      if (!group.groupId) {
+        throw new Error("그룹 ID가 없습니다.");
+      }
+      
+      const updatedGroup = await updateGroup(group.groupId, payload);
+      console.log("그룹 정보 수정 성공:", updatedGroup);
+      onSave(updatedGroup);
+      onOpenChange(false);
+    } catch (error) {
+      console.error("그룹 정보 수정 실패:", error);
+      setSaveError("그룹 정보를 저장하는 데 실패했습니다. 다시 시도해 주세요.");
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const getCategoryName = (categoryId: string) => {
@@ -169,16 +169,22 @@ export default function GroupEdit({ open, onOpenChange, group, onSave }: GroupEd
     return category ? category.emoji : '📋';
   };
 
-  return (
+ return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md md:max-w-lg lg:max-w-xl xl:max-w-2xl h-auto flex flex-col p-4 text-icon-secondary dark:text-white rounded-xl shadow-lg border">
+      <DialogContent className="sm:max-w-md md:max-w-lg lg:max-w-xl xl:max-w-2xl h-[90vh] flex flex-col p-4 text-icon-secondary dark:text-white rounded-xl shadow-lg border">
         <DialogHeader className="p-4">
           <DialogTitle className="text-2xl font-bold">그룹 편집</DialogTitle>
           <DialogDescription className="text-sm text-muted-foreground">그룹 정보를 수정하고 저장하세요</DialogDescription>
         </DialogHeader>
-        
+
         <div className="flex-1 overflow-y-auto px-4 space-y-6">
-          {/* 기본 정보 */}
+          {saveError && (
+            <Alert variant="destructive" className="rounded-xl">
+              <AlertCircle className="h-4 w-4" />
+              <AlertTitle>오류 발생</AlertTitle>
+              <AlertDescription>{saveError}</AlertDescription>
+            </Alert>
+          )}
           <Card className="shadow-none border-none">
             <CardHeader className="pb-4">
               <CardTitle className="text-base text-card-foreground flex items-center space-x-2 font-semibold">
@@ -229,8 +235,8 @@ export default function GroupEdit({ open, onOpenChange, group, onSave }: GroupEd
                   </SelectTrigger>
                   <SelectContent className="rounded-lg shadow-lg">
                     {categories.map((category) => (
-                      <SelectItem 
-                        key={category.id} 
+                      <SelectItem
+                        key={category.id}
                         value={category.id}
                         className={`transition-colors rounded-md ${category.hoverColor}`}
                       >
@@ -252,7 +258,6 @@ export default function GroupEdit({ open, onOpenChange, group, onSave }: GroupEd
             </CardContent>
           </Card>
 
-          {/* 루틴 정보 */}
           <Card className="shadow-none border-none">
             <CardHeader className="pb-4">
               <CardTitle className="text-base text-card-foreground flex items-center space-x-2 font-semibold">
@@ -287,8 +292,7 @@ export default function GroupEdit({ open, onOpenChange, group, onSave }: GroupEd
                   )}
                 </div>
               )}
-              
-              {/* 반복 요일 */}
+
               <div className="space-y-2">
                 <Label className="text-card-foreground font-medium">반복 주기 <span className="ml-2 text-xs text-muted-foreground">{getFrequencyText()}</span></Label>
                 <div className="flex gap-2 flex-wrap mt-2">
@@ -306,8 +310,7 @@ export default function GroupEdit({ open, onOpenChange, group, onSave }: GroupEd
               </div>
             </CardContent>
           </Card>
-          
-          {/* 그룹 설정 */}
+
           <Card className="shadow-none border-none">
             <CardHeader className="pb-4">
               <CardTitle className="text-base text-card-foreground flex items-center space-x-2 font-semibold">
@@ -318,8 +321,8 @@ export default function GroupEdit({ open, onOpenChange, group, onSave }: GroupEd
             <CardContent className="space-y-4">
               <div className="space-y-3">
                 <Label className="text-card-foreground font-medium">참여 유형</Label>
-                <RadioGroup 
-                  value={formData.groupType} 
+                <RadioGroup
+                  value={formData.groupType}
                   onValueChange={(value) => setFormData({...formData, groupType: value as 'FREE' | 'REQUIRED'})}
                   className="space-y-3"
                 >
@@ -365,7 +368,6 @@ export default function GroupEdit({ open, onOpenChange, group, onSave }: GroupEd
             </CardContent>
           </Card>
 
-          {/* 미리보기 */}
           {formData.groupName && formData.category && (
             <Card className="shadow-none border-none">
               <CardHeader className="pb-4">
@@ -408,27 +410,28 @@ export default function GroupEdit({ open, onOpenChange, group, onSave }: GroupEd
           <Alert className="rounded-xl border-l-4 border-primary">
             <AlertCircle className="h-4 w-4 text-primary" />
             <AlertDescription className="text-xs text-muted-foreground">
-              그룹을 편집한 후에도 언제든지 설정을 다시 변경할 수 있습니다. 
+              그룹을 편집한 후에도 언제든지 설정을 다시 변경할 수 있습니다.
               {formData.groupType === 'REQUIRED' && ' 의무참여 그룹은 멤버들이 정해진 시간에 참여해야 합니다.'}
             </AlertDescription>
           </Alert>
         </div>
 
-        {/* 버튼 영역 */}
         <div className="p-4 border-t border-border bg-background">
           <div className="flex space-x-3">
-            <Button 
-              variant="outline" 
+            <Button
+              variant="outline"
               onClick={() => onOpenChange(false)}
               className="flex-1 text-card-foreground border-border hover:bg-accent hover:text-card-foreground"
             >
               취소
             </Button>
-            <Button 
+            <Button
               onClick={handleSave}
               className="flex-1 bg-primary text-primary-foreground hover:bg-primary/90"
+              disabled={isSaving}
             >
-              수정하기
+              {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+              {isSaving ? '저장 중...' : '수정하기'}
             </Button>
           </div>
         </div>

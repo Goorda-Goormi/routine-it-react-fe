@@ -131,7 +131,7 @@ export const GroupDetailHeader = ({
               </div>
               <div>
                 <h2 className="font-bold text-lg text-card-foreground">{group.groupName}</h2>
-                <p className="text-sm text-muted-foreground mt-1">{group.groupDescription}</p>
+                <p className="text-sm text-muted-foreground mt-1">{group.description}</p>
               </div>
               <div className="flex items-center justify-center space-x-4">
                 <div className="text-center">

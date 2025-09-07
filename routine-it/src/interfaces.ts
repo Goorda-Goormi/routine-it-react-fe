@@ -15,7 +15,8 @@ export interface Group {
  groupId: number;
   leaderName: string; 
   groupName: string; 
-  groupDescription: string; 
+  //groupDescription: string; 
+  description: string;
   groupType: 'FREE' | 'REQUIRED'; 
   alarmTime: string; 
   authDays: string; 

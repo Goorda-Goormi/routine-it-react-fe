@@ -76,7 +76,7 @@ export function MyGroupsSection({ myGroups, onNavigate, onNewGroup }: MyGroupsSe
                         <MessageCircle className="h-4 w-4 icon-secondary" />
                       </Button>
                     </div>
-                    <p className="text-xs text-left text-muted-foreground mb-2">{group.groupDescription}</p>
+                    <p className="text-xs text-left text-muted-foreground mb-2">{group.description}</p>
                     <div className="flex items-center justify-between text-xs text-muted-foreground">
                       <span>{getCategoryEmoji(group.category)} {getCategoryName(group.category)}</span>
                       <span>👥 {group.currentMemberCount}명</span>

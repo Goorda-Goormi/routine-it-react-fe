@@ -751,6 +751,18 @@ const handleAddGroup = async (newGroupData: any) => {
           : group
       )
     );
+
+    setMyGroups(prevMyGroups => 
+      prevMyGroups.map(group =>
+        group.groupId === updatedGroup.groupId
+          ? {
+              ...group,
+              ...updatedGroup,
+              isMandatory: isMandatory,
+            }
+          : group
+      )
+    );
   };
 
 
