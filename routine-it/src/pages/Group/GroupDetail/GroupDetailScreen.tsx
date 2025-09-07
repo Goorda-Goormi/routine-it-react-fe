@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent } from '../../../components/ui/dialog';
 import { GroupDetailHeader } from './GroupDetailHeader';
 import { GroupDetailTabs } from './GroupDetailTabs';
@@ -6,11 +6,12 @@ import { GroupMemberManager } from './GroupMemberManager';
 import GroupEdit from './GroupEdit';
 import { GroupApproval } from './GroupApproval';
 import { GroupRoutineDialog } from '../GroupChat/GroupRoutineDialog';
-import type { AuthMessage } from "../../../interfaces";
+import type { AuthMessage,IPersonalRankingData } from "../../../interfaces";
 import { getGroupMembers } from '../../../api/group';
 import type { GroupMemberResponse } from "../../../interfaces";
-import { deleteGroup } from '../../../api/group';
-
+import { deleteGroup,getJoinedGroups } from '../../../api/group';
+import { getGroupTop3Ranking } from '../../../api/ranking';
+import type { GlobalGroupRankingData } from '../../Ranking/RankingScreen';
 interface GroupDetailScreenProps {
   groupId: number;
   groups: any[];
@@ -26,6 +27,10 @@ interface GroupDetailScreenProps {
   groupMembers: GroupMemberResponse[];
   //onDeleteGroupSuccess: (deletedGroupId: number) => void;
   onDeleteGroupSuccess: () => void;
+  myid: string | number;
+  onGroupJoined: () => void;
+  isJoined: boolean;
+  
 }
 
 export function GroupDetailScreen({
@@ -42,6 +47,10 @@ export function GroupDetailScreen({
   currentUser,
   groupMembers,
   onDeleteGroupSuccess,
+  myid,
+  onGroupJoined,
+  isJoined,
+  
 }: GroupDetailScreenProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [showExMembersModal, setShowExMembersModal] = useState(false);
@@ -50,14 +59,11 @@ export function GroupDetailScreen({
 
   const group = groups.find((g) => g.groupId === groupId);
   const pendingGroupAuthMessages = pendingAuthMessages[groupId] || [];
+  const isLeader = group?.leaderName === currentUser.nickname;
   
-  const isLeader = group?.isOwner ?? false;
+   console.log('GroupDetailScreen: isLeader 계산 결과:', isLeader);
+const [weeklyRanking, setWeeklyRanking] = useState<GlobalGroupRankingData[]>([]);
 
-  const weeklyRanking = [
-    { rank: 1, nickname: '루티니', score: 95, change: 'up' },
-    { rank: 2, nickname: '관습박', score: 88, change: 'same' },
-    { rank: 3, nickname: '지속성',score: 82, change: 'down' },
-  ];
   
   const recentActivities = [
     { id: 1, nickname: '루티니', action: '운동 인증 완료', time: '10분 전', image: null },
@@ -99,14 +105,42 @@ export function GroupDetailScreen({
       }
      }
   };
+useEffect(() => {
+  const fetchRanking = async () => {
+    // ✅ 1. currentUser와 currentUser.id가 유효한지 확인
+    if (!currentUser || currentUser.id === undefined || currentUser.id === null) {
+      console.error("사용자 정보가 없어 랭킹을 불러올 수 없습니다.");
+      setWeeklyRanking([]); // 또는 로딩 상태를 유지
+      return;
+    }
 
+    try {
+      // 2. 유효성이 확인된 후 함수 호출
+      const response = await getGroupTop3Ranking(groupId, Number(currentUser.id));
+      
+      console.log("API로부터 받은 전체 응답:", response);
+      
+      if (response && response.data && response.data.top3Users) {
+        setWeeklyRanking(response.data.top3Users);
+      } else {
+        console.error("API 응답 구조가 예상과 다릅니다:", response);
+        setWeeklyRanking([]);
+      }
+    } catch (error) {
+      console.error("랭킹 데이터 가져오기 실패:", error);
+      setWeeklyRanking([]);
+    }
+  };
+
+  fetchRanking();
+}, [groupId, currentUser.id]); 
 
   return (
     <div className="min-h-screen relative">
       <GroupDetailHeader
         group={group}
-        //isJoined={group?.isJoined}
-        //isLeader={isLeader}
+        isJoined={isJoined}
+        isLeader={isLeader}
         onBack={onBack}
        // onJoinGroup={handleJoinGroup}
         onChatClick={handleChatClick}
@@ -117,6 +151,8 @@ export function GroupDetailScreen({
         pendingAuthCount={pendingGroupAuthMessages.length}
         groupMembers={groupMembers}
         onGroupDeleted={handleGroupDeleted}
+        myid={myid}
+        onGroupJoined={onGroupJoined}
       />
 
       <div className="p-4 space-y-4">

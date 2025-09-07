@@ -15,7 +15,8 @@ export interface Group {
  groupId: number;
   leaderName: string; 
   groupName: string; 
-  groupDescription: string; 
+  //groupDescription: string; 
+  description: string;
   groupType: 'FREE' | 'REQUIRED'; 
   alarmTime: string; 
   authDays: string; 
@@ -155,6 +156,13 @@ export interface IPersonalRankingResponse {
   success: boolean;
   message: string;
   data: IPersonalRankingData[];
+}
+
+// 사용자 총 점수 조회 시 필요한 로직 
+export interface UserTotalScoreResponse {
+  success: boolean;
+  message: string;
+  data: number; 
 }
 
 //==================================================//

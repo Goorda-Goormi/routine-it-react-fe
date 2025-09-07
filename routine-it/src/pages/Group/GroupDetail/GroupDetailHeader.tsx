@@ -18,12 +18,12 @@ import {
 } from '../../../components/ui/dropdown-menu';
 
 import type { GroupMemberResponse } from '../../../interfaces';
-import { deleteGroup } from '../../../api/group';
+import { deleteGroup, requestJoinGroup } from '../../../api/group';
 
 interface GroupDetailHeaderProps {
   group: any;
-  //isJoined: boolean;
-  //isLeader: boolean;
+  isJoined: boolean;
+  isLeader: boolean;
   onBack: () => void;
  // onJoinGroup: () => void;
   onChatClick: () => void;
@@ -34,12 +34,14 @@ interface GroupDetailHeaderProps {
   pendingAuthCount: number;
   groupMembers: GroupMemberResponse[];
   onGroupDeleted: () => void; 
+  myid: string | number;
+  onGroupJoined: () => void;
 }
 
 export const GroupDetailHeader = ({
   group,
-  //isJoined,
-  //isLeader,
+  isJoined,
+  isLeader,
   onBack,
  // onJoinGroup,
   onChatClick,
@@ -50,12 +52,20 @@ export const GroupDetailHeader = ({
   pendingAuthCount,
   groupMembers,
   onGroupDeleted,
+  myid,
+  onGroupJoined,
 }: GroupDetailHeaderProps) => {
-  const isLeader = groupMembers.some(member => member.role === 'LEADER');
-   const isJoined = groupMembers.some(member => member.status === 'JOINED');
+  const myIdAsNumber = typeof myid === 'string' ? parseInt(myid, 10) : myid;
   
-   const handleMenuClick = async (action: string) => {
 
+console.log('--- GroupDetailHeader Variables ---');
+  console.log('GroupDetailHeader: isJoined:', isJoined);
+  console.log('GroupDetailHeader: isLeader:', isLeader);
+  console.log('GroupDetailHeader: myid:', myid, `(${typeof myid})`);
+  console.log('GroupDetailHeader: group:', group);
+  console.log('GroupDetailHeader: groupMembers:', groupMembers);
+  console.log('-----------------------------------');
+  const handleMenuClick = async (action: string) => {
     switch (action) {
       case 'edit':
         onOpenEdit();
@@ -73,6 +83,24 @@ export const GroupDetailHeader = ({
         break;
       default:
         break;
+    }
+  };
+
+  // 그룹 가입 요청 처리 함수
+  const handleJoinGroup = async () => {
+    try {
+      await requestJoinGroup(group.groupId, myIdAsNumber);
+
+      if (group.groupType === 'FREE') {
+        alert('그룹에 성공적으로 가입되었습니다.');
+      } else {
+        alert('그룹 가입 요청이 전송되었습니다. 리더의 승인을 기다려주세요.');
+      }
+      onGroupJoined(); 
+  
+    } catch (error) {
+      alert('그룹 가입 요청에 실패했습니다.');
+      console.error("그룹 가입 실패:", error);
     }
   };
 
@@ -99,12 +127,10 @@ export const GroupDetailHeader = ({
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
               <DropdownMenuItem onClick={() => handleMenuClick('edit')}>그룹 정보 편집</DropdownMenuItem>
-              
               <DropdownMenuSeparator />
               <DropdownMenuItem onClick={() => handleMenuClick('approval')} className="relative">
                 <div className="flex items-center justify-between w-full">
                   <span>인증 승인 / 반려</span>
-                  {/* pendingAuthCount가 0보다 클 때만 뱃지 표시 */}
                   {pendingAuthCount > 0 && (
                     <Badge variant="destructive" className="ml-2 px-2 py-0.5 text-xs">
                       {pendingAuthCount}
@@ -112,10 +138,8 @@ export const GroupDetailHeader = ({
                   )}
                 </div>
               </DropdownMenuItem>
-              
               <DropdownMenuSeparator />
               <DropdownMenuItem onClick={() => handleMenuClick('ex-members')}>멤버 관리하기</DropdownMenuItem>
-              
               <DropdownMenuSeparator />
               <DropdownMenuItem onClick={() => handleMenuClick('delete')}>그룹 삭제하기</DropdownMenuItem>
             </DropdownMenuContent>
@@ -131,7 +155,7 @@ export const GroupDetailHeader = ({
               </div>
               <div>
                 <h2 className="font-bold text-lg text-card-foreground">{group.groupName}</h2>
-                <p className="text-sm text-muted-foreground mt-1">{group.groupDescription}</p>
+                <p className="text-sm text-muted-foreground mt-1">{group.description}</p>
               </div>
               <div className="flex items-center justify-center space-x-4">
                 <div className="text-center">
@@ -139,21 +163,21 @@ export const GroupDetailHeader = ({
                   <div className="text-xs text-muted-foreground">참여자</div>
                 </div>
                 <div className="text-center">
-                  <Badge variant={group.type === '의무참여' ? 'destructive' : 'secondary'}>{group.type === "REQUIRED" ? "의무참여":"자유참여"}</Badge>
+                  <Badge variant={group.type === 'REUQIRED' ? 'destructive' : 'secondary'}>{group.type === "REQUIRED" ? "의무참여":"자유참여"}</Badge>
                   <div className="text-xs text-muted-foreground mt-1">그룹 유형</div>
                 </div>
                 <div className="text-center">
-                  <div className="font-bold text-card-foreground">{group.alarmTime ? group.alarmTime.slice(0,5) : ''}</div>
+                  <div className="font-bold text-card-foreground">{group.alarmTime ? group.alarmTime.slice(0, 5) : ''}</div>
                   <div className="text-xs text-muted-foreground">인증 시간</div>
                 </div>
               </div>
               {!isJoined ? (
-                <Button /*onClick={onJoinGroup}*/ className="w-full">그룹 참여하기</Button>
+                <Button onClick={handleJoinGroup} className="w-full">그룹 참여하기</Button>
               ) : (
                 <div className="flex space-x-2">
                   <Button onClick={onChatClick} className="flex-1">
                     <MessageCircle className="h-4 w-4 mr-2 icon-primary" />
-                    채팅
+                    채팅하기
                   </Button>
                   <Button
                     onClick={onRoutineAuthClick}

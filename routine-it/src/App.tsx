@@ -27,8 +27,9 @@ import { LoadingSpinner } from "./components/ui/loading-spinner";
 import { startKakaoLogin, getUserInfo } from "./api/login"; 
 import { completeSignup, logoutUser, deleteAccount } from './api/auth';
 import { createGroup, getAllGroups,getJoinedGroups,getGroupMembers } from "./api/group";
-import { getPersonalRankings } from "./api/ranking";
-import { toggleDarkMode as toggleDarkModeAPI, toggleAlarm as toggleAlarmAPI } from './api/setting';
+import { getPersonalRankings, getUserTotalScore, getGlobalGroupRanking } from "./api/ranking";
+import type { IPersonalRankingResponse, UserTotalScoreResponse } from './interfaces';
+import type { GlobalGroupRankingData } from "./pages/Ranking/RankingScreen";import { toggleDarkMode as toggleDarkModeAPI, toggleAlarm as toggleAlarmAPI } from './api/setting';
 
 interface NavigationState {
   screen: string;
@@ -324,6 +325,7 @@ export default function App() {
         setIsLoggedIn(true);
         fetchUserInfo(); // 로컬 스토리지에 토큰이 있을 경우 사용자 정보 불러오기
         fetchGroupData();
+        fetchUserTotalScore();
       }
     }
   }, []);
@@ -752,6 +754,18 @@ const handleAddGroup = async (newGroupData: any) => {
           : group
       )
     );
+
+    setMyGroups(prevMyGroups => 
+      prevMyGroups.map(group =>
+        group.groupId === updatedGroup.groupId
+          ? {
+              ...group,
+              ...updatedGroup,
+              isMandatory: isMandatory,
+            }
+          : group
+      )
+    );
   };
 
 
@@ -763,32 +777,71 @@ const handleDeleteGroupSuccess = () => {
  // 8. 랭킹 관련 =============================================================
 
 const [personalRankingData, setPersonalRankingData] = useState<IPersonalRankingResponse | null>(null);
-const handleRankingTabClick = async () => {
-    // 로그인 상태가 아니거나 사용자 정보가 없으면 함수를 종료합니다.
-    if (!isLoggedIn || !UserInfo) { 
-        console.log("로그인 상태가 아니거나 사용자 정보가 없습니다.");
-        setActiveTab('ranking');
-        return; 
-    }
+const [userTotalScore, setUserTotalScore] = useState<number | null>(null);
+const [loadingUserTotalScore, setLoadingUserTotalScore] = useState(true);
+const [groupRankingData, setGroupRankingData] = useState<GlobalGroupRankingData | null>(null);
+const [loadingGroupRanking, setLoadingGroupRanking] = useState(true);
 
-    // 랭킹 탭을 눌렀을 때 API 호출
-    setIsLoading(true);
-    try {
-        // UserProfile.id를 getPersonalRankings 함수에 전달
-        const rankingResponse = await getPersonalRankings(UserInfo.id);
-        
-        console.log('개인 랭킹 데이터:', rankingResponse);
-        
-        setPersonalRankingData(rankingResponse);
-    } catch (error) {
-        console.error('랭킹 데이터 로딩 실패:', error);
-        setPersonalRankingData(null); 
-    } finally {
-        setIsLoading(false);
-        setActiveTab('ranking');
-    }
+// 모든 랭킹 데이터를 가져오는 통합 함수
+const fetchRankingData = async () => {
+  if (!isLoggedIn || !UserInfo) {
+    console.log("로그인 상태가 아니거나 사용자 정보가 없습니다.");
+     return;
+  }
+
+  setIsLoading(true);
+  try {
+     // 개인 랭킹 데이터 가져오기
+    const personalRankingResponse = await getPersonalRankings(UserInfo.id);
+     setPersonalRankingData(personalRankingResponse);
+
+     // 그룹 랭킹 데이터 가져오기
+    setLoadingGroupRanking(true);
+     const now = new Date();
+     const year = now.getFullYear();
+     const month = String(now.getMonth() + 1).padStart(2, '0');
+     const monthYear = `${year}-${month}`;
+    const globalGroupRankingResponse = await getGlobalGroupRanking(monthYear);
+     setGroupRankingData(globalGroupRankingResponse);
+  } catch (error) {
+    console.error("랭킹 데이터 로딩 실패:", error);
+    setPersonalRankingData(null);
+    setGroupRankingData(null);
+  } finally {
+     setLoadingGroupRanking(false);
+     setIsLoading(false);
+  }
 };
- 
+
+// 사용자 총 점수를 가져오는 별도의 함수 (필요한 곳에서 재사용 가능)
+const fetchUserTotalScore = async () => {
+  if (!isLoggedIn) return;
+  
+  setLoadingUserTotalScore(true);
+  try {
+    const response = await getUserTotalScore();
+     if (response.success) {
+      setUserTotalScore(response.data);
+       console.log("사용자 총 점수 조회 성공:", response.data);
+    } else {
+      console.error("사용자 총 점수 조회 실패:", response.message);
+      setUserTotalScore(null);
+    }
+  } catch (error) {
+    console.error("사용자 총 점수 데이터를 불러오는데 실패했습니다.", error);
+    setUserTotalScore(null);
+  } finally {
+     setLoadingUserTotalScore(false);
+  }
+};
+
+const handleRankingTabClick = () => {
+  // 탭 클릭 시 랭킹 데이터만 새로고침
+  fetchRankingData();
+  setActiveTab('ranking');
+};
+
+
 // 9. ui/네비게이션 관련 =============================================================
   const handleSearch = (query: string) => {
     console.log("검색:", query);
@@ -913,13 +966,17 @@ const navigateTo = (screen: string, params?: any, options?: { replace?: boolean 
             />
           );
        
-          case "group-detail": { // ✨ 여기에 중괄호를 추가합니다.
+          case "group-detail": { 
         const groupId = currentScreen.params.groupId;
         const members = groupMembers[groupId] || [];
+        const myId = UserInfo?.id; 
+        const isJoined = myGroups.some(joinedGroup => joinedGroup.groupId === groupId);
            console.log('넘어온 params:', currentScreen.params);
           console.log('넘어온 groupId:', groupId);
           console.log('해당 그룹의 멤버 groupmembers:', members);
           console.log('그룹상세 groups:', groups);
+          console.log('내 아이디 myId:', myId);
+          console.log("isJoined:", isJoined);
         return (
           <GroupDetailScreen
             groupId={groupId}
@@ -934,6 +991,10 @@ const navigateTo = (screen: string, params?: any, options?: { replace?: boolean 
             currentUser={UserInfo} 
             groupMembers={members}
             onDeleteGroupSuccess={handleDeleteGroupSuccess}
+            myid={myId}
+            onGroupJoined={fetchGroupData}
+            isJoined={isJoined}
+           
           />
         );
       } 
@@ -1046,7 +1107,7 @@ const navigateTo = (screen: string, params?: any, options?: { replace?: boolean 
         return <GroupScreen 
                   onNavigate={navigateTo} 
                   groups={groups} 
-                  myGroups={myGroups}   // 임시로 참여중 그룹 = 전체 그룹
+                  myGroups={myGroups}   
                   onNewGroup={() => navigateTo("create-group")}
                   //onJoinGroup={handleJoinGroup}
                 />
@@ -1056,6 +1117,10 @@ const navigateTo = (screen: string, params?: any, options?: { replace?: boolean 
         return <RankingScreen 
                   groups={groups}
                   personalRankingData={personalRankingData}
+                  groupRankingData={groupRankingData} // props로 전달
+                  userTotalScore={userTotalScore} // props로 전달
+                  loadingGroupRanking={loadingGroupRanking} // props로 전달
+                  loadingUserTotalScore={loadingUserTotalScore}
                 />;}
       case "mypage":
         return (
