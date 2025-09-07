@@ -115,9 +115,11 @@ export async function getUserTotalScore(userId: number) {
 };*/
 export const getGroupTop3Ranking = async (
   groupId: number,
-  monthYear?: string
+  userId: number,
+  monthYear?: string,
 ): Promise<RankingResponse> => {
   try {
+    /*
     const path = `/api/rankings/groups/${groupId}/top3`;
     const params = new URLSearchParams();
 
@@ -129,7 +131,24 @@ export const getGroupTop3Ranking = async (
 
     const response = await apiFetch(url);
     return response as RankingResponse; // response가 RankingResponse 타입임을 명시
-  } catch (error) {
+  */
+  const path = `/api/rankings/groups/${groupId}/top3`;
+    const params = new URLSearchParams();
+
+    // userId는 필수이므로 항상 쿼리 파라미터로 추가합니다.
+    params.append('userId', userId.toString());
+
+    // monthYear는 선택적이므로 값이 있을 때만 추가합니다.
+    if (monthYear) {
+      params.append('monthYear', monthYear);
+    }
+    
+    // params.toString()을 사용하여 'monthYear=2025-09&userId=123' 와 같은 형식의 문자열을 만듭니다.
+    const url = `${path}?${params.toString()}`;
+
+    const response = await apiFetch(url);
+    return response as RankingResponse;
+    } catch (error) {
     console.error('그룹 상위 3명 랭킹 조회 실패:', error);
     throw error;
   }
