@@ -30,20 +30,6 @@ export async function createGroup(data: GroupRequest) {
 
 
 //그룹 편집
-/*
-export async function updateGroup(groupId: number, data: GroupRequest) {
-  const response = await apiFetch(`/groups/${groupId}`, {
-    method: 'PUT',
-    body: JSON.stringify(data),
-  });
-
-  if (!response.ok) {
-    const errorData = await response.json().catch(() => ({ message: '그룹 편집에 실패했습니다.' }));
-    throw new Error(errorData.message);
-  }
-
-  return response.json();
-}*/
 export async function updateGroup(groupId: number, data: GroupRequest) {
   try {
     const updatedData = await apiFetch(`/groups/${groupId}`, {
@@ -121,5 +107,22 @@ export async function deleteGroup(groupId: number) {
   } catch (error) {
     console.error(`그룹 ${groupId} 탈퇴 실패:`, error);
     throw new Error("그룹 탈퇴 실패");
+  }
+}
+
+// 그룹 가입 요청 (인증 필요)
+export async function requestJoinGroup(groupId: number, groupMemberId: number) {
+  try {
+    const response = await apiFetch(`/group/${groupId}/join`, {
+      method: 'POST',
+      body: JSON.stringify({
+        groupId: groupId,
+        groupMemberId: groupMemberId,
+      }),
+    });
+    return response;
+  } catch (error) {
+    console.error(`그룹 ${groupId} 가입 요청 실패:`, error);
+    throw new Error('그룹 가입 요청 실패');
   }
 }

@@ -894,10 +894,12 @@ const navigateTo = (screen: string, params?: any, options?: { replace?: boolean 
           case "group-detail": { // ✨ 여기에 중괄호를 추가합니다.
         const groupId = currentScreen.params.groupId;
         const members = groupMembers[groupId] || [];
+        const myId = UserInfo?.id; 
            console.log('넘어온 params:', currentScreen.params);
           console.log('넘어온 groupId:', groupId);
           console.log('해당 그룹의 멤버 groupmembers:', members);
           console.log('그룹상세 groups:', groups);
+          console.log('내 아이디 myId:', myId);
         return (
           <GroupDetailScreen
             groupId={groupId}
@@ -912,6 +914,7 @@ const navigateTo = (screen: string, params?: any, options?: { replace?: boolean 
             currentUser={UserInfo} 
             groupMembers={members}
             onDeleteGroupSuccess={handleDeleteGroupSuccess}
+            myid={myId}
           />
         );
       } 

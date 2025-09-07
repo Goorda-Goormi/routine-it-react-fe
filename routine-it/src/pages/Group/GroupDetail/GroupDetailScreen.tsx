@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent } from '../../../components/ui/dialog';
 import { GroupDetailHeader } from './GroupDetailHeader';
 import { GroupDetailTabs } from './GroupDetailTabs';
@@ -9,7 +9,7 @@ import { GroupRoutineDialog } from '../GroupChat/GroupRoutineDialog';
 import type { AuthMessage } from "../../../interfaces";
 import { getGroupMembers } from '../../../api/group';
 import type { GroupMemberResponse } from "../../../interfaces";
-import { deleteGroup } from '../../../api/group';
+import { deleteGroup,getJoinedGroups } from '../../../api/group';
 
 interface GroupDetailScreenProps {
   groupId: number;
@@ -26,6 +26,7 @@ interface GroupDetailScreenProps {
   groupMembers: GroupMemberResponse[];
   //onDeleteGroupSuccess: (deletedGroupId: number) => void;
   onDeleteGroupSuccess: () => void;
+  myid: string | number;
 }
 
 export function GroupDetailScreen({
@@ -42,6 +43,7 @@ export function GroupDetailScreen({
   currentUser,
   groupMembers,
   onDeleteGroupSuccess,
+  myid,
 }: GroupDetailScreenProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [showExMembersModal, setShowExMembersModal] = useState(false);
@@ -52,6 +54,20 @@ export function GroupDetailScreen({
   const pendingGroupAuthMessages = pendingAuthMessages[groupId] || [];
   
   const isLeader = group?.isOwner ?? false;
+
+  const [isJoined, setIsJoined] = useState(false);
+  useEffect(() => {
+    const checkJoinStatus = async () => {
+      try {
+        const joinedGroups = await getJoinedGroups();
+        const joined = joinedGroups.some((joinedGroup: any) => joinedGroup.groupId === groupId);
+        setIsJoined(joined);
+      } catch (error) {
+        console.error("가입된 그룹 목록 조회 실패:", error);
+      }
+    };
+    checkJoinStatus();
+  }, [groupId]);
 
   const weeklyRanking = [
     { rank: 1, nickname: '루티니', score: 95, change: 'up' },
@@ -105,7 +121,7 @@ export function GroupDetailScreen({
     <div className="min-h-screen relative">
       <GroupDetailHeader
         group={group}
-        //isJoined={group?.isJoined}
+        isJoined={isJoined}
         //isLeader={isLeader}
         onBack={onBack}
        // onJoinGroup={handleJoinGroup}
@@ -117,6 +133,7 @@ export function GroupDetailScreen({
         pendingAuthCount={pendingGroupAuthMessages.length}
         groupMembers={groupMembers}
         onGroupDeleted={handleGroupDeleted}
+        myid={myid}
       />
 
       <div className="p-4 space-y-4">
