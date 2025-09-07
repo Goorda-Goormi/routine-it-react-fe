@@ -4,13 +4,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { Avatar, AvatarFallback } from '../../../components/ui/avatar';
 import { MinusCircle, Crown } from 'lucide-react';
 import type { GroupMemberResponse } from '../../../interfaces';
-// 그룹 멤버 데이터 타입을 정의합니다. isLeader 속성을 추가합니다.
-/*interface GroupMember {
-  id: string;
-  name: string;
-  nickname: string;
-  isLeader: boolean; // isLeader 속성 추가
-}*/
+import { delegateLeader } from '../../../api/group';
 
 // 컴포넌트 prop 인터페이스를 업데이트합니다.
 interface GroupMemberManagerProps {
@@ -18,8 +12,9 @@ interface GroupMemberManagerProps {
   onOpenChange: (open: boolean) => void;
   members: GroupMemberResponse[];
   onKickMember: (memberId: number) => void;
-  onDelegateLeader: (memberId: number) => void;
+  //onDelegateLeader: (memberId: number) => void;
   isLeader: boolean;
+  onDelegateLeader: (memberName: number) => void; 
 }
 
 export function GroupMemberManager({ open, onOpenChange, members, onKickMember, onDelegateLeader }: GroupMemberManagerProps) {

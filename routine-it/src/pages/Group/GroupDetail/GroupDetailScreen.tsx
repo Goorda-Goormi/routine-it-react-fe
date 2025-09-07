@@ -9,9 +9,10 @@ import { GroupRoutineDialog } from '../GroupChat/GroupRoutineDialog';
 import type { AuthMessage,IPersonalRankingData } from "../../../interfaces";
 import { getGroupMembers } from '../../../api/group';
 import type { GroupMemberResponse } from "../../../interfaces";
-import { deleteGroup,getJoinedGroups } from '../../../api/group';
+import { deleteGroup,getJoinedGroups,delegateLeader } from '../../../api/group';
 import { getGroupTop3Ranking } from '../../../api/ranking';
 import type { GlobalGroupRankingData } from '../../Ranking/RankingScreen';
+
 interface GroupDetailScreenProps {
   groupId: number;
   groups: any[];
@@ -81,10 +82,10 @@ const [weeklyRanking, setWeeklyRanking] = useState<GlobalGroupRankingData[]>([])
     setShowExMembersModal(false);
   };
 
-  const handleDelegateLeader = (newLeaderId: string | number) => {
+  /*const handleDelegateLeader = (newLeaderId: string | number) => {
     alert('리더 권한이 성공적으로 위임되었습니다.');
     setShowExMembersModal(false);
-  };
+  };*/
 
  const handleAuthSubmit = (data: { description: string; image: File | null; isPublic: boolean }) => {
   const routineId = 123; // 테스트용 루틴 ID 또는 실제 값
@@ -134,6 +135,33 @@ useEffect(() => {
 
   fetchRanking();
 }, [groupId, currentUser.id]); 
+
+// 리더 위임 비동기 함수를 GroupDetailScreen에서 구현합니다.
+  const handleDelegateLeader = async (targetMemberId: number, targetMemberName: string) => {
+    try {
+      // API가 리더의 ID와 위임 대상의 ID를 받으므로, 닉네임으로 ID를 찾아서 전달합니다.
+      const currentLeaderId = groupMembers.find(m => m.memberName === group.leaderName)?/;
+      
+      if (!currentLeaderId) {
+        alert("현재 리더 정보를 찾을 수 없습니다.");
+        return;
+      }
+
+      // API 호출
+      const response = await delegateLeader(group.groupId, Number(currentLeaderId), targetMemberId);
+      
+      alert(`그룹 리더가 ${targetMemberName}님으로 성공적으로 위임되었습니다.`);
+      setShowExMembersModal(false);
+      // 부모 컴포넌트의 그룹 정보를 업데이트하여 UI를 갱신합니다.
+      // API 응답에 업데이트된 그룹 정보가 포함되어 있다면 해당 정보를 사용하고,
+      // 그렇지 않다면 수동으로 그룹 정보를 업데이트하는 로직을 추가합니다.
+      // 여기서는 leaderName을 수동으로 업데이트하는 예시를 보여드립니다.
+      onUpdateGroup({ ...group, leaderName: targetMemberName, leaderId: targetMemberId }); // leaderId도 함께 업데이트하면 더 좋습니다.
+    } catch (error) {
+      console.error("리더 위임 실패:", error);
+      alert('리더 위임에 실패했습니다.');
+    }
+  };
 
   return (
     <div className="min-h-screen relative">
