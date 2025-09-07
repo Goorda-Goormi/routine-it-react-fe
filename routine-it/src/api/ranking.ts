@@ -1,6 +1,24 @@
 import { apiFetch } from './client';
 import type { IPersonalRankingResponse } from '../interfaces';
 import type { GlobalGroupRankingData } from '../pages/Ranking/RankingScreen';
+
+export interface RankingResponse {
+  success: boolean;
+  message: string;
+  data: {
+    groupId: number;
+    groupName: string | null;
+    groupType: string | null;
+    groupWeightMultiplier: number | null;
+    monthYear: string;
+    top3Users: GlobalGroupRankingData[];
+    totalMembers: number;
+    updatedAt: string;
+  };
+}
+
+
+
 // 랭킹 점수 업데이트
 // POST /api/rankings/update-score
 export async function updateRankingScore(
@@ -68,7 +86,7 @@ export async function getUserTotalScore(userId: number) {
  * @param monthYear 조회할 월 (YYYY-MM 형식, 선택 사항)
  * @returns 상위 3명의 랭킹 데이터 배열을 반환하는 Promise
  */
-export const getGroupTop3Ranking = async (
+/*export const getGroupTop3Ranking = async (
   groupId: number,
   monthYear?: string
 ): Promise<GlobalGroupRankingData[]> => {
@@ -86,6 +104,27 @@ export const getGroupTop3Ranking = async (
     
     const responseData = await apiFetch(url);
     return responseData as GlobalGroupRankingData[];
+  } catch (error) {
+    console.error('그룹 상위 3명 랭킹 조회 실패:', error);
+    throw error;
+  }
+};*/
+export const getGroupTop3Ranking = async (
+  groupId: number,
+  monthYear?: string
+): Promise<RankingResponse> => {
+  try {
+    const path = `/api/rankings/groups/${groupId}/top3`;
+    const params = new URLSearchParams();
+
+    if (monthYear) {
+      params.append('monthYear', monthYear);
+    }
+
+    const url = monthYear ? `${path}?${params.toString()}` : path;
+
+    const response = await apiFetch(url);
+    return response as RankingResponse; // response가 RankingResponse 타입임을 명시
   } catch (error) {
     console.error('그룹 상위 3명 랭킹 조회 실패:', error);
     throw error;
