@@ -1,16 +1,16 @@
 import { apiFetch } from './client';
 import type { IPersonalRankingResponse } from '../interfaces';
-
+import type { GlobalGroupRankingData } from '../pages/Ranking/RankingScreen';
 // 랭킹 점수 업데이트
 // POST /api/rankings/update-score
 export async function updateRankingScore(
   userId: number,
-  groupId: number | null,
+  groupId: number,
   score: number
 ) {
   try {
     const data = { userId, groupId, score };
-    const result = await apiFetch("/rankings/update-score", {
+    const result = await apiFetch("/api/rankings/update-score", {
       method: "POST",
       body: JSON.stringify(data),
     });

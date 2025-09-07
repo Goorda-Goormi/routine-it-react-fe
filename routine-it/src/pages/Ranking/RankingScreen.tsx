@@ -52,7 +52,13 @@ export function RankingScreen({ groups, personalRankingData }: RankingScreenProp
     const fetchGroupRanking = async () => {
       try {
         setLoadingGroupRanking(true);
-        const data = await getGlobalGroupRanking();
+        const now = new Date();
+        const year = now.getFullYear();
+        const month = String(now.getMonth() + 1).padStart(2, '0');
+        const monthYear = `${year}-${month}`;
+
+        const data = await getGlobalGroupRanking(monthYear);
+        //const data = await getGlobalGroupRanking();
         console.log("그룹 랭킹 데이터 조회 성공:", data);
         setGroupRankingData(data);
       } catch (error) {
