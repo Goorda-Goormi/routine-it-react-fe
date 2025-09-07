@@ -1,11 +1,36 @@
 // RankingScreen.tsx
-import React from 'react';
+import React,{useState,useEffect} from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card';
 import { Badge } from '../../components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../components/ui/tabs';
 import { Avatar, AvatarFallback, AvatarImage } from '../../components/ui/avatar';
 import { Trophy, Users, Medal, Crown, Star, Target } from 'lucide-react';
 import type { Group, IPersonalRankingResponse, IPersonalRankingData } from '../../interfaces';
+// API 연동 추가: 그룹 랭킹 인터페이스 정의
+export interface IGroupRankingItem {
+  rank: number;
+  groupId: number;
+  groupName: string;
+  groupImageUrl: string;
+  category: string;
+  groupType: string;
+  totalScore: number;
+  memberCount: number;
+  activeMembers: number;
+  participationRate: number;
+  totalAuthCount: number;
+  averageAuthPerMember: number;
+}
+
+export interface GlobalGroupRankingData {
+  rankings: IGroupRankingItem[];
+  monthYear: string;
+  totalGroups: number;
+  updatedAt: string;
+}
+
+// API 연동 추가: getGlobalGroupRanking 함수를 가져옵니다.
+import { getGlobalGroupRanking } from '../../api/ranking';
 
 interface RankingScreenProps {
   groups: Group[];
@@ -13,18 +38,33 @@ interface RankingScreenProps {
 }
 
 export function RankingScreen({ groups, personalRankingData }: RankingScreenProps) {
-  // 그룹 랭킹 더미 데이터 (기존과 동일)
-  const groupRanking = groups
-    .map((group) => ({
-      ...group,
-      totalScore: 5000 + Math.floor(Math.random() * 5000),
-      avgScore: (5000 + Math.floor(Math.random() * 5000) / (group.maxMembers || 1)),
-    }))
-    .sort((a, b) => b.totalScore - a.totalScore)
-    .map((group, index) => ({ ...group, rank: index + 1 }));
+  const currentMonth = new Date().getMonth() + 1; 
 
-  // `IPersonalRankingResponse`의 `data` 속성을 사용합니다.
+  // personalRankingData에서 데이터를 추출하여 personalRankings 변수 정의
   const personalRankings: IPersonalRankingData[] = personalRankingData?.data || [];
+
+  // API 연동 추가: 그룹 랭킹 데이터를 위한 상태
+  const [groupRankingData, setGroupRankingData] = useState<GlobalGroupRankingData | null>(null);
+  const [loadingGroupRanking, setLoadingGroupRanking] = useState(true);
+
+  // API 연동 추가: useEffect를 사용해 그룹 랭킹 데이터를 가져옵니다.
+  useEffect(() => {
+    const fetchGroupRanking = async () => {
+      try {
+        setLoadingGroupRanking(true);
+        const data = await getGlobalGroupRanking();
+        console.log("그룹 랭킹 데이터 조회 성공:", data);
+        setGroupRankingData(data);
+      } catch (error) {
+        console.error("그룹 랭킹 데이터를 불러오는데 실패했습니다.", error);
+        setGroupRankingData(null);
+      } finally {
+        setLoadingGroupRanking(false);
+      }
+    };
+
+    fetchGroupRanking();
+  }, []); // 빈 배열을 넣어 컴포넌트 마운트 시 한 번만 실행되도록 합니다.
 
   const getRankIcon = (rank: number) => {
     switch (rank) {
@@ -62,8 +102,8 @@ export function RankingScreen({ groups, personalRankingData }: RankingScreenProp
                   <Star className="h-5 w-5 text-white" />
                 </div>
                 <div className="flex-1">
-                  <div className="text-sm font-medium text-amber-800 dark:text-white">11월 월간 랭킹</div>
-                  <div className="text-xs text-amber-700 dark:text-white dark:opacity-90">12월 1일 자정에 랭킹이 리셋됩니다</div>
+                  <div className="text-sm font-medium text-amber-800 dark:text-white">{currentMonth}월 월간 랭킹</div>
+                  <div className="text-xs text-amber-700 dark:text-white dark:opacity-90">{currentMonth + 1}월 1일 자정에 랭킹이 리셋됩니다</div>
                 </div>
               </div>
             </CardContent>
@@ -121,7 +161,7 @@ export function RankingScreen({ groups, personalRankingData }: RankingScreenProp
                   <Users className="h-5 w-5 text-white" />
                 </div>
                 <div className="flex-1">
-                  <div className="text-sm font-medium text-orange-800 dark:text-white">11월 그룹 랭킹</div>
+                  <div className="text-sm font-medium text-orange-800 dark:text-white">{currentMonth}월 그룹 랭킹</div>
                   <div className="text-xs text-orange-700 dark:text-white dark:opacity-90">전체 그룹 중 순위를 확인하세요</div>
                 </div>
               </div>
@@ -137,39 +177,48 @@ export function RankingScreen({ groups, personalRankingData }: RankingScreenProp
             </CardHeader>
             <CardContent className="pt-0">
               <div className="space-y-3">
-                {groupRanking.map((group) => (
-                  <div key={group.groupId} className="p-3 rounded-lg border border-border dark:border-border">
-                    <div className="flex items-center justify-between mb-2">
-                      <div className="flex items-center space-x-3">
-                        <div className="flex items-center justify-center w-8">
-                          {getRankIcon(group.rank)}
+                {/* API 연동 추가: 로딩 상태 확인 */}
+                {loadingGroupRanking ? (
+                  <div className="text-center text-sm text-gray-500 py-8">그룹 랭킹을 불러오는 중입니다...</div>
+                ) : (groupRankingData && groupRankingData.rankings.length > 0) ? (
+                  groupRankingData.rankings.map((group) => (
+                    <div key={group.groupId} className="p-3 rounded-lg border border-border dark:border-border">
+                      <div className="flex items-center justify-between mb-2">
+                        <div className="flex items-center space-x-3">
+                          <div className="flex items-center justify-center w-8">
+                            {getRankIcon(group.rank)}
+                          </div>
+                          <div className="flex-1">
+                            <div className="flex items-center space-x-2">
+                              <span className="text-sm font-medium text-foreground">{group.groupName}</span>
+                              <Badge variant={group.groupType === 'REQUIRED' ? 'destructive' : 'secondary'} className="text-xs">
+                                {group.groupType === 'REQUIRED' ? '의무참여' : '자유참여'}
+                              </Badge>
+                            </div>
+                            <div className="flex items-center space-x-2 text-xs text-foreground dark:opacity-75 mt-1">
+                              <span>{group.category}</span>
+                              <span>•</span>
+                              <span>{group.memberCount}명</span>
+                            </div>
+                          </div>
                         </div>
-                        <div className="flex-1">
-                          <div className="flex items-center space-x-2">
-                            <span className="text-sm font-medium text-foreground">{group.groupName}</span>
-                            <Badge variant={group.groupType === 'REQUIRED' ? 'destructive' : 'secondary'} className="text-xs">
-                              {group.groupType === 'REQUIRED' ? '의무참여' : '자유참여'}
-                            </Badge>
+                        <div className="text-right">
+                          <div className={`text-lg font-bold ${getScoreColor(group.rank)}`}>
+                            {group.totalScore.toLocaleString()}
                           </div>
-                          <div className="flex items-center space-x-2 text-xs text-foreground dark:opacity-75 mt-1">
-                            <span>{group.category}</span>
-                            <span>•</span>
-                            <span>{group.currentMemberCount}명</span>
-                          </div>
+                          <div className="text-xs text-foreground dark:opacity-75">총점</div>
                         </div>
                       </div>
-                      <div className="text-right">
-                        <div className={`text-lg font-bold ${getScoreColor(group.rank)}`}>
-                          {group.totalScore.toLocaleString()}
-                        </div>
-                        <div className="text-xs text-foreground dark:opacity-75">총점</div>
+                      <div className="flex items-center justify-between text-xs text-foreground dark:opacity-75">
+                        <span>평균 점수: {group.averageAuthPerMember.toFixed(1)}점</span>
                       </div>
                     </div>
-                    <div className="flex items-center justify-between text-xs text-foreground dark:opacity-75">
-                      <span>평균 점수: {group.avgScore.toFixed(1)}점</span>
-                    </div>
+                  ))
+                ) : (
+                  <div className="text-center text-sm text-gray-500 py-8">
+                    그룹 랭킹 데이터가 없습니다.
                   </div>
-                ))}
+                )}
               </div>
             </CardContent>
           </Card>
