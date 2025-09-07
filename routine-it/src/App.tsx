@@ -919,7 +919,7 @@ const navigateTo = (screen: string, params?: any, options?: { replace?: boolean 
             myid={myId}
             onGroupJoined={fetchGroupData}
             isJoined={isJoined}
-            myGroups={myGroups} 
+           
           />
         );
       } 

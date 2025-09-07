@@ -57,10 +57,6 @@ export const GroupDetailHeader = ({
 }: GroupDetailHeaderProps) => {
   const myIdAsNumber = typeof myid === 'string' ? parseInt(myid, 10) : myid;
   
-  //const isLeader = groupMembers.some(member => member.role === 'LEADER' && member.groupMemberId === myIdAsNumber);
-  //const isJoined = groupMembers.some(
-  //(member) => member.status === 'JOINED' && member.groupMemberId === myid
-//);
 
 console.log('--- GroupDetailHeader Variables ---');
   console.log('GroupDetailHeader: isJoined:', isJoined);

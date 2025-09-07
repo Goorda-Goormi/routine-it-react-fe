@@ -62,29 +62,35 @@ export async function getUserTotalScore(userId: number) {
 }
 
 // 그룹 랭킹 상위 3명 조회
-// GET /api/rankings/groups/{groupId}/top3
-export async function getGroupTop3Ranking(
+/**
+ * 특정 그룹 내 상위 3명의 랭킹을 조회합니다.
+ * @param groupId 조회할 그룹 ID
+ * @param monthYear 조회할 월 (YYYY-MM 형식, 선택 사항)
+ * @returns 상위 3명의 랭킹 데이터 배열을 반환하는 Promise
+ */
+export const getGroupTop3Ranking = async (
   groupId: number,
-  monthYear?: string,
-  userId?: number
-) {
+  monthYear?: string
+): Promise<GlobalGroupRankingData[]> => {
   try {
+    const path = `/api/rankings/groups/${groupId}/top3`;
     const params = new URLSearchParams();
+
+    // monthYear 매개변수가 있을 경우 URL 파라미터에 추가
     if (monthYear) {
-      params.append("monthYear", monthYear);
-    }
-    if (userId) {
-      params.append("userId", userId.toString());
+      params.append('monthYear', monthYear);
     }
     
-    const url = `api/rankings/groups/${groupId}/top3?${params.toString()}`;
-    const response = await apiFetch(url, { method: "GET" });
-    return response.data;
+    // 최종 URL 생성 (monthYear가 있을 경우 쿼리 파라미터 추가)
+    const url = monthYear ? `${path}?${params.toString()}` : path;
+    
+    const responseData = await apiFetch(url);
+    return responseData as GlobalGroupRankingData[];
   } catch (error) {
-    console.error(`그룹 ID ${groupId}의 상위 3명 랭킹 조회 실패:`, error);
+    console.error('그룹 상위 3명 랭킹 조회 실패:', error);
     throw error;
   }
-}
+};
 
 // 그룹별 전체 랭킹 조회
 // GET /api/rankings/groups/global

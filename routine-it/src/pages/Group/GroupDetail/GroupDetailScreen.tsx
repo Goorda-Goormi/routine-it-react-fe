@@ -10,7 +10,7 @@ import type { AuthMessage } from "../../../interfaces";
 import { getGroupMembers } from '../../../api/group';
 import type { GroupMemberResponse } from "../../../interfaces";
 import { deleteGroup,getJoinedGroups } from '../../../api/group';
-
+import { getGroupTop3Ranking } from '../../../api/ranking';
 interface GroupDetailScreenProps {
   groupId: number;
   groups: any[];
@@ -29,7 +29,7 @@ interface GroupDetailScreenProps {
   myid: string | number;
   onGroupJoined: () => void;
   isJoined: boolean;
-  myGroups: any[];
+  
 }
 
 export function GroupDetailScreen({
@@ -49,7 +49,7 @@ export function GroupDetailScreen({
   myid,
   onGroupJoined,
   isJoined,
-  myGroups,
+  
 }: GroupDetailScreenProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [showExMembersModal, setShowExMembersModal] = useState(false);
@@ -60,26 +60,13 @@ export function GroupDetailScreen({
   const pendingGroupAuthMessages = pendingAuthMessages[groupId] || [];
   const isLeader = group?.leaderName === currentUser.nickname;
   
-   console.log('GroupDetailScreen: isLeader 계산 결과:', isLeader);//  console.log('GroupDetailScreen: isLeader 계산 결과:', isLeader);
-
-  /*useEffect(() => {
-    const checkJoinStatus = async () => {
-      try {
-        const joinedGroups = await getJoinedGroups();
-        const joined = joinedGroups.some((joinedGroup: any) => joinedGroup.groupId === groupId);
-        setIsJoined(joined);
-      } catch (error) {
-        console.error("가입된 그룹 목록 조회 실패:", error);
-      }
-    };
-    checkJoinStatus();
-  }, [groupId]);*/
-
-  const weeklyRanking = [
+   console.log('GroupDetailScreen: isLeader 계산 결과:', isLeader);
+ const [weeklyRanking, setWeeklyRanking] = useState([]);
+  /*const weeklyRanking = [
     { rank: 1, nickname: '루티니', score: 95, change: 'up' },
     { rank: 2, nickname: '관습박', score: 88, change: 'same' },
     { rank: 3, nickname: '지속성',score: 82, change: 'down' },
-  ];
+  ];*/
   
   const recentActivities = [
     { id: 1, nickname: '루티니', action: '운동 인증 완료', time: '10분 전', image: null },
@@ -121,7 +108,32 @@ export function GroupDetailScreen({
       }
      }
   };
+   useEffect(() => {
+  const fetchRanking = async () => {
+    try {
+      // getGroupTop3Ranking 함수 호출
+      const response = await getGroupTop3Ranking(groupId, undefined, Number(currentUser.id));
+      
+      console.log("API로부터 받은 전체 응답:", response);
+      
+      // 응답 객체에서 'data' 속성 안의 'top3Users' 배열을 추출합니다.
+      if (response && response.data && response.data.top3Users) {
+        // weeklyRanking 상태를 top3Users 배열로 설정합니다.
+        setWeeklyRanking(response.data.top3Users);
+      } else {
+        console.error("API 응답 구조가 예상과 다릅니다:", response);
+        setWeeklyRanking([]); // 데이터가 없을 경우 빈 배열로 설정
+      }
+      
+    } catch (error) {
+      console.error("랭킹 데이터 가져오기 실패:", error);
+      // 실패 시 빈 배열로 설정하여 오류를 방지
+      setWeeklyRanking([]);
+    }
+  };
 
+  fetchRanking();
+}, [groupId, currentUser.id]);
 
   return (
     <div className="min-h-screen relative">
