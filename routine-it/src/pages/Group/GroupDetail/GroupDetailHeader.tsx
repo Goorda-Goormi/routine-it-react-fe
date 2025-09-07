@@ -35,6 +35,7 @@ interface GroupDetailHeaderProps {
   groupMembers: GroupMemberResponse[];
   onGroupDeleted: () => void; 
   myid: string | number;
+  onGroupJoined: () => void;
 }
 
 export const GroupDetailHeader = ({
@@ -52,6 +53,7 @@ export const GroupDetailHeader = ({
   groupMembers,
   onGroupDeleted,
   myid,
+  onGroupJoined,
 }: GroupDetailHeaderProps) => {
   const myIdAsNumber = typeof myid === 'string' ? parseInt(myid, 10) : myid;
   
@@ -98,30 +100,8 @@ console.log('--- GroupDetailHeader Variables ---');
       } else {
         alert('그룹 가입 요청이 전송되었습니다. 리더의 승인을 기다려주세요.');
       }
-
-      // 가입 요청 성공 후, 상위 컴포넌트의 멤버 목록을 새로고침
-      // `getGroupMembers` 함수를 호출하여 데이터를 업데이트
-      // 이 로직은 `GroupDetailScreen`에서 관리하는 것이 더 적합합니다.
-      // 따라서 `onGroupJoined` 함수를 사용하는 것이 좋습니다.
-      // 다만, 요구사항에 따라 `GroupDetailHeader`에서 직접 로직을 처리하는 예시를 보여드립니다.
-      // 이 코드를 사용하려면 `GroupDetailScreen`에서 `setGroupMembers` 상태 관리 함수를 props로 넘겨줘야 합니다.
-      // 이 방식은 컴포넌트 간 의존성을 높이므로 추천하지는 않습니다.
-      //
-      // **(대안) `GroupDetailHeader`에서 직접 처리하는 로직은 다음과 같지만,
-      //   `GroupDetailScreen`에 `onGroupJoined` 함수를 만들어 전달하는 것이 더 깔끔합니다.**
-      //
-      // try {
-      //   const updatedMembers = await getGroupMembers(group.groupId);
-      //   // 상위 컴포넌트의 `setGroupMembers` 함수가 props로 전달되어야 함.
-      //   // onSetGroupMembers(updatedMembers);
-      // } catch (fetchError) {
-      //   console.error("멤버 목록 새로고침 실패:", fetchError);
-      // }
-      
-      // onGroupJoined를 사용하지 않고, 상위 컴포넌트에서 이 버튼 클릭에 대한 로직을 처리하는 것이 좋습니다.
-      // 따라서 여기서는 단순히 alert를 띄우는 것까지만 진행하고,
-      // 상위 컴포넌트에서 `groupMembers` 상태가 변경될 때 UI가 자동으로 업데이트되도록 하는 것이 올바른 방향입니다.
-      
+      onGroupJoined(); 
+  
     } catch (error) {
       alert('그룹 가입 요청에 실패했습니다.');
       console.error("그룹 가입 실패:", error);

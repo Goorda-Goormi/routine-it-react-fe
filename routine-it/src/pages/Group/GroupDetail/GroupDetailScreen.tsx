@@ -27,6 +27,7 @@ interface GroupDetailScreenProps {
   //onDeleteGroupSuccess: (deletedGroupId: number) => void;
   onDeleteGroupSuccess: () => void;
   myid: string | number;
+  onGroupJoined: () => void;
 }
 
 export function GroupDetailScreen({
@@ -44,6 +45,7 @@ export function GroupDetailScreen({
   groupMembers,
   onDeleteGroupSuccess,
   myid,
+  onGroupJoined,
 }: GroupDetailScreenProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [showExMembersModal, setShowExMembersModal] = useState(false);
@@ -134,6 +136,7 @@ export function GroupDetailScreen({
         groupMembers={groupMembers}
         onGroupDeleted={handleGroupDeleted}
         myid={myid}
+        onGroupJoined={onGroupJoined}
       />
 
       <div className="p-4 space-y-4">

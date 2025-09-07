@@ -915,6 +915,7 @@ const navigateTo = (screen: string, params?: any, options?: { replace?: boolean 
             groupMembers={members}
             onDeleteGroupSuccess={handleDeleteGroupSuccess}
             myid={myId}
+            onGroupJoined={fetchGroupData}
           />
         );
       } 
