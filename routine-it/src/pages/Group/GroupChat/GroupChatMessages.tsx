@@ -5,53 +5,53 @@ import { Button } from '../../../components/ui/button';
 import { Smile, CheckCircle } from 'lucide-react';
 import { getStreakInfo } from '../../../components/utils/streakUtils';
 import type { Message } from './GroupChatScreen';
+import type { UserProfile } from '../../../interfaces';
 
 interface GroupChatMessagesProps {
   messages: Message[];
   myUserId: number;
-  getUserInfo: (userId: number) => any;
-  handleReactionClick: (messageId: number, emoji: string) => void;
+  //getUserInfo: (userId: number) => any;
+  getUserInfo: (message: Message) => any;
+  handleReactionClick: (messageKey: string, emoji: string) => void;
+  userInfo : UserProfile;
 }
 
 export function GroupChatMessages({ messages, myUserId, getUserInfo, handleReactionClick }: GroupChatMessagesProps) {
-  const [hoveredMessageId, setHoveredMessageId] = useState<number | null>(null);
-
-  // 이모티콘 목록
+ console.log("GroupChatMessages.jsx - Received messages :", messages);
+ 
+ const [hoveredMessageKey, setHoveredMessageKey] = useState<string | null>(null);
   const emojis = ['😀', '😂', '👍', '❤️', '👏', '💪', '🎉', '🔥', '🤔', '😊', '😭', '😎', '👌', '🙏', '🤯'];
 
   return (
     <div className="flex-1 overflow-y-auto">
       <div className="max-w-md mx-auto px-4 py-4 space-y-4">
         {messages.map((msg) => {
-           const userInfo = getUserInfo(msg.userId);
-
-          // 🚨 널 체크 추가: userInfo가 undefined인 경우 렌더링하지 않음
-         if (!userInfo) {
-          return null; // 또는 빈 div 등 적절한 값을 반환하여 오류 방지
+          const userInfo = getUserInfo(msg);
+           console.log("GroupChatMessages.jsx - Received getuserinfo(msg) :", userInfo); 
+          if (!userInfo) {
+            return null;
           }
-          
-          //const userInfo = getUserInfo(msg.userId);
-          //const streakInfo = getStreakInfo(userInfo.streakDays);
-          const isMyMessage = msg.userId === myUserId;
+
+          const isMyMessage = msg.isMe;
+          const messageKey = `${msg.nickname}-${msg.time}-${msg.message}`; // ✅ 고유한 키 생성
 
           return (
             <div
-              key={msg.id}
+              key={messageKey} // ✅ 고유한 키로 변경
               className={`flex ${isMyMessage ? 'justify-end' : 'justify-start'}`}
-              onMouseEnter={() => setHoveredMessageId(msg.id)}
-              onMouseLeave={() => setHoveredMessageId(null)}
+              onMouseEnter={() => setHoveredMessageKey(messageKey)} // ✅ 고유한 키로 변경
+              onMouseLeave={() => setHoveredMessageKey(null)} // ✅ 고유한 키로 변경
             >
               <div className={`relative flex items-end space-x-2 max-w-[80%] ${isMyMessage ? 'flex-row-reverse space-x-reverse' : ''}`}>
                 {!isMyMessage && (
                   <Avatar className="h-6 w-6">
-                    <AvatarImage src={userInfo.profileImageUrl} alt={msg.user} />
+                    <AvatarImage src={userInfo.profileImageUrl} alt={msg.nickname} />
                     <AvatarFallback className="text-xs">{msg.nickname[0]}</AvatarFallback>
                   </Avatar>
                 )}
                 <div className={`flex flex-col ${isMyMessage ? 'items-end' : 'items-start'}`}>
                   {!isMyMessage && (
                     <div className="flex items-center space-x-1 mb-1">
-                      {/*<span className="text-sm">{streakInfo.icon}</span>*/}
                       <span className="text-xs text-muted-foreground">{msg.nickname}</span>
                       <span className="text-xs text-muted-foreground opacity-70">{userInfo.streakDays}일</span>
                     </div>
@@ -107,7 +107,7 @@ export function GroupChatMessages({ messages, myUserId, getUserInfo, handleReact
                   <span className="text-xs text-muted-foreground mt-1">{msg.time}</span>
                 </div>
 
-                {hoveredMessageId === msg.id && (
+                {hoveredMessageKey === messageKey && ( // ✅ 고유한 키로 변경
                   <Popover>
                     <PopoverTrigger asChild>
                       <Button
@@ -123,7 +123,7 @@ export function GroupChatMessages({ messages, myUserId, getUserInfo, handleReact
                     <PopoverContent className="p-2 w-auto min-w-[150px] bg-background/95 backdrop-blur border-border" align="start" side="top" sideOffset={10}>
                       <div className="grid grid-cols-5 gap-1 text-2xl">
                         {emojis.map((emoji, index) => (
-                          <Button key={index} variant="ghost" className="text-2xl p-1 h-8 w-8" onClick={() => handleReactionClick(msg.id, emoji)}>
+                          <Button key={index} variant="ghost" className="text-2xl p-1 h-8 w-8" onClick={() => handleReactionClick(messageKey, emoji)}>
                             {emoji}
                           </Button>
                         ))}

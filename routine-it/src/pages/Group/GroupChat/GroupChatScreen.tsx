@@ -20,7 +20,7 @@ export const BASE_URL = "http://54.180.93.1:8080";
 const WS_CONNECTION_URL = `${BASE_URL}/ws`;
 
 export interface Message {
-  id: number;
+
   nickname: string;
   userId: number;
   message: string;
@@ -61,12 +61,13 @@ export function GroupChatScreen({ group, groupmembers, onBack, onAddAuthMessage,
           const body = JSON.parse(message.body);
 
           const newMsg: Message = {
-            id: Date.now(),
+          
             nickname: body.nickname,
             userId: body.userId,
             message: body.message,
             time: new Date().toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' }),
-            isMe: body.userId === myUserId,
+            //isMe: body.userId === myUserId,
+            isMe: body.nickname === myNickname,
             type: 'text',
             reactions: {},
           };
@@ -92,28 +93,46 @@ export function GroupChatScreen({ group, groupmembers, onBack, onAddAuthMessage,
     };
   }, [roomId, myUserId, myNickname]);
 
-  // ✉️ 메시지 보내기
-  const handleSendMessage = (text: string) => {
-    if (!text.trim()) return;
+const handleSendMessage = (text: string) => {
+  if (!text.trim()) return;
 
-    const msgBody = {
-      userId: myUserId,
-      nickname: myNickname,
-      message: text,
-      type: 'text',
-    };
-
-    stompClientRef.current?.publish({
-      destination: `/app/chat/${roomId}/send`,
-      body: JSON.stringify(msgBody),
-    });
+  const msgBody = {
+    userId: myUserId,
+    nickname: myNickname,
+    message: text,
+    type: 'text',
   };
 
+  // 1. 웹소켓으로 메시지 전송
+  stompClientRef.current?.publish({
+    destination: `/app/chat/${roomId}/send`,
+    body: JSON.stringify(msgBody),
+  });
+
+  // 2. 내 화면에 메시지 즉시 추가 (로컬 프리뷰)
+  // 서버로부터 응답을 기다리지 않고 즉시 화면에 표시
+  const newMsg: Message = {
+
+    nickname: myNickname,
+    userId: myUserId,
+    message: text,
+    time: new Date().toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' }),
+    isMe: true, // 내가 보낸 메시지이므로 isMe는 true
+    type: 'text',
+    reactions: {},
+  };
+
+  // ✅ 콘솔 로그 추가: 내가 보낸 메시지 객체를 화면에 추가하기 전에 확인
+    console.log("GroupChatScreen.jsx - newMsg : ", newMsg);
+    console.log("GroupChatScreen.jsx - messages State Before Update : ", messages);
+
+  setMessages((prev) => [...prev, newMsg]);
+};
   // 🖼️ 이미지 보내기 (로컬 프리뷰 + 서버 전송 필요하면 백엔드 맞춤)
   const handleSendImage = (file: File) => {
     const imageUrl = URL.createObjectURL(file);
     const newMessage: Message = {
-      id: Date.now(),
+     
       nickname: myNickname,
       userId: myUserId,
       message: '',
@@ -129,7 +148,7 @@ export function GroupChatScreen({ group, groupmembers, onBack, onAddAuthMessage,
   const handleSendAlbum = (files: FileList) => {
     const imageUrls = Array.from(files).map((file) => URL.createObjectURL(file));
     const newMessage: Message = {
-      id: Date.now(),
+      
       nickname: myNickname,
       userId: myUserId,
       message: '',
@@ -144,7 +163,7 @@ export function GroupChatScreen({ group, groupmembers, onBack, onAddAuthMessage,
 
   const handleAuthSubmit = (data: { description: string; image: File | null; isPublic: boolean }) => {
     const authMessage: Message = {
-      id: Date.now(),
+
       nickname: myNickname,
       userId: myUserId,
       message: data.description,
@@ -153,6 +172,8 @@ export function GroupChatScreen({ group, groupmembers, onBack, onAddAuthMessage,
       type: 'auth',
       reactions: {},
     };
+    console.log("GroupChatScreen.jsx - authMessage : ", authMessage);
+
     setMessages((prevMessages) => [...prevMessages, authMessage]);
 
     const routineId = group.routines?.[0]?.id || 0;
@@ -173,7 +194,7 @@ export function GroupChatScreen({ group, groupmembers, onBack, onAddAuthMessage,
     }
   };
 
-  const handleReactionClick = (messageId: number, emoji: string) => {
+  /*const handleReactionClick = (messageId: number, emoji: string) => {
     setMessages((prevMessages) =>
       prevMessages.map((msg) => {
         if (msg.id === messageId) {
@@ -189,9 +210,26 @@ export function GroupChatScreen({ group, groupmembers, onBack, onAddAuthMessage,
         return msg;
       })
     );
+  };*/
+   const handleReactionClick = (messageKey: string, emoji: string) => {
+    setMessages((prevMessages) =>
+      prevMessages.map((msg) => {
+        if (`${msg.nickname}-${msg.time}-${msg.message}` === messageKey) {
+          const newReactions = { ...msg.reactions };
+          if (newReactions[emoji]) {
+            newReactions[emoji]--;
+            if (newReactions[emoji] === 0) delete newReactions[emoji];
+          } else {
+            newReactions[emoji] = 1;
+          }
+          return { ...msg, reactions: newReactions };
+        }
+        return msg;
+      })
+    );
   };
 
-  const getUserInfo = (userId: number): UserProfile | undefined => {
+  /*const getUserInfo = (userId: number): UserProfile | undefined => {
     const member = groupmembers.find((m) => m.groupMemberId === userId);
     if (!member) return undefined;
     return {
@@ -200,7 +238,34 @@ export function GroupChatScreen({ group, groupmembers, onBack, onAddAuthMessage,
       profileImageUrl: 'default_image_url',
       streakDays: 0,
     };
+  };*/
+ const getUserInfo = (msg: Message): UserProfile | undefined => {
+  // ✅ 1. 가장 먼저, 메시지 객체의 닉네임이 현재 로그인한 사용자의 닉네임과 같은지 확인
+  if (msg.nickname === myNickname) {
+    // 닉네임이 같으면 내 메시지로 판단하고, userInfo 전체를 반환합니다.
+    return userInfo;
+  }
+
+  // 2. 만약 내 닉네임이 아니라면, groupmembers 배열에서 해당 userId를 가진 멤버를 찾습니다.
+  //    (다른 사용자의 메시지는 userId로 구분하는 로직을 유지)
+  const member = groupmembers.find((m) => m.groupMemberId === msg.userId);
+
+  // 3. 멤버를 찾지 못했다면 undefined를 반환
+  if (!member) {
+    console.warn(`사용자 정보를 찾을 수 없습니다: userId ${msg.userId}`);
+    return undefined;
+  }
+    console.log("getuserinfo",getUserInfo);
+    //console.log("chat screen isme : ",isMe);
+    console.log("chat screen member :" ,member);
+  return {
+    id: member.groupMemberId,
+    nickname: member.memberName,
+    profileImageUrl: userInfo.profileImageUrl,
+    streakDays: 0,
   };
+};
+
 
   return (
     <div className="flex flex-col h-screen bg-background">
@@ -263,7 +328,13 @@ export function GroupChatScreen({ group, groupmembers, onBack, onAddAuthMessage,
         </div>
       </div>
 
-      <GroupChatMessages messages={messages} myUserId={myUserId} getUserInfo={getUserInfo} handleReactionClick={handleReactionClick} />
+      <GroupChatMessages 
+        messages={messages}
+        myUserId={myUserId} 
+        getUserInfo={getUserInfo} 
+        handleReactionClick={handleReactionClick}
+        userInfo={userInfo}
+        />
       <GroupChatInput handleSendMessage={handleSendMessage} handleSendImage={handleSendImage} handleSendAlbum={handleSendAlbum} />
 
       <GroupRoutineDialog
