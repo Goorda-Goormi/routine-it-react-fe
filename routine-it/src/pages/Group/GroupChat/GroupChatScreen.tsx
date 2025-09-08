@@ -205,14 +205,14 @@ export function GroupChatScreen({ group, groupmembers, onBack, onLeaveGroup, use
     // };
 
     const handleDeleteGroup = async () => {
-        if (!window.confirm("정말로 이 그룹에서 나가시겠습니까?")) return;
+        if (!window.confirm("정말로 이 채팅에서 나가시겠습니까?")) return;
         try {
             await leaveGroup(group.groupId);
-            alert("성공적으로 그룹에서 탈퇴했습니다.");
+            alert("성공적으로 탈퇴했습니다.");
             onLeaveGroup();
         } catch (error) {
             console.error("그룹 탈퇴 오류:", error);
-            alert("그룹 탈퇴에 실패했습니다.");
+            alert("채팅방 나가기에 실패했습니다.");
         }
     };
 
@@ -235,11 +235,11 @@ export function GroupChatScreen({ group, groupmembers, onBack, onLeaveGroup, use
     };
 
     const getUserInfo = (msg: Message): UserProfile | undefined => {
-        if (msg.userId === myUserId) {
+        if (msg.senderNickname === myNickname) {
             return userInfo;
         }
-        const member = groupmembers.find((m) => m.groupMemberId === msg.userId);
-
+        //const member = groupmembers.find((m) => m.groupMemberId === msg.userId);
+const member = groupmembers.find((m) => m.memberName === msg.senderNickname);
         if (!member) {
             console.warn(`사용자 정보를 찾을 수 없습니다: userId ${msg.userId}`);
             return undefined;
