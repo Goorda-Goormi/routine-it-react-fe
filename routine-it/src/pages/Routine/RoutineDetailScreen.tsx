@@ -62,11 +62,11 @@ export function RoutineDetailScreen({ routine, onBack, onUpdateRoutine, onDelete
 
   const getCategoryEmoji = (category: string) => {
     switch (category) {
-      case '운동': return '💪';
-      case '건강': return '🏥';
-      case '학습': return '📚';
-      case '생활': return '🏠';
-      case '기타': return '📋';
+      case 'health': return '💪';
+      case 'exercise': return '🏥';
+      case 'study': return '📚';
+      case 'lifestyle': return '🏠';
+      case 'hobby': return '🎨';
       default: return '📋';
     }
   };

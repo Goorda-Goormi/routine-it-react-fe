@@ -163,7 +163,7 @@ const handleDayToggle = (day: string) => {
                   <SelectItem value="건강">🏥 건강</SelectItem>
                   <SelectItem value="학습">📚 학습</SelectItem>
                   <SelectItem value="생활">🏠 생활</SelectItem>
-                  <SelectItem value="기타">📋 기타</SelectItem>
+                  <SelectItem value="취미">🎨 취미</SelectItem>
                 </SelectContent>
               </Select>
               {errors.category && <p className="text-destructive text-sm mt-1">{errors.category}</p>}

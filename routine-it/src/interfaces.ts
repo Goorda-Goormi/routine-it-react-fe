@@ -7,6 +7,19 @@
   nano: number;
 }*/
 
+export type NotificationCategory = '홈' | '그룹' | '회고';
+
+export interface Notification {
+  id: number;
+  message: string;
+  category: NotificationCategory;
+  date: string;
+  icon?: React.ReactNode;
+  read: boolean;
+  relatedId?: number; // 그룹 ID 등 관련 정보
+  fullContent?: string; 
+  monthYear?: string;
+}
 
 export interface Group {
  
@@ -18,7 +31,12 @@ export interface Group {
   //groupDescription: string; 
   description: string;
   groupType: 'FREE' | 'REQUIRED'; 
-  alarmTime: string; 
+  alarmTime: {
+    hour: number;
+    minute: number;
+    second: number;
+    nano: number;
+  }; 
   authDays: string; 
   category: string;
   groupImageUrl: string; 

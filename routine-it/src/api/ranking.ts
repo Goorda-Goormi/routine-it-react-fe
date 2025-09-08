@@ -21,23 +21,27 @@ export interface RankingResponse {
 
 // 랭킹 점수 업데이트
 // POST /api/rankings/update-score
-export async function updateRankingScore(
+export const updateRankingScore = async (
   userId: number,
-  groupId: number,
-  score: number
-) {
+  score: number,
+  groupId?: number,
+): Promise<any> => {
   try {
-    const data = { userId, groupId, score };
-    const result = await apiFetch("/api/rankings/update-score", {
-      method: "POST",
-      body: JSON.stringify(data),
+    const params = new URLSearchParams();
+    params.append('userId', String(userId));
+    params.append('score', String(score));
+    if (groupId) {
+      params.append('groupId', String(groupId));
+    }
+    return await apiFetch(`/api/rankings/update-score?${params.toString()}`, {
+      method: 'POST',
     });
-    return result;
   } catch (error) {
     console.error("랭킹 점수 업데이트 실패:", error);
     throw error;
   }
-}
+};
+
 // 수정된 getPersonalRankings 함수
 export const getPersonalRankings = async (
   userId: number, // userId를 필수 매개변수로 추가

@@ -1,13 +1,17 @@
 import React, { useState } from 'react';
-import { Search, Plus, User, Settings, HelpCircle, LogOut } from 'lucide-react';
+import { Search, Bell, Camera, User, Settings, HelpCircle, LogOut } from 'lucide-react';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from './ui/dropdown-menu';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger, DropdownMenuLabel } from './ui/dropdown-menu';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
+import { Separator } from './ui/separator';
+import type { PendingAuthMap, AuthMessage } from '../interfaces';
 
 interface TopNavBarProps {
   onSearch: (query: string) => void;
-  onNewProject: () => void;
+  onNotificationClick: (notification: Notification) => void; 
+  notifications: Notification[];
+  pendingAuthMessages: PendingAuthMap;
   onProfileMenuClick: (action: string) => void;
   userInfo: {
     profileImageUrl: string;
@@ -15,13 +19,49 @@ interface TopNavBarProps {
   };
 }
 
-export function TopNavBar({ onSearch, onNewProject, onProfileMenuClick, userInfo }: TopNavBarProps) {
+// 알림 카테고리
+type NotificationCategory = '홈' | '그룹' | '회고';
+
+// 새 알림 타입 정의
+export interface Notification {
+  id: number;
+  message: string;
+  category: NotificationCategory;
+  date: string;
+  icon?: React.ReactNode; 
+  read: boolean;
+  relatedId?: number; // 그룹 ID 등 관련 정보
+}
+
+export function TopNavBar({ onSearch, onNotificationClick, notifications, pendingAuthMessages, onProfileMenuClick, userInfo }: TopNavBarProps) {
   const [searchQuery, setSearchQuery] = useState('');
 
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     onSearch(searchQuery);
   };
+
+  const [activeCategory, setActiveCategory] = useState<NotificationCategory>('홈');
+  const filteredNotifications = notifications.filter(
+      (n) => n.category === activeCategory
+    );
+
+    // '그룹' 카테고리일 때만 인증 대기 메시지 포함
+    if (activeCategory === '그룹') {
+      const pendingAuths = Object.entries(pendingAuthMessages).flatMap(
+        ([groupId, messages]) =>
+          messages.map((msg: AuthMessage) => ({
+            id: msg.id,
+            message: `${msg.nickname}님이 루틴 인증을 요청했습니다.`,
+            category: '그룹' as NotificationCategory,
+            date: '방금 전', // 실제 날짜로 수정 필요
+            icon: <Camera className="h-4 w-4 text-muted-foreground" />,
+            read: false,
+            relatedId: Number(groupId),
+          }))
+      );
+      filteredNotifications.push(...pendingAuths);
+    }
 
   // 아바타의 첫 글자를 가져오는 함수
   const getInitial = (nickname?: string) => {
@@ -43,15 +83,70 @@ export function TopNavBar({ onSearch, onNewProject, onProfileMenuClick, userInfo
 
         {/* 우측 버튼들 */}
         <div className="flex items-center space-x-2">
-          {/* 새 프로젝트 버튼 */}
-          <Button 
-            variant="ghost" 
-            size="sm" 
-            onClick={onNewProject}
-            className="text-card-foreground hover:text-card-foreground hover:bg-accent/50"
-          >
-            <Plus className="h-4 w-4 icon-secondary" />
-          </Button>
+          {/* 알림 버튼 */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                className="text-card-foreground hover:text-card-foreground hover:bg-accent/50 relative"
+              >
+                <Bell className="h-5 w-5 icon-secondary" />
+                 {/* 읽지 않은 알림이 있을 경우 빨간 점 표시 */}
+                {notifications.some(n => !n.read) && (
+                  <div className="absolute top-1 right-2 w-[4px] h-[4px] rounded-full bg-red-500" />
+                )}
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="start" className="w-[350px] h-[450px] p-0 flex">
+              {/* 알림 카테고리 (좌측) */}
+              <div className="w-1/4 h-full border-r border-border/60 bg-accent/30 flex flex-col items-center py-2">
+                {['홈', '그룹', '회고'].map(category => (
+                  <Button
+                    key={category}
+                    variant="ghost"
+                    className={`w-full justify-start rounded-none px-4 py-3 text-sm font-medium ${
+                      activeCategory === category ? 'bg-background' : 'hover:bg-accent'
+                    }`}
+                    onClick={() => setActiveCategory(category as NotificationCategory)}
+                  >
+                    {category}
+                  </Button>
+                ))}
+              </div>
+
+              {/* 알림 목록 (우측) */}
+              <div className="flex-1 overflow-y-auto p-4">
+                <DropdownMenuLabel className="mb-2 text-base font-semibold">
+                  {activeCategory} 알림
+                </DropdownMenuLabel>
+                <Separator className="mb-4" />
+                {filteredNotifications.length > 0 ? (
+                  <div className="space-y-3">
+                    {filteredNotifications.map((note) => (
+                      <DropdownMenuItem 
+                        key={note.id} 
+                        className="p-3 h-auto items-start space-x-3 cursor-pointer"
+                        onClick={() => onNotificationClick(note)} // 메뉴가 닫히지 않도록 방지
+                      >
+                        <div className="flex-shrink-0 flex items-center justify-center w-8 h-8 rounded-full bg-primary/10 text-primary-foreground/80">
+                           {note.icon ? note.icon : <Bell className="h-4 w-4 icon-secondary" />}
+                        </div>
+                        <div className="flex-1 flex flex-col">
+                           <p className="text-sm font-medium text-foreground leading-tight">{note.message}</p>
+                           <p className="text-xs text-muted-foreground mt-1">{note.date}</p>
+                        </div>
+                      </DropdownMenuItem>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center text-sm text-muted-foreground p-4">
+                    새로운 알림이 없습니다.
+                  </div>
+                )}
+              </div>
+            </DropdownMenuContent>
+          </DropdownMenu>
 
           {/* 프로필 드롭다운 */}
           <DropdownMenu>

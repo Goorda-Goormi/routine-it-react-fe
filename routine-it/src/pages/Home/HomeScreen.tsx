@@ -27,7 +27,7 @@ interface UserInfo {
 interface HomeScreenProps {
   onNavigate: (screen: string, params?: any) => void;
   userInfo: UserInfo;
-  personalRoutines: Routine[];
+  routines: Routine[];
   onToggleCompletion: (routineId: number, isGroupRoutine?: boolean) => void;
   streakDays: number;
   participatingGroups: Group[];
@@ -51,7 +51,7 @@ interface VerificationPhoto {
 export function HomeScreen({
   onNavigate,
   userInfo,
-  personalRoutines,
+  routines,
   onToggleCompletion,
   streakDays,
   participatingGroups,
@@ -72,16 +72,12 @@ export function HomeScreen({
 
   useEffect(() => {
     const newRoutineStates: Record<number, 'completed' | 'pending' | 'initial'> = {};
-    const allRoutines = [
-      ...personalRoutines,
-      ...participatingGroups.flatMap(group => group.routines || [])
-    ];
-
-    allRoutines.forEach(routine => {
+    (routines || []).forEach(routine => {
       if (routine.isGroupRoutine) {
         if (routine.completed) {
           newRoutineStates[routine.id] = 'completed';
         } else if (
+          // '승인 대기' 상태를 확인하는 로직은 그대로 유지합니다.
           participatingGroups.some(group =>
             pendingAuthMessages[group.groupId]?.some(msg => msg.routineId === routine.id)
           )
@@ -91,12 +87,13 @@ export function HomeScreen({
           newRoutineStates[routine.id] = 'initial';
         }
       } else {
+        // 개인 루틴의 완료 상태를 설정합니다.
         newRoutineStates[routine.id] = routine.completed ? 'completed' : 'initial';
       }
     });
 
     setRoutineStates(newRoutineStates);
-  }, [participatingGroups, personalRoutines, pendingAuthMessages]);
+  }, [participatingGroups, routines, pendingAuthMessages]);
 
   const handleGroupAuthClick = (routine: Routine, e: React.MouseEvent) => {
     e.stopPropagation();
@@ -109,15 +106,8 @@ export function HomeScreen({
 
   const todayDay = getTodayDayOfWeek();
 
-  const todayPersonalRoutines = (personalRoutines || []).filter((routine: Routine) => {
+  const allTodayRoutines = (routines || []).filter((routine: Routine) => {
     return routine.frequency && routine.frequency.includes(todayDay);
-  });
-
-  const todayGroupRoutines = participatingGroups.flatMap((group: Group) => {
-    if (group.routines && Array.isArray(group.routines)) {
-      return group.routines.filter((routine: Routine) => routine.frequency && routine.frequency.includes(todayDay));
-    }
-    return [];
   });
 
   const myVerificationPhotos: VerificationPhoto[] = [
@@ -187,8 +177,6 @@ export function HomeScreen({
 
     setIsGroupDialogOpen(false);
   };
-
-  const allTodayRoutines = [...todayPersonalRoutines, ...todayGroupRoutines];
 
   const completedRoutines = allTodayRoutines.filter(routine => {
     if (routine.isGroupRoutine) {
@@ -307,7 +295,7 @@ export function HomeScreen({
                     <div
                       className={`flex items-center justify-between rounded-lg p-3 transition-colors ${
                         isCompleted ? 'bg-green-50/50 dark:bg-green-900/20' : 'hover:bg-accent/50'
-                      } ${index < personalRoutines.length - 1 ? 'mb-1' : ''}`}
+                      } ${index < routines.length - 1 ? 'mb-1' : ''}`}
                     >
                       <div className="flex items-center space-x-3 flex-1 cursor-pointer " onClick={() => handleRoutineClick(routine)}>
                         <div className="flex items-center space-x-3">

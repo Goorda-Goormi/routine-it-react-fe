@@ -21,13 +21,15 @@ import { AttendanceModal } from './components/modules/AttendanceModal';
 import { StreakModal } from './components/modules/StreakModal';
 import { getStreakInfo } from './components/utils/streakUtils';
 import { AchievementBadgeModal } from './components/modules/AchievementBadgeModal';
-import type { AuthMessage,Routine,Group,Member,PendingAuthMap,UserProfile,GroupMemberResponse, IPersonalRankingResponse } from "./interfaces";
+import type { Notification, AuthMessage,Routine,Group,Member, PendingAuthMap,UserProfile,GroupMemberResponse } from "./interfaces";
 import { LoginModal } from './components/modules/LoginModal';
 import { LoadingSpinner } from "./components/ui/loading-spinner";
+import { MonthlyReviewModal } from './components/modules/MonthlyReviewModal';
 import { startKakaoLogin, getUserInfo } from "./api/login"; 
 import { completeSignup, logoutUser, deleteAccount } from './api/auth';
 import { createGroup, getAllGroups,getJoinedGroups,getGroupMembers } from "./api/group";
-import { getPersonalRankings, getUserTotalScore, getGlobalGroupRanking } from "./api/ranking";
+import { updateRankingScore, getPersonalRankings, getUserTotalScore, getGlobalGroupRanking } from "./api/ranking";
+import { getMonthlyReview } from './api/review';
 import type { IPersonalRankingResponse, UserTotalScoreResponse } from './interfaces';
 import type { GlobalGroupRankingData } from "./pages/Ranking/RankingScreen";import { toggleDarkMode as toggleDarkModeAPI, toggleAlarm as toggleAlarmAPI } from './api/setting';
 
@@ -35,6 +37,72 @@ interface NavigationState {
   screen: string;
   params?: any;
 }
+
+/**
+ * { hour: 8, minute: 0 } 형태의 alarmTime 객체를 '08:00' 형태의 문자열로 변환합니다.
+ */
+const convertAlarmTimeToTimeString = (alarmTime: { hour?: number; minute?: number }): string => {
+  if (!alarmTime || typeof alarmTime.hour !== 'number' || typeof alarmTime.minute !== 'number') {
+    // [수정] '시간 미정' 대신 기본 시간을 반환합니다.
+    return '09:00';
+  }
+  const hour = String(alarmTime.hour).padStart(2, '0');
+  const minute = String(alarmTime.minute).padStart(2, '0');
+  return `${hour}:${minute}`;
+};
+
+/**
+ * '1111100' 형태의 authDays 문자열을 ['월', '화', '수', '목', '금'] 형태의 배열로 변환합니다.
+ */
+const convertAuthDaysToFrequency = (authDays: string): string[] => {
+  const daysOfWeek = ['월', '화', '수', '목', '금', '토', '일'];
+  if (!authDays || authDays.length !== 7) {
+    return []; // 기본값은 빈 배열
+  }
+  return authDays.split('').map((char, index) => (char === '1' ? daysOfWeek[index] : null)).filter(Boolean) as string[];
+};
+
+const transformGroupToRoutine = (group: Group): Routine => {
+  
+  return {
+    // 1. Group 객체에서 직접 매핑되는 필드
+    id: group.groupId,
+    name: group.groupName,
+    description: group.description,
+    category: group.category,
+    isGroupRoutine: true, // 이 루틴이 그룹에서 왔음을 명시
+
+    // 2. 헬퍼 함수 및 타입 변환
+    time: convertAlarmTimeToTimeString(group.alarmTime),
+    frequency: convertAuthDaysToFrequency(group.authDays),
+    type: group.groupType === 'REQUIRED' ? '의무참여' : '자율참여',
+
+    // 3. Routine 객체에 필요하지만 Group 객체에 없는 필드 (기본값 설정)
+    difficulty: '보통',
+    completed: false, 
+    streak: 0,
+    goal: '30',
+    reminder: true,
+  };
+  
+};
+
+/**
+ * 루틴 난이도에 따라 점수를 계산합니다.
+ */
+const calculateScoreByDifficulty = (difficulty?: string): number => {
+  switch (difficulty) {
+    case '쉬움':
+      return 10;
+    case '보통':
+      return 20;
+    case '어려움':
+      return 30;
+    default:
+      return 10; // 난이도가 없으면 기본 점수
+  }
+};
+
 
 type BadgeType = '첫걸음' | '7일 연속' | '루틴 마스터' | '월간 챔피언';
 //type PendingAuthMap = { [groupId: number]: AuthMessage[] };
@@ -44,6 +112,7 @@ export default function App() {
   const [isLoggedIn, setIsLoggedIn] = useState<boolean>(false);
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
   const [isNewUser, setIsNewUser] = useState(false);
+  const [notifications, setNotifications] = useState<Notification[]>([]);
   const [activeTab, setActiveTab] = useState("home");
   const [pendingAuthMessages, setPendingAuthMessages] = useState<PendingAuthMap>({});
   const [navigationStack, setNavigationStack] = useState<NavigationState[]>([]);
@@ -91,47 +160,7 @@ export default function App() {
   const [UserInfo, setUserInfo] = useState<UserProfile | null>(null); // 초기 상태를 null로 변경
   const [isLoading, setIsLoading] = useState<boolean>(false);
 
-   const [personalRoutines, setPersonalRoutines] = useState<Routine[]>([
-    {
-      id: 1,
-      name: '아침 식단 챙기기',
-      description: '건강한 아침 식사를 통해 하루를 시작해보세요',
-      time: '08:00',
-      frequency: ["월", "화", "수", "목", "금", "토", "일"],
-      reminder: true,
-      goal: "30",
-      category: "건강",
-      completed: false,
-      streak: 5,
-      difficulty: "쉬움",
-    },
-    {
-      id: 2,
-      name: '오후 산책',
-      description: '점심 후 15분 산책으로 소화를 돕고 기분 전환하기',
-      time: '13:00',
-      frequency: ["월", "화", "수", "목", "금"],
-      reminder: true,
-      goal: "14",
-      category: "운동",
-      completed: false,
-      streak: 10,
-      difficulty: "보통",
-    },
-    {
-      id: 3,
-      name: '자기 전 책 읽기',
-      description: '자기 전 30분 책 읽기로 마음의 양식 쌓기',
-      time: '21:00',
-      frequency: ["월", "수", "금", "일"],
-      reminder: true,
-      goal: "60",
-      category: "학습",
-      completed: false,
-      streak: 20,
-      difficulty: "어려움",
-    },
-  ]);
+  const [personalRoutines, setPersonalRoutines] = useState<Routine[]>([])
 
  const [groups, setGroups] = useState<Group[]>([]);
  const [myGroups, setMyGroups] = useState<Group[]>([]);
@@ -140,7 +169,22 @@ export default function App() {
   const [groupRoutines, setGroupRoutines] = useState<Routine[]>([]);
   const [error, setError] = useState<string | null>(null);
 
-   
+  const [isReviewModalOpen, setReviewModalOpen] = useState(false);
+  const [reviewModalContent, setReviewModalContent] = useState({ content: '', monthYear: '' });
+  const addNotification = (newNotification: Notification) => {
+    // setNotifications는 항상 새로운 배열을 반환해야 합니다.
+    setNotifications(prevNotifications => [newNotification, ...prevNotifications]);
+  };
+
+  useEffect(() => {
+    const dummyNotifications: Notification[] = [
+      { id: 1, message: '출석체크로 20점을 획득했습니다!', category: '홈', date: '1분 전', read: false },
+      { id: 2, message: '김민지님이 그룹 루틴 인증을 요청했습니다.', category: '그룹', date: '10분 전', read: false },
+      { id: 3, message: '루틴 회고 알림이 도착했어요.', category: '회고', date: '어제', read: true },
+    ];
+    setNotifications(dummyNotifications);
+  }, []);
+  
   const [recommendedRoutines, setRecommendedRoutines] = useState([
     {
       id: 7,
@@ -150,7 +194,7 @@ export default function App() {
       frequency: ['월', '화', '수', '목', '금', '토', '일'],
       reminder: true,
       goal: '30',
-      category: '운동',
+      category: 'exercise',
       completed: false,
       streak: 0,
       difficulty: '쉬움',
@@ -164,7 +208,7 @@ export default function App() {
       frequency: ['월', '화', '수', '목', '금', '토', '일'],
       reminder: true,
       goal: '30',
-      category: '기타',
+      category: '',
       completed: false,
       streak: 0,
       difficulty: '쉬움',
@@ -178,7 +222,7 @@ export default function App() {
       frequency: ['월', '화', '수', '목', '금', '토', '일'],
       reminder: true,
       goal: '30',
-      category: '건강',
+      category: 'health',
       completed: false,
       streak: 0,
       difficulty: '보통',
@@ -192,7 +236,7 @@ export default function App() {
       frequency: ['월', '화', '수', '목', '금', '토', '일'],
       reminder: true,
       goal: '30',
-      category: '학습',
+      category: 'study',
       completed: false,
       streak: 0,
       difficulty: '보통',
@@ -206,7 +250,21 @@ export default function App() {
       frequency: ['월', '화', '수', '목', '금', '토', '일'],
       reminder: true,
       goal: '30',
-      category: '생활',
+      category: 'lifestyle',
+      completed: false,
+      streak: 0,
+      difficulty: '쉬움',
+      isGroupRoutine: false
+    },
+    {
+      id: 12,
+      name: '오늘의 사진 한 장',
+      description: '일상 속 특별한 순간을 포착하고 기록해보세요',
+      time: '08:00',
+      frequency: ['월', '화', '수', '목', '금', '토', '일'],
+      reminder: true,
+      goal: '30',
+      category: 'hobby',
       completed: false,
       streak: 0,
       difficulty: '쉬움',
@@ -277,13 +335,24 @@ export default function App() {
       setGroups(allGroups);
       setMyGroups(joinedGroups);
       */
-     const joinedGroupIds = new Set(joinedGroups.map((g: Group) => g.groupId));
 
-      // allGroups 중에서 joinedGroupIds에 포함된 그룹만 필터링합니다.
-      const filteredJoinedGroups = allGroups.filter((g: Group) => joinedGroupIds.has(g.groupId));
+      // 1. 받아온 '가입한 그룹' 목록을 '루틴' 객체 배열로 변환합니다.
+      const transformedRoutines = joinedGroups.map(transformGroupToRoutine);
 
+      // 2. 변환된 루틴 데이터를 새로운 state에 저장합니다.
+      setGroupRoutines(transformedRoutines);
+
+      // 3. 원본 그룹 데이터는 myGroups state에 저장하여 그룹 목록 UI 등에서 사용합니다.
+      setMyGroups(joinedGroups);
       setGroups(allGroups);
-       setMyGroups(filteredJoinedGroups); 
+
+    //  const joinedGroupIds = new Set(joinedGroups.map((g: Group) => g.groupId));
+
+    //   // allGroups 중에서 joinedGroupIds에 포함된 그룹만 필터링합니다.
+    //   const filteredJoinedGroups = allGroups.filter((g: Group) => joinedGroupIds.has(g.groupId));
+
+    //   setGroups(allGroups);
+    //    setMyGroups(filteredJoinedGroups); 
 
     } catch (err) {
       console.error("Failed to fetch groups:", err);
@@ -302,21 +371,22 @@ export default function App() {
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const accessToken = params.get('accessToken');
-    //const isNewUserParam = params.get('isNewUser');
+    const isNewUserParam = params.get('isNewUser');
     const storedToken = localStorage.getItem('accessToken');
 
     if (accessToken) {
       localStorage.setItem('accessToken', accessToken);
       setIsLoggedIn(true);
       fetchUserInfo(); // 로그인 성공 시 사용자 정보 즉시 불러오기
+      fetchGroupData();
         
-      // if (isNewUserParam === 'true') {
-      //   setIsNewUser(true);
-      //   setIsLoginModalOpen(true);
-      // }
-       fetchGroupData();
-      setIsNewUser(true);
-      setIsLoginModalOpen(true);
+      if (isNewUserParam === 'true') {
+        setIsNewUser(true);
+        setIsLoginModalOpen(true);
+      }
+      //  fetchGroupData();
+      // setIsNewUser(true);
+      // setIsLoginModalOpen(true);
       window.history.replaceState({}, document.title, window.location.pathname);
       
     } else {
@@ -331,12 +401,12 @@ export default function App() {
   }, []);
 
    //groups 상태가 변경될 때마다 groupRoutines 업데이트
-   useEffect(() => {
-    const newGroupRoutines: Routine[] = groups.flatMap(group => 
-      group.routines?.map(routine => ({ ...routine, isGroupRoutine: true })) || []
-    );
-    setGroupRoutines(newGroupRoutines);
-  }, [groups]);
+  //  useEffect(() => {
+  //   const newGroupRoutines: Routine[] = groups.flatMap(group => 
+  //     group.routines?.map(routine => ({ ...routine, isGroupRoutine: true })) || []
+  //   );
+  //   setGroupRoutines(newGroupRoutines);
+  // }, [groups]);
 
   // UserInfo(서버) 상태와 isDarkMode(UI) 상태를 동기화
   useEffect(() => {
@@ -534,6 +604,8 @@ export default function App() {
     );
   };
 
+
+
   const handleToggleCompletion = (routineId: number, isGroupRoutine?: boolean) => {
     let isCompleted = false;
     let routineOwner = isGroupRoutine ? 'group' : 'personal';
@@ -630,6 +702,51 @@ export default function App() {
     navigateBack();
   };
 
+  const fetchMonthlyReview = async () => {
+    try {
+      console.log("현재 accessToken:", localStorage.getItem('accessToken'));
+      // YYYY-MM 형식으로 지난달을 계산 (예시)
+      const date = new Date();
+      date.setMonth(date.getMonth() - 1);
+      const lastMonth = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+
+      const response = await getMonthlyReview(lastMonth);
+      if (response.success && response.data) {
+        // 알림 목록에 추가 (글자는 30자로 제한)
+        addNotification({
+          id: Date.now(),
+          message: response.data.substring(0, 30) + '...',
+          category: '회고',
+          date: `${lastMonth} 회고`,
+          read: false,
+          fullContent: response.data, 
+          monthYear: lastMonth
+        });
+      }
+    } catch (error) {
+      console.error("월간 회고 로딩 실패:", error);
+    }
+  };
+
+  // [추가] 회고 알림 클릭 시 모달을 여는 핸들러
+  const handleNotificationClick = (notification: Notification) => {
+    if (notification.category === '회고' && notification.fullContent) {
+      setReviewModalContent({
+        content: notification.fullContent,
+        monthYear: notification.monthYear || '월간'
+      });
+      setReviewModalOpen(true);
+    }
+    // TODO: 다른 카테고리 알림 클릭 시 동작 추가 (예: 그룹 인증으로 이동)
+  };
+
+  // 앱이 로드될 때 회고 데이터를 불러옵니다.
+  useEffect(() => {
+    if (isLoggedIn) {
+      fetchMonthlyReview();
+    }
+  }, [isLoggedIn]);
+
   
    //7.그룹 관련 =============================================================
   
@@ -660,16 +777,38 @@ export default function App() {
 };
 
   // 루틴 인증을 승인하는 함수에 groupId 추가
-  const handleApproveAuthMessage = (groupId: number, id: number) => {
+  const handleApproveAuthMessage = (groupId: number, authId: number) => {
   // 1. 승인할 인증 메시지 찾기
-  const messageToApprove = pendingAuthMessages[groupId]?.find(msg => msg.id === id);
+  const messageToApprove = pendingAuthMessages[groupId]?.find(msg => msg.id === authId);
 
   if (!messageToApprove) {
     console.log("승인할 인증 메시지를 찾을 수 없습니다.");
     return;
   }
 
- 
+  //모든 루틴 목록에서 승인된 루틴 정보를 찾습니다.
+  const allRoutines = [...personalRoutines, ...groupRoutines];
+  const approvedRoutine = allRoutines.find(r => r.id === messageToApprove.routineId);
+
+  if (approvedRoutine && UserInfo) {
+      const score = calculateScoreByDifficulty(approvedRoutine.difficulty);
+      const memberId = Number(messageToApprove.userId); // 인증을 올린 멤버의 ID
+
+      // 4. 랭킹 점수 업데이트 API 호출 (groupId 포함)
+      updateRankingScore(memberId, score, groupId)
+        .then(response => {
+          console.log(`그룹 루틴 인증 (${messageToApprove.nickname}님): ${score}점 획득 성공`, response);
+          
+          // 만약 내 인증이 승인된 것이라면, 화면의 총점을 즉시 업데이트합니다.
+          if (memberId === UserInfo.id) {
+            fetchUserTotalScore();
+          }
+        })
+        .catch(error => {
+          console.error("그룹 루틴 점수 업데이트 실패:", error);
+        });
+    }
+
   // 2. 그룹 상태를 업데이트하는 로직
   setGroups(prevGroups => 
     prevGroups.map(group => {
@@ -711,11 +850,11 @@ export default function App() {
   // pendingAuthMessages 상태에서 승인된 메시지 제거
   setPendingAuthMessages(prevMessages => ({
     ...prevMessages,
-    [groupId]: (prevMessages[groupId] || []).filter(msg => msg.id !== id)
+    [groupId]: (prevMessages[groupId] || []).filter(msg => msg.id !== authId)
   }));
   
-  console.log(`${id}번 인증을 승인했습니다.`);
-  alert(`${id}번 인증이 승인되었습니다.`);
+  console.log(`${authId}번 인증을 승인했습니다.`);
+  alert(`${authId}번 인증이 승인되었습니다.`);
 };
 
   // 루틴 인증을 거절하는 함수에 groupId 추가
@@ -1072,11 +1211,11 @@ const navigateTo = (screen: string, params?: any, options?: { replace?: boolean 
         return (
           <HomeScreen 
             onNavigate={navigateTo} 
-            personalRoutines={personalRoutines}
+            routines={[...personalRoutines, ...groupRoutines]}
             onToggleCompletion={handleToggleCompletion}
             streakDays={streakDays}
             userInfo={{...UserInfo, exp: UserInfo.exp ?? 0 }}
-            participatingGroups={groups}
+            participatingGroups={myGroups}
             onOpenAttendanceModal={handleOpenAttendanceModal}
             onOpenStreakModal={handleOpenStreakModal}
             onOpenBadgeModal={handleOpenBadgeModal}
@@ -1090,7 +1229,7 @@ const navigateTo = (screen: string, params?: any, options?: { replace?: boolean 
         return <RoutineScreen 
           onNavigate={navigateTo} 
           //allRoutines={allRoutines}
-          allRoutines={[...personalRoutines, ...groups.flatMap(g => g.routines || [])]}
+          allRoutines={[...personalRoutines, ...groupRoutines]}
           recommendedRoutines={recommendedRoutines}
           onToggleCompletion={handleToggleCompletion}
           onAddRecommendedRoutine={handleAddRecommendedRoutine}
@@ -1099,7 +1238,7 @@ const navigateTo = (screen: string, params?: any, options?: { replace?: boolean 
           onOpenBadgeModal={handleOpenBadgeModal}
           onAddAuthMessage={handleAddAuthMessage} 
           initialUserInfo={UserInfo} 
-          participatingGroups={groups} 
+          participatingGroups={myGroups} 
           allGroups={groups}
           pendingAuthMessages={pendingAuthMessages} 
         />;
@@ -1140,11 +1279,11 @@ const navigateTo = (screen: string, params?: any, options?: { replace?: boolean 
         return (
           <HomeScreen 
             onNavigate={navigateTo} 
-            personalRoutines={personalRoutines}
+            routines={personalRoutines}
             onToggleCompletion={handleToggleCompletion}
             streakDays={streakDays}
             userInfo={{...UserInfo, exp: UserInfo.exp ?? 0}}
-            participatingGroups={groups}   
+            participatingGroups={myGroups}   
             onOpenAttendanceModal={handleOpenAttendanceModal}
             onOpenStreakModal={handleOpenStreakModal}
             onOpenBadgeModal={handleOpenBadgeModal}
@@ -1294,9 +1433,11 @@ const navigateTo = (screen: string, params?: any, options?: { replace?: boolean 
             {!currentScreen && UserInfo && (
               <TopNavBar
                 onSearch={handleSearch}
-                onNewProject={handleNewProject}
+                onNotificationClick={handleNewProject}
                 onProfileMenuClick={handleProfileMenuClick}
                 userInfo={UserInfo}
+                notifications={notifications}
+                pendingAuthMessages={pendingAuthMessages}
               />
             )}
 
@@ -1345,6 +1486,13 @@ const navigateTo = (screen: string, params?: any, options?: { replace?: boolean 
         onClose={handleCloseBadgeModal}
         badgeName={badgeName}
         badgeImage={badgeImage}
+      />
+
+      <MonthlyReviewModal
+        isOpen={isReviewModalOpen}
+        onClose={() => setReviewModalOpen(false)}
+        reviewContent={reviewModalContent.content}
+        monthYear={reviewModalContent.monthYear}
       />
     </div>
   );
