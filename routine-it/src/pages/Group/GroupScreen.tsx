@@ -1,19 +1,26 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Input } from '../../components/ui/input';
 import { Search } from 'lucide-react';
 import { MyGroupsSection } from './MyGroupSection';
 import { AllGroupsSection } from './AllGroupSection';
-import type { Group } from '../../interfaces'; // Group 인터페이스를 별도로 관리하는 것이 좋습니다.
+import type { Group } from '../../interfaces';
 
 interface GroupScreenProps {
   onNavigate: (screen: string, params?: any) => void;
-  groups: Group[]; // 전체 그룹 데이터
-  myGroups: Group[]; // 내가 참여 중인 그룹 데이터
+  groups: Group[];
+  myGroups: Group[];
   onNewGroup: () => void;
-  //onJoinGroup: (groupId: number) => void;
+  onJoinGroup: (groupId: number) => void;
 }
 
 export function GroupScreen({ onNavigate, groups, myGroups, onNewGroup, onJoinGroup }: GroupScreenProps) {
+  const [searchTerm, setSearchTerm] = useState('');
+
+  // ✅ 수정된 부분: group.name이 유효한 값인지 확인
+  const filteredGroups = groups.filter(group =>
+    (group.groupName || '').toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
   return (
     <div className="space-y-4 h-full p-4 overflow-y-auto scrollbar-hide">
       {/* 검색 바 */}
@@ -22,6 +29,8 @@ export function GroupScreen({ onNavigate, groups, myGroups, onNewGroup, onJoinGr
         <Input
           placeholder="그룹 검색..."
           className="pl-10 bg-input-background border-border text-foreground placeholder:text-muted-foreground"
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
         />
       </div>
 
@@ -34,7 +43,7 @@ export function GroupScreen({ onNavigate, groups, myGroups, onNewGroup, onJoinGr
 
       {/* 전체 그룹 섹션 */}
       <AllGroupsSection
-        groups={groups}
+        groups={filteredGroups}
         onNavigate={onNavigate}
         onJoinGroup={onJoinGroup}
       />
