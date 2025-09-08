@@ -34,7 +34,8 @@ interface GroupDetailHeaderProps {
   pendingAuthCount: number;
   groupMembers: GroupMemberResponse[];
   onGroupDeleted: () => void; 
-  myid: string | number;
+  //myid: string | number;
+  myid : number;
   onGroupJoined: () => void;
 }
 

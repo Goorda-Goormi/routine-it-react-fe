@@ -126,3 +126,24 @@ export async function requestJoinGroup(groupId: number, groupMemberId: number) {
     throw new Error('그룹 가입 요청 실패');
   }
 }
+
+//리더 위임
+export async function delegateLeader(groupId: number, leaderId: number, targetMemberId: number) {
+  try {
+    const response = await apiFetch(`/group/${groupId}/members/role`, {
+      method: "PUT",
+      body: JSON.stringify({
+        groupId: groupId,
+        leaderId: leaderId,
+        targetMemberId: targetMemberId,
+        status:"JOINED",
+        role: "LEADER",
+        approved:"true",
+      }),
+    });
+    return response;
+  } catch (error) {
+    console.error("리더 위임 실패:", error);
+    throw error;
+  }
+}

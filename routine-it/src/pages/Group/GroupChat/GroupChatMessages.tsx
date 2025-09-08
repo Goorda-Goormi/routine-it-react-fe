@@ -4,7 +4,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '../../../components/ui/
 import { Button } from '../../../components/ui/button';
 import { Smile, CheckCircle } from 'lucide-react';
 import { getStreakInfo } from '../../../components/utils/streakUtils';
-import { Message } from './GroupChatScreen';
+import type { Message } from './GroupChatScreen';
 
 interface GroupChatMessagesProps {
   messages: Message[];
@@ -23,8 +23,15 @@ export function GroupChatMessages({ messages, myUserId, getUserInfo, handleReact
     <div className="flex-1 overflow-y-auto">
       <div className="max-w-md mx-auto px-4 py-4 space-y-4">
         {messages.map((msg) => {
-          const userInfo = getUserInfo(msg.userId);
-          const streakInfo = getStreakInfo(userInfo.streakDays);
+           const userInfo = getUserInfo(msg.userId);
+
+          // 🚨 널 체크 추가: userInfo가 undefined인 경우 렌더링하지 않음
+         if (!userInfo) {
+          return null; // 또는 빈 div 등 적절한 값을 반환하여 오류 방지
+          }
+          
+          //const userInfo = getUserInfo(msg.userId);
+          //const streakInfo = getStreakInfo(userInfo.streakDays);
           const isMyMessage = msg.userId === myUserId;
 
           return (
@@ -44,7 +51,7 @@ export function GroupChatMessages({ messages, myUserId, getUserInfo, handleReact
                 <div className={`flex flex-col ${isMyMessage ? 'items-end' : 'items-start'}`}>
                   {!isMyMessage && (
                     <div className="flex items-center space-x-1 mb-1">
-                      <span className="text-sm">{streakInfo.icon}</span>
+                      {/*<span className="text-sm">{streakInfo.icon}</span>*/}
                       <span className="text-xs text-muted-foreground">{msg.nickname}</span>
                       <span className="text-xs text-muted-foreground opacity-70">{userInfo.streakDays}일</span>
                     </div>

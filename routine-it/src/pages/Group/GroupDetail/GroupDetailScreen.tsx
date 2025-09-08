@@ -9,9 +9,10 @@ import { GroupRoutineDialog } from '../GroupChat/GroupRoutineDialog';
 import type { AuthMessage,IPersonalRankingData } from "../../../interfaces";
 import { getGroupMembers } from '../../../api/group';
 import type { GroupMemberResponse } from "../../../interfaces";
-import { deleteGroup,getJoinedGroups } from '../../../api/group';
+import { deleteGroup,getJoinedGroups,delegateLeader } from '../../../api/group';
 import { getGroupTop3Ranking } from '../../../api/ranking';
 import type { GlobalGroupRankingData } from '../../Ranking/RankingScreen';
+
 interface GroupDetailScreenProps {
   groupId: number;
   groups: any[];
@@ -27,7 +28,8 @@ interface GroupDetailScreenProps {
   groupMembers: GroupMemberResponse[];
   //onDeleteGroupSuccess: (deletedGroupId: number) => void;
   onDeleteGroupSuccess: () => void;
-  myid: string | number;
+  //myid: string | number;
+  myid:number;
   onGroupJoined: () => void;
   isJoined: boolean;
   
@@ -76,15 +78,15 @@ const [weeklyRanking, setWeeklyRanking] = useState<GlobalGroupRankingData[]>([])
   const handleRoutineAuthClick = () => setShowRoutineModal(true);
   const handleMemberClick = (member: any) => onNavigate('user-home', member);
 
-  const handleKickMember = (memberId: string | number) => {
+  const handleKickMember = (groupMemberId: string | number) => {
     alert('멤버를 그룹에서 내보냈습니다.');
     setShowExMembersModal(false);
   };
 
-  const handleDelegateLeader = (newLeaderId: string | number) => {
+  /*const handleDelegateLeader = (newLeaderId: string | number) => {
     alert('리더 권한이 성공적으로 위임되었습니다.');
     setShowExMembersModal(false);
-  };
+  };*/
 
  const handleAuthSubmit = (data: { description: string; image: File | null; isPublic: boolean }) => {
   const routineId = 123; // 테스트용 루틴 ID 또는 실제 값
@@ -133,7 +135,41 @@ useEffect(() => {
   };
 
   fetchRanking();
-}, [groupId, currentUser.id]); 
+}, [groupId, currentUser.id]);
+
+
+
+// 리더 위임 비동기 함수를 GroupDetailScreen에서 구현합니다.
+  const handleDelegateLeader = async (targetMemberId: number, targetMemberName: string) => {
+  try {
+    // API가 리더의 ID와 위임 대상의 ID를 받으므로, ID를 찾아서 전달합니다.
+    const currentLeader = groupMembers.find(m => m.memberName === group.leaderName);
+    
+    if (!currentLeader) {
+      alert("현재 리더 정보를 찾을 수 없습니다.");
+      return;
+    }
+
+    const currentLeaderId = currentLeader.groupMemberId;
+    
+    // API 호출
+    const response = await delegateLeader(group.groupId, Number(currentLeaderId), targetMemberId);
+    
+    // API 응답에 따라 성공 여부 판단
+    if (response.success) { // API 응답에 success 필드가 있다고 가정
+      alert(`그룹 리더가 ${targetMemberName}님으로 성공적으로 위임되었습니다.`);
+      setShowExMembersModal(false);
+      // 부모 컴포넌트의 그룹 정보를 업데이트하여 UI 갱신
+      onUpdateGroup({ ...group, leaderName: targetMemberName, leaderId: targetMemberId });
+    } else {
+      alert(response.message || '리더 위임에 실패했습니다.');
+    }
+    
+  } catch (error) {
+    console.error("리더 위임 실패:", error);
+    alert('리더 위임에 실패했습니다.');
+  }
+};
 
   return (
     <div className="min-h-screen relative">
@@ -157,7 +193,7 @@ useEffect(() => {
 
       <div className="p-4 space-y-4">
         <GroupDetailTabs
-          members={group?.recentMembers || []} // 그룹 상태에서 직접 가져오기
+  
           weeklyRanking={weeklyRanking}
           recentActivities={recentActivities}
           onMemberClick={handleMemberClick}
@@ -175,39 +211,41 @@ useEffect(() => {
         }}
       />
 
+
       <GroupMemberManager
         open={showExMembersModal}
         onOpenChange={setShowExMembersModal}
-        members={group?.recentMembers || []} // 그룹 상태에서 직접 가져오기
+        members={groupMembers} 
         onKickMember={handleKickMember}
         onDelegateLeader={handleDelegateLeader} 
+        isLeader={isLeader}
       />
 
       <Dialog open={showApprovalModal} onOpenChange={setShowApprovalModal}>
         <DialogContent className="max-w-md text-icon-secondary dark:text-white">
           <GroupApproval
-        authMessages={pendingGroupAuthMessages}
-        onApprove={(messageId) => {
-          const message = pendingGroupAuthMessages.find(m => m.id === messageId);
-          if (message) {
-            console.log("인증 제출한 사용자 ID:", message.userId);
-            console.log("승인 처리 대상 메시지 ID:", messageId);
-            onApproveAuthMessage(groupId, messageId);
-          }
-          setShowApprovalModal(false);
-        }}
-        onReject={(messageId) => {
-          const message = pendingGroupAuthMessages.find(m => m.id === messageId);
-          if (message) {
-            console.log("거절 처리 대상 사용자 ID:", message.userId);
-          }
-          onRejectAuthMessage(groupId, messageId);
-          setShowApprovalModal(false);
-        }}
-        onClose={() => setShowApprovalModal(false)}
-      />
-  </DialogContent>
-</Dialog>
+            authMessages={pendingGroupAuthMessages}
+            onApprove={(messageId) => {
+              const message = pendingGroupAuthMessages.find(m => m.id === messageId);
+              if (message) {
+                console.log("인증 제출한 사용자 ID:", message.userId);
+                console.log("승인 처리 대상 메시지 ID:", messageId);
+                onApproveAuthMessage(groupId, messageId);
+              }
+              setShowApprovalModal(false);
+            }}
+            onReject={(messageId) => {
+              const message = pendingGroupAuthMessages.find(m => m.id === messageId);
+              if (message) {
+                console.log("거절 처리 대상 사용자 ID:", message.userId);
+              }
+              onRejectAuthMessage(groupId, messageId);
+              setShowApprovalModal(false);
+            }}
+            onClose={() => setShowApprovalModal(false)}
+          />
+      </DialogContent>
+    </Dialog>
 
       <GroupRoutineDialog
         isOpen={showRoutineModal}

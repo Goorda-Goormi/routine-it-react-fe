@@ -1,22 +1,23 @@
-import React, { useState } from 'react';
+// GroupChatScreen.jsx
+import React, { useState, useEffect, useRef } from 'react';
+import SockJS from 'sockjs-client';
+import { Client } from '@stomp/stompjs';
+
 import { Button } from '../../../components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '../../../components/ui/avatar';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '../../../components/ui/dialog';
 import { ArrowLeft, CheckCircle, Users } from 'lucide-react';
-import { getStreakInfo } from '../../../components/utils/streakUtils';
+
 import { GroupRoutineDialog } from './GroupRoutineDialog';
 import { GroupChatMessages } from './GroupChatMessages';
 import { GroupChatInput } from './GroupChatInput';
-import type { UserProfile } from '../../../interfaces';
-//import { deleteGroup } from '../../../api/group';
 import { leaveGroup } from '../../../api/chat';
-interface GroupChatScreenProps {
-  group: any;
-  onBack: () => void;
-  onAddAuthMessage: (groupId: number, data: any, nickname: string, userId: string | number, routineId: number) => void;
-  onLeaveGroup: () => void;
-}
 
+import type { Group, UserProfile, GroupMemberResponse } from '../../../interfaces';
+
+// 👉 API 기본 URL, WS 연결 URL
+export const BASE_URL = "http://54.180.93.1:8080";
+const WS_CONNECTION_URL = `${BASE_URL}/ws`;
 
 export interface Message {
   id: number;
@@ -31,163 +32,89 @@ export interface Message {
   albumImages?: string[];
 }
 
-export function GroupChatScreen({ group, onBack, onAddAuthMessage, onLeaveGroup }: GroupChatScreenProps) {
+export function GroupChatScreen({ group, groupmembers, onBack, onAddAuthMessage, onLeaveGroup, userInfo }) {
   const [isAuthDialogOpen, setIsAuthDialogOpen] = useState(false);
   const [isMembersDialogOpen, setIsMembersDialogOpen] = useState(false);
+  const [messages, setMessages] = useState<Message[]>([]);
 
+  const stompClientRef = useRef<Client | null>(null);
 
+  const myUserId = userInfo.id;
+  const myNickname = userInfo.nickname;
+  const roomId = group.groupId; // 그룹 채팅방 ID
 
-  const myUserId = 2; // '나'의 userId를 상수로 정의
-  const myNickname = '나';
+  // 🔌 웹소켓 연결
+  useEffect(() => {
+    const socket = new SockJS(WS_CONNECTION_URL);
+    const stompClient = new Client({
+      webSocketFactory: () => socket,
+      connectHeaders: {
+        Authorization: 'Bearer ' + localStorage.getItem('accessToken'),
+      },
+      debug: (str) => console.log(str),
+      reconnectDelay: 5000, // 재연결 5초
+      onConnect: () => {
+        console.log('✅ STOMP 연결 성공');
 
-  // 그룹 멤버 데이터
-  const groupMembers: UserProfile[] = [
-    {
-      id: 1,
-      nickname: '루티니',
-      profileImageUrl: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=40&h=40&fit=crop&crop=face',
-      streakDays: 45,
-      exp: 1850,
-    },
-    {
-      id: myUserId, // '나'의 id
-      nickname: '나',
-      profileImageUrl: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=40&h=40&fit=crop&crop=face',
-      streakDays: 28,
-      exp: 1904,
-    },
-    {
-      id: 3,
-      nickname: '관습박',
-      profileImageUrl: 'https://images.unsplash.com/photo-1494790108755-2616b95fcebf?w=40&h=40&fit=crop&crop=face',
-      streakDays: 3,
-      exp: 1850,
-    },
-    {
-      id: 4,
-      nickname: '지속성',
-      profileImageUrl: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=40&h=40&fit=crop&crop=face',
-      streakDays: 120,
-      exp: 1552,
-    },
-    {
-      id: 5,
-      nickname: '성실불성실',
-      profileImageUrl: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=40&h=40&fit=crop&crop=face',
-      streakDays: 8,
-      exp: 1643,
-    },
-  ];
+        // 구독
+        stompClient.subscribe(`/topic/chat/${roomId}`, (message) => {
+          const body = JSON.parse(message.body);
 
-  const [messages, setMessages] = useState<Message[]>([
-    {
-      id: 1,
-      nickname: '루티니',
-      userId: 1,
-      message: '오늘도 운동 완료! 💪',
-      time: '14:32',
-      isMe: false,
-      type: 'text',
-      reactions: { '👍': 1, '🔥': 2 },
-    },
-    {
-      id: 2,
-      nickname: '나',
-      userId: 2,
-      message: '저도 방금 끝냈어요! 같이 운동하니까 더 동기부여 되는 것 같아요',
-      time: '14:35',
-      isMe: true,
-      type: 'text',
-      reactions: { '👏': 1 },
-    },
-    {
-      id: 3,
-      nickname: '관습박',
-      userId: 3,
-      message: '다들 대단하시네요! 저는 내일부터 시작할게요 😅',
-      time: '14:40',
-      isMe: false,
-      type: 'text',
-      reactions: {},
-    },
-    {
-      id: 4,
-      nickname: '지속성',
-      userId: 4,
-      message: '화이팅! 함께하면 더 오래 지속할 수 있어요',
-      time: '14:42',
-      isMe: false,
-      type: 'text',
-      reactions: { '🎉': 1, '💪': 1 },
-    },
-    {
-      id: 5,
-      nickname: '성실불성실',
-      userId: 5,
-      message: '오늘 첫 운동이에요! 긴장되네요 ㅎㅎ',
-      time: '14:45',
-      isMe: false,
-      type: 'text',
-      reactions: {},
-    },
-  ]);
+          const newMsg: Message = {
+            id: Date.now(),
+            nickname: body.nickname,
+            userId: body.userId,
+            message: body.message,
+            time: new Date().toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' }),
+            isMe: body.userId === myUserId,
+            type: 'text',
+            reactions: {},
+          };
+          setMessages((prev) => [...prev, newMsg]);
+        });
 
-  /*
-  const handleDeleteGroup = async () => {
-    // 사용자에게 한 번 더 확인할 수 있는 로직을 추가하면 더 안전합니다.
-    if (!window.confirm("정말로 이 그룹에서 나가시겠습니까?")) {
-      return;
-    }
+        // 온라인 신호
+        stompClient.publish({
+          destination: `/app/chat/${roomId}/online`,
+          body: JSON.stringify({ userId: myUserId, nickname: myNickname }),
+        });
+      },
+      onStompError: (frame) => {
+        console.error('❌ STOMP 오류:', frame);
+      },
+    });
 
-    try {
-      await deleteGroup(group.groupId);
-      alert("성공적으로 그룹에서 탈퇴했습니다.");
-      //onBack(); // 그룹 목록 화면으로 돌아가기
-    onLeaveGroup();
-    //onBack();
-    } catch (error) {
-      console.error("그룹 탈퇴 오류:", error);
-      alert("그룹 탈퇴에 실패했습니다.");
-    }
-  };*/
-  const handleDeleteGroup = async () => {
-  // 사용자에게 한 번 더 확인할 수 있는 로직을 추가하면 더 안전합니다.
-  if (!window.confirm("정말로 이 그룹에서 나가시겠습니까?")) {
-    return;
-  }
+    stompClient.activate();
+    stompClientRef.current = stompClient;
 
-  try {
-    // leaveGroup API를 호출하고 group.groupId를 전달합니다.
-    await leaveGroup(group.groupId);
-    alert("성공적으로 그룹에서 탈퇴했습니다.");
-    onLeaveGroup(); // 그룹 목록 화면으로 돌아가는 함수 호출
-  } catch (error) {
-    console.error("그룹 탈퇴 오류:", error);
-    alert("그룹 탈퇴에 실패했습니다.");
-  }
-};
+    return () => {
+      stompClient.deactivate();
+    };
+  }, [roomId, myUserId, myNickname]);
 
+  // ✉️ 메시지 보내기
   const handleSendMessage = (text: string) => {
-    if (text.trim()) {
-      const newMessage: Message = {
-        id: Date.now(),
-        nickname: '나',
-        userId: myUserId,
-        message: text.trim(),
-        time: new Date().toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' }),
-        isMe: true,
-        type: 'text',
-        reactions: {},
-      };
-      setMessages((prevMessages) => [...prevMessages, newMessage]);
-    }
+    if (!text.trim()) return;
+
+    const msgBody = {
+      userId: myUserId,
+      nickname: myNickname,
+      message: text,
+      type: 'text',
+    };
+
+    stompClientRef.current?.publish({
+      destination: `/app/chat/${roomId}/send`,
+      body: JSON.stringify(msgBody),
+    });
   };
 
+  // 🖼️ 이미지 보내기 (로컬 프리뷰 + 서버 전송 필요하면 백엔드 맞춤)
   const handleSendImage = (file: File) => {
     const imageUrl = URL.createObjectURL(file);
     const newMessage: Message = {
       id: Date.now(),
-      nickname: '나',
+      nickname: myNickname,
       userId: myUserId,
       message: '',
       time: new Date().toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' }),
@@ -196,15 +123,14 @@ export function GroupChatScreen({ group, onBack, onAddAuthMessage, onLeaveGroup 
       reactions: {},
       imageUrl,
     };
-    setMessages((prevMessages) => [...prevMessages, newMessage]);
+    setMessages((prev) => [...prev, newMessage]);
   };
 
   const handleSendAlbum = (files: FileList) => {
     const imageUrls = Array.from(files).map((file) => URL.createObjectURL(file));
-
     const newMessage: Message = {
       id: Date.now(),
-      nickname: '나',
+      nickname: myNickname,
       userId: myUserId,
       message: '',
       time: new Date().toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' }),
@@ -213,12 +139,10 @@ export function GroupChatScreen({ group, onBack, onAddAuthMessage, onLeaveGroup 
       reactions: {},
       albumImages: imageUrls,
     };
-
     setMessages((prev) => [...prev, newMessage]);
   };
-  const myUserName = '나';
-   const handleAuthSubmit = (data: { description: string; image: File | null; isPublic: boolean }) => {
-    // 1. 그룹 채팅에 바로 표시할 메시지 추가
+
+  const handleAuthSubmit = (data: { description: string; image: File | null; isPublic: boolean }) => {
     const authMessage: Message = {
       id: Date.now(),
       nickname: myNickname,
@@ -230,12 +154,23 @@ export function GroupChatScreen({ group, onBack, onAddAuthMessage, onLeaveGroup 
       reactions: {},
     };
     setMessages((prevMessages) => [...prevMessages, authMessage]);
-     
+
     const routineId = group.routines?.[0]?.id || 0;
-    // 2. props로 받은 onAddAuthMessage 함수를 호출하여 필요한 모든 데이터를 전달
-    onAddAuthMessage(group.id, data, myNickname, myUserId, routineId);
-    
+    onAddAuthMessage(group.groupId, data, myNickname, myUserId, routineId);
+
     setIsAuthDialogOpen(false);
+  };
+
+  const handleDeleteGroup = async () => {
+    if (!window.confirm("정말로 이 그룹에서 나가시겠습니까?")) return;
+    try {
+      await leaveGroup(group.groupId);
+      alert("성공적으로 그룹에서 탈퇴했습니다.");
+      onLeaveGroup();
+    } catch (error) {
+      console.error("그룹 탈퇴 오류:", error);
+      alert("그룹 탈퇴에 실패했습니다.");
+    }
   };
 
   const handleReactionClick = (messageId: number, emoji: string) => {
@@ -243,13 +178,11 @@ export function GroupChatScreen({ group, onBack, onAddAuthMessage, onLeaveGroup 
       prevMessages.map((msg) => {
         if (msg.id === messageId) {
           const newReactions = { ...msg.reactions };
-          if (newReactions[emoji] && newReactions[emoji] > 0) {
+          if (newReactions[emoji]) {
             newReactions[emoji]--;
-            if (newReactions[emoji] === 0) {
-              delete newReactions[emoji];
-            }
+            if (newReactions[emoji] === 0) delete newReactions[emoji];
           } else {
-            newReactions[emoji] = (newReactions[emoji] || 0) + 1;
+            newReactions[emoji] = 1;
           }
           return { ...msg, reactions: newReactions };
         }
@@ -258,55 +191,57 @@ export function GroupChatScreen({ group, onBack, onAddAuthMessage, onLeaveGroup 
     );
   };
 
-  const getUserInfo = (userId: number): UserProfile => {
-    return groupMembers.find((member) => member.id === userId) || groupMembers[1];
+  const getUserInfo = (userId: number): UserProfile | undefined => {
+    const member = groupmembers.find((m) => m.groupMemberId === userId);
+    if (!member) return undefined;
+    return {
+      id: member.groupMemberId,
+      nickname: member.memberName,
+      profileImageUrl: 'default_image_url',
+      streakDays: 0,
+    };
   };
 
   return (
     <div className="flex flex-col h-screen bg-background">
       {/* 헤더 */}
-      <div className="sticky top-0 z-10 bg-background/95 backdrop-blur border-b border-b-[var(--color-border-bottom-custom)] p-4">
+      <div className="sticky top-0 z-10 bg-background/95 backdrop-blur border-b p-4">
         <div className="mx-auto flex items-center justify-between">
           <div className="flex-1 flex items-center space-x-3">
-            <Button variant="ghost" size="sm" onClick={onBack} className="p-1 text-card-foreground hover:text-card-foreground">
-              <ArrowLeft className="h-5 w-5 icon-secondary" />
+            <Button variant="ghost" size="sm" onClick={onBack} className="p-1">
+              <ArrowLeft className="h-5 w-5" />
             </Button>
             <div className="flex-1" />
           </div>
           <div className="flex flex-col items-center">
-            <h1 className="font-bold text-base text-card-foreground line-clamp-2">{group.name}</h1>
-            <p className="text-xs text-muted-foreground">{group.members}명 참여 중</p>
+            <h1 className="font-bold text-base">{group.groupName}</h1>
+            <p className="text-xs text-muted-foreground">{group.currentMemberCount}명 참여 중</p>
           </div>
-          <div className="flex-1 flex items-center justify-end space-x-2 text-icon-secondary dark:text-white">
-            <div className="flex-1" />
+          <div className="flex-1 flex items-center justify-end space-x-2">
             <Dialog open={isMembersDialogOpen} onOpenChange={setIsMembersDialogOpen}>
               <DialogTrigger asChild>
-                <Button variant="ghost" size="sm" className="text-card-foreground hover:text-card-foreground">
-                  <Users className="h-4 w-4 icon-secondary" />
+                <Button variant="ghost" size="sm">
+                  <Users className="h-4 w-4" />
                 </Button>
               </DialogTrigger>
-              <DialogContent className="max-w-sm mx-auto text-icon-secondary">
+              <DialogContent className="max-w-sm mx-auto">
                 <DialogHeader>
-                  <DialogTitle className="text-card-foreground">그룹 멤버</DialogTitle>
-                  <DialogDescription>{group.name} 참여 멤버들의 연속 출석 현황</DialogDescription>
+                  <DialogTitle>그룹 멤버</DialogTitle>
+                  <DialogDescription>{group.groupName} 참여 멤버</DialogDescription>
                 </DialogHeader>
                 <div className="space-y-3 max-h-80 overflow-y-auto">
-                  {groupMembers.map((member) => {
-                    const streakInfo = getStreakInfo(member.streakDays);
+                  {groupmembers.map((member) => {
+                    const isMe = member.memberName === myNickname;
                     return (
-                      <div key={member.id} className="flex items-center space-x-3 p-2 rounded-lg hover:bg-accent/50 transition-colors">
+                      <div key={member.groupMemberId} className="flex items-center space-x-3 p-2 rounded-lg hover:bg-accent/50">
                         <Avatar className="h-10 w-10">
-                          <AvatarImage src={member.profileImageUrl} alt={member.nickname} />
-                          <AvatarFallback className="text-sm">{member.nickname[0]}</AvatarFallback>
+                          <AvatarImage src={isMe ? userInfo.profileImageUrl : ''} alt={member.memberName} />
+                          <AvatarFallback>{member.memberName}</AvatarFallback>
                         </Avatar>
                         <div className="flex-1">
                           <div className="flex items-center space-x-2">
-                            <span className="text-lg">{streakInfo.icon}</span>
-                            <span className="text-sm font-medium text-card-foreground">{member.nickname}</span>
-                            {member.id === myUserId && <span className="text-xs text-muted-foreground">(나)</span>}
-                          </div>
-                          <div className="text-xs text-muted-foreground">
-                            {member.streakDays}일 연속 • {streakInfo.stage}
+                            <span className="text-sm font-medium">{member.memberName}</span>
+                            {isMe && <span className="text-xs text-muted-foreground">(나)</span>}
                           </div>
                         </div>
                       </div>
@@ -314,43 +249,30 @@ export function GroupChatScreen({ group, onBack, onAddAuthMessage, onLeaveGroup 
                   })}
                 </div>
                 <div className="border-t pt-4 mt-4">
-                <Button
-                  variant="destructive"
-                  className="w-full"
-                  onClick={handleDeleteGroup} 
-                >
-                  그룹 나가기
-                </Button>
-              </div>
+                  <Button variant="destructive" className="w-full" onClick={handleDeleteGroup}>
+                    그룹 나가기
+                  </Button>
+                </div>
               </DialogContent>
             </Dialog>
-            {/* 인증하기 버튼 */}
-            <Button
-              size="sm"
-              className="bg-green-400 hover:bg-green-500 text-icon-secondary dark:text-white"
-              onClick={() => setIsAuthDialogOpen(true)}
-            >
-              <CheckCircle className="h-4 w-4 mr-1 text-icon-secondary dark:text-white " />
+            <Button size="sm" className="bg-green-400 hover:bg-green-500" onClick={() => setIsAuthDialogOpen(true)}>
+              <CheckCircle className="h-4 w-4 mr-1" />
               인증하기
             </Button>
           </div>
         </div>
       </div>
 
-      {/* 메시지 목록 */}
       <GroupChatMessages messages={messages} myUserId={myUserId} getUserInfo={getUserInfo} handleReactionClick={handleReactionClick} />
-
-      {/* 메시지 입력 */}
       <GroupChatInput handleSendMessage={handleSendMessage} handleSendImage={handleSendImage} handleSendAlbum={handleSendAlbum} />
-      
-      {/* GroupRoutineDialog 모달을 조건부 렌더링 */}
-       <GroupRoutineDialog 
-       isOpen={isAuthDialogOpen} 
-       onOpenChange={setIsAuthDialogOpen} 
-       onAuthSubmit={handleAuthSubmit}
-       isMandatory={group.isMandatory}
-       selectedRoutine={group.routines?.[0] || null} 
-       />
+
+      <GroupRoutineDialog
+        isOpen={isAuthDialogOpen}
+        onOpenChange={setIsAuthDialogOpen}
+        onAuthSubmit={handleAuthSubmit}
+        isMandatory={group.groupType === 'REQUIRED'}
+        selectedRoutine={group.routines?.[0] || null}
+      />
     </div>
   );
 }

@@ -274,7 +274,15 @@ export default function App() {
 
    const [groupMembers, setGroupMembers] = useState<Record<number, GroupMemberResponse[]>>({});
   
+    const currentScreen =
+    navigationStack.length > 0
+      ? navigationStack[navigationStack.length - 1]
+      : null;
 
+        const groupId = currentScreen && currentScreen.params ? currentScreen.params.groupId : undefined;
+        const members = groupId !== undefined ? (groupMembers[groupId] || []) : [];
+        const myId = UserInfo?.id; 
+        const isJoined = groupId !== undefined ? myGroups.some(joinedGroup => joinedGroup.groupId === groupId) : false;
   //2. 유틸리티 함수 ============================================
   const badgeInfo = {
     '첫걸음': {
@@ -445,7 +453,7 @@ export default function App() {
   };
 
   fetchMembers();
-}, [navigationStack]);
+}, [navigationStack, isJoined]);
   
 
   //5. 사용자/계정 관리 =============================================================
@@ -905,6 +913,8 @@ const handleAddGroup = async (newGroupData: any) => {
           : group
       )
     );
+
+    
   };
 
 
@@ -1078,10 +1088,10 @@ const navigateTo = (screen: string, params?: any, options?: { replace?: boolean 
 
 // 9. 화면 렌더링 및 모달 =============================================================
 
-  const currentScreen =
-    navigationStack.length > 0
-      ? navigationStack[navigationStack.length - 1]
-      : null;
+  //const currentScreen =
+    //navigationStack.length > 0
+      //? navigationStack[navigationStack.length - 1]
+      //: null;
 
   const renderScreen = () => {
     if (!isLoggedIn) {
@@ -1106,10 +1116,10 @@ const navigateTo = (screen: string, params?: any, options?: { replace?: boolean 
           );
        
           case "group-detail": { 
-        const groupId = currentScreen.params.groupId;
-        const members = groupMembers[groupId] || [];
-        const myId = UserInfo?.id; 
-        const isJoined = myGroups.some(joinedGroup => joinedGroup.groupId === groupId);
+        //const groupId = currentScreen.params.groupId;
+        //const members = groupMembers[groupId] || [];
+        //const myId = UserInfo?.id; 
+        //const isJoined = myGroups.some(joinedGroup => joinedGroup.groupId === groupId);
            console.log('넘어온 params:', currentScreen.params);
           console.log('넘어온 groupId:', groupId);
           console.log('해당 그룹의 멤버 groupmembers:', members);
@@ -1130,7 +1140,7 @@ const navigateTo = (screen: string, params?: any, options?: { replace?: boolean 
             currentUser={UserInfo} 
             groupMembers={members}
             onDeleteGroupSuccess={handleDeleteGroupSuccess}
-            myid={myId}
+            myid={myId ?? 0}
             onGroupJoined={fetchGroupData}
             isJoined={isJoined}
            
@@ -1156,10 +1166,13 @@ const navigateTo = (screen: string, params?: any, options?: { replace?: boolean 
           return (
             <GroupChatScreen
               group={currentScreen.params}
+              groupmembers={members}
               onBack={navigateBack}
                onAddAuthMessage={handleAddAuthMessage}
                //groupMembers={groupMembers}
                 onLeaveGroup={handleLeaveGroup}
+                userInfo={UserInfo}
+                //streakDays={streakDays}
             />
           );
         }

@@ -8,7 +8,7 @@ import { Trophy, Users, Medal, Crown, Star, Target } from 'lucide-react';
 import type { Group, IPersonalRankingResponse, IPersonalRankingData } from '../../interfaces';
 import { getGlobalGroupRanking, getUserTotalScore } from '../../api/ranking';
 
-// API 연동 추가: 그룹 랭킹 인터페이스 정의
+//그룹 랭킹 인터페이스 정의
 export interface IGroupRankingItem {
   rank: number;
   groupId: number;
