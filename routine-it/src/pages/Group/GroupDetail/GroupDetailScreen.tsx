@@ -9,9 +9,10 @@ import { GroupRoutineDialog } from '../GroupChat/GroupRoutineDialog';
 import type { AuthMessage,IPersonalRankingData } from "../../../interfaces";
 import { getGroupMembers } from '../../../api/group';
 import type { GroupMemberResponse } from "../../../interfaces";
-import { deleteGroup,getJoinedGroups,delegateLeader } from '../../../api/group';
+import { deleteGroup,getJoinedGroups,delegateLeader, } from '../../../api/group';
 import { getGroupTop3Ranking } from '../../../api/ranking';
 import type { GlobalGroupRankingData } from '../../Ranking/RankingScreen';
+import { getPendingAuthentications, approveAuthentication, rejectAuthentication, submitAuthentication } from '../../../api/group'; 
 
 interface GroupDetailScreenProps {
   groupId: number;
@@ -20,10 +21,10 @@ interface GroupDetailScreenProps {
   onNavigate: (screen: string, params?: any) => void;
   onUpdateGroup: (group: any) => void;
   //onJoinGroup: (groupId: number) => void;
-  pendingAuthMessages: { [groupId: number]: AuthMessage[] };
-  onAddAuthMessage: (groupId: number, data: any, nickname: string, userId: string | number,  routineId: number) => void;
-  onApproveAuthMessage: (groupId: number, id: number) => void; 
-  onRejectAuthMessage: (groupId: number, id: number) => void;
+  //pendingAuthMessages: { [groupId: number]: AuthMessage[] };
+  //onAddAuthMessage: (groupId: number, data: any, nickname: string, userId: string | number,  routineId: number) => void;
+  //onApproveAuthMessage: (groupId: number, id: number) => void; 
+  //onRejectAuthMessage: (groupId: number, id: number) => void;
   currentUser: { nickname: string; id: string | number; profileImageUrl?: string };
   groupMembers: GroupMemberResponse[];
   //onDeleteGroupSuccess: (deletedGroupId: number) => void;
@@ -42,10 +43,10 @@ export function GroupDetailScreen({
   onNavigate,
   onUpdateGroup,
  // onJoinGroup,
-  pendingAuthMessages,
-  onAddAuthMessage,
-  onApproveAuthMessage,
-  onRejectAuthMessage,
+  // pendingAuthMessages,
+  // onAddAuthMessage,
+  // onApproveAuthMessage,
+  // onRejectAuthMessage,
   currentUser,
   groupMembers,
   onDeleteGroupSuccess,
@@ -59,8 +60,13 @@ export function GroupDetailScreen({
   const [showApprovalModal, setShowApprovalModal] = useState(false);
   const [showRoutineModal, setShowRoutineModal] = useState(false);
 
+  const [pendingAuths, setPendingAuths] = useState<AuthMessage[]>([]);
   const group = groups.find((g) => g.groupId === groupId);
-  const pendingGroupAuthMessages = pendingAuthMessages[groupId] || [];
+  
+  if (!group) {
+    return <div>그룹 정보를 불러오는 중이거나, 그룹을 찾을 수 없습니다.</div>;
+  }
+  //const pendingGroupAuthMessages = pendingAuthMessages[groupId] || [];
   const isLeader = group?.leaderName === currentUser.nickname;
   
    console.log('GroupDetailScreen: isLeader 계산 결과:', isLeader);
@@ -88,11 +94,24 @@ const [weeklyRanking, setWeeklyRanking] = useState<GlobalGroupRankingData[]>([])
     setShowExMembersModal(false);
   };*/
 
- const handleAuthSubmit = (data: { description: string; image: File | null; isPublic: boolean }) => {
-  const routineId = 123; // 테스트용 루틴 ID 또는 실제 값
-  onAddAuthMessage(groupId, data, currentUser.nickname,  currentUser.id, routineId);
-  setShowRoutineModal(false);
-};
+ const handleAuthSubmit = async (data: { description: string; image: File | null; isPublic: boolean }) => {
+    const formData = new FormData();
+    formData.append('description', data.description);
+    if (data.image) {
+      formData.append('image', data.image);
+    }
+    // 필요한 다른 데이터가 있다면 formData에 추가합니다.
+    
+    try {
+      await submitAuthentication(groupId, formData);
+      alert('인증이 성공적으로 제출되었습니다.');
+      setShowRoutineModal(false);
+      // 필요 시 알림 목록이나 다른 데이터를 새로고침할 수 있습니다.
+    } catch (error) {
+      alert('인증 제출에 실패했습니다.');
+      console.error(error);
+    }
+  };
 
 // 그룹 삭제 로직을 GroupDetailScreen에 통합
  const handleGroupDeleted = async () => {
@@ -171,6 +190,44 @@ useEffect(() => {
   }
 };
 
+// ▼▼▼ '승인 관리' 모달을 열 때 API를 호출하는 함수 추가 ▼▼▼
+  const handleOpenApprovalModal = async () => {
+    try {
+      const auths = await getPendingAuthentications(groupId);
+      setPendingAuths(auths || []); // API 응답이 없을 경우 빈 배열로 처리
+      setShowApprovalModal(true);
+    } catch (error) {
+      alert("인증 대기 목록을 불러오는데 실패했습니다.");
+      console.error(error);
+    }
+  };
+
+  // ▼▼▼ '승인' 버튼을 눌렀을 때 API를 호출하는 함수 추가 ▼▼▼
+  const handleApprove = async (authId: number) => {
+    try {
+      await approveAuthentication(authId);
+      alert("인증을 승인했습니다.");
+      // 성공 시, 목록에서 해당 항목을 제거하고 모달을 닫음
+      setPendingAuths(prev => prev.filter(p => p.id !== authId));
+      setShowApprovalModal(false);
+      // 필요하다면 알림 목록 갱신을 위해 부모의 함수를 호출할 수 있습니다.
+    } catch (error) {
+      alert("승인 처리에 실패했습니다.");
+    }
+  };
+
+  // ▼▼▼ '거절' 버튼을 눌렀을 때 API를 호출하는 함수 추가 ▼▼▼
+  const handleReject = async (authId: number) => {
+    try {
+      await rejectAuthentication(authId);
+      alert("인증을 거절했습니다.");
+      setPendingAuths(prev => prev.filter(p => p.id !== authId));
+      setShowApprovalModal(false);
+    } catch (error) {
+      alert("거절 처리에 실패했습니다.");
+    }
+  };
+
   return (
     <div className="min-h-screen relative">
       <GroupDetailHeader
@@ -182,9 +239,9 @@ useEffect(() => {
         onChatClick={handleChatClick}
         onRoutineAuthClick={handleRoutineAuthClick}
         onOpenEdit={() => setIsEditing(true)}
-        onOpenApproval={() => setShowApprovalModal(true)}
+        onOpenApproval={handleOpenApprovalModal}
         onOpenExMembers={() => setShowExMembersModal(true)}
-        pendingAuthCount={pendingGroupAuthMessages.length}
+        pendingAuthCount={pendingAuths.length}
         groupMembers={groupMembers}
         onGroupDeleted={handleGroupDeleted}
         myid={myid}
@@ -224,24 +281,26 @@ useEffect(() => {
       <Dialog open={showApprovalModal} onOpenChange={setShowApprovalModal}>
         <DialogContent className="max-w-md text-icon-secondary dark:text-white">
           <GroupApproval
-            authMessages={pendingGroupAuthMessages}
-            onApprove={(messageId) => {
-              const message = pendingGroupAuthMessages.find(m => m.id === messageId);
-              if (message) {
-                console.log("인증 제출한 사용자 ID:", message.userId);
-                console.log("승인 처리 대상 메시지 ID:", messageId);
-                onApproveAuthMessage(groupId, messageId);
-              }
-              setShowApprovalModal(false);
-            }}
-            onReject={(messageId) => {
-              const message = pendingGroupAuthMessages.find(m => m.id === messageId);
-              if (message) {
-                console.log("거절 처리 대상 사용자 ID:", message.userId);
-              }
-              onRejectAuthMessage(groupId, messageId);
-              setShowApprovalModal(false);
-            }}
+            authMessages={pendingAuths} // API로 받아온 데이터를 전달
+            onApprove={handleApprove} // 새로 만든 핸들러 전달
+            onReject={handleReject} 
+            // onApprove={(messageId) => {
+            //   const message = pendingGroupAuthMessages.find(m => m.id === messageId);
+            //   if (message) {
+            //     console.log("인증 제출한 사용자 ID:", message.userId);
+            //     console.log("승인 처리 대상 메시지 ID:", messageId);
+            //     onApproveAuthMessage(groupId, messageId);
+            //   }
+            //   setShowApprovalModal(false);
+            // }}
+            // onReject={(messageId) => {
+            //   const message = pendingGroupAuthMessages.find(m => m.id === messageId);
+            //   if (message) {
+            //     console.log("거절 처리 대상 사용자 ID:", message.userId);
+            //   }
+            //   onRejectAuthMessage(groupId, messageId);
+            //   setShowApprovalModal(false);
+            // }}
             onClose={() => setShowApprovalModal(false)}
           />
       </DialogContent>
