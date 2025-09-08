@@ -31,6 +31,8 @@ export interface Notification {
   icon?: React.ReactNode; 
   read: boolean;
   relatedId?: number; // 그룹 ID 등 관련 정보
+  fullContent?: string; 
+  monthYear?: string;
 }
 
 export function TopNavBar({ onSearch, onNotificationClick, notifications, pendingAuthMessages, onProfileMenuClick, userInfo }: TopNavBarProps) {

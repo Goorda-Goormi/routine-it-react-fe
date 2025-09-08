@@ -171,9 +171,14 @@ export default function App() {
 
   const [isReviewModalOpen, setReviewModalOpen] = useState(false);
   const [reviewModalContent, setReviewModalContent] = useState({ content: '', monthYear: '' });
-  const addNotification = (newNotification: Notification) => {
-    // setNotifications는 항상 새로운 배열을 반환해야 합니다.
-    setNotifications(prevNotifications => [newNotification, ...prevNotifications]);
+  const addNotification = (notification: Omit<Notification, 'id' | 'date' | 'read'>) => {
+    const newNotification: Notification = {
+      ...notification,
+      id: Date.now(),
+      date: '방금 전',
+      read: false,
+    };
+    setNotifications(prev => [newNotification, ...prev]);
   };
 
   useEffect(() => {
@@ -713,20 +718,17 @@ export default function App() {
   const fetchMonthlyReview = async () => {
     try {
       console.log("현재 accessToken:", localStorage.getItem('accessToken'));
-      // YYYY-MM 형식으로 지난달을 계산 (예시)
+      // YYYY-MM 
       const date = new Date();
       date.setMonth(date.getMonth() - 1);
       const lastMonth = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
 
       const response = await getMonthlyReview(lastMonth);
       if (response.success && response.data) {
-        // 알림 목록에 추가 (글자는 30자로 제한)
+        // 알림 목록에 추가 (30자 제한)
         addNotification({
-          id: Date.now(),
           message: response.data.substring(0, 30) + '...',
           category: '회고',
-          date: `${lastMonth} 회고`,
-          read: false,
           fullContent: response.data, 
           monthYear: lastMonth
         });
@@ -758,6 +760,22 @@ export default function App() {
   
    //7.그룹 관련 =============================================================
   
+  /**
+   * (유지) 사용자가 그룹 가입을 '요청'했을 때 호출됩니다.
+   * - '의무 참여' 그룹인 경우, 리더에게 알림을 생성합니다.
+   */
+  const handleJoinGroupRequest = (group: Group) => {
+    // 그룹 리더에게 보낼 알림 생성
+    addNotification({
+      message: `${UserInfo?.nickname || '사용자'}님이 '${group.groupName}' 그룹 참여를 신청했습니다.`,
+      category: '그룹',
+      relatedId: group.groupId,
+    });
+    alert('그룹 가입 요청이 전송되었습니다. 리더의 승인을 기다려주세요.');
+    // 여기에 실제 API 호출 로직을 추가하시면 됩니다.
+    // 예: requestJoinGroup(group.groupId, UserInfo.id);
+  };
+
   // 루틴 인증 메시지를 추가하는 함수에 groupId 추가
   const handleAddAuthMessage = (
   groupId: number, 
@@ -786,13 +804,21 @@ export default function App() {
 
   // 루틴 인증을 승인하는 함수에 groupId 추가
   const handleApproveAuthMessage = (groupId: number, authId: number) => {
-  // 1. 승인할 인증 메시지 찾기
-  const messageToApprove = pendingAuthMessages[groupId]?.find(msg => msg.id === authId);
+    // 1. 승인할 인증 메시지 찾기
+    const messageToApprove = pendingAuthMessages[groupId]?.find(msg => msg.id === authId);
+    if (!messageToApprove) return;
 
-  if (!messageToApprove) {
-    console.log("승인할 인증 메시지를 찾을 수 없습니다.");
-    return;
-  }
+    // 인증을 요청한 사용자에게 보낼 알림 생성
+    addNotification({
+      message: `그룹 루틴 인증이 승인되었습니다. (+20점)`,
+      category: '그룹',
+      relatedId: groupId,
+    });  
+
+    setPendingAuthMessages(prevMessages => ({
+      ...prevMessages,
+      [groupId]: (prevMessages[groupId] || []).filter(msg => msg.id !== authId)
+    }));
 
   //모든 루틴 목록에서 승인된 루틴 정보를 찾습니다.
   const allRoutines = [...personalRoutines, ...groupRoutines];
@@ -866,13 +892,26 @@ export default function App() {
 };
 
   // 루틴 인증을 거절하는 함수에 groupId 추가
-  const handleRejectAuthMessage = (groupId: number, id: number) => {
+  const handleRejectAuthMessage = (groupId: number, authId: number) => {
+    const messageToReject = pendingAuthMessages[groupId]?.find(msg => msg.id === authId);
+    if (!messageToReject) {
+      console.error("거절할 인증 메시지를 찾을 수 없습니다.");
+      return;
+    }
+
+    addNotification({
+      message: `아쉽지만, '${messageToReject.message}' 루틴 인증이 반려되었습니다.`,
+      category: '그룹',
+      relatedId: groupId
+    });
+
+
     setPendingAuthMessages(prevMessages => ({
       ...prevMessages,
-      [groupId]: (prevMessages[groupId] || []).filter(msg => msg.id !== id)
+      [groupId]: (prevMessages[groupId] || []).filter(msg => msg.id !== authId)
     }));
-    console.log(`${id}번 인증을 거절했습니다.`);
-    alert(`${id}번 인증이 거절되었습니다.`);
+    console.log(`${authId}번 인증을 거절했습니다.`);
+    alert(`${authId}번 인증이 거절되었습니다.`);
   };
 
 const handleAddGroup = async (newGroupData: any) => {
