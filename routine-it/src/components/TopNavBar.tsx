@@ -32,6 +32,7 @@ export interface Notification {
   relatedId?: number; // 그룹 ID 등 관련 정보
   fullContent?: string; 
   monthYear?: string;
+  isLocal?: boolean;
 }
 
 export function TopNavBar({ onSearch, onNotificationClick, notifications, onProfileMenuClick, userInfo }: TopNavBarProps) {
@@ -43,9 +44,10 @@ export function TopNavBar({ onSearch, onNotificationClick, notifications, onProf
   };
 
   const [activeCategory, setActiveCategory] = useState<NotificationCategory>('홈');
+  const [justReadId, setJustReadId] = useState<number | null>(null);
   const filteredNotifications = notifications.filter(
-      (n) => n.category === activeCategory
-    );
+    (n) => n.category === activeCategory && (!n.read || n.id === justReadId)
+  );
 
   // 아바타의 첫 글자를 가져오는 함수
   const getInitial = (nickname?: string) => {
@@ -68,7 +70,12 @@ export function TopNavBar({ onSearch, onNotificationClick, notifications, onProf
         {/* 우측 버튼들 */}
         <div className="flex items-center space-x-2">
           {/* 알림 버튼 */}
-          <DropdownMenu>
+          <DropdownMenu onOpenChange={(isOpen) => {
+            // 메뉴가 닫힐 때(isOpen이 false일 때) 임시 ID를 초기화
+            if (!isOpen) {
+              setJustReadId(null);
+            }
+          }}>
             <DropdownMenuTrigger asChild>
               <Button 
                 variant="ghost" 
@@ -110,8 +117,17 @@ export function TopNavBar({ onSearch, onNotificationClick, notifications, onProf
                     {filteredNotifications.map((note) => (
                       <DropdownMenuItem 
                         key={note.id} 
-                        className="p-3 h-auto items-start space-x-3 cursor-pointer"
-                        onClick={() => onNotificationClick(note)} // 메뉴가 닫히지 않도록 방지
+                        className={`p-3 h-auto items-start space-x-3 cursor-pointer transition-opacity ${
+                          note.read ? 'opacity-50' : ''
+                        }`}
+                        
+                        onSelect={(event) => {
+                          event.preventDefault();
+                          onNotificationClick(note);
+                          if (!note.read) {
+                            setJustReadId(note.id);
+                          }
+                        }}
                       >
                         <div className="flex-shrink-0 flex items-center justify-center w-8 h-8 rounded-full bg-primary/10 text-primary-foreground/80">
                            {note.icon ? note.icon : <Bell className="h-4 w-4 icon-secondary" />}

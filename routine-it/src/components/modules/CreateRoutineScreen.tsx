@@ -44,6 +44,7 @@ export function CreateRoutineScreen({ onBack, onCreateRoutine }: CreateRoutineSc
 // 선택된 요일들을 상태로 관리합니다.
 const [selectedDays, setSelectedDays] = useState<string[]>([]);
 const [errors, setErrors] = useState<{ [key: string]: string }>({});
+const [isTimeEnabled, setIsTimeEnabled] = useState(false);
 
 // 선택된 요일들을 기반으로 표시할 텍스트를 생성하는 함수입니다.
 const getFrequencyText = () => {
@@ -245,13 +246,13 @@ const handleDayToggle = (day: string) => {
         {/* 알림 설정 */}
         <Card>
           <CardHeader className="pb-3 pl-3">
-            <CardTitle className="text-base">알림 설정</CardTitle>
+            <CardTitle className="text-base">톡캘린더 설정</CardTitle>
           </CardHeader>
           <CardContent className="pt-0">
             <div className="flex items-center justify-between">
               <div>
-                <Label className="pb-3 pl-3">알림 켜기</Label>
-                <p className="text-sm text-muted-foreground pl-3">설정한 시간에 알림을 받습니다</p>
+                <Label className="pb-3 pl-3">톡캘린더에 연결하기</Label>
+                <p className="text-sm text-muted-foreground pl-3">설정한 루틴을 카카오로 확인해보세요</p>
               </div>
               <Switch
                 checked={formData.reminder}

@@ -22,6 +22,7 @@ export function RoutineDetailScreen({ routine, onBack, onUpdateRoutine, onDelete
   const [isEditing, setIsEditing] = useState(false);
   const [editedRoutine, setEditedRoutine] = useState(routine);
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
+  const [isTimeEnabled, setIsTimeEnabled] = useState(!!routine.time); 
   
   // 선택된 요일들을 상태로 관리합니다.
   const daysOfWeek = ['월', '화', '수', '목', '금', '토', '일'];
@@ -322,7 +323,7 @@ export function RoutineDetailScreen({ routine, onBack, onUpdateRoutine, onDelete
               </div>
 
               <div className="flex items-center justify-between">
-                <Label htmlFor="edit-reminder">알림 켜기</Label>
+                <Label htmlFor="edit-reminder">톡캘린더 연결하기</Label>
                 <Switch
                   id="edit-reminder"
                   checked={!!editedRoutine.reminder}

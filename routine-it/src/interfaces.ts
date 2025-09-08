@@ -19,6 +19,7 @@ export interface Notification {
   relatedId?: number; // 그룹 ID 등 관련 정보
   fullContent?: string; 
   monthYear?: string;
+  isLocal?: boolean;
 }
 
 export interface Group {
