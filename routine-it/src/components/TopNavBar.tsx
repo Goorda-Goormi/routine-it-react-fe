@@ -11,7 +11,6 @@ interface TopNavBarProps {
   onSearch: (query: string) => void;
   onNotificationClick: (notification: Notification) => void; 
   notifications: Notification[];
-  pendingAuthMessages: PendingAuthMap;
   onProfileMenuClick: (action: string) => void;
   userInfo: {
     profileImageUrl: string;
@@ -35,7 +34,7 @@ export interface Notification {
   monthYear?: string;
 }
 
-export function TopNavBar({ onSearch, onNotificationClick, notifications, pendingAuthMessages, onProfileMenuClick, userInfo }: TopNavBarProps) {
+export function TopNavBar({ onSearch, onNotificationClick, notifications, onProfileMenuClick, userInfo }: TopNavBarProps) {
   const [searchQuery, setSearchQuery] = useState('');
 
   const handleSearchSubmit = (e: React.FormEvent) => {
@@ -47,23 +46,6 @@ export function TopNavBar({ onSearch, onNotificationClick, notifications, pendin
   const filteredNotifications = notifications.filter(
       (n) => n.category === activeCategory
     );
-
-    // '그룹' 카테고리일 때만 인증 대기 메시지 포함
-    if (activeCategory === '그룹') {
-      const pendingAuths = Object.entries(pendingAuthMessages).flatMap(
-        ([groupId, messages]) =>
-          messages.map((msg: AuthMessage) => ({
-            id: msg.id,
-            message: `${msg.nickname}님이 루틴 인증을 요청했습니다.`,
-            category: '그룹' as NotificationCategory,
-            date: '방금 전', // 실제 날짜로 수정 필요
-            icon: <Camera className="h-4 w-4 text-muted-foreground" />,
-            read: false,
-            relatedId: Number(groupId),
-          }))
-      );
-      filteredNotifications.push(...pendingAuths);
-    }
 
   // 아바타의 첫 글자를 가져오는 함수
   const getInitial = (nickname?: string) => {

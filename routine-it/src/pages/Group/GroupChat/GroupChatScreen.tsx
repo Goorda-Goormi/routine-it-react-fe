@@ -15,6 +15,7 @@ import { leaveGroup } from '../../../api/chat';
 
 import type { Group, UserProfile, GroupMemberResponse } from '../../../interfaces';
 import { fetchChatHistory } from '../../../api/chat'; // ✅ 추가된 import
+import { submitAuthentication } from '../../../api/group'; 
 
 // 👉 API 기본 URL, WS 연결 URL
 export const BASE_URL = "http://54.180.93.1:8080";
@@ -34,7 +35,7 @@ export interface Message {
     albumImages?: string[];
 }
 
-export function GroupChatScreen({ group, groupmembers, onBack, onAddAuthMessage, onLeaveGroup, userInfo }) {
+export function GroupChatScreen({ group, groupmembers, onBack, onLeaveGroup, userInfo }) {
     const [isAuthDialogOpen, setIsAuthDialogOpen] = useState(false);
     const [isMembersDialogOpen, setIsMembersDialogOpen] = useState(false);
     const [messages, setMessages] = useState<Message[]>([]);
@@ -182,26 +183,26 @@ export function GroupChatScreen({ group, groupmembers, onBack, onAddAuthMessage,
         setMessages((prev) => [...prev, newMessage]);
     };
 
-    const handleAuthSubmit = (data: { description: string; image: File | null; isPublic: boolean }) => {
-        const authMessage: Message = {
-            id: null,
-            roomId,
-            userId: myUserId,
-            senderNickname: myNickname,
-            message: data.description,
-            imageUrl: null,
-            messageType: 'AUTH',
-            sentAt: new Date().toISOString(),
-            isMe: true,
-            reactions: {},
-        };
-        setMessages((prevMessages) => [...prevMessages, authMessage]);
+    // const handleAuthSubmit = (data: { description: string; image: File | null; isPublic: boolean }) => {
+    //     const authMessage: Message = {
+    //         id: null,
+    //         roomId,
+    //         userId: myUserId,
+    //         senderNickname: myNickname,
+    //         message: data.description,
+    //         imageUrl: null,
+    //         messageType: 'AUTH',
+    //         sentAt: new Date().toISOString(),
+    //         isMe: true,
+    //         reactions: {},
+    //     };
+    //     setMessages((prevMessages) => [...prevMessages, authMessage]);
 
-        const routineId = group.routines?.[0]?.id || 0;
-        onAddAuthMessage(group.groupId, data, myNickname, myUserId, routineId);
+    //     const routineId = group.routines?.[0]?.id || 0;
+    //     onAddAuthMessage(group.groupId, data, myNickname, myUserId, routineId);
 
-        setIsAuthDialogOpen(false);
-    };
+    //     setIsAuthDialogOpen(false);
+    // };
 
     const handleDeleteGroup = async () => {
         if (!window.confirm("정말로 이 그룹에서 나가시겠습니까?")) return;
@@ -251,6 +252,23 @@ export function GroupChatScreen({ group, groupmembers, onBack, onAddAuthMessage,
             streakDays: 0,
         };
     };
+
+    const handleAuthSubmit = async (data: { description: string; image: File | null; isPublic: boolean }) => {
+    const formData = new FormData();
+    formData.append('description', data.description);
+    if (data.image) {
+      formData.append('image', data.image);
+    }
+
+    try {
+      await submitAuthentication(group.groupId, formData);
+      alert('인증이 성공적으로 제출되었습니다.');
+      // 인증 제출 후 필요한 작업 (예: 모달 닫기)
+    } catch (error) {
+      alert('인증 제출에 실패했습니다.');
+      console.error(error);
+    }
+  };
 
     return (
         <div className="flex flex-col h-screen bg-background">

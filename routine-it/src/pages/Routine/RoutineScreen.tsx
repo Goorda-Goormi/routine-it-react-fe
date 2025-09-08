@@ -8,6 +8,7 @@ import { Plus, Target, CheckCircle, Clock, Calendar, TrendingUp, Filter, Camera,
 import type { Routine, Group } from '../../interfaces';
 import type { AuthMessage } from '../../interfaces';
 import { GroupRoutineDialog } from '../../pages/Group/GroupChat/GroupRoutineDialog';
+import { submitAuthentication } from '../../api/group'; 
 
 const getTodayDayOfWeek = () => {
   const dayOfWeek = ['일', '월', '화', '수', '목', '금', '토'];
@@ -39,14 +40,14 @@ interface RoutineScreenProps {
   onOpenAttendanceModal: () => void;
   onOpenStreakModal: (streakDays: number) => void;
   onOpenBadgeModal: (badgeName: string, badgeImage: string) => void;
-  onAddAuthMessage: (groupId: number, data: any, nickname: string, userId: string | number, routineId: number) => void;
+  //onAddAuthMessage: (groupId: number, data: any, nickname: string, userId: string | number, routineId: number) => void;
   initialUserInfo: { nickname: string; id: number | string; };
   participatingGroups: Group[];
   allGroups: Group[];
-  pendingAuthMessages: { [groupId: number]: AuthMessage[] };
+  //pendingAuthMessages: { [groupId: number]: AuthMessage[] };
 }
 
-export function RoutineScreen({ onNavigate, allRoutines, recommendedRoutines, onToggleCompletion, onAddRecommendedRoutine, onOpenAttendanceModal, onOpenStreakModal, onOpenBadgeModal, onAddAuthMessage, initialUserInfo, participatingGroups, pendingAuthMessages, allGroups }: RoutineScreenProps) {
+export function RoutineScreen({ onNavigate, allRoutines, recommendedRoutines, onToggleCompletion, onAddRecommendedRoutine, onOpenAttendanceModal, onOpenStreakModal, onOpenBadgeModal, initialUserInfo, participatingGroups, allGroups }: RoutineScreenProps) {
   const [activeFilter, setActiveFilter] = useState('today');
   const todayDay = getTodayDayOfWeek();
   const [isGroupDialogOpen, setIsGroupDialogOpen] = useState(false);
@@ -102,47 +103,47 @@ export function RoutineScreen({ onNavigate, allRoutines, recommendedRoutines, on
     setIsGroupDialogOpen(true);
   };
 
-  const handleGroupAuthSubmit = (data: { description: string; image: File | null; isPublic: boolean }) => {
+  const handleGroupAuthSubmit = async (data: { description: string; image: File | null; isPublic: boolean }) => {
     if (!selectedRoutine) return;
 
-    // 'participatingGroups'가 undefined일 경우 빈 배열로 처리하여 오류 방지
-    const groupId = (participatingGroups || []).find(group => 
-        group.routines?.some(r => r.id === selectedRoutine.id)
-    )?.id;
+    const group = (participatingGroups || []).find(g => 
+        g.routines?.some(r => r.id === selectedRoutine.id)
+    );
+    
+    
+    if (group && group.groupId) {
+        // FormData를 사용하여 서버에 인증 데이터를 전송합니다.
+        const formData = new FormData();
+        formData.append('description', data.description);
+        if (data.image) {
+            formData.append('image', data.image);
+        }
 
-    if (groupId) {
-        // App.tsx에서 props로 받은 함수를 호출하여 인증 메시지를 추가합니다.
-        onAddAuthMessage(groupId, data, initialUserInfo.nickname, initialUserInfo.id, selectedRoutine.id);
+        try {
+            // API를 직접 호출합니다.
+            await submitAuthentication(group.groupId, formData);
+            alert('인증이 성공적으로 제출되었습니다.');
+        } catch (error) {
+            alert('인증 제출에 실패했습니다.');
+            console.error(error);
+        }
     }
 
-    // 모달을 닫습니다.
     setIsGroupDialogOpen(false);
 };
 
   const getButtonOrCheckbox = (routine: Routine) => {
     const groupId = (participatingGroups || []).find(group => 
       group.routines?.some(r => r.id === routine.id)
-    )?.id;
-
-    // [추가] 해당 루틴이 인증 대기 중인지 확인합니다.
-    const isPendingAuth = groupId && pendingAuthMessages[groupId]?.some(msg => msg.routineId === routine.id);
+    )?.groupId;
 
     if (routine.isGroupRoutine) {
-      if (isPendingAuth) {
+      if (routine.completed) {
         return (
-          <button
-            disabled
-            className="w-auto h-8 rounded-full flex items-center justify-center transition-colors px-2 py-1 text-xs text-muted-foreground/80 border border-border/60 bg-accent cursor-not-allowed"
-          >
-            승인 대기
-          </button>
-          );
-        } else if (routine.completed) {
-          return (
-            <div className="w-8 h-8 rounded-full flex items-center justify-center transition-colors p-0 m-0 border-0 bg-green-500">
-              <CheckCircle className="h-5 w-5 text-white" />
-            </div>
-          );
+                <div className="w-8 h-8 rounded-full flex items-center justify-center transition-colors p-0 m-0 border-0 bg-green-500">
+                    <CheckCircle className="h-5 w-5 text-white" />
+                </div>
+            );
         } else {
           return (
             <button

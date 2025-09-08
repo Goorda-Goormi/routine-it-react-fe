@@ -183,4 +183,24 @@ export interface UserTotalScoreResponse {
   data: number; 
 }
 
-//==================================================//
+//===============알림 관련 인터페이스================//
+
+export type NotificationType = 
+  | "GROUP_JOIN_REQUEST"
+  | "GROUP_MEMBER_STATUS_UPDATED"
+  | "GROUP_MEMBER_ROLE_UPDATED"
+  | "GROUP_TODAY_AUTH_COMPLETED"
+  | "GROUP_TODAY_AUTH_REJECTED"
+  | "GROUP_TODAY_AUTH_REQUEST"
+  | "MONTHLY_REVIEW";
+
+export interface NotificationApiResponse {
+  id: number;
+  content: string;
+  notificationType: NotificationType;
+  senderName: string;
+  receiverName: string;
+  groupName: string;
+  createdAt: string; // "2025-09-08T09:37:03.951Z"
+  read: boolean;
+}

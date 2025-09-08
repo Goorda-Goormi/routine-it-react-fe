@@ -31,13 +31,13 @@ interface HomeScreenProps {
   onToggleCompletion: (routineId: number, isGroupRoutine?: boolean) => void;
   streakDays: number;
   participatingGroups: Group[];
-  pendingAuthMessages: PendingAuthMap;
+  //pendingAuthMessages: PendingAuthMap;
   onOpenAttendanceModal: () => void;
   onOpenStreakModal: (streakDays: number) => void;
   onOpenBadgeModal: (badgeName: string, badgeImage: string) => void;
-  onAddAuthMessage: (groupId: number, data: any, nickname: string, userId: string | number, routineId: number) => void;
-  onApproveAuthMessage: (groupId: number, authId: number) => void;
-  onRejectAuthMessage: (groupId: number, authId: number) => void;
+//   onAddAuthMessage: (groupId: number, data: any, nickname: string, userId: string | number, routineId: number) => void;
+//   onApproveAuthMessage: (groupId: number, authId: number) => void;
+//   onRejectAuthMessage: (groupId: number, authId: number) => void;
 }
 
 interface VerificationPhoto {
@@ -55,13 +55,13 @@ export function HomeScreen({
   onToggleCompletion,
   streakDays,
   participatingGroups,
-  pendingAuthMessages,
+  //pendingAuthMessages,
   onOpenAttendanceModal,
   onOpenStreakModal,
   onOpenBadgeModal,
-  onAddAuthMessage,
-  onApproveAuthMessage,
-  onRejectAuthMessage,
+  //onAddAuthMessage,
+  //onApproveAuthMessage,
+  //onRejectAuthMessage,
 }: HomeScreenProps) {
   const today = new Date();
   const todayString = today.toLocaleDateString('ko-KR', { month: 'long', day: 'numeric' });
@@ -71,29 +71,15 @@ export function HomeScreen({
   const [routineStates, setRoutineStates] = useState<Record<number, 'completed' | 'pending' | 'initial'>>({});
 
   useEffect(() => {
-    const newRoutineStates: Record<number, 'completed' | 'pending' | 'initial'> = {};
+    const newRoutineStates: Record<number, 'completed' | 'initial'> = {};
     (routines || []).forEach(routine => {
-      if (routine.isGroupRoutine) {
-        if (routine.completed) {
-          newRoutineStates[routine.id] = 'completed';
-        } else if (
-          // '승인 대기' 상태를 확인하는 로직은 그대로 유지합니다.
-          participatingGroups.some(group =>
-            pendingAuthMessages[group.groupId]?.some(msg => msg.routineId === routine.id)
-          )
-        ) {
-          newRoutineStates[routine.id] = 'pending';
-        } else {
-          newRoutineStates[routine.id] = 'initial';
-        }
-      } else {
-        // 개인 루틴의 완료 상태를 설정합니다.
-        newRoutineStates[routine.id] = routine.completed ? 'completed' : 'initial';
-      }
-    });
+    // 이제 개인 루틴과 그룹 루틴 모두 동일한 로직을 사용합니다.
+    // 단순히 'completed' 필드가 true인지 false인지만 확인합니다.
+    newRoutineStates[routine.id] = routine.completed ? 'completed' : 'initial';
+  });
 
     setRoutineStates(newRoutineStates);
-  }, [participatingGroups, routines, pendingAuthMessages]);
+  }, [routines]);
 
   const handleGroupAuthClick = (routine: Routine, e: React.MouseEvent) => {
     e.stopPropagation();
@@ -167,7 +153,7 @@ export function HomeScreen({
     const groupId = participatingGroups.find(group => group.routines?.some(r => r.id === selectedRoutine.id))?.groupId;
 
     if (groupId) {
-      onAddAuthMessage(groupId, { ...data, id: Date.now() }, userInfo.nickname ?? '', userInfo.id, selectedRoutine.id);
+      //(groupId, { ...data, id: Date.now() }, userInfo.nickname ?? '', userInfo.id, selectedRoutine.id);
 
       setRoutineStates(prevStates => ({
         ...prevStates,

@@ -14,7 +14,7 @@ interface GroupMemberManagerProps {
   onKickMember: (memberId: number) => void;
   //onDelegateLeader: (memberId: number) => void;
   isLeader: boolean;
-  onDelegateLeader: (memberName: number) => void; 
+  onDelegateLeader: (newLeaderId: number, newLeaderName: string) => void; 
 }
 
 export function GroupMemberManager({ open, onOpenChange, members, onKickMember, onDelegateLeader }: GroupMemberManagerProps) {

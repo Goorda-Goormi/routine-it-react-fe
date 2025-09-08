@@ -110,6 +110,39 @@ export async function deleteGroup(groupId: number) {
   }
 }
 
+// [추가] 특정 그룹의 인증 대기 목록을 가져오는 API
+export async function getPendingAuthentications(groupId: number) {
+  // 실제 엔드포인트는 백엔드에 맞게 수정해야 합니다. 예: /groups/{groupId}/pending-auths
+  return apiFetch(`/groups/${groupId}/pending-auths`, { method: 'GET' });
+}
+
+// [추가] 특정 인증을 승인하는 API
+export async function approveAuthentication(authId: number) {
+  // 실제 엔드포인트는 백엔드에 맞게 수정해야 합니다. 예: /authentications/{authId}/approve
+  return apiFetch(`/authentications/${authId}/approve`, { method: 'POST' });
+}
+
+// [추가] 특정 인증을 거절하는 API
+export async function rejectAuthentication(authId: number) {
+  return apiFetch(`/authentications/${authId}/reject`, { method: 'POST' });
+}
+
+// ▼▼▼ 아래 함수를 새로 추가하세요 ▼▼▼
+/**
+ * 그룹 루틴을 인증합니다.
+ * @param groupId - 그룹 ID
+ * @param data - 인증 데이터 (설명, 이미지 등)
+ */
+export async function submitAuthentication(groupId: number, data: FormData) {
+  // 실제 엔드포인트는 백엔드에 맞게 수정해야 합니다. 예: /groups/{groupId}/auth
+  // 이미지를 포함하므로 FormData를 사용하고 Content-Type 헤더를 설정하지 않습니다.
+  return apiFetch(`/groups/${groupId}/auth`, {
+    method: 'POST',
+    body: data,
+  });
+}
+
+
 // 그룹 가입 요청 (인증 필요)
 export async function requestJoinGroup(groupId: number, groupMemberId: number) {
   try {

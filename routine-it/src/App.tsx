@@ -32,6 +32,9 @@ import { updateRankingScore, getPersonalRankings, getUserTotalScore, getGlobalGr
 import { getMonthlyReview } from './api/review';
 import type { IPersonalRankingResponse, UserTotalScoreResponse } from './interfaces';
 import type { GlobalGroupRankingData } from "./pages/Ranking/RankingScreen";import { toggleDarkMode as toggleDarkModeAPI, toggleAlarm as toggleAlarmAPI } from './api/setting';
+import { getNotifications, markNotificationAsRead } from "./api/notification";
+import type { NotificationApiResponse, NotificationType } from "./interfaces";
+import { User, Bell, Camera } from 'lucide-react'
 
 interface NavigationState {
   screen: string;
@@ -87,6 +90,48 @@ const transformGroupToRoutine = (group: Group): Routine => {
   
 };
 
+// --- Helper Functions ---
+/**
+ * API 응답 데이터를 프론트엔드 Notification 타입으로 변환합니다.
+ */
+const transformNotification = (apiNotif: NotificationApiResponse): Notification => {
+  let category: Notification['category'] = '홈';
+  let icon: React.ReactNode = <Bell className="h-4 w-4 icon-secondary" />;
+
+  // API의 notificationType에 따라 카테고리와 아이콘을 매핑
+  switch (apiNotif.notificationType) {
+    case 'GROUP_JOIN_REQUEST':
+    case 'GROUP_MEMBER_STATUS_UPDATED':
+    case 'GROUP_MEMBER_ROLE_UPDATED':
+      category = '그룹';
+      icon = <User className="h-4 w-4 text-muted-foreground" />;
+      break;
+    case 'GROUP_TODAY_AUTH_REQUEST':
+      category = '그룹';
+      icon = <Camera className="h-4 w-4 text-muted-foreground" />;
+      break;
+    case 'GROUP_TODAY_AUTH_COMPLETED':
+    case 'GROUP_TODAY_AUTH_REJECTED':
+      category = '그룹';
+      break;
+    case 'MONTHLY_REVIEW':
+      category = '회고';
+      break;
+    default:
+      category = '홈';
+  }
+
+  return {
+    id: apiNotif.id,
+    message: apiNotif.content,
+    category: category,
+    date: new Date(apiNotif.createdAt).toLocaleString(), // 날짜 형식 변환
+    read: apiNotif.read,
+    icon: icon,
+    // relatedId가 필요하다면 API 응답에 groupId 같은 필드를 추가해야 합니다.
+  };
+};
+
 /**
  * 루틴 난이도에 따라 점수를 계산합니다.
  */
@@ -114,7 +159,7 @@ export default function App() {
   const [isNewUser, setIsNewUser] = useState(false);
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [activeTab, setActiveTab] = useState("home");
-  const [pendingAuthMessages, setPendingAuthMessages] = useState<PendingAuthMap>({});
+  //const [pendingAuthMessages, setPendingAuthMessages] = useState<PendingAuthMap>({});
   const [navigationStack, setNavigationStack] = useState<NavigationState[]>([]);
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [isAttendanceModalOpen, setAttendanceModalOpen] = useState(false);
@@ -547,7 +592,7 @@ export default function App() {
         });
         setPersonalRoutines([]);
         setGroups([]);
-        setPendingAuthMessages({});
+        //setPendingAuthMessages({});
         setLastCompletionDate(null);
         setRoutineCompletionCount(0);
         setAttendanceCount(0);
@@ -738,18 +783,60 @@ export default function App() {
     }
   };
 
-  // [추가] 회고 알림 클릭 시 모달을 여는 핸들러
-  const handleNotificationClick = (notification: Notification) => {
-    if (notification.category === '회고' && notification.fullContent) {
-      setReviewModalContent({
-        content: notification.fullContent,
-        monthYear: notification.monthYear || '월간'
-      });
-      setReviewModalOpen(true);
+  /**
+   * 서버에서 알림 목록을 가져와 상태를 업데이트합니다.
+   */
+  const fetchNotifications = async () => {
+    if (!isLoggedIn) return;
+    try {
+      const apiNotifications = await getNotifications();
+      const transformedNotifications = apiNotifications.map(transformNotification);
+      setNotifications(transformedNotifications);
+    } catch (error) {
+      console.error("알림을 불러오는데 실패했습니다.", error);
     }
-    // TODO: 다른 카테고리 알림 클릭 시 동작 추가 (예: 그룹 인증으로 이동)
   };
 
+  // 로그인 시 알림 데이터를 불러옵니다.
+  useEffect(() => {
+    if (isLoggedIn) {
+      fetchNotifications();
+    }
+  }, [isLoggedIn]);
+
+
+  /**
+   * 알림 클릭 시 호출됩니다.
+   * '읽음' 처리 API를 호출하고, UI 상태를 즉시 업데이트합니다.
+   */
+  const handleNotificationClick = async (notification: Notification) => {
+    // 1. UI 즉시 업데이트 (Optimistic Update)
+    if (!notification.read) {
+      setNotifications(currentNotifications =>
+        currentNotifications.map(n =>
+          n.id === notification.id ? { ...n, read: true } : n
+        )
+      );
+    }
+
+    // 2. 서버에 '읽음' 상태 전송
+    try {
+      await markNotificationAsRead(notification.id, true);
+    } catch (error) {
+      // 실패 시 UI 롤백 (선택적)
+      console.error("알림 읽음 처리 실패:", error);
+      setNotifications(currentNotifications =>
+        currentNotifications.map(n =>
+          n.id === notification.id ? { ...n, read: false } : n
+        )
+      );
+    }
+    
+    // 3. 알림 종류에 따른 화면 이동 등 후속 작업
+    console.log(`${notification.id}번 알림 클릭됨`);
+    // 예: navigateTo('group-detail', { groupId: notification.relatedId });
+  };
+  
   // 앱이 로드될 때 회고 데이터를 불러옵니다.
   useEffect(() => {
     if (isLoggedIn) {
@@ -783,42 +870,43 @@ export default function App() {
   nickname: string,
   userId: string | number, // userId 추가
   routineId: number // routineId 추가
-) => {
-  const newAuthMessage: AuthMessage = {
-    id: Date.now(),
-    nickname: nickname,
-    userId: userId, // userId 저장
-    message: data.description,
-    imageUrl: data.image ? URL.createObjectURL(data.image) : null,
-    routineId: routineId, // routineId 저장
-  };
+) => {};
+//   {
+//   const newAuthMessage: AuthMessage = {
+//     id: Date.now(),
+//     nickname: nickname,
+//     userId: userId, // userId 저장
+//     message: data.description,
+//     imageUrl: data.image ? URL.createObjectURL(data.image) : null,
+//     routineId: routineId, // routineId 저장
+//   };
   
-  setPendingAuthMessages(prevMessages => ({
-    ...prevMessages,
-    [groupId]: [...(prevMessages[groupId] || []), newAuthMessage]
-  }));
+//   setPendingAuthMessages(prevMessages => ({
+//     ...prevMessages,
+//     [groupId]: [...(prevMessages[groupId] || []), newAuthMessage]
+//   }));
   
-  console.log('인증 데이터 제출:', data);
-  alert('인증이 제출되었습니다!');
-};
+//   console.log('인증 데이터 제출:', data);
+//   alert('인증이 제출되었습니다!');
+// };
 
   // 루틴 인증을 승인하는 함수에 groupId 추가
   const handleApproveAuthMessage = (groupId: number, authId: number) => {
     // 1. 승인할 인증 메시지 찾기
-    const messageToApprove = pendingAuthMessages[groupId]?.find(msg => msg.id === authId);
-    if (!messageToApprove) return;
+    // const messageToApprove = pendingAuthMessages[groupId]?.find(msg => msg.id === authId);
+    // if (!messageToApprove) return;
 
-    // 인증을 요청한 사용자에게 보낼 알림 생성
-    addNotification({
-      message: `그룹 루틴 인증이 승인되었습니다. (+20점)`,
-      category: '그룹',
-      relatedId: groupId,
-    });  
+    // // 인증을 요청한 사용자에게 보낼 알림 생성
+    // addNotification({
+    //   message: `그룹 루틴 인증이 승인되었습니다. (+20점)`,
+    //   category: '그룹',
+    //   relatedId: groupId,
+    // });  
 
-    setPendingAuthMessages(prevMessages => ({
-      ...prevMessages,
-      [groupId]: (prevMessages[groupId] || []).filter(msg => msg.id !== authId)
-    }));
+    // setPendingAuthMessages(prevMessages => ({
+    //   ...prevMessages,
+    //   [groupId]: (prevMessages[groupId] || []).filter(msg => msg.id !== authId)
+    // }));
 
   //모든 루틴 목록에서 승인된 루틴 정보를 찾습니다.
   const allRoutines = [...personalRoutines, ...groupRoutines];
@@ -882,14 +970,15 @@ export default function App() {
   );
 
   // pendingAuthMessages 상태에서 승인된 메시지 제거
-  setPendingAuthMessages(prevMessages => ({
-    ...prevMessages,
-    [groupId]: (prevMessages[groupId] || []).filter(msg => msg.id !== authId)
-  }));
+  setPendingAuthMessages = (groupId: number, authId: number) => {}
+//   (prevMessages => ({
+//     ...prevMessages,
+//     [groupId]: (prevMessages[groupId] || []).filter(msg => msg.id !== authId)
+//   }));
   
-  console.log(`${authId}번 인증을 승인했습니다.`);
-  alert(`${authId}번 인증이 승인되었습니다.`);
-};
+//   console.log(`${authId}번 인증을 승인했습니다.`);
+//   alert(`${authId}번 인증이 승인되었습니다.`);
+// };
 
   // 루틴 인증을 거절하는 함수에 groupId 추가
   const handleRejectAuthMessage = (groupId: number, authId: number) => {
@@ -1172,7 +1261,7 @@ const navigateTo = (screen: string, params?: any, options?: { replace?: boolean 
             onBack={navigateBack}
             onNavigate={navigateTo}
             onUpdateGroup={handleUpdateGroup}
-            pendingAuthMessages={pendingAuthMessages}
+            //pendingAuthMessages={pendingAuthMessages}
             onAddAuthMessage={handleAddAuthMessage}
             onApproveAuthMessage={handleApproveAuthMessage}
             onRejectAuthMessage={handleRejectAuthMessage}
@@ -1272,7 +1361,7 @@ const navigateTo = (screen: string, params?: any, options?: { replace?: boolean 
             onOpenStreakModal={handleOpenStreakModal}
             onOpenBadgeModal={handleOpenBadgeModal}
             onAddAuthMessage={handleAddAuthMessage}
-            pendingAuthMessages={pendingAuthMessages}
+            //pendingAuthMessages={pendingAuthMessages}
             onApproveAuthMessage={handleApproveAuthMessage}
             onRejectAuthMessage={handleRejectAuthMessage}
           />
@@ -1292,7 +1381,7 @@ const navigateTo = (screen: string, params?: any, options?: { replace?: boolean 
           initialUserInfo={UserInfo} 
           participatingGroups={myGroups} 
           allGroups={groups}
-          pendingAuthMessages={pendingAuthMessages} 
+          //pendingAuthMessages={pendingAuthMessages} 
         />;
       case "group":
         return <GroupScreen 
@@ -1340,7 +1429,7 @@ const navigateTo = (screen: string, params?: any, options?: { replace?: boolean 
             onOpenStreakModal={handleOpenStreakModal}
             onOpenBadgeModal={handleOpenBadgeModal}
             onAddAuthMessage={handleAddAuthMessage}
-            pendingAuthMessages={pendingAuthMessages}
+            //pendingAuthMessages={pendingAuthMessages}
             onApproveAuthMessage={handleApproveAuthMessage}
             onRejectAuthMessage={handleRejectAuthMessage}
              
@@ -1485,11 +1574,11 @@ const navigateTo = (screen: string, params?: any, options?: { replace?: boolean 
             {!currentScreen && UserInfo && (
               <TopNavBar
                 onSearch={handleSearch}
-                onNotificationClick={handleNewProject}
+                onNotificationClick={handleNotificationClick}
                 onProfileMenuClick={handleProfileMenuClick}
                 userInfo={UserInfo}
                 notifications={notifications}
-                pendingAuthMessages={pendingAuthMessages}
+                //pendingAuthMessages={pendingAuthMessages}
               />
             )}
 
