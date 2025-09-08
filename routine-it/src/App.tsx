@@ -864,14 +864,13 @@ export default function App() {
   };
 
   // 루틴 인증 메시지를 추가하는 함수에 groupId 추가
-  const handleAddAuthMessage = (
-  groupId: number, 
-  data: { description: string; image: File | null; isPublic: boolean }, 
-  nickname: string,
-  userId: string | number, // userId 추가
-  routineId: number // routineId 추가
-) => {};
-//   {
+//   const handleAddAuthMessage = (
+//   groupId: number, 
+//   data: { description: string; image: File | null; isPublic: boolean }, 
+//   nickname: string,
+//   userId: string | number, // userId 추가
+//   routineId: number // routineId 추가
+// ) => {
 //   const newAuthMessage: AuthMessage = {
 //     id: Date.now(),
 //     nickname: nickname,
@@ -891,87 +890,86 @@ export default function App() {
 // };
 
   // 루틴 인증을 승인하는 함수에 groupId 추가
-  const handleApproveAuthMessage = (groupId: number, authId: number) => {
-    // 1. 승인할 인증 메시지 찾기
-    // const messageToApprove = pendingAuthMessages[groupId]?.find(msg => msg.id === authId);
-    // if (!messageToApprove) return;
+  // const handleApproveAuthMessage = (groupId: number, authId: number) => {
+  //   // 1. 승인할 인증 메시지 찾기
+  //   const messageToApprove = pendingAuthMessages[groupId]?.find(msg => msg.id === authId);
+  //   if (!messageToApprove) return;
 
-    // // 인증을 요청한 사용자에게 보낼 알림 생성
-    // addNotification({
-    //   message: `그룹 루틴 인증이 승인되었습니다. (+20점)`,
-    //   category: '그룹',
-    //   relatedId: groupId,
-    // });  
+  //   // 인증을 요청한 사용자에게 보낼 알림 생성
+  //   addNotification({
+  //     message: `그룹 루틴 인증이 승인되었습니다. (+20점)`,
+  //     category: '그룹',
+  //     relatedId: groupId,
+  //   });  
 
-    // setPendingAuthMessages(prevMessages => ({
-    //   ...prevMessages,
-    //   [groupId]: (prevMessages[groupId] || []).filter(msg => msg.id !== authId)
-    // }));
+  //   setPendingAuthMessages(prevMessages => ({
+  //     ...prevMessages,
+  //     [groupId]: (prevMessages[groupId] || []).filter(msg => msg.id !== authId)
+  //   }));
 
   //모든 루틴 목록에서 승인된 루틴 정보를 찾습니다.
-  const allRoutines = [...personalRoutines, ...groupRoutines];
-  const approvedRoutine = allRoutines.find(r => r.id === messageToApprove.routineId);
+  // const allRoutines = [...personalRoutines, ...groupRoutines];
+  // const approvedRoutine = allRoutines.find(r => r.id === messageToApprove.routineId);
 
-  if (approvedRoutine && UserInfo) {
-      const score = calculateScoreByDifficulty(approvedRoutine.difficulty);
-      const memberId = Number(messageToApprove.userId); // 인증을 올린 멤버의 ID
+  // if (approvedRoutine && UserInfo) {
+  //     const score = calculateScoreByDifficulty(approvedRoutine.difficulty);
+  //     const memberId = Number(messageToApprove.userId); // 인증을 올린 멤버의 ID
 
-      // 4. 랭킹 점수 업데이트 API 호출 (groupId 포함)
-      updateRankingScore(memberId, score, groupId)
-        .then(response => {
-          console.log(`그룹 루틴 인증 (${messageToApprove.nickname}님): ${score}점 획득 성공`, response);
+  //     // 4. 랭킹 점수 업데이트 API 호출 (groupId 포함)
+  //     updateRankingScore(memberId, score, groupId)
+  //       .then(response => {
+  //         console.log(`그룹 루틴 인증 (${messageToApprove.nickname}님): ${score}점 획득 성공`, response);
           
-          // 만약 내 인증이 승인된 것이라면, 화면의 총점을 즉시 업데이트합니다.
-          if (memberId === UserInfo.id) {
-            fetchUserTotalScore();
-          }
-        })
-        .catch(error => {
-          console.error("그룹 루틴 점수 업데이트 실패:", error);
-        });
-    }
+  //         // 만약 내 인증이 승인된 것이라면, 화면의 총점을 즉시 업데이트합니다.
+  //         if (memberId === UserInfo.id) {
+  //           fetchUserTotalScore();
+  //         }
+  //       })
+  //       .catch(error => {
+  //         console.error("그룹 루틴 점수 업데이트 실패:", error);
+  //       });
+  //   }
 
-  // 2. 그룹 상태를 업데이트하는 로직
-  setGroups(prevGroups => 
-    prevGroups.map(group => {
-      // 해당 그룹인지 확인
-      if (group.groupId === groupId) {
-        // 그룹 내에서 해당 루틴 찾기
-        const updatedRoutines = group.routines?.map(routine => {
-          if (routine.id === messageToApprove.routineId) {
-            return {
-              ...routine,
-              // 루틴 완료 상태 업데이트 (예: isCertified를 true로 설정)
-              completed: true, // 또는 별도의 인증 상태 필드 사용
-            };
-          }
-          return routine;
-        });
+//   // 2. 그룹 상태를 업데이트하는 로직
+//   setGroups(prevGroups => 
+//     prevGroups.map(group => {
+//       // 해당 그룹인지 확인
+//       if (group.groupId === groupId) {
+//         // 그룹 내에서 해당 루틴 찾기
+//         const updatedRoutines = group.routines?.map(routine => {
+//           if (routine.id === messageToApprove.routineId) {
+//             return {
+//               ...routine,
+//               // 루틴 완료 상태 업데이트 (예: isCertified를 true로 설정)
+//               completed: true, // 또는 별도의 인증 상태 필드 사용
+//             };
+//           }
+//           return routine;
+//         });
 
-        // 멤버 상태 업데이트 (예: '인증' 뱃지 표시)
-        const updatedMembers = group.recentMembers?.map(member => {
-          if (member.id === messageToApprove.userId) {
-            return {
-              ...member,
-              isCertified: true, // 인증 상태를 나타내는 필드 추가
-            };
-          }
-          return member;
-        });
+//         // 멤버 상태 업데이트 (예: '인증' 뱃지 표시)
+//         const updatedMembers = group.recentMembers?.map(member => {
+//           if (member.id === messageToApprove.userId) {
+//             return {
+//               ...member,
+//               isCertified: true, // 인증 상태를 나타내는 필드 추가
+//             };
+//           }
+//           return member;
+//         });
 
-        return { 
-          ...group, 
-          routines: updatedRoutines,
-          recentMembers: updatedMembers 
-        };
-      }
-      return group;
-    })
-  );
+//         return { 
+//           ...group, 
+//           routines: updatedRoutines,
+//           recentMembers: updatedMembers 
+//         };
+//       }
+//       return group;
+//     })
+//   );
 
-  // pendingAuthMessages 상태에서 승인된 메시지 제거
-  setPendingAuthMessages = (groupId: number, authId: number) => {}
-//   (prevMessages => ({
+//   // pendingAuthMessages 상태에서 승인된 메시지 제거
+//   setPendingAuthMessages(prevMessages => ({
 //     ...prevMessages,
 //     [groupId]: (prevMessages[groupId] || []).filter(msg => msg.id !== authId)
 //   }));
@@ -981,27 +979,27 @@ export default function App() {
 // };
 
   // 루틴 인증을 거절하는 함수에 groupId 추가
-  const handleRejectAuthMessage = (groupId: number, authId: number) => {
-    const messageToReject = pendingAuthMessages[groupId]?.find(msg => msg.id === authId);
-    if (!messageToReject) {
-      console.error("거절할 인증 메시지를 찾을 수 없습니다.");
-      return;
-    }
+  // const handleRejectAuthMessage = (groupId: number, authId: number) => {
+  //   const messageToReject = pendingAuthMessages[groupId]?.find(msg => msg.id === authId);
+  //   if (!messageToReject) {
+  //     console.error("거절할 인증 메시지를 찾을 수 없습니다.");
+  //     return;
+  //   }
 
-    addNotification({
-      message: `아쉽지만, '${messageToReject.message}' 루틴 인증이 반려되었습니다.`,
-      category: '그룹',
-      relatedId: groupId
-    });
+  //   addNotification({
+  //     message: `아쉽지만, '${messageToReject.message}' 루틴 인증이 반려되었습니다.`,
+  //     category: '그룹',
+  //     relatedId: groupId
+  //   });
 
 
-    setPendingAuthMessages(prevMessages => ({
-      ...prevMessages,
-      [groupId]: (prevMessages[groupId] || []).filter(msg => msg.id !== authId)
-    }));
-    console.log(`${authId}번 인증을 거절했습니다.`);
-    alert(`${authId}번 인증이 거절되었습니다.`);
-  };
+  //   setPendingAuthMessages(prevMessages => ({
+  //     ...prevMessages,
+  //     [groupId]: (prevMessages[groupId] || []).filter(msg => msg.id !== authId)
+  //   }));
+  //   console.log(`${authId}번 인증을 거절했습니다.`);
+  //   alert(`${authId}번 인증이 거절되었습니다.`);
+  // };
 
 const handleAddGroup = async (newGroupData: any) => {
     try {
@@ -1216,6 +1214,11 @@ const navigateTo = (screen: string, params?: any, options?: { replace?: boolean 
 
 // 9. 화면 렌더링 및 모달 =============================================================
 
+  //const currentScreen =
+    //navigationStack.length > 0
+      //? navigationStack[navigationStack.length - 1]
+      //: null;
+
   const renderScreen = () => {
     if (!isLoggedIn) {
       return <LoginScreen onLogin={handleKakaoLogin} />;
@@ -1256,10 +1259,10 @@ const navigateTo = (screen: string, params?: any, options?: { replace?: boolean 
             onBack={navigateBack}
             onNavigate={navigateTo}
             onUpdateGroup={handleUpdateGroup}
-            //pendingAuthMessages={pendingAuthMessages}
-            onAddAuthMessage={handleAddAuthMessage}
-            onApproveAuthMessage={handleApproveAuthMessage}
-            onRejectAuthMessage={handleRejectAuthMessage}
+            // pendingAuthMessages={pendingAuthMessages}
+            // onAddAuthMessage={handleAddAuthMessage}
+            // onApproveAuthMessage={handleApproveAuthMessage}
+            // onRejectAuthMessage={handleRejectAuthMessage}
             currentUser={UserInfo} 
             groupMembers={members}
             onDeleteGroupSuccess={handleDeleteGroupSuccess}
@@ -1291,7 +1294,7 @@ const navigateTo = (screen: string, params?: any, options?: { replace?: boolean 
               group={currentScreen.params}
               groupmembers={members}
               onBack={navigateBack}
-               onAddAuthMessage={handleAddAuthMessage}
+               //onAddAuthMessage={handleAddAuthMessage}
                //groupMembers={groupMembers}
                 onLeaveGroup={handleLeaveGroup}
                 userInfo={UserInfo}
@@ -1355,10 +1358,10 @@ const navigateTo = (screen: string, params?: any, options?: { replace?: boolean 
             onOpenAttendanceModal={handleOpenAttendanceModal}
             onOpenStreakModal={handleOpenStreakModal}
             onOpenBadgeModal={handleOpenBadgeModal}
-            onAddAuthMessage={handleAddAuthMessage}
-            //pendingAuthMessages={pendingAuthMessages}
-            onApproveAuthMessage={handleApproveAuthMessage}
-            onRejectAuthMessage={handleRejectAuthMessage}
+            // onAddAuthMessage={handleAddAuthMessage}
+            // pendingAuthMessages={pendingAuthMessages}
+            // onApproveAuthMessage={handleApproveAuthMessage}
+            // onRejectAuthMessage={handleRejectAuthMessage}
           />
         );
       case "routine":
@@ -1372,7 +1375,7 @@ const navigateTo = (screen: string, params?: any, options?: { replace?: boolean 
           onOpenAttendanceModal={handleOpenAttendanceModal}
           onOpenStreakModal={handleOpenStreakModal}
           onOpenBadgeModal={handleOpenBadgeModal}
-          onAddAuthMessage={handleAddAuthMessage} 
+          //onAddAuthMessage={handleAddAuthMessage} 
           initialUserInfo={UserInfo} 
           participatingGroups={myGroups} 
           allGroups={groups}
@@ -1396,7 +1399,7 @@ const navigateTo = (screen: string, params?: any, options?: { replace?: boolean 
                   userTotalScore={userTotalScore} // props로 전달
                   loadingGroupRanking={loadingGroupRanking} // props로 전달
                   loadingUserTotalScore={loadingUserTotalScore}
-                />;}
+                />}
       case "mypage":
         return (
           <MyPageScreen
@@ -1423,10 +1426,10 @@ const navigateTo = (screen: string, params?: any, options?: { replace?: boolean 
             onOpenAttendanceModal={handleOpenAttendanceModal}
             onOpenStreakModal={handleOpenStreakModal}
             onOpenBadgeModal={handleOpenBadgeModal}
-            onAddAuthMessage={handleAddAuthMessage}
-            //pendingAuthMessages={pendingAuthMessages}
-            onApproveAuthMessage={handleApproveAuthMessage}
-            onRejectAuthMessage={handleRejectAuthMessage}
+            // onAddAuthMessage={handleAddAuthMessage}
+            // pendingAuthMessages={pendingAuthMessages}
+            // onApproveAuthMessage={handleApproveAuthMessage}
+            // onRejectAuthMessage={handleRejectAuthMessage}
              
           />
         );
@@ -1443,8 +1446,8 @@ const navigateTo = (screen: string, params?: any, options?: { replace?: boolean 
     setAttendanceModalOpen(true);
     setLastCompletionDate(today);
     localStorage.setItem('lastCompletionDate', today);
-  }
-};
+    }
+  };
 
   const handleOpenStreakModal = (streakDays: number) => {
     // 특정 누적일 달성 시 호출
@@ -1555,7 +1558,7 @@ const navigateTo = (screen: string, params?: any, options?: { replace?: boolean 
         }
     }
   };
-//====================================================================
+  //====================================================================
   return (
     <div
       className={`min-h-screen w-full bg-[var(--root-background)] flex items-center justify-center `}
