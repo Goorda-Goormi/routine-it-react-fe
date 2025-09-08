@@ -291,14 +291,14 @@ export function RoutineScreen({ onNavigate, allRoutines, recommendedRoutines, on
         </Card>
       </div>
       <Tabs value={activeFilter} onValueChange={setActiveFilter} className="space-y-4 flex flex-col items-center">
-        <TabsList className="grid w-[413px] h-[40px] grid-cols-3">
-          <TabsTrigger value="today">
+        <TabsList className="w-[413px] h-[40px] flex">
+          <TabsTrigger className="flex-1" value="today" >
             오늘
           </TabsTrigger>
-          <TabsTrigger value="all">
+          <TabsTrigger className="flex-1" value="all">
             전체
           </TabsTrigger>
-          <TabsTrigger value="recommended">
+          <TabsTrigger className="flex-1" value="recommended">
             추천
           </TabsTrigger>
         </TabsList>
