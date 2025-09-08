@@ -92,7 +92,7 @@ export function MyGroupsSection({ myGroups, onNavigate, onNewGroup }: MyGroupsSe
             <Users className="h-12 w-12 icon-muted mx-auto mb-4" />
             <p className="text-sm text-muted-foreground mb-4">참여 중인 그룹이 없습니다</p>
             <Button onClick={onNewGroup} size="sm">
-              <Plus className="h-4 w-4 mr-2 icon-secondary" />
+              <Plus className="h-4 w-4  icon-primary" />
               첫 그룹 만들기
             </Button>
           </div>
