@@ -10,87 +10,99 @@ import type { UserProfile } from '../../../interfaces';
 interface GroupChatMessagesProps {
   messages: Message[];
   myUserId: number;
-  //getUserInfo: (userId: number) => any;
   getUserInfo: (message: Message) => any;
   handleReactionClick: (messageKey: string, emoji: string) => void;
   userInfo : UserProfile;
 }
 
 export function GroupChatMessages({ messages, myUserId, getUserInfo, handleReactionClick }: GroupChatMessagesProps) {
- console.log("GroupChatMessages.jsx - Received messages :", messages);
- 
- const [hoveredMessageKey, setHoveredMessageKey] = useState<string | null>(null);
+  console.log("GroupChatMessages.jsx - Received messages :", messages);
+  
+  const [hoveredMessageKey, setHoveredMessageKey] = useState<string | null>(null);
   const emojis = ['😀', '😂', '👍', '❤️', '👏', '💪', '🎉', '🔥', '🤔', '😊', '😭', '😎', '👌', '🙏', '🤯'];
 
   return (
     <div className="flex-1 overflow-y-auto">
       <div className="max-w-md mx-auto px-4 py-4 space-y-4">
-       {messages.map((msg, index) => {
+        {messages.map((msg, index) => {
          if (msg.messageType === 'ONLINE' || msg.messageType === 'OFFLINE') {
-          return null; 
-        }
-   
-        if (!['TALK', 'AUTH', 'IMAGE', 'ALBUM'].includes(msg.messageType)) {
+            return null;
+          }
+          if (!msg) {
+            console.warn("GroupChatMessages.jsx: 유효하지 않은 메시지 객체를 건너뜁니다.", index);
+            return null;
+          }
+
+          // 시스템 메시지 처리: 'ONLINE', 'OFFLINE', 'MEMBER_JOIN', 'MEMBER_LEAVE' 등
+          if (['TALK', 'AUTH', 'IMAGE', 'ALBUM'].includes(msg.messageType) === false) {
+            return (
+              <div
+                key={`system-${msg.id || index}`}
+                className="flex items-center my-4"
+              >
+                <div className="flex-grow border-t border-muted-foreground/30" />
+                <span className="mx-3 text-xs text-muted-foreground">
+                  {msg.message}
+                </span>
+                <div className="flex-grow border-t border-muted-foreground/30" />
+              </div>
+            );
+          }
+
+          // 일반/인증/이미지 메시지 처리
+          const userInfo = getUserInfo(msg);
+          // userInfo가 null 또는 undefined일 경우 렌더링을 중단하고 경고
+          if (!userInfo) {
+            console.warn(`사용자 정보를 찾을 수 없습니다: 메시지 ${msg.id} / 닉네임 ${msg.senderNickname}`);
+            return null;
+          }
+
+          const isMyMessage = msg.isMe;
+          // 메시지의 고유 키 생성 시 모든 잠재적 속성 사용
+          const messageKey = `${msg.senderNickname}-${msg.sentAt}-${msg.message || ''}-${msg.imageUrl || ''}-${msg.albumImages ? msg.albumImages.join(',') : ''}`;
+
           return (
             <div
-              key={`system-${msg.id || index}`} // `msg.id`가 없을 경우를 대비해 `index` 사용
-              className="flex items-center my-4"
-            >
-              <div className="flex-grow border-t border-muted-foreground/30" />
-              <span className="mx-3 text-xs text-muted-foreground">
-                {msg.message}
-              </span>
-              <div className="flex-grow border-t border-muted-foreground/30" />
-            </div>
-          );
-        }
-
-    // 기존 로직 (말풍선 UI)
-    const userInfo = getUserInfo(msg);
-    if (!userInfo) return null;
-    const isMyMessage = msg.isMe;
-    const messageKey = `${msg.senderNickname}-${msg.sentAt}-${msg.message || msg.imageUrl || msg.albumImages || ''}`;
-
-
-          return (
-            <div
-              key={messageKey} // ✅ 고유한 키로 변경
+              key={messageKey}
               className={`flex ${isMyMessage ? 'justify-end' : 'justify-start'}`}
-              onMouseEnter={() => setHoveredMessageKey(messageKey)} // ✅ 고유한 키로 변경
-              onMouseLeave={() => setHoveredMessageKey(null)} // ✅ 고유한 키로 변경
+              onMouseEnter={() => setHoveredMessageKey(messageKey)}
+              onMouseLeave={() => setHoveredMessageKey(null)}
             >
               <div className={`relative flex items-end space-x-2 max-w-[80%] ${isMyMessage ? 'flex-row-reverse space-x-reverse' : ''}`}>
+                {/* 내 메시지가 아닐 때만 아바타 표시 */}
                 {!isMyMessage && (
                   <Avatar className="h-6 w-6">
-                    <AvatarImage src={userInfo.profileImageUrl} alt={msg.nickname} />
-                    <AvatarFallback className="text-xs">{msg.nickname[0]}</AvatarFallback>
+                    <AvatarImage src={userInfo.profileImageUrl} alt={userInfo.nickname} />
+                    <AvatarFallback className="text-xs">{userInfo.nickname ? userInfo.nickname[0] : '?'}</AvatarFallback>
                   </Avatar>
                 )}
                 <div className={`flex flex-col ${isMyMessage ? 'items-end' : 'items-start'}`}>
+                  {/* 내 메시지가 아닐 때만 닉네임 및 정보 표시 */}
                   {!isMyMessage && (
                     <div className="flex items-center space-x-1 mb-1">
-                      <span className="text-xs text-muted-foreground">{msg.nickname}</span>
+                      <span className="text-xs text-muted-foreground">{userInfo.nickname}</span>
                       <span className="text-xs text-muted-foreground opacity-70">{userInfo.streakDays}일</span>
                     </div>
                   )}
                   <div
                     className={`rounded-lg px-3 py-2 max-w-full break-words ${
-                      msg.type === 'auth'
+                      msg.messageType === 'AUTH'
                         ? 'bg-green-50/80 border border-green-200/50 dark:bg-green-900/20 dark:border-green-700/50'
                         : isMyMessage
                         ? 'bg-chart-5 text-primary'
                         : 'bg-muted text-foreground'
                     }`}
                   >
-                    {msg.type === 'auth' && (
+                    {/* 메시지 타입에 따른 콘텐츠 렌더링 */}
+                    {msg.messageType === 'AUTH' && (
                       <div className="flex items-center space-x-1 mb-1">
                         <CheckCircle className="h-3 w-3 text-green-600" />
                         <span className="text-xs font-medium text-green-600 dark:text-green-400">루틴 인증 전송</span>
                       </div>
                     )}
-                    {msg.type === 'album' ? (
+                    {msg.messageType === 'ALBUM' && Array.isArray(msg.albumImages) && msg.albumImages.length > 0 ? (
                       <div className="grid grid-cols-2 gap-2">
-                        {msg.albumImages?.map((img, idx) => (
+                        {msg.albumImages.map((img, idx) => (
                           <img
                             key={idx}
                             src={img}
@@ -100,7 +112,7 @@ export function GroupChatMessages({ messages, myUserId, getUserInfo, handleReact
                           />
                         ))}
                       </div>
-                    ) : msg.type === 'image' ? (
+                    ) : msg.messageType === 'IMAGE' && msg.imageUrl ? (
                       <img
                         src={msg.imageUrl}
                         alt="보낸 이미지"
@@ -111,6 +123,7 @@ export function GroupChatMessages({ messages, myUserId, getUserInfo, handleReact
                       <p className="text-sm">{msg.message}</p>
                     )}
                   </div>
+                  {/* 리액션 렌더링 (방어적인 코드 추가) */}
                   {msg.reactions && Object.keys(msg.reactions).length > 0 && (
                     <div className="flex space-x-1 mt-1">
                       {Object.entries(msg.reactions).map(([emoji, count]) => (
@@ -121,10 +134,10 @@ export function GroupChatMessages({ messages, myUserId, getUserInfo, handleReact
                       ))}
                     </div>
                   )}
-                  <span className="text-xs text-muted-foreground mt-1">{msg.time}</span>
+                  <span className="text-xs text-muted-foreground mt-1">{msg.sentAt ? new Date(msg.sentAt).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' }) : ''}</span>
                 </div>
 
-                {hoveredMessageKey === messageKey && ( // ✅ 고유한 키로 변경
+                {hoveredMessageKey === messageKey && (
                   <Popover>
                     <PopoverTrigger asChild>
                       <Button

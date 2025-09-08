@@ -234,11 +234,11 @@ export function GroupChatScreen({ group, groupmembers, onBack, onAddAuthMessage,
     };
 
     const getUserInfo = (msg: Message): UserProfile | undefined => {
-        if (msg.userId === myUserId) {
+        if (msg.senderNickname === myNickname) {
             return userInfo;
         }
-        const member = groupmembers.find((m) => m.groupMemberId === msg.userId);
-
+        //const member = groupmembers.find((m) => m.groupMemberId === msg.userId);
+const member = groupmembers.find((m) => m.memberName === msg.senderNickname);
         if (!member) {
             console.warn(`사용자 정보를 찾을 수 없습니다: userId ${msg.userId}`);
             return undefined;
