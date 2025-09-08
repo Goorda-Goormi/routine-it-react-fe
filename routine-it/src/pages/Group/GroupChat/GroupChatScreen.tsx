@@ -204,14 +204,14 @@ export function GroupChatScreen({ group, groupmembers, onBack, onAddAuthMessage,
     };
 
     const handleDeleteGroup = async () => {
-        if (!window.confirm("정말로 이 그룹에서 나가시겠습니까?")) return;
+        if (!window.confirm("정말로 이 채팅에서 나가시겠습니까?")) return;
         try {
             await leaveGroup(group.groupId);
-            alert("성공적으로 그룹에서 탈퇴했습니다.");
+            alert("성공적으로 탈퇴했습니다.");
             onLeaveGroup();
         } catch (error) {
             console.error("그룹 탈퇴 오류:", error);
-            alert("그룹 탈퇴에 실패했습니다.");
+            alert("채팅방 나가기에 실패했습니다.");
         }
     };
 

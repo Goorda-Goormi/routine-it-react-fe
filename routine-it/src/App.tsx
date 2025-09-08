@@ -1120,17 +1120,12 @@ const navigateTo = (screen: string, params?: any, options?: { replace?: boolean 
    const handleLeaveGroup = () => {
     
     // 그룹을 떠난 후 그룹 목록 화면으로 바로 이동하도록 합니다.
-    setNavigationStack([{ screen: "group", params: {} }]);
+    setNavigationStack([]);
     setActiveTab("group");
   };
 
 
 // 9. 화면 렌더링 및 모달 =============================================================
-
-  //const currentScreen =
-    //navigationStack.length > 0
-      //? navigationStack[navigationStack.length - 1]
-      //: null;
 
   const renderScreen = () => {
     if (!isLoggedIn) {
@@ -1499,17 +1494,17 @@ const navigateTo = (screen: string, params?: any, options?: { replace?: boolean 
               </div>
 
                {!currentScreen && (
-      <div className="bg-background border-t border-border">
-        <BottomTabNav
-          activeTab={activeTab}
-          onTabChange={(tabName: string) => {
-    if (tabName === 'ranking' && personalRankingData === null && !isLoading) {
-      handleRankingTabClick();
-    }
-    setActiveTab(tabName);
-}}
-        />
-      </div>
+              <div className="bg-background border-t border-border">
+                <BottomTabNav
+                  activeTab={activeTab}
+                  onTabChange={(tabName: string) => {
+                    if (tabName === 'ranking' && personalRankingData === null && !isLoading) {
+                      handleRankingTabClick();
+                    }
+                    setActiveTab(tabName);
+                }}
+              />
+            </div>
               )}
             </main>
           </>
