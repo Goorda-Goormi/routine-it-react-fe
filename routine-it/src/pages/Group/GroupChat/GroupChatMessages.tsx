@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState,useEffect,useRef } from 'react';
 import { Avatar, AvatarFallback, AvatarImage } from '../../../components/ui/avatar';
 import { Popover, PopoverContent, PopoverTrigger } from '../../../components/ui/popover';
 import { Button } from '../../../components/ui/button';
@@ -21,8 +21,16 @@ export function GroupChatMessages({ messages, myUserId, getUserInfo, handleReact
   const [hoveredMessageKey, setHoveredMessageKey] = useState<string | null>(null);
   const emojis = ['😀', '😂', '👍', '❤️', '👏', '💪', '🎉', '🔥', '🤔', '😊', '😭', '😎', '👌', '🙏', '🤯'];
 
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    // 현재 ref가 유효한지 확인
+    if (messagesEndRef.current) {
+      messagesEndRef.current.scrollTop = messagesEndRef.current.scrollHeight;
+    }
+  }, [messages]);
+
   return (
-    <div className="flex-1 overflow-y-auto">
+    <div className="flex-1 overflow-y-auto" ref={messagesEndRef}>
       <div className="max-w-md mx-auto px-4 py-4 space-y-4">
         {messages.map((msg, index) => {
          if (msg.messageType === 'ONLINE' || msg.messageType === 'OFFLINE') {
