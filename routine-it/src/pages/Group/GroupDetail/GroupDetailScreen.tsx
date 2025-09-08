@@ -28,7 +28,8 @@ interface GroupDetailScreenProps {
   groupMembers: GroupMemberResponse[];
   //onDeleteGroupSuccess: (deletedGroupId: number) => void;
   onDeleteGroupSuccess: () => void;
-  myid: string | number;
+  //myid: string | number;
+  myid:number;
   onGroupJoined: () => void;
   isJoined: boolean;
   
@@ -223,28 +224,28 @@ useEffect(() => {
       <Dialog open={showApprovalModal} onOpenChange={setShowApprovalModal}>
         <DialogContent className="max-w-md text-icon-secondary dark:text-white">
           <GroupApproval
-        authMessages={pendingGroupAuthMessages}
-        onApprove={(messageId) => {
-          const message = pendingGroupAuthMessages.find(m => m.id === messageId);
-          if (message) {
-            console.log("인증 제출한 사용자 ID:", message.userId);
-            console.log("승인 처리 대상 메시지 ID:", messageId);
-            onApproveAuthMessage(groupId, messageId);
-          }
-          setShowApprovalModal(false);
-        }}
-        onReject={(messageId) => {
-          const message = pendingGroupAuthMessages.find(m => m.id === messageId);
-          if (message) {
-            console.log("거절 처리 대상 사용자 ID:", message.userId);
-          }
-          onRejectAuthMessage(groupId, messageId);
-          setShowApprovalModal(false);
-        }}
-        onClose={() => setShowApprovalModal(false)}
-      />
-  </DialogContent>
-</Dialog>
+            authMessages={pendingGroupAuthMessages}
+            onApprove={(messageId) => {
+              const message = pendingGroupAuthMessages.find(m => m.id === messageId);
+              if (message) {
+                console.log("인증 제출한 사용자 ID:", message.userId);
+                console.log("승인 처리 대상 메시지 ID:", messageId);
+                onApproveAuthMessage(groupId, messageId);
+              }
+              setShowApprovalModal(false);
+            }}
+            onReject={(messageId) => {
+              const message = pendingGroupAuthMessages.find(m => m.id === messageId);
+              if (message) {
+                console.log("거절 처리 대상 사용자 ID:", message.userId);
+              }
+              onRejectAuthMessage(groupId, messageId);
+              setShowApprovalModal(false);
+            }}
+            onClose={() => setShowApprovalModal(false)}
+          />
+      </DialogContent>
+    </Dialog>
 
       <GroupRoutineDialog
         isOpen={showRoutineModal}

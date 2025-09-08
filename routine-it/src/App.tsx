@@ -967,7 +967,7 @@ const navigateTo = (screen: string, params?: any, options?: { replace?: boolean 
             currentUser={UserInfo} 
             groupMembers={members}
             onDeleteGroupSuccess={handleDeleteGroupSuccess}
-            myid={myId}
+            myid={myId ?? 0}
             onGroupJoined={fetchGroupData}
             isJoined={isJoined}
            
@@ -993,10 +993,13 @@ const navigateTo = (screen: string, params?: any, options?: { replace?: boolean 
           return (
             <GroupChatScreen
               group={currentScreen.params}
+              groupmembers={members}
               onBack={navigateBack}
                onAddAuthMessage={handleAddAuthMessage}
                //groupMembers={groupMembers}
                 onLeaveGroup={handleLeaveGroup}
+                userInfo={UserInfo}
+                //streakDays={streakDays}
             />
           );
         }
