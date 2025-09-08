@@ -54,13 +54,16 @@ export function GroupChatScreen({ group, groupmembers, onBack, onAddAuthMessage,
             const response = await fetchChatHistory(roomId, 20); 
 
             // ✅ 응답 객체의 `data.content`에 메시지 배열이 들어있으므로, 이 부분을 사용합니다.
-            const messagesFromServer = response.data?.content || [];
+            let messagesFromServer = response.data?.content || [];
             
+            // ⭐️ 추가된 코드: 메시지 배열을 역순으로 정렬
+            messagesFromServer = messagesFromServer.reverse();
             // 불러온 메시지에 isMe 속성 추가
             const updatedHistory = messagesFromServer.map(msg => ({
-                ...msg,
-                isMe: msg.userId === myUserId,
-            }));
+              ...msg,
+              // MEMBER_JOIN, MEMBER_LEAVE 타입에는 isMe를 항상 false로 설정
+              isMe: (msg.messageType === 'MEMBER_JOIN' || msg.messageType === 'MEMBER_LEAVE') ? false : msg.userId === myUserId,
+          }));
 
             // 상태 업데이트
             setMessages(updatedHistory);

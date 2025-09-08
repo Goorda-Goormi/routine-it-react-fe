@@ -25,15 +25,32 @@ export function GroupChatMessages({ messages, myUserId, getUserInfo, handleReact
   return (
     <div className="flex-1 overflow-y-auto">
       <div className="max-w-md mx-auto px-4 py-4 space-y-4">
-        {messages.map((msg) => {
-          const userInfo = getUserInfo(msg);
-           console.log("GroupChatMessages.jsx - Received getuserinfo(msg) :", userInfo); 
-          if (!userInfo) {
-            return null;
-          }
+       {messages.map((msg, index) => {
+         if (msg.messageType === 'ONLINE' || msg.messageType === 'OFFLINE') {
+          return null; 
+        }
+   
+        if (!['TALK', 'AUTH', 'IMAGE', 'ALBUM'].includes(msg.messageType)) {
+          return (
+            <div
+              key={`system-${msg.id || index}`} // `msg.id`가 없을 경우를 대비해 `index` 사용
+              className="flex items-center my-4"
+            >
+              <div className="flex-grow border-t border-muted-foreground/30" />
+              <span className="mx-3 text-xs text-muted-foreground">
+                {msg.message}
+              </span>
+              <div className="flex-grow border-t border-muted-foreground/30" />
+            </div>
+          );
+        }
 
-          const isMyMessage = msg.isMe;
-          const messageKey = `${msg.nickname}-${msg.time}-${msg.message}`; // ✅ 고유한 키 생성
+    // 기존 로직 (말풍선 UI)
+    const userInfo = getUserInfo(msg);
+    if (!userInfo) return null;
+    const isMyMessage = msg.isMe;
+    const messageKey = `${msg.senderNickname}-${msg.sentAt}-${msg.message || msg.imageUrl || msg.albumImages || ''}`;
+
 
           return (
             <div
