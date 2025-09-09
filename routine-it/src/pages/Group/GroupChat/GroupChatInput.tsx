@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { Button } from '../../../components/ui/button';
 import { Input } from '../../../components/ui/input';
 import { Popover, PopoverContent, PopoverTrigger } from '../../../components/ui/popover';
@@ -12,7 +12,15 @@ interface GroupChatInputProps {
 
 export function GroupChatInput({ handleSendMessage, handleSendImage, handleSendAlbum }: GroupChatInputProps) {
   const [message, setMessage] = useState('');
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
 
+
+   const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+     const textarea = e.target;
+     textarea.style.height = 'auto';
+     textarea.style.height = `${textarea.scrollHeight}px`;
+    setMessage(textarea.value);
+  };
   // 이모티콘 목록
   const emojis = ['😀', '😂', '👍', '❤️', '👏', '💪', '🎉', '🔥', '🤔', '😊', '😭', '😎', '👌', '🙏', '🤯'];
 
@@ -23,6 +31,9 @@ export function GroupChatInput({ handleSendMessage, handleSendImage, handleSendA
   const onSendMessage = () => {
     handleSendMessage(message);
     setMessage('');
+    if (textareaRef.current) {
+      textareaRef.current.style.height = 'auto';
+    }
   };
 
   return (
@@ -56,13 +67,17 @@ export function GroupChatInput({ handleSendMessage, handleSendImage, handleSendA
               >
                 <Image className="h-4 w-4 icon-secondary" />
               </Button>
-              <Input
+              <textarea
+                ref={textareaRef}
                 value={message}
-                onChange={(e) => setMessage(e.target.value)}
+                onChange={handleInputChange}
                 placeholder="메시지를 입력하세요..."
-                className="border-0 bg-transparent focus-visible:ring-0 p-0 text-foreground placeholder:text-muted-foreground"
+                className="w-full border-0 bg-transparent focus:outline-none p-0 text-foreground placeholder:text-muted-foreground resize-none"
+                rows={1}
+                style={{ maxHeight: '100px' }}
                 onKeyPress={(e) => {
-                  if (e.key === 'Enter') {
+                  if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault(); // 기본 줄 바꿈 방지
                     onSendMessage();
                   }
                 }}

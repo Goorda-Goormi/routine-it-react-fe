@@ -201,7 +201,7 @@ export function GroupChatMessages({ messages, myUserId, getUserInfo, handleReact
                               onClick={() => window.open(msg.imageUrl, '_blank')}
                             />
                           ) : (
-                            <p className="text-sm">{msg.message}</p>
+                            <p className="text-sm text-left">{msg.message}</p>
                           )}
                         </div>
                         {msg.reactions && Object.keys(msg.reactions).length > 0 && (
