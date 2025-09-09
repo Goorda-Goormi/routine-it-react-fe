@@ -17,11 +17,11 @@ import {
   DropdownMenuTrigger,
 } from '../../../components/ui/dropdown-menu';
 
-import type { GroupMemberResponse } from '../../../interfaces';
+import type { Group, GroupMemberResponse } from '../../../interfaces';
 import { deleteGroup, requestJoinGroup } from '../../../api/group';
 
 interface GroupDetailHeaderProps {
-  group: any;
+  group: Group;
   isJoined: boolean;
   isLeader: boolean;
   onBack: () => void;
@@ -164,7 +164,7 @@ console.log('--- GroupDetailHeader Variables ---');
                   <div className="text-xs text-muted-foreground">참여자</div>
                 </div>
                 <div className="text-center">
-                  <Badge variant={group.type === 'REUQIRED' ? 'destructive' : 'secondary'}>{group.type === "REQUIRED" ? "의무참여":"자유참여"}</Badge>
+                  <Badge variant={group.groupType === 'REQUIRED' ? 'destructive' : 'secondary'}>{group.groupType === "REQUIRED" ? "의무참여":"자유참여"}</Badge>
                   <div className="text-xs text-muted-foreground mt-1">그룹 유형</div>
                 </div>
                 <div className="text-center">
