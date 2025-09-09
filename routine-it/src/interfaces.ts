@@ -106,8 +106,7 @@ export interface Routine {
   reminder?: string | boolean;
   goal?: string;
   description?: string;
-
-
+  isPublic: boolean;
 }
 
 export interface PendingAuthMap {

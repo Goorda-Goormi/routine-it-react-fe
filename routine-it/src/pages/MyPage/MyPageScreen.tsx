@@ -46,6 +46,7 @@ interface MyPageScreenProps {
     exp?: number;
     maxExp?: number;
     streakDays: number;
+    maxStreakDays?: number;
     profileMessage?: string;
     isAlarmOn: boolean;
   }
@@ -525,10 +526,10 @@ export function MyPageScreen({ onNavigate, isDarkMode, onToggleDarkMode, onToggl
         
         <Button
           variant="outline"
-          className="w-full bg-red-500/80 hover:bg-red-600/80 text-white border-red-400/50 hover:border-red-500/50 transition-colors"
+          className="w-full mb-5 bg-red-500/80 hover:bg-red-600/80 text-white border-red-400/50 hover:border-red-500/50 transition-colors"
           onClick={onLogout}
         >
-          <LogOut className="h-4 w-4 mr-2" />
+          <LogOut className="h-4 w-4 mr-2 " />
           로그아웃
         </Button>
       </div>

@@ -20,6 +20,7 @@ interface NewRoutine {
   difficulty: string;
   completed: boolean;
   streak: number;
+  isPublic: boolean;
 }
 
 interface CreateRoutineScreenProps {
@@ -36,7 +37,8 @@ export function CreateRoutineScreen({ onBack, onCreateRoutine }: CreateRoutineSc
     reminder: true,
     goal: '30',
     category: '',
-    difficulty: ''
+    difficulty: '',
+    isPublic: true
   });
 
   const daysOfWeek = ['월', '화', '수', '목', '금', '토', '일'];
@@ -96,17 +98,18 @@ const handleDayToggle = (day: string) => {
     }
 
     const newRoutineData: NewRoutine = {
-      id: Math.random(), // 임시 ID
+      id: Math.random(),
       name: formData.name,
       description: formData.description,
       time: formData.time,
-      frequency: selectedDays, // 선택된 요일 배열을 사용합니다.
+      frequency: selectedDays, 
       reminder: formData.reminder,
       goal: formData.goal,
       category: formData.category,
       difficulty: formData.difficulty,
-      completed: false, // 새로운 루틴은 완료되지 않은 상태로 시작
-      streak: 0, // 새로운 루틴은 연속일이 0으로 시작
+      completed: false,
+      streak: 0, 
+      isPublic: formData.isPublic
     };
 
     onCreateRoutine(newRoutineData);
@@ -148,6 +151,17 @@ const handleDayToggle = (day: string) => {
               />
               {errors.name && <p className="text-destructive text-sm mt-1">{errors.name}</p>}
             </div>
+
+            <div>
+              <Label className="pb-3 pl-3" htmlFor="description">설명 (선택)</Label>
+              <Textarea
+                id="description"
+                placeholder="루틴에 대한 간단한 설명을 적어주세요"
+                value={formData.description}
+                onChange={(e) => setFormData({...formData, description: e.target.value})}
+                rows={3}
+              />
+            </div>
             
             {/* 카테고리 선택 추가 */}
             <div>
@@ -187,18 +201,6 @@ const handleDayToggle = (day: string) => {
                 </SelectContent>
               </Select>
               {errors.difficulty && <p className="text-destructive text-sm mt-1">{errors.difficulty}</p>}
-            </div>
-
-
-            <div>
-              <Label className="pb-3 pl-3" htmlFor="description">설명 (선택)</Label>
-              <Textarea
-                id="description"
-                placeholder="루틴에 대한 간단한 설명을 적어주세요"
-                value={formData.description}
-                onChange={(e) => setFormData({...formData, description: e.target.value})}
-                rows={3}
-              />
             </div>
           </CardContent>
         </Card>
@@ -286,6 +288,23 @@ const handleDayToggle = (day: string) => {
                   <SelectItem value="100">100일 도전</SelectItem>
                 </SelectContent>
               </Select>
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="pb-3 pl-3">
+            <CardTitle className="text-base">공개 설정</CardTitle>
+          </CardHeader>
+          <CardContent className="pt-0">
+            <div className="flex items-center justify-between">
+              <div>
+                <Label className="pb-3 pl-3">루틴 공개하기</Label>
+                <p className="text-sm text-muted-foreground pl-3">다른 사용자에게 이 루틴을 공유합니다</p>
+              </div>
+              <Switch
+                checked={formData.isPublic}
+                onCheckedChange={(checked) => setFormData({...formData, isPublic: checked})}
+              />
             </div>
           </CardContent>
         </Card>

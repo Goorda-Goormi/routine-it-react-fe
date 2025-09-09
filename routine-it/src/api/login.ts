@@ -88,32 +88,47 @@ export const getUserInfo = async (): Promise<UserProfile> => {
 
 // 토큰 갱신 api
 export const refreshAuthToken = async () => {
-  const refreshToken = localStorage.getItem('refreshToken');
-  if (!refreshToken) {
-    throw new Error('No refresh token available');
-  }
-
-  const response = await fetch(`${BASE_URL}/api/auth/refresh`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({ refreshToken: refreshToken })
-  });
-
-  if (!response.ok) {
-    throw new Error('Failed to refresh token');
-  }
-
-  const result = await response.json();
-  if (result.success && result.data.accessToken) {
-   
-    localStorage.setItem('accessToken', result.data.accessToken);
-    if (result.data.refreshToken) {
-      localStorage.setItem('refreshToken', result.data.refreshToken);
+  try {
+        console.log('🔄 Starting token refresh...');
+        
+        const response = await fetch(`${BASE_URL}/api/auth/refresh`, {
+            method: 'POST',
+            credentials: 'include', // 쿠키 포함
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            // body는 쿠키로 전송되므로 제거합니다.
+        });
+        
+        console.log('📡 Refresh response status:', response.status);
+        
+        if (!response.ok) {
+            const errorText = await response.text();
+            console.error('❌ Refresh failed:', response.status, errorText);
+            throw new Error(`Token refresh failed: ${response.status}`);
+        }
+        
+        const result = await response.json();
+        console.log('✅ Token refresh successful');
+        
+        if (result.success && result.data.accessToken) {
+            // 새로운 accessToken을 localStorage에 저장
+            localStorage.setItem('accessToken', result.data.accessToken);
+            console.log('✅ New access token saved');
+            
+            // refreshToken은 쿠키로 자동 갱신되므로 localStorage에 저장하지 않습니다.
+            return result.data.accessToken;
+        } else {
+            throw new Error('Failed to parse refresh token response');
+        }
+        
+    } catch (error) {
+        console.error('💥 Token refresh error:', error);
+        
+        // 갱신 실패 시 localStorage 정리하고 로그인 페이지로 이동
+        localStorage.removeItem('accessToken');
+        localStorage.removeItem('refreshToken'); // 혹시 모를 경우를 대비해 제거
+        
+        throw error;
     }
-    return result.data.accessToken; 
-  } else {
-    throw new Error('Failed to parse refresh token response');
-  }
 };

@@ -27,6 +27,13 @@ import { LoadingSpinner } from "./components/ui/loading-spinner";
 import { MonthlyReviewModal } from './components/modules/MonthlyReviewModal';
 import { startKakaoLogin, getUserInfo } from "./api/login"; 
 import { completeSignup, logoutUser, deleteAccount } from './api/auth';
+import { 
+  createPersonalRoutine,
+  getPersonalRoutinesByUser,
+  updatePersonalRoutine,
+  deletePersonalRoutine 
+} from './api/personalRoutine';
+import type { PersonalRoutineResponse, PersonalRoutineCreatePayload, PersonalRoutineUpdatePayload } from './api/personalRoutine';
 import { createGroup, getAllGroups,getJoinedGroups,getGroupMembers, requestJoinGroup } from "./api/group";
 import { updateRankingScore, getPersonalRankings, getUserTotalScore, getGlobalGroupRanking } from "./api/ranking";
 import { getMonthlyReview } from './api/review';
@@ -36,10 +43,31 @@ import { getNotifications, markNotificationAsRead } from "./api/notification";
 import type { NotificationApiResponse, NotificationType } from "./interfaces";
 import { User, Bell, Camera, Clock } from 'lucide-react'
 
+const BASE_URL = import.meta.env.VITE_API_BASE_URL;
+
 interface NavigationState {
   screen: string;
   params?: any;
 }
+
+const transformPersonalRoutine = (pr: PersonalRoutineResponse): Routine => {
+  return {
+    id: pr.routineId,
+    name: pr.routineName,
+    description: pr.description,
+    time: pr.startTime,
+    frequency: convertAuthDaysToFrequency(pr.repeatDays), // 기존 헬퍼 함수 재활용
+    isPublic: pr.isPublic,
+    reminder: pr.isAlarmOn,
+    
+    isGroupRoutine: false,
+    completed: false, 
+    streak: 0, 
+    difficulty: '쉬움',
+    goal: '30', 
+    category: '생활',
+  };
+};
 
 type RoutineOverride = Partial<Pick<Routine, 'time' | 'frequency' | 'reminder' | 'goal'>>;
 
@@ -98,6 +126,7 @@ const transformGroupToRoutine = (group: Group): Routine => {
     streak: 0,
     goal: '30',
     reminder: true,
+    isPublic: true,
   };
   
 };
@@ -275,7 +304,8 @@ export default function App() {
       completed: false,
       streak: 0,
       difficulty: '쉬움',
-      isGroupRoutine: false
+      isGroupRoutine: false,
+      isPublic: true
     },
     {
       id: 8,
@@ -289,7 +319,8 @@ export default function App() {
       completed: false,
       streak: 0,
       difficulty: '쉬움',
-      isGroupRoutine: false
+      isGroupRoutine: false,
+      isPublic: true
     },
     {
       id: 9,
@@ -303,7 +334,8 @@ export default function App() {
       completed: false,
       streak: 0,
       difficulty: '보통',
-      isGroupRoutine: false
+      isGroupRoutine: false,
+      isPublic: true
     },
     {
       id: 10,
@@ -317,7 +349,8 @@ export default function App() {
       completed: false,
       streak: 0,
       difficulty: '보통',
-      isGroupRoutine: false
+      isGroupRoutine: false,
+      isPublic: true
     },
     {
       id: 11,
@@ -331,7 +364,8 @@ export default function App() {
       completed: false,
       streak: 0,
       difficulty: '쉬움',
-      isGroupRoutine: false
+      isGroupRoutine: false,
+      isPublic: true
     },
     {
       id: 12,
@@ -345,7 +379,8 @@ export default function App() {
       completed: false,
       streak: 0,
       difficulty: '쉬움',
-      isGroupRoutine: false
+      isGroupRoutine: false,
+      isPublic: true
     }
   ]);
 
@@ -456,28 +491,31 @@ export default function App() {
     const params = new URLSearchParams(window.location.search);
     const accessToken = params.get('accessToken');
     const isNewUserParam = params.get('isNewUser');
-    const storedToken = localStorage.getItem('accessToken');
+    //const storedToken = localStorage.getItem('accessToken');
 
     if (accessToken) {
+      // accessToken만 localStorage에 저장합니다.
       localStorage.setItem('accessToken', accessToken);
+      
+      // refreshToken 관련 로직은 모두 제거합니다.
+      
+      console.log('✅ OAuth login successful, access token saved');
       setIsLoggedIn(true);
-      fetchUserInfo(); // 로그인 성공 시 사용자 정보 즉시 불러오기
+      fetchUserInfo();
       fetchGroupData();
         
       if (isNewUserParam === 'true') {
         setIsNewUser(true);
         setIsLoginModalOpen(true);
       }
-      //  fetchGroupData();
-      // setIsNewUser(true);
-      // setIsLoginModalOpen(true);
+      // URL에서 토큰 정보를 제거합니다.
       window.history.replaceState({}, document.title, window.location.pathname);
       
     } else {
-      //const storedToken = localStorage.getItem('accessToken');
+      const storedToken = localStorage.getItem('accessToken');
       if (storedToken) {
         setIsLoggedIn(true);
-        fetchUserInfo(); // 로컬 스토리지에 토큰이 있을 경우 사용자 정보 불러오기
+        fetchUserInfo();
         fetchGroupData();
         fetchUserTotalScore();
       }
@@ -575,22 +613,36 @@ export default function App() {
 
   const handleLogout = async() => {
     try {
-    // 분리된 로그아웃 API 함수를 호출합니다.
-    await logoutUser();
+        console.log('🚪 Logging out...');
+        
+        // 서버에 로그아웃을 요청하여 서버 세션 및 쿠키를 무효화합니다.
+        await fetch(`${BASE_URL}/api/auth/logout`, {
+            method: 'POST',
+            credentials: 'include', // 쿠키(refreshToken)를 함께 보내기 위해 필수
+            headers: {
+                'Content-Type': 'application/json',
+                Authorization: `Bearer ${localStorage.getItem('accessToken')}`,
+            },
+        });
+        
+        console.log('✅ Logout request sent to server');
+        
+    } catch (error) {
+        console.error('⚠️ Logout request failed:', error);
+    } finally {
+        // 요청 성공 여부와 관계없이 로컬 데이터를 모두 정리합니다.
+        localStorage.removeItem('accessToken');
+        localStorage.removeItem('refreshToken'); // 혹시 남아있을 경우를 대비
+        
+        console.log('✅ Local tokens cleared');
+        
+        // 상태를 초기화하고 로그인 페이지로 이동합니다.
+        setIsLoggedIn(false);
+        setUserInfo(null);
+        window.location.href = '/login';
+    }
+  };
 
-    // 클라이언트 상태를 초기화합니다.
-    setIsLoggedIn(false);
-    setActiveTab("home");
-    setNavigationStack([]);
-    
-    alert('로그아웃 되었습니다.');
-
-  } catch (error) {
-    console.error("로그아웃 에러:", error);
-    // API 모듈에서 전달된 에러 메시지를 사용자에게 보여줍니다.
-    alert((error as Error).message);
-  }
-};
 
   const handleDeleteAccount = async () => {
     const isConfirmed = window.confirm("계정 탈퇴 시 모든 정보가 삭제되며 복구할 수 없습니다. 정말로 탈퇴하시겠습니까?");
@@ -765,7 +817,8 @@ export default function App() {
         goal: '30',
         completed: false,
         streak: 0,
-         isGroupRoutine: false,
+        isGroupRoutine: false,
+        isPublic: true
     };
 
     setPersonalRoutines(prevRoutines => [...prevRoutines, newRoutine]);

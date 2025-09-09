@@ -288,7 +288,7 @@ export function RoutineDetailScreen({ routine, onBack, onUpdateRoutine, onDelete
               </div>
               
               <div>
-                <Label className='pl-3' htmlFor="frequency">
+                <Label  htmlFor="frequency">
                   반복 주기 <span className="text-sm text-gray-500">{getFrequencyText(selectedDays)}</span>
                 </Label>
                 <div className="flex justify-center gap-5 pt-2">
@@ -308,7 +308,7 @@ export function RoutineDetailScreen({ routine, onBack, onUpdateRoutine, onDelete
                 {errors.frequency && <p className="text-destructive text-sm mt-1 text-center">{errors.frequency}</p>}
               </div>
 
-              <div>
+              <div className='pt-3'>
                 <Label htmlFor="edit-goal">목표 연속일</Label>
                 <Select 
                   value={editedRoutine.goal} 
@@ -328,12 +328,24 @@ export function RoutineDetailScreen({ routine, onBack, onUpdateRoutine, onDelete
                 </Select>
               </div>
 
-              <div className="flex items-center justify-between">
+              <div className="flex items-center justify-between pt-1">
                 <Label htmlFor="edit-reminder">톡캘린더 연결하기</Label>
                 <Switch
                   id="edit-reminder"
                   checked={!!editedRoutine.reminder}
                   onCheckedChange={(checked) => setEditedRoutine({...editedRoutine, reminder: checked})}
+                />
+              </div>
+
+              <div className="flex items-center justify-between">
+                <div>
+                  <Label className="pb-3 pt-3">루틴 공개하기</Label>
+                  <p className="text-sm text-muted-foreground pl-3">다른 사용자가 내 프로필에서 이 루틴을 볼 수 있도록 허용합니다.</p>
+                </div>
+                <Switch
+                  checked={!!editedRoutine.isPublic}
+                  onCheckedChange={(checked) => setEditedRoutine({...editedRoutine, isPublic: checked})}
+                  disabled={editedRoutine.isGroupRoutine}
                 />
               </div>
             </CardContent>
