@@ -3,25 +3,24 @@ import { Avatar, AvatarFallback, AvatarImage } from '../../../components/ui/avat
 import { Popover, PopoverContent, PopoverTrigger } from '../../../components/ui/popover';
 import { Button } from '../../../components/ui/button';
 import { Smile, CheckCircle } from 'lucide-react';
-import { getStreakInfo } from '../../../components/utils/streakUtils';
 import type { Message } from './GroupChatScreen';
 import type { UserProfile } from '../../../interfaces';
 
 interface GroupChatMessagesProps {
   messages: Message[];
   myUserId: number;
-  getUserInfo: (message: Message) => any;
-  handleReactionClick: (messageKey: string, emoji: string) => void;
+  getUserInfo: (message: Message) => UserProfile | null;
   userInfo: UserProfile;
 }
 
-export function GroupChatMessages({ messages, myUserId, getUserInfo, handleReactionClick }: GroupChatMessagesProps) {
-  console.log("GroupChatMessages.jsx - Received messages :", messages);
-
+export function GroupChatMessages({ messages, myUserId, getUserInfo }: GroupChatMessagesProps) {
+  // 메시지 키를 기반으로 반응을 저장하는 상태
+  const [localReactions, setLocalReactions] = useState<{ [key: string]: { [emoji: string]: number } }>({});
   const [hoveredMessageKey, setHoveredMessageKey] = useState<string | null>(null);
-  const emojis = ['😀', '😂', '👍', '❤️', '👏', '💪', '🎉', '🔥', '🤔', '😊', '😭', '😎', '👌', '🙏', '🤯'];
 
+  const emojis = ['😀', '😂', '👍', '❤️', '👏', '💪', '🎉', '🔥', '🤔', '😊', '😭', '😎', '👌', '🙏', '🤯'];
   const messagesEndRef = useRef<HTMLDivElement>(null);
+
   useEffect(() => {
     if (messagesEndRef.current) {
       messagesEndRef.current.scrollTop = messagesEndRef.current.scrollHeight;
@@ -33,13 +32,11 @@ export function GroupChatMessages({ messages, myUserId, getUserInfo, handleReact
     if (!isoString) return '';
     const date = new Date(isoString);
     date.setHours(date.getHours() + 9);
-
     const hours = date.getHours();
     const minutes = date.getMinutes();
     const ampm = hours >= 12 ? '오후' : '오전';
     const displayHours = hours % 12 === 0 ? 12 : hours % 12;
     const displayMinutes = minutes < 10 ? `0${minutes}` : minutes;
-
     return `${ampm} ${displayHours}:${displayMinutes}`;
   };
 
@@ -48,51 +45,44 @@ export function GroupChatMessages({ messages, myUserId, getUserInfo, handleReact
     if (!isoString) return '';
     const date = new Date(isoString);
     date.setHours(date.getHours() + 9);
-
-    const options = {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-      weekday: 'long'
-    } as const;
-
+    const options = { year: 'numeric', month: 'long', day: 'numeric', weekday: 'long' } as const;
     return date.toLocaleDateString('ko-KR', options);
   };
   
-  // 날짜가 바뀌었는지 판단하는 함수
-  const isDifferentDay = (currentMsg: Message,
-     prevMsg: Message | null,
-     renderedDates: Set<string>
-    ) => {
+  const isDifferentDay = (currentMsg: Message, prevMsg: Message | null, renderedDates: Set<string>) => {
     if (!currentMsg.sentAt) return false;
-
-  const currentDate = new Date(currentMsg.sentAt);
-  currentDate.setHours(currentDate.getHours() + 9);
-
-  const dateKey = `${currentDate.getFullYear()}-${currentDate.getMonth()}-${currentDate.getDate()}`;
-
-  if (renderedDates.has(dateKey)) {
-    return false; // 이미 렌더링된 날짜이면 구분선 생략
-  }
-
-  if (!prevMsg || !prevMsg.sentAt) {
-    renderedDates.add(dateKey);
-    return true;
-  }
-
-  const prevDate = new Date(prevMsg.sentAt);
-  prevDate.setHours(prevDate.getHours() + 9);
-
-  const isDifferent =
-    currentDate.getFullYear() !== prevDate.getFullYear() ||
-    currentDate.getMonth() !== prevDate.getMonth() ||
-    currentDate.getDate() !== prevDate.getDate();
-
-  if (isDifferent) renderedDates.add(dateKey);
-
-  return isDifferent;
+    const currentDate = new Date(currentMsg.sentAt);
+    currentDate.setHours(currentDate.getHours() + 9);
+    const dateKey = `${currentDate.getFullYear()}-${currentDate.getMonth()}-${currentDate.getDate()}`;
+    if (renderedDates.has(dateKey)) {
+      return false;
+    }
+    if (!prevMsg || !prevMsg.sentAt) {
+      renderedDates.add(dateKey);
+      return true;
+    }
+    const prevDate = new Date(prevMsg.sentAt);
+    prevDate.setHours(prevDate.getHours() + 9);
+    const isDifferent =
+      currentDate.getFullYear() !== prevDate.getFullYear() ||
+      currentDate.getMonth() !== prevDate.getMonth() ||
+      currentDate.getDate() !== prevDate.getDate();
+    if (isDifferent) renderedDates.add(dateKey);
+    return isDifferent;
   };
   const renderedDates = new Set<string>();
+
+  // ✅ 로컬 상태에 이모티콘 반응을 추가하는 함수
+  const handleLocalReactionClick = (messageKey: string, emoji: string) => {
+    setLocalReactions(prev => {
+      const newReactions = { ...prev };
+      if (!newReactions[messageKey]) {
+        newReactions[messageKey] = {};
+      }
+      newReactions[messageKey][emoji] = (newReactions[messageKey][emoji] || 0) + 1;
+      return newReactions;
+    });
+  };
 
   return (
     <div className="flex-1 overflow-y-auto" ref={messagesEndRef}>
@@ -107,21 +97,18 @@ export function GroupChatMessages({ messages, myUserId, getUserInfo, handleReact
           }
 
           const prevMsg = index > 0 ? messages[index - 1] : null;
-         const showDateSeparator = isDifferentDay(msg, prevMsg, renderedDates);
+          const showDateSeparator = isDifferentDay(msg, prevMsg, renderedDates);
           const messageKey = `${msg.senderNickname}-${msg.sentAt}-${msg.message || ''}-${msg.imageUrl || ''}-${msg.albumImages ? msg.albumImages.join(',') : ''}`;
           const isSystemMessage = ['TALK', 'AUTH', 'IMAGE', 'ALBUM'].includes(msg.messageType) === false;
+          
+          const reactionsToDisplay = localReactions[messageKey] || {};
 
           return (
             <React.Fragment key={`message-${msg.id || index}`}>
-              {/* ✅ 날짜가 바뀌는 지점에만 날짜 구분선 렌더링 */}
               {showDateSeparator && !isSystemMessage && (
-                <div
-                  key={`date-separator-${msg.sentAt}`}
-                  className="flex items-center my-4"
-                >
+                <div key={`date-separator-${msg.sentAt}`} className="flex items-center my-4">
                   <div className="flex-grow border-t border-muted-foreground/30" />
                   <span className="mx-3 text-xs text-muted-foreground">
-                    {/* ✅ 오늘 날짜인지 확인하여 '오늘'로 표시 */}
                     {formatDateWithDay(msg.sentAt) === formatDateWithDay(new Date().toISOString()) ? '오늘' : formatDateWithDay(msg.sentAt)}
                   </span>
                   <div className="flex-grow border-t border-muted-foreground/30" />
@@ -129,7 +116,6 @@ export function GroupChatMessages({ messages, myUserId, getUserInfo, handleReact
               )}
               
               {isSystemMessage ? (
-                // 시스템 메시지 렌더링
                 <div key={`system-${msg.id || index}`} className="flex items-center my-4">
                   <div className="flex-grow border-t border-muted-foreground/30" />
                   <span className="mx-3 text-xs text-muted-foreground">
@@ -138,7 +124,6 @@ export function GroupChatMessages({ messages, myUserId, getUserInfo, handleReact
                   <div className="flex-grow border-t border-muted-foreground/30" />
                 </div>
               ) : (
-                // 일반/인증 메시지 렌더링
                 <div
                   key={messageKey}
                   className={`flex ${msg.isMe ? 'justify-end' : 'justify-start'}`}
@@ -201,12 +186,13 @@ export function GroupChatMessages({ messages, myUserId, getUserInfo, handleReact
                               onClick={() => window.open(msg.imageUrl, '_blank')}
                             />
                           ) : (
-                            <p className="text-sm">{msg.message}</p>
+                            <p className="text-sm text-left">{msg.message}</p>
                           )}
                         </div>
-                        {msg.reactions && Object.keys(msg.reactions).length > 0 && (
+                        {/* ✅ 로컬 상태에서 reactions를 불러와 렌더링 */}
+                        {Object.keys(reactionsToDisplay).length > 0 && (
                           <div className="flex space-x-1 mt-1">
-                            {Object.entries(msg.reactions).map(([emoji, count]) => (
+                            {Object.entries(reactionsToDisplay).map(([emoji, count]) => (
                               <div key={emoji} className="flex items-center text-xs p-1 rounded-full bg-secondary text-secondary-foreground">
                                 <span>{emoji}</span>
                                 <span className="ml-1">{count}</span>
@@ -238,7 +224,7 @@ export function GroupChatMessages({ messages, myUserId, getUserInfo, handleReact
                         <PopoverContent className="p-2 w-auto min-w-[150px] bg-background/95 backdrop-blur border-border" align="start" side="top" sideOffset={10}>
                           <div className="grid grid-cols-5 gap-1 text-2xl">
                             {emojis.map((emoji, index) => (
-                              <Button key={index} variant="ghost" className="text-2xl p-1 h-8 w-8" onClick={() => handleReactionClick(messageKey, emoji)}>
+                              <Button key={index} variant="ghost" className="text-2xl p-1 h-8 w-8" onClick={() => handleLocalReactionClick(messageKey, emoji)}>
                                 {emoji}
                               </Button>
                             ))}
