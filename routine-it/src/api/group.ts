@@ -164,3 +164,32 @@ export async function delegateLeader(groupId: number, leaderId: number, targetMe
     throw error;
   }
 }
+
+/**
+ * 그룹 멤버의 상태, 역할, 인증 여부 등을 변경합니다.
+ * @param groupId - 그룹 ID
+ * @param data - 업데이트할 데이터를 담은 객체
+ */
+export async function updateGroupMemberStatus(
+  groupId: number, 
+  data: {
+    leaderId: number;
+    targetMemberId: number;
+    status: 'PENDING' | 'JOINED' | 'BLOCKED' | 'LEFT';
+    role: 'LEADER' | 'MEMBER';
+    activityDate?: string;
+    imageUrl?: string;
+    approved: boolean;
+  }
+) {
+  try {
+    const response = await apiFetch(`/group/${groupId}/members/status`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    });
+    return response;
+  } catch (error) {
+    console.error("그룹 멤버 상태 변경 실패:", error);
+    throw error;
+  }
+}
