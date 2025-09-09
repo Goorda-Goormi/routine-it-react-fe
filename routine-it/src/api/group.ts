@@ -1,6 +1,6 @@
 //import api from "./api";
 import { apiFetch } from "./client";
-import type { GroupMemberResponse } from "../interfaces";
+import type { GroupMemberResponse, Group } from "../interfaces";
 
 export interface GroupRequest {
   groupName: string;
@@ -45,7 +45,7 @@ export async function updateGroup(groupId: number, data: GroupRequest) {
 
 
 // 전체 그룹 리스트 조회
-export async function getAllGroups() {
+export async function getAllGroups(): Promise<Group[]> {
   // apiFetch가 이미 JSON을 반환하므로, 바로 변수에 할당합니다.
   try {
     const allGroups = await apiFetch("/groups", { method: "GET" });
@@ -60,7 +60,7 @@ export async function getAllGroups() {
 
 
 // 가입된 그룹 리스트 조회
-export async function getJoinedGroups() {
+export async function getJoinedGroups(): Promise<Group[]> {
   try {
     const joinedGroups = await apiFetch("/groups/joined", { method: "GET" });
     return joinedGroups; // JSON 데이터가 담긴 배열을 반환

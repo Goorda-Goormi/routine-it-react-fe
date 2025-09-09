@@ -27,7 +27,7 @@ import { LoadingSpinner } from "./components/ui/loading-spinner";
 import { MonthlyReviewModal } from './components/modules/MonthlyReviewModal';
 import { startKakaoLogin, getUserInfo } from "./api/login"; 
 import { completeSignup, logoutUser, deleteAccount } from './api/auth';
-import { createGroup, getAllGroups,getJoinedGroups,getGroupMembers } from "./api/group";
+import { createGroup, getAllGroups,getJoinedGroups,getGroupMembers, requestJoinGroup } from "./api/group";
 import { updateRankingScore, getPersonalRankings, getUserTotalScore, getGlobalGroupRanking } from "./api/ranking";
 import { getMonthlyReview } from './api/review';
 import type { IPersonalRankingResponse, UserTotalScoreResponse } from './interfaces';
@@ -40,6 +40,8 @@ interface NavigationState {
   screen: string;
   params?: any;
 }
+
+type RoutineOverride = Partial<Pick<Routine, 'time' | 'frequency' | 'reminder' | 'goal'>>;
 
 /**
  * { hour: 8, minute: 0 } 형태의 alarmTime 객체를 '08:00' 형태의 문자열로 변환합니다.
@@ -189,6 +191,8 @@ export default function App() {
     return null;
   });
 
+  const [groupRoutineOverrides, setGroupRoutineOverrides] = useState<Record<number, RoutineOverride>>({});
+
   const [routineCompletionCount, setRoutineCompletionCount] = useState<number>(() => {
     return Number(localStorage.getItem('routineCompletionCount')) || 0;
   });
@@ -225,7 +229,7 @@ export default function App() {
  const [myGroups, setMyGroups] = useState<Group[]>([]);
   const [isLoadingGroups, setIsLoadingGroups] = useState(true);
 
-  const [groupRoutines, setGroupRoutines] = useState<Routine[]>([]);
+  //const [groupRoutines, setGroupRoutines] = useState<Routine[]>([]);
   const [error, setError] = useState<string | null>(null);
 
   const [remindersSentToday, setRemindersSentToday] = useState<Record<number, boolean>>({});
@@ -242,6 +246,12 @@ export default function App() {
     setNotifications(prev => [newNotification, ...prev]);
   };
 
+  useEffect(() => {
+    const savedOverrides = localStorage.getItem('groupRoutineOverrides');
+    if (savedOverrides) {
+      setGroupRoutineOverrides(JSON.parse(savedOverrides));
+    }
+  }, []);
 
   useEffect(() => {
     const dummyNotifications: Notification[] = [
@@ -406,19 +416,18 @@ export default function App() {
       const allGroups = await getAllGroups();
       const joinedGroups = await getJoinedGroups();
 
-      /*
-      setGroups(allGroups);
-      setMyGroups(joinedGroups);
-      */
+      const uniqueJoinedGroups = Array.from(
+        new Map(joinedGroups.map((group: Group) => [group.groupId, group])).values()
+      );
 
       // 1. 받아온 '가입한 그룹' 목록을 '루틴' 객체 배열로 변환합니다.
-      const transformedRoutines = joinedGroups.map(transformGroupToRoutine);
+      // const transformedRoutines = joinedGroups.map(transformGroupToRoutine);
 
-      // 2. 변환된 루틴 데이터를 새로운 state에 저장합니다.
-      setGroupRoutines(transformedRoutines);
+      // // 2. 변환된 루틴 데이터를 새로운 state에 저장합니다.
+      // setGroupRoutines(transformedRoutines);
 
       // 3. 원본 그룹 데이터는 myGroups state에 저장하여 그룹 목록 UI 등에서 사용합니다.
-      setMyGroups(joinedGroups);
+      setMyGroups(uniqueJoinedGroups);
       setGroups(allGroups);
 
     //  const joinedGroupIds = new Set(joinedGroups.map((g: Group) => g.groupId));
@@ -648,38 +657,51 @@ export default function App() {
   
   const handleUpdateRoutine = (updatedRoutine: Routine) => {
     if (updatedRoutine.isGroupRoutine) {
-      setGroups(prevGroups => 
-            prevGroups.map(group => {
-                if (group.routines && Array.isArray(group.routines)) {
-                    const groupHasRoutine = group.routines.some(r => r.id === updatedRoutine.id);
-                    if (groupHasRoutine) {
-                        return {
-                            ...group,
-                            routines: group.routines.map(r => r.id === updatedRoutine.id ? updatedRoutine : r)
-                        };
-                    }
-                }
-                return group;
-            })
+      const overrideData: RoutineOverride = {
+        time: updatedRoutine.time,
+        frequency: updatedRoutine.frequency,
+        reminder: updatedRoutine.reminder,
+        goal: updatedRoutine.goal,
+      }
+
+      const newOverrides = {
+        ...groupRoutineOverrides,
+        [updatedRoutine.id]: overrideData,
+      };
+
+      setGroupRoutineOverrides(newOverrides);
+      localStorage.setItem('groupRoutineOverrides', JSON.stringify(newOverrides));
+      
+      } 
+      // B. 개인 루틴일 경우 -> 기존 로직 (상태 직접 수정)
+      else {
+        setPersonalRoutines(prevRoutines =>
+          prevRoutines.map(routine =>
+            routine.id === updatedRoutine.id ? updatedRoutine : routine
+          )
         );
-    } else {
-      setPersonalRoutines(prevRoutines =>
-        prevRoutines.map(routine =>
-          routine.id === updatedRoutine.id ? updatedRoutine : routine
+      }
+
+      // C. 네비게이션 스택 업데이트 (화면이 최신 정보로 보이도록)
+      setNavigationStack(prevStack =>
+        prevStack.map(navItem =>
+          navItem.screen === 'routine-detail' && navItem.params.id === updatedRoutine.id
+            ? { ...navItem, params: { ...navItem.params, ...updatedRoutine } }
+            : navItem
         )
       );
-    }
+    };
 
-    setNavigationStack(prevStack =>
-      prevStack.map(navItem =>
-        navItem.screen === 'routine-detail' && navItem.params.id === updatedRoutine.id
-          ? { ...navItem, params: updatedRoutine }
-          : navItem
-      )
-    );
-  };
-
-
+  const getGroupRoutinesWithOverrides = (): Routine[] => {
+  return myGroups.map(group => {
+    // 1. 기본 그룹 정보를 루틴으로 변환
+    const routine = transformGroupToRoutine(group);
+    // 2. 해당 루틴(그룹) ID에 대한 개인 설정이 있는지 확인
+    const override = groupRoutineOverrides[group.groupId];
+    // 3. 개인 설정이 있다면 기본 루틴 정보 위에 덮어쓰기
+    return override ? { ...routine, ...override } : routine;
+  });
+};
 
   const handleToggleCompletion = (routineId: number, isGroupRoutine?: boolean) => {
     let isCompleted = false;
@@ -868,7 +890,7 @@ export default function App() {
     // 1분마다 실행되는 타이머를 설정합니다.
     const timer = setInterval(() => {
       const now = new Date();
-      const allRoutines = [...personalRoutines, ...groupRoutines];
+      const allRoutines = [...personalRoutines, ...getGroupRoutinesWithOverrides()];
 
       allRoutines.forEach(routine => {
         // 조건: 1. 알림이 켜져 있고, 2. 시간이 설정되어 있으며, 3. 오늘 아직 알림을 보내지 않았어야 함
@@ -908,7 +930,7 @@ export default function App() {
     // 컴포넌트가 사라질 때 타이머를 정리하여 메모리 누수를 방지합니다.
     return () => clearInterval(timer);
 
-  }, [personalRoutines, groupRoutines, remindersSentToday]); // 의존성 배열
+  }, [personalRoutines, remindersSentToday]); // 의존성 배열
 
   
    //7.그룹 관련 =============================================================
@@ -917,16 +939,39 @@ export default function App() {
    * (유지) 사용자가 그룹 가입을 '요청'했을 때 호출됩니다.
    * - '의무 참여' 그룹인 경우, 리더에게 알림을 생성합니다.
    */
-  const handleJoinGroupRequest = (group: Group) => {
-    // 그룹 리더에게 보낼 알림 생성
-    addNotification({
-      message: `${UserInfo?.nickname || '사용자'}님이 '${group.groupName}' 그룹 참여를 신청했습니다.`,
-      category: '그룹',
-      relatedId: group.groupId,
-    });
-    alert('그룹 가입 요청이 전송되었습니다. 리더의 승인을 기다려주세요.');
-    // 여기에 실제 API 호출 로직을 추가하시면 됩니다.
-    // 예: requestJoinGroup(group.groupId, UserInfo.id);
+  const handleJoinGroupRequest = async (groupId: number) => {
+
+    const group = groups.find(g => g.groupId === groupId);
+    if (!group || !UserInfo || !UserInfo.id) {
+      console.error("가입 요청 실패: 사용자 또는 그룹 정보가 없습니다.", { group, UserInfo });
+      alert("사용자 또는 그룹 정보를 찾을 수 없어 가입 요청에 실패했습니다.");
+      return;
+    }
+
+    try {
+      await requestJoinGroup(groupId, UserInfo.id as number);
+
+      if (group.groupType === 'FREE') {
+        // --- 자유 참여 그룹일 경우 ---
+        alert(`'${group.groupName}' 그룹에 참여했습니다!`);
+        // 그룹 목록을 새로고침하여 UI에 즉시 반영합니다.
+        fetchGroupData(); 
+      } else {
+        // --- 의무 참여 그룹일 경우 ---
+        // 리더에게 보낼 알림을 생성합니다.
+        addNotification({
+          message: `${UserInfo.nickname || '사용자'}님이 '${group.groupName}' 그룹 참여를 신청했습니다.`,
+          category: '그룹',
+          relatedId: group.groupId,
+          isLocal: true, 
+        });
+        alert('그룹 가입 요청이 전송되었습니다. 리더의 승인을 기다려주세요.');
+      }
+
+    } catch (error) {
+      console.error("그룹 가입 요청 API 실패:", error);
+      alert("그룹 가입 요청 중 오류가 발생했습니다.");
+    }
   };
 
   // 루틴 인증 메시지를 추가하는 함수에 groupId 추가
@@ -1416,7 +1461,7 @@ const navigateTo = (screen: string, params?: any, options?: { replace?: boolean 
         return (
           <HomeScreen 
             onNavigate={navigateTo} 
-            routines={[...personalRoutines, ...groupRoutines]}
+            routines={[...personalRoutines, ...getGroupRoutinesWithOverrides()]}
             onToggleCompletion={handleToggleCompletion}
             streakDays={streakDays}
             userInfo={{...UserInfo, exp: UserInfo.exp ?? 0 }}
@@ -1434,7 +1479,7 @@ const navigateTo = (screen: string, params?: any, options?: { replace?: boolean 
         return <RoutineScreen 
           onNavigate={navigateTo} 
           //allRoutines={allRoutines}
-          allRoutines={[...personalRoutines, ...groupRoutines]}
+          allRoutines={[...personalRoutines, ...getGroupRoutinesWithOverrides()]}
           recommendedRoutines={recommendedRoutines}
           onToggleCompletion={handleToggleCompletion}
           onAddRecommendedRoutine={handleAddRecommendedRoutine}
@@ -1453,7 +1498,7 @@ const navigateTo = (screen: string, params?: any, options?: { replace?: boolean 
                   groups={groups} 
                   myGroups={myGroups}   
                   onNewGroup={() => navigateTo("create-group")}
-                  //onJoinGroup={handleJoinGroup}
+                  onJoinGroup={handleJoinGroupRequest}
                 />
       case "ranking":{
         console.log('그룹 목록 (랭킹):', groups);

@@ -219,6 +219,8 @@ export function RoutineDetailScreen({ routine, onBack, onUpdateRoutine, onDelete
                   id="edit-name"
                   value={editedRoutine.name}
                   onChange={(e) => setEditedRoutine({...editedRoutine, name: e.target.value})}
+                  disabled={editedRoutine.isGroupRoutine}
+                  aria-readonly={editedRoutine.isGroupRoutine}
                 />
                 {errors.name && <p className="text-destructive text-sm mt-1">{errors.name}</p>}
               </div>
@@ -228,6 +230,7 @@ export function RoutineDetailScreen({ routine, onBack, onUpdateRoutine, onDelete
                 <Select 
                   value={editedRoutine.category} 
                   onValueChange={(value) => setEditedRoutine({...editedRoutine, category: value})}
+                  disabled={editedRoutine.isGroupRoutine}
                 >
                   <SelectTrigger>
                     <SelectValue />
@@ -248,6 +251,7 @@ export function RoutineDetailScreen({ routine, onBack, onUpdateRoutine, onDelete
                 <Select 
                   value={editedRoutine.difficulty} 
                   onValueChange={(value) => setEditedRoutine({...editedRoutine, difficulty: value})}
+                  disabled={editedRoutine.isGroupRoutine}
                 >
                   <SelectTrigger>
                     <SelectValue />
@@ -267,6 +271,8 @@ export function RoutineDetailScreen({ routine, onBack, onUpdateRoutine, onDelete
                   id="edit-description"
                   value={editedRoutine.description}
                   onChange={(e) => setEditedRoutine({...editedRoutine, description: e.target.value})}
+                  disabled={editedRoutine.isGroupRoutine}
+                  aria-readonly={editedRoutine.isGroupRoutine}
                 />
               </div>
 

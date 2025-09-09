@@ -10,7 +10,7 @@ import type { AuthMessage, GroupMemberResponse, NotificationApiResponse } from "
 import { deleteGroup, delegateLeader } from '../../../api/group';
 import { getGroupTop3Ranking } from '../../../api/ranking';
 import type { GlobalGroupRankingData } from '../../Ranking/RankingScreen';
-import { submitAuthentication } from '../../../api/group';
+import { getPendingAuthMembers, updateAuthStatus, requestAuthApproval } from '../../../api/group';
 import { getNotificationsByType, markNotificationAsRead } from '../../../api/notification';
 
 interface GroupDetailScreenProps {
@@ -71,20 +71,29 @@ export function GroupDetailScreen({
   };
 
   const handleAuthSubmit = async (data: { description: string; image: File | null; isPublic: boolean }) => {
-    const formData = new FormData();
-    formData.append('description', data.description);
-    if (data.image) {
-      formData.append('image', data.image);
+    const leader = groupMembers.find(member => member.role === 'LEADER');
+    if (!leader) {
+      alert('그룹 리더 정보를 찾을 수 없어 인증을 요청할 수 없습니다.');
+      setShowRoutineModal(false);
+      return;
     }
     try {
-      await submitAuthentication(groupId, formData);
-      alert('인증이 성공적으로 제출되었습니다.');
-      setShowRoutineModal(false);
-    } catch (error) {
-      alert('인증 제출에 실패했습니다.');
-      console.error(error);
-    }
-  };
+      const authData = {
+      leaderId: leader.groupMemberId,
+      targetMemberId: myid, // 현재 로그인한 사용자의 ID
+      activityDate: new Date().toISOString().split('T')[0], // 오늘 날짜 (YYYY-MM-DD)
+      imageUrl: "https://placeholder.com/image.jpg", 
+    };
+
+    await requestAuthApproval(groupId, authData);
+    alert('인증이 성공적으로 제출되었습니다.');
+    setShowRoutineModal(false);
+
+  } catch (error) {
+    alert('인증 제출에 실패했습니다.');
+    console.error(error);
+  }
+};
 
   const handleGroupDeleted = async () => {
     if (group?.groupId) {

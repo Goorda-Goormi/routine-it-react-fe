@@ -277,7 +277,7 @@ export function HomeScreen({
                 const isCompleted = currentState === 'completed';
 
                 return (
-                  <div key={routine.id}>
+                  <div key={routine.isGroupRoutine ? `group-${routine.id}` : `personal-${routine.id}`}>
                     <div
                       className={`flex items-center justify-between rounded-lg p-3 transition-colors ${
                         isCompleted ? 'bg-green-50/50 dark:bg-green-900/20' : 'hover:bg-accent/50'

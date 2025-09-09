@@ -86,9 +86,9 @@ export interface AuthMessage {
   //user: string;
   nickname: string;
   message: string;
-  imageUrl: string | null;
-  routineId: number; 
-  userId: string | number;
+  imageUrl?: string | null;
+  routineId?: number; 
+  userId?: string | number;
 }
 
 export interface Routine {
