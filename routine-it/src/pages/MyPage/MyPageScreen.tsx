@@ -52,9 +52,11 @@ interface MyPageScreenProps {
   onLogout: () => void;
   attendanceDates: string[];
   earnedBadges: BadgeType[];
+  routineCompletionCount: number; 
+  userTotalScore: number | null;
 }
 
-export function MyPageScreen({ onNavigate, isDarkMode, onToggleDarkMode, onToggleAlarm, user, onLogout, attendanceDates = [], earnedBadges = [] }: MyPageScreenProps) {
+export function MyPageScreen({ onNavigate, isDarkMode, onToggleDarkMode, onToggleAlarm, user, onLogout, attendanceDates = [], earnedBadges = [], routineCompletionCount, userTotalScore }: MyPageScreenProps) {
   const allBadgesInfo = [
     { 
       id: 1, 
@@ -156,7 +158,7 @@ export function MyPageScreen({ onNavigate, isDarkMode, onToggleDarkMode, onToggl
   const stats = [
     { 
       label: '총 활동일', 
-      value: '127', 
+      value: (user.streakDays ?? 0).toLocaleString(), 
       unit: '일',
       icon: Calendar,
       bgColor: 'bg-purple-500/40',
@@ -167,7 +169,7 @@ export function MyPageScreen({ onNavigate, isDarkMode, onToggleDarkMode, onToggl
     },
     { 
       label: '완료한 루틴', 
-      value: '1,245', 
+      value: (routineCompletionCount ?? 0).toLocaleString(), 
       unit: '개',
       icon: CheckCircle,
       bgColor: 'bg-pink-500/20',
@@ -178,7 +180,7 @@ export function MyPageScreen({ onNavigate, isDarkMode, onToggleDarkMode, onToggl
     },
     { 
       label: '누적 점수', 
-      value: '2,450', 
+      value: userTotalScore ? userTotalScore.toLocaleString() : '0', 
       unit: '점',
       icon: TrendingUp,
       bgColor: 'bg-orange-500/40',
@@ -189,7 +191,7 @@ export function MyPageScreen({ onNavigate, isDarkMode, onToggleDarkMode, onToggl
     },
     { 
       label: '최대 연속', 
-      value: '28', 
+      value: (user.maxStreakDays ?? 0).toLocaleString(), 
       unit: '일',
       icon: Flame,
       bgColor: 'bg-yellow-500/40',
@@ -202,6 +204,32 @@ export function MyPageScreen({ onNavigate, isDarkMode, onToggleDarkMode, onToggl
 
 
   const expProgress = user.maxExp ? Math.round(((user.exp ?? 0) / user.maxExp) * 100) : 0;;
+
+  const formatJoinDate = (joinDateStr?: string): string => {
+    if (!joinDateStr) return '가입일 정보 없음';
+    const date = new Date(joinDateStr);
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}.${month}.${day}`;
+  };
+
+  /**
+   * 가입일로부터 오늘까지 며칠이 지났는지 계산합니다. (가입일을 1일차로 계산)
+   */
+  const getDaysSinceJoining = (joinDateStr?: string): number => {
+    if (!joinDateStr) return 0;
+    const joinDate = new Date(joinDateStr);
+    const today = new Date();
+    
+    // 시간 정보를 무시하고 날짜만 비교하기 위해 자정으로 설정
+    joinDate.setHours(0, 0, 0, 0);
+    today.setHours(0, 0, 0, 0);
+
+    const diffTime = today.getTime() - joinDate.getTime();
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
+    return diffDays;
+  };
 
   return (
     <div className="space-y-6 h-full p-4">
@@ -489,11 +517,11 @@ export function MyPageScreen({ onNavigate, isDarkMode, onToggleDarkMode, onToggl
 
       {/* 가입 정보 및 로그아웃 */}
       <div className="space-y-3">
-        <div className="text-center">
+        {/* <div className="text-center">
           <p className="text-xs text-muted-foreground">
-            {user.joinDate}에 가입 • 루틴잇과 함께한 지 {Math.floor(Math.random() * 300 + 100)}일
+            {formatJoinDate(user.joinDate)}에 가입 • 루틴잇과 함께한 지 {getDaysSinceJoining(user.joinDate)}일
           </p>
-        </div>
+        </div> */}
         
         <Button
           variant="outline"

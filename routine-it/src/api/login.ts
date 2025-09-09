@@ -20,6 +20,8 @@ export const getUserInfo = async (): Promise<UserProfile> => {
     const authResult = await apiFetch('/api/auth/me'); 
     const profileResult = await apiFetch('/api/users/me');
 
+    const localMaxStreak = Number(localStorage.getItem('maxStreakDays')) || 0;
+
     // 두 API 결과 병합
     const authData = authResult.data;
     const profileData = profileResult.data;
@@ -32,11 +34,12 @@ export const getUserInfo = async (): Promise<UserProfile> => {
       profileMessage: profileData.profileMessage,
       isAlarmOn: profileData.isAlarmOn,
       isDarkMode: profileData.isDarkMode,
-      joinDate: '', 
+      joinDate: '',
       level: 0,
       exp: 0,
       maxExp: 3000,
       streakDays: 0,
+      maxStreakDays: localMaxStreak
     };
 
     return mergedUserData;

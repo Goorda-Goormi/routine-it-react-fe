@@ -1518,10 +1518,16 @@ const navigateTo = (screen: string, params?: any, options?: { replace?: boolean 
             isDarkMode={isDarkMode}
             onToggleDarkMode={toggleDarkMode}
             onToggleAlarm={handleToggleAlarm}
-            user={{...UserInfo, isAlarmOn: UserInfo.isAlarmOn ?? true }}
+            user={{
+              ...UserInfo, 
+              isAlarmOn: UserInfo.isAlarmOn ?? true,
+              streakDays: streakDays 
+            }}
             onLogout={handleLogout}
             attendanceDates={attendanceDates}
             earnedBadges={earnedBadges}
+            routineCompletionCount={routineCompletionCount}
+            userTotalScore={userTotalScore}
           />
         );
       
@@ -1626,30 +1632,46 @@ const navigateTo = (screen: string, params?: any, options?: { replace?: boolean 
 
   const handleCloseAttendanceModal = () => {
     setAttendanceModalOpen(false);
-    const today = new Date();
-    const todayString = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+    const todayString = new Date().toISOString().split('T')[0];
 
-    // 중복 체크 후 출석 날짜 추가 및 localStorage 업데이트
-    setAttendanceDates(prevDates => {
-      if (!prevDates.includes(todayString)) {
-        const newDates = [...prevDates, todayString];
-        localStorage.setItem('attendanceDates', JSON.stringify(newDates));
-        return newDates;
-      }
-      return prevDates;
-    });
+    // --- 1. 누적 출석일 (streakDays) 업데이트 ---
+    // 이제 streakDays는 초기화되지 않고 항상 1씩 증가합니다.
+    const newCumulativeStreak = streakDays + 1;
+    setStreakDays(newCumulativeStreak);
+    localStorage.setItem('streakDays', String(newCumulativeStreak));
 
-    // 출석 인증 횟수 증가 및 localStorage 업데이트
+    // --- 2. 출석 날짜 배열 업데이트 ---
+    const newDates = [...attendanceDates];
+    if (!newDates.includes(todayString)) {
+      newDates.push(todayString);
+      localStorage.setItem('attendanceDates', JSON.stringify(newDates));
+      setAttendanceDates(newDates);
+    }
+    
+    // --- 3. 현재 '연속 출석일' 계산 및 '최고 기록' 업데이트 ---
+    let consecutiveCount = 0;
+    const dateChecker = new Date(); // 오늘부터 시작
+
+    // 출석 기록에 날짜가 있는지 확인하며 하루씩 뒤로 갑니다.
+    while (newDates.includes(dateChecker.toISOString().split('T')[0])) {
+      consecutiveCount++;
+      dateChecker.setDate(dateChecker.getDate() - 1); // 어제 날짜로 변경
+    }
+
+    const currentMaxStreak = UserInfo?.maxStreakDays ?? 0;
+    if (consecutiveCount > currentMaxStreak && UserInfo) {
+      const newMaxStreak = consecutiveCount;
+      setUserInfo({ ...UserInfo, maxStreakDays: consecutiveCount });
+      
+      localStorage.setItem('maxStreakDays', String(newMaxStreak));
+    }
+
+    // --- 4. 기존 출석 처리 및 다음 모달 호출 로직 (그대로 유지) ---
     const newAttendanceCount = attendanceCount + 1;
     setAttendanceCount(newAttendanceCount);
     localStorage.setItem('attendanceCount', String(newAttendanceCount));
 
-    // 스트릭 일수 증가 및 localStorage 업데이트
-    const newStreakDays = streakDays + 1;
-    setStreakDays(newStreakDays);
-    localStorage.setItem('streakDays', String(newStreakDays));
-
-    handleNextModalSequence(newStreakDays, newAttendanceCount);
+    handleNextModalSequence(consecutiveCount, newAttendanceCount);
   };
 
   const handleCloseStreakModal = () => {
