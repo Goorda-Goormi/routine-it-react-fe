@@ -15,7 +15,7 @@ import { leaveGroup } from '../../../api/chat';
 
 import type { Group, UserProfile, GroupMemberResponse } from '../../../interfaces';
 import { fetchChatHistory } from '../../../api/chat'; // ✅ 추가된 import
-import { submitAuthentication } from '../../../api/group'; 
+import { requestAuthApproval, getGroupMembers } from '../../../api/group'; 
 
 // 👉 API 기본 URL, WS 연결 URL
 export const BASE_URL = "http://54.180.93.1:8080";
@@ -254,21 +254,34 @@ const member = groupmembers.find((m) => m.memberName === msg.senderNickname);
     };
 
     const handleAuthSubmit = async (data: { description: string; image: File | null; isPublic: boolean }) => {
-    const formData = new FormData();
-    formData.append('description', data.description);
-    if (data.image) {
-      formData.append('image', data.image);
-    }
+        try {
+            
+            const members = await getGroupMembers(group.groupId);
+            const leader = members.find(member => member.role === 'LEADER');
 
-    try {
-      await submitAuthentication(group.groupId, formData);
-      alert('인증이 성공적으로 제출되었습니다.');
-      // 인증 제출 후 필요한 작업 (예: 모달 닫기)
-    } catch (error) {
-      alert('인증 제출에 실패했습니다.');
-      console.error(error);
-    }
-  };
+            if (!leader) {
+            alert('그룹 리더 정보를 찾을 수 없어 인증을 요청할 수 없습니다.');
+            return;
+            }
+
+            const authData = {
+            leaderId: leader.groupMemberId,
+            targetMemberId: userInfo.id as number,
+            activityDate: new Date().toISOString().split('T')[0],
+       
+            imageUrl: "https://placeholder.com/image.jpg",
+            };
+
+            // 3. 수정한 이름의 함수를 호출합니다.
+            await requestAuthApproval(group.groupId, authData);
+            alert('인증이 성공적으로 제출되었습니다.');
+            
+
+        } catch (error) {
+            alert('인증 제출에 실패했습니다.');
+            console.error(error);
+        }
+    };
 
     return (
         <div className="flex flex-col h-screen bg-background">

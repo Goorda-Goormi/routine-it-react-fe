@@ -12,7 +12,7 @@ import type { GroupMemberResponse } from "../../../interfaces";
 import { deleteGroup,getJoinedGroups,delegateLeader, } from '../../../api/group';
 import { getGroupTop3Ranking } from '../../../api/ranking';
 import type { GlobalGroupRankingData } from '../../Ranking/RankingScreen';
-import { getPendingAuthentications, approveAuthentication, rejectAuthentication, submitAuthentication } from '../../../api/group'; 
+import { getPendingAuthMembers, updateAuthStatus, requestAuthApproval } from '../../../api/group'; 
 
 interface GroupDetailScreenProps {
   groupId: number;
@@ -95,23 +95,35 @@ const [weeklyRanking, setWeeklyRanking] = useState<GlobalGroupRankingData[]>([])
   };*/
 
  const handleAuthSubmit = async (data: { description: string; image: File | null; isPublic: boolean }) => {
-    const formData = new FormData();
-    formData.append('description', data.description);
-    if (data.image) {
-      formData.append('image', data.image);
+    const leader = groupMembers.find(member => member.role === 'LEADER');
+    
+    if (!leader) {
+      alert('그룹 리더 정보를 찾을 수 없어 인증을 요청할 수 없습니다.');
+      setShowRoutineModal(false);
+      return;
     }
+
     // 필요한 다른 데이터가 있다면 formData에 추가합니다.
     
     try {
-      await submitAuthentication(groupId, formData);
-      alert('인증이 성공적으로 제출되었습니다.');
-      setShowRoutineModal(false);
-      // 필요 시 알림 목록이나 다른 데이터를 새로고침할 수 있습니다.
-    } catch (error) {
-      alert('인증 제출에 실패했습니다.');
-      console.error(error);
-    }
-  };
+
+    const authData = {
+      leaderId: leader.groupMemberId,
+      targetMemberId: myid, 
+      activityDate: new Date().toISOString().split('T')[0], 
+      imageUrl: "https://placeholder.com/image.jpg", 
+    };
+
+    // 3. API를 호출합니다.
+    await requestAuthApproval(groupId, authData);
+    alert('인증이 성공적으로 제출되었습니다.');
+    setShowRoutineModal(false);
+
+  } catch (error) {
+    alert('인증 제출에 실패했습니다.');
+    console.error(error);
+  }
+};
 
 // 그룹 삭제 로직을 GroupDetailScreen에 통합
  const handleGroupDeleted = async () => {
@@ -193,36 +205,84 @@ useEffect(() => {
 // ▼▼▼ '승인 관리' 모달을 열 때 API를 호출하는 함수 추가 ▼▼▼
   const handleOpenApprovalModal = async () => {
     try {
-      const auths = await getPendingAuthentications(groupId);
-      setPendingAuths(auths || []); // API 응답이 없을 경우 빈 배열로 처리
-      setShowApprovalModal(true);
-    } catch (error) {
-      alert("인증 대기 목록을 불러오는데 실패했습니다.");
-      console.error(error);
-    }
-  };
+      const pendingMembers = await getPendingAuthMembers(groupId);
+      const transformedAuths: AuthMessage[] = pendingMembers.map(member => ({
+        id: member.groupMemberId, 
+        userId: member.groupMemberId, 
+        nickname: member.memberName,
+        message: member.message || '인증 요청', 
+        imageUrl: null, 
+        routineId: 0,
+      }));
+
+      setPendingAuths(transformedAuths || []);
+    setShowApprovalModal(true);
+
+  } catch (error) {
+    alert("인증 대기 목록을 불러오는데 실패했습니다.");
+    console.error(error);
+  }
+};
 
   // ▼▼▼ '승인' 버튼을 눌렀을 때 API를 호출하는 함수 추가 ▼▼▼
   const handleApprove = async (authId: number) => {
+
+    // 1. 승인할 대상(targetMember)의 정보를 pendingAuths 목록에서 찾습니다.
+    const targetAuth = pendingAuths.find(auth => auth.id === authId);
+    // 2. 현재 그룹 리더의 정보를 groupMembers 목록에서 찾습니다.
+    const leader = groupMembers.find(member => member.role === 'LEADER');
+
+  if (!targetAuth || !leader) {
+    alert("승인 처리 중 오류가 발생했습니다. (사용자 또는 리더 정보 없음)");
+    return;
+  }
+
     try {
-      await approveAuthentication(authId);
-      alert("인증을 승인했습니다.");
-      // 성공 시, 목록에서 해당 항목을 제거하고 모달을 닫음
-      setPendingAuths(prev => prev.filter(p => p.id !== authId));
-      setShowApprovalModal(false);
-      // 필요하다면 알림 목록 갱신을 위해 부모의 함수를 호출할 수 있습니다.
-    } catch (error) {
-      alert("승인 처리에 실패했습니다.");
-    }
-  };
+    // 3. API가 요구하는 모든 정보를 담아 payload 객체를 만듭니다.
+    const payload = {
+      groupId: groupId,
+      leaderId: leader.groupMemberId,
+      targetMemberId: targetAuth.userId as number, // targetMemberId는 인증을 올린 사람의 ID
+      approved: true, // 승인이므로 true
+    };
+    
+    // 4. 수정한 API 함수를 호출합니다.
+    await updateAuthStatus(payload);
+    alert("인증을 승인했습니다.");
+    
+    // 성공 시, 목록에서 해당 항목을 제거하고 모달을 닫음
+    setPendingAuths(prev => prev.filter(p => p.id !== authId));
+    setShowApprovalModal(false);
+
+  } catch (error) {
+    alert("승인 처리에 실패했습니다.");
+  }
+};
 
   // ▼▼▼ '거절' 버튼을 눌렀을 때 API를 호출하는 함수 추가 ▼▼▼
   const handleReject = async (authId: number) => {
+    const targetAuth = pendingAuths.find(auth => auth.id === authId);
+    const leader = groupMembers.find(member => member.role === 'LEADER');
+
+    if (!targetAuth || !leader) {
+      alert("거절 처리 중 오류가 발생했습니다. (사용자 또는 리더 정보 없음)");
+      return;
+    }
+
     try {
-      await rejectAuthentication(authId);
+      const payload = {
+        groupId: groupId,
+        leaderId: leader.groupMemberId,
+        targetMemberId: targetAuth.userId as number,
+        approved: false, // 거절이므로 false
+      };
+
+      await updateAuthStatus(payload);
       alert("인증을 거절했습니다.");
+      
       setPendingAuths(prev => prev.filter(p => p.id !== authId));
       setShowApprovalModal(false);
+
     } catch (error) {
       alert("거절 처리에 실패했습니다.");
     }

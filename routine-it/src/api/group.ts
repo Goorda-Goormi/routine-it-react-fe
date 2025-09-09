@@ -110,21 +110,31 @@ export async function deleteGroup(groupId: number) {
   }
 }
 
-// [추가] 특정 그룹의 인증 대기 목록을 가져오는 API
-export async function getPendingAuthentications(groupId: number) {
-  // 실제 엔드포인트는 백엔드에 맞게 수정해야 합니다. 예: /groups/{groupId}/pending-auths
-  return apiFetch(`/groups/${groupId}/pending-auths`, { method: 'GET' });
+/**
+ * 특정 그룹의 인증 대기중인 멤버 목록을 가져옵니다.
+ * @param groupId - 그룹 ID
+ */
+export async function getPendingAuthMembers(groupId: number): Promise<GroupMemberResponse[]> {
+  // 그룹 멤버 조회 API를 사용하되, status가 'PENDING'인 멤버만 필터링합니다.
+  return apiFetch(`/group/${groupId}/members?status=PENDING`, { method: 'GET' });
 }
 
-// [추가] 특정 인증을 승인하는 API
-export async function approveAuthentication(authId: number) {
-  // 실제 엔드포인트는 백엔드에 맞게 수정해야 합니다. 예: /authentications/{authId}/approve
-  return apiFetch(`/authentications/${authId}/approve`, { method: 'POST' });
+/**
+ * 리더가 멤버의 활동을 승인 또는 거절합니다.
+ * @param payload - 승인/거절 처리에 필요한 데이터
+ */
+interface UpdateAuthStatusPayload {
+  groupId: number;
+  leaderId: number;
+  targetMemberId: number;
+  approved: boolean; // true: 승인, false: 거절
 }
 
-// [추가] 특정 인증을 거절하는 API
-export async function rejectAuthentication(authId: number) {
-  return apiFetch(`/authentications/${authId}/reject`, { method: 'POST' });
+export async function updateAuthStatus(payload: UpdateAuthStatusPayload) {
+  return apiFetch(`/group/${payload.groupId}/members/status`, {
+    method: 'PUT',
+    body: JSON.stringify(payload),
+  });
 }
 
 // ▼▼▼ 아래 함수를 새로 추가하세요 ▼▼▼
@@ -133,12 +143,17 @@ export async function rejectAuthentication(authId: number) {
  * @param groupId - 그룹 ID
  * @param data - 인증 데이터 (설명, 이미지 등)
  */
-export async function submitAuthentication(groupId: number, data: FormData) {
-  // 실제 엔드포인트는 백엔드에 맞게 수정해야 합니다. 예: /groups/{groupId}/auth
-  // 이미지를 포함하므로 FormData를 사용하고 Content-Type 헤더를 설정하지 않습니다.
-  return apiFetch(`/groups/${groupId}/auth`, {
+interface AuthRequestPayload {
+  leaderId: number;
+  targetMemberId: number;
+  activityDate: string; // "YYYY-MM-DD" 형식
+  imageUrl: string;
+}
+
+export async function requestAuthApproval(groupId: number, authData: AuthRequestPayload) {
+  return apiFetch(`/group/${groupId}/approve-auth`, {
     method: 'POST',
-    body: data,
+    body: JSON.stringify({ ...authData, groupId }),
   });
 }
 

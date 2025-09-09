@@ -8,7 +8,7 @@ import { Plus, Target, CheckCircle, Clock, Calendar, TrendingUp, Filter, Camera,
 import type { Routine, Group } from '../../interfaces';
 import type { AuthMessage } from '../../interfaces';
 import { GroupRoutineDialog } from '../../pages/Group/GroupChat/GroupRoutineDialog';
-import { submitAuthentication } from '../../api/group'; 
+import { getGroupMembers, requestAuthApproval } from '../../api/group'; 
 
 const getTodayDayOfWeek = () => {
   const dayOfWeek = ['일', '월', '화', '수', '목', '금', '토'];
@@ -112,22 +112,38 @@ export function RoutineScreen({ onNavigate, allRoutines, recommendedRoutines, on
     
     
     if (group && group.groupId) {
-        // FormData를 사용하여 서버에 인증 데이터를 전송합니다.
-        const formData = new FormData();
-        formData.append('description', data.description);
-        if (data.image) {
-            formData.append('image', data.image);
-        }
+      try {
+          // 1. 해당 그룹의 전체 멤버 목록을 불러옵니다.
+          const members = await getGroupMembers(group.groupId);
+          
+          // 2. 멤버 목록에서 리더(role === 'LEADER')를 찾습니다.
+          const leader = members.find(member => member.role === 'LEADER');
+          
+          // 3. 리더를 찾지 못하면 오류 처리 후 함수를 종료합니다.
+          if (!leader) {
+            alert('그룹 리더 정보를 찾을 수 없어 인증을 요청할 수 없습니다.');
+            setIsGroupDialogOpen(false);
+            return;
+          }
 
-        try {
-            // API를 직접 호출합니다.
-            await submitAuthentication(group.groupId, formData);
-            alert('인증이 성공적으로 제출되었습니다.');
-        } catch (error) {
-            alert('인증 제출에 실패했습니다.');
-            console.error(error);
-        }
-    }
+          // 4. API 명세서에 맞는 AuthRequestPayload 객체를 생성합니다.
+          const authData = {
+            leaderId: leader.groupMemberId, // 찾은 리더의 ID를 사용합니다.
+            targetMemberId: initialUserInfo.id as number,
+            activityDate: new Date().toISOString().split('T')[0],
+            // TODO: 실제 이미지 업로드 후 받은 URL로 교체해야 합니다.
+            imageUrl: "https://placeholder.com/image.jpg", 
+          };
+
+          // 5. 새로 만든 객체로 API를 호출합니다.
+          await requestAuthApproval(group.groupId, authData);
+          alert('인증이 성공적으로 제출되었습니다.');
+
+      } catch (error) {
+          alert('인증 제출에 실패했습니다.');
+          console.error(error);
+      }
+  }
 
     setIsGroupDialogOpen(false);
 };

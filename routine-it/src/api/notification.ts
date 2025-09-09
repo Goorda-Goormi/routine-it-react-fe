@@ -23,6 +23,7 @@ export async function markNotificationAsRead(notificationId: number, isRead: boo
   try {
     const updatedNotification = await apiFetch(`/notifications/${notificationId}/read?isRead=${isRead}`, {
       method: "POST",
+      //method: "PUT",
     });
     return updatedNotification;
   } catch (error) {
