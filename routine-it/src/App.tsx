@@ -54,6 +54,16 @@ const convertAlarmTimeToTimeString = (alarmTime: { hour?: number; minute?: numbe
   return `${hour}:${minute}`;
 };
 
+  // 날짜 포맷 옵션 (연, 월, 일, 시, 분)
+const dateOptions: Intl.DateTimeFormatOptions = {
+  year: 'numeric',
+  month: 'numeric',
+  day: 'numeric',
+  hour: '2-digit',
+  minute: '2-digit',
+  hour12: true,
+};
+
 /**
  * '1111100' 형태의 authDays 문자열을 ['월', '화', '수', '목', '금'] 형태의 배열로 변환합니다.
  */
@@ -121,14 +131,18 @@ const transformNotification = (apiNotif: NotificationApiResponse): Notification 
       category = '홈';
   }
 
+  const dateString = apiNotif.createdAt 
+    ? new Date(apiNotif.createdAt).toLocaleString('ko-KR', dateOptions) // <-- 옵션 적용
+    : '시간 정보 없음';
+
   return {
     id: apiNotif.id,
     message: apiNotif.content,
     category: category,
-    date: new Date(apiNotif.createdAt).toLocaleString(), // 날짜 형식 변환
+    date: dateString, // 수정된 날짜 문자열을 사용합니다.
     read: apiNotif.read,
     icon: icon,
-    // relatedId가 필요하다면 API 응답에 groupId 같은 필드를 추가해야 합니다.
+    isLocal: false, // 서버에서 온 알림이므로 false
   };
 };
 
@@ -222,11 +236,12 @@ export default function App() {
     const newNotification: Notification = {
       ...notification,
       id: Date.now(),
-      date: '방금 전',
+      date: new Date().toLocaleString('ko-KR', dateOptions),
       read: false,
     };
     setNotifications(prev => [newNotification, ...prev]);
   };
+
 
   useEffect(() => {
     const dummyNotifications: Notification[] = [
