@@ -211,13 +211,14 @@ export async function delegateLeader(groupId: number, leaderId: number, targetMe
 export async function updateGroupMemberStatus(
   groupId: number, 
   data: {
+    groupId:number;
     leaderId: number;
     targetMemberId: number;
     status: 'PENDING' | 'JOINED' | 'BLOCKED' | 'LEFT';
-    role: 'LEADER' | 'MEMBER';
+    role?: 'LEADER' | 'MEMBER';
     activityDate?: string;
     imageUrl?: string;
-    approved: boolean;
+    approved?: boolean;
   }
 ) {
   try {
