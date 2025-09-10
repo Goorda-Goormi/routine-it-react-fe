@@ -6,10 +6,15 @@ import { GroupMemberManager } from './GroupMemberManager';
 import GroupEdit from './GroupEdit';
 import { GroupApproval } from './GroupApproval';
 import type { AuthMessage, GroupMemberResponse, NotificationApiResponse } from "../../../interfaces";
-import { deleteGroup, delegateLeader, getUserActivitiesByDay,updateGroupMemberStatus } from '../../../api/group';
+import { 
+    deleteGroup, 
+    delegateLeader, 
+    getUserActivitiesByDay, 
+    updateGroupMemberStatus,
+    getPendingMembersByGroupId, 
+} from '../../../api/group';
 import { getGroupTop3Ranking } from '../../../api/ranking';
 import type { GlobalGroupRankingData } from '../../Ranking/RankingScreen';
-import { getNotificationsByType, markNotificationAsRead } from '../../../api/notification';
 import { fetchChatHistory } from '../../../api/chat';
 
 interface GroupDetailScreenProps {
@@ -42,7 +47,8 @@ export function GroupDetailScreen({
     const [isEditing, setIsEditing] = useState(false);
     const [showExMembersModal, setShowExMembersModal] = useState(false);
     const [showApprovalModal, setShowApprovalModal] = useState(false);
-    const [pendingInvites, setPendingInvites] = useState<any[]>([]);
+    const [pendingInvites, setPendingInvites] = useState<GroupMemberResponse[]>([]);
+    const [pendingAuthCount, setPendingAuthCount] = useState(0);
 
     const group = groups.find((g) => g.groupId === groupId);
 
@@ -55,65 +61,61 @@ export function GroupDetailScreen({
     const [recentActivities, setRecentActivities] = useState<any[]>([]);
 
     const handleChatClick = () => onNavigate('group-chat', group);
+    
     const handleMemberClick = (member: GroupMemberResponse) => {
-      // 1. 클릭된 멤버 객체에 필요한 정보(userId, memberName)가 있는지 확인합니다.
-      if (!member || !member.userId || !member.memberName) {
-        console.error("전달된 멤버 객체에 필수 정보가 없습니다:", member);
-        return;
-      }
-      
-      // 2. UserHomeScreen에서 필요로 하는 형식({ id, nickname })으로 객체를 만들어줍니다.
-      const userForNav = {
-        id: member.userId,       // member 객체의 'userId'를 'id'로 매핑
-        nickname: member.memberName, // member 객체의 'memberName'을 'nickname'으로 매핑
-      };
-
-      // 3. onNavigate 함수를 호출하여 화면을 전환합니다.
-      onNavigate('user-home', userForNav);
-    };
-
-   const handleKickMember = async (targetMemberId: number) => {
-    try {
-        const currentLeader = groupMembers.find(m => m.memberName === group.leaderName);
-        
-        if (!currentLeader || !currentLeader.groupMemberId) {
-            alert("리더의 정보를 찾을 수 없습니다.");
+        if (!member || !member.userId || !member.memberName) {
+            console.error("전달된 멤버 객체에 필수 정보가 없습니다:", member);
             return;
         }
+        
+        const userForNav = {
+            id: member.userId,
+            nickname: member.memberName,
+        };
 
-        // --- 이 부분을 추가해주세요. ---
-        console.log("전송 데이터:", {
-            groupId: groupId,
-            leaderId: currentLeader.groupMemberId,
-            targetMemberId: targetMemberId,
-            status: "BLOCKED",
-            role: "MEMBER",
-            approved: false
-        });
-        // -----------------------------
+        onNavigate('user-home', userForNav);
+    };
 
-        const response = await updateGroupMemberStatus(groupId, {
-            groupId: groupId,  
-            leaderId: currentLeader.groupMemberId,
-            targetMemberId: targetMemberId,
-            status: "BLOCKED",
-            role: "MEMBER",
-            approved: false
-        });
+    const handleKickMember = async (targetMemberId: number) => {
+        try {
+            const currentLeader = groupMembers.find(m => m.memberName === group.leaderName);
+            
+            if (!currentLeader || !currentLeader.groupMemberId) {
+                alert("리더의 정보를 찾을 수 없습니다.");
+                return;
+            }
+
+            console.log("전송 데이터:", {
+                groupId: groupId,
+                leaderId: currentLeader.groupMemberId,
+                targetMemberId: targetMemberId,
+                status: "BLOCKED",
+                role: "MEMBER",
+                approved: false
+            });
+
+            const response = await updateGroupMemberStatus(groupId, {
+                groupId: groupId,  
+                leaderId: currentLeader.groupMemberId,
+                targetMemberId: targetMemberId,
+                status: "BLOCKED",
+                role: "MEMBER",
+                approved: false
+            });
 
 
-        if (response && response.status === "BLOCKED") {
-            alert('멤버가 성공적으로 그룹에서 내보내졌습니다.');
-            setShowExMembersModal(false);
-            onUpdateGroup({ ...group, members: groupMembers.filter(m => m.groupMemberId !== targetMemberId) });
-        } else {
+            if (response && response.status === "BLOCKED") {
+                alert('멤버가 성공적으로 그룹에서 내보내졌습니다.');
+                setShowExMembersModal(false);
+                onUpdateGroup({ ...group, members: groupMembers.filter(m => m.groupMemberId !== targetMemberId) });
+            } else {
+                alert('멤버 내보내기에 실패했습니다.');
+            }
+        } catch (error) {
+            console.error("멤버 내보내기 실패:", error);
             alert('멤버 내보내기에 실패했습니다.');
         }
-    } catch (error) {
-        console.error("멤버 내보내기 실패:", error);
-        alert('멤버 내보내기에 실패했습니다.');
-    }
-};
+    };
 
     const handleGroupDeleted = async () => {
         if (group?.groupId) {
@@ -130,7 +132,6 @@ export function GroupDetailScreen({
 
     useEffect(() => {
         const fetchData = async () => {
-            // 랭킹 데이터 가져오기
             if (currentUser && currentUser.id !== undefined && currentUser.id !== null) {
                 try {
                     const response = await getGroupTop3Ranking(groupId, Number(currentUser.id));
@@ -146,7 +147,6 @@ export function GroupDetailScreen({
                 }
             }
 
-            // 최근 활동 (인증 내역) 데이터 가져오기
             try {
                 const response = await fetchChatHistory(groupId, 50);
                 const chatHistory = response.data?.content || [];
@@ -154,13 +154,12 @@ export function GroupDetailScreen({
                 const authMessages = chatHistory
                     .filter(msg => msg.messageType === 'NOTICE')
                     .map(msg => {
-                        // UTC 시간을 KST(UTC+9)로 변환
                         const date = new Date(msg.sentAt);
                         date.setHours(date.getHours() + 9);
                         const kstTime = date.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' });
 
                         return {
-                            id: msg.messageId, // 고유 ID로 사용
+                            id: msg.messageId, 
                             nickname: msg.senderNickname,
                             action: '루틴 인증 완료',
                             time: kstTime,
@@ -169,7 +168,7 @@ export function GroupDetailScreen({
                     });
                 
                 setRecentActivities(authMessages);
-                console.log("최근 인증 내역 (KST):", authMessages); // 콘솔에 출력
+                console.log("최근 인증 내역 (KST):", authMessages);
             } catch (error) {
                 console.error("채팅 인증 내역 로딩 실패:", error);
                 setRecentActivities([]);
@@ -179,32 +178,10 @@ export function GroupDetailScreen({
         fetchData();
     }, [groupId, currentUser.id]);
 
-    /*const handleDelegateLeader = async (targetMemberId: number, targetMemberName: string) => {
-        try {
-            const currentLeader = groupMembers.find(m => m.memberName === group.leaderName);
-            if (!currentLeader) {
-                alert("현재 리더 정보를 찾을 수 없습니다.");
-                return;
-            }
-            const currentLeaderId = currentLeader.groupMemberId;
-            const response = await delegateLeader(group.groupId, Number(currentLeaderId), targetMemberId);
-            if (response.success) {
-                alert(`그룹 리더가 ${targetMemberName}님으로 성공적으로 위임되었습니다.`);
-                setShowExMembersModal(false);
-                onUpdateGroup({ ...group, leaderName: targetMemberName, leaderId: targetMemberId });
-            } else {
-                alert(response.message || '리더 위임에 실패했습니다.');
-            }
-        } catch (error) {
-            console.error("리더 위임 실패:", error);
-            alert('리더 위임에 실패했습니다.');
-        }
-    };*/
     const handleDelegateLeader = async (targetMemberId: number, targetMemberName: string) => {
         try {
             const currentLeader = groupMembers.find(m => m.memberName === group.leaderName);
             if (!currentLeader) {
-                
                 alert("현재 리더 정보를 찾을 수 없습니다.");
                 return;
             }
@@ -219,50 +196,78 @@ export function GroupDetailScreen({
         }
     };
 
-
     const handleOpenApprovalModal = async () => {
-    try {
-        const inviteNotifications = await getNotificationsByType('GROUP_JOIN_REQUEST');
-        
-        // 현재 그룹의 이름(currentGroupName)과 일치하는 알림만 필터링
-        const currentGroupNotifications = inviteNotifications.filter(
-            (notification) => notification.groupName === group.groupName
-        );
-
-        const inviteMessages = currentGroupNotifications.map((notification) => ({
-            id: notification.id,
-            user: notification.senderName
-        }));
-
-        setPendingInvites(inviteMessages);
-        setShowApprovalModal(true);
-    } catch (error) {
-        alert("알림 목록을 불러오는데 실패했습니다.");
-        console.error(error);
-    }
-};
-
-    const handleApprove = async (notificationId: number) => {
         try {
-            await markNotificationAsRead(notificationId, true);
-            alert("그룹 가입을 승인했습니다.");
-            setPendingInvites(prev => prev.filter(p => p.id !== notificationId));
-            setShowApprovalModal(false);
+            const pendingMembers = await getPendingMembersByGroupId(groupId);
+            
+            setPendingInvites(pendingMembers);
+            setPendingAuthCount(pendingMembers.length);
+            setShowApprovalModal(true);
         } catch (error) {
-            alert("승인 처리에 실패했습니다.");
+            alert("가입 대기중인 멤버 목록을 불러오는데 실패했습니다.");
             console.error(error);
         }
     };
 
-    const handleReject = async (notificationId: number) => {
+    const handleApprove = async (targetMemberId: number) => {
         try {
-            await markNotificationAsRead(notificationId, true);
-            alert("그룹 가입을 거절했습니다.");
-            setPendingInvites(prev => prev.filter(p => p.id !== notificationId));
-            setShowApprovalModal(false);
+            const currentLeader = groupMembers.find(m => m.memberName === group.leaderName);
+            if (!currentLeader || !currentLeader.groupMemberId) {
+                alert("리더의 정보를 찾을 수 없어 승인에 실패했습니다.");
+                return;
+            }
+
+            const response = await updateGroupMemberStatus(groupId, {
+                groupId: groupId,
+                leaderId: currentLeader.groupMemberId,
+                targetMemberId: targetMemberId,
+                status: "JOINED",
+                role: "MEMBER",
+                approved: true
+            });
+
+            if (response && response.status === 'JOINED') {
+                alert("그룹 가입을 승인했습니다.");
+                setPendingInvites(prev => prev.filter(p => p.groupMemberId !== targetMemberId));
+                setPendingAuthCount(prev => prev - 1);
+                
+                onUpdateGroup({ 
+                    ...group, 
+                    currentMemberCount: group.currentMemberCount + 1,
+                    members: [...groupMembers, response]
+                });
+            } else {
+                alert("승인 처리에 실패했습니다.");
+            }
         } catch (error) {
+            console.error("승인 처리에 실패했습니다:", error);
+            alert("승인 처리에 실패했습니다.");
+        }
+    };
+
+    const handleReject = async (targetMemberId: number) => {
+        try {
+            const currentLeader = groupMembers.find(m => m.memberName === group.leaderName);
+            if (!currentLeader || !currentLeader.groupMemberId) {
+                alert("리더의 정보를 찾을 수 없어 거절에 실패했습니다.");
+                return;
+            }
+
+            await updateGroupMemberStatus(groupId, {
+                groupId: groupId,
+                leaderId: currentLeader.groupMemberId,
+                targetMemberId: targetMemberId,
+                status: "BLOCKED",
+                role: "MEMBER",
+                approved: false
+            });
+
+            alert("그룹 가입을 거절했습니다.");
+            setPendingInvites(prev => prev.filter(p => p.groupMemberId !== targetMemberId));
+            setPendingAuthCount(prev => prev - 1);
+        } catch (error) {
+            console.error("거절 처리에 실패했습니다:", error);
             alert("거절 처리에 실패했습니다.");
-            console.error(error);
         }
     };
 
@@ -277,7 +282,7 @@ export function GroupDetailScreen({
                 onOpenEdit={() => setIsEditing(true)}
                 onOpenApproval={handleOpenApprovalModal}
                 onOpenExMembers={() => setShowExMembersModal(true)}
-                pendingAuthCount={0}
+                pendingAuthCount={pendingAuthCount}
                 groupMembers={groupMembers}
                 onGroupDeleted={handleGroupDeleted}
                 myid={myid}
@@ -312,7 +317,10 @@ export function GroupDetailScreen({
                 <DialogContent className="max-w-md text-icon-secondary dark:text-white">
                     <GroupApproval
                         authMessages={[]}
-                        inviteMessages={pendingInvites}
+                        inviteMessages={pendingInvites.map(member => ({
+                            id: member.groupMemberId,
+                            user: member.memberName,
+                        }))}
                         onApprove={handleApprove}
                         onReject={handleReject}
                         onClose={() => setShowApprovalModal(false)}

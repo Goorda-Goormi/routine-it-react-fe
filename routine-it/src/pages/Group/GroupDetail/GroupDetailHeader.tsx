@@ -90,8 +90,10 @@ console.log('--- GroupDetailHeader Variables ---');
   // 그룹 가입 요청 처리 함수
   const handleJoinGroup = async () => {
     try {
-      await requestJoinGroup(group.groupId, myIdAsNumber);
+      const response = await requestJoinGroup(group.groupId, myIdAsNumber);
 
+      console.log("group detailheader 그룹 가입 요청 API 응답:", response);
+      
       if (group.groupType === 'FREE') {
         alert('그룹에 성공적으로 가입되었습니다.');
       } else {

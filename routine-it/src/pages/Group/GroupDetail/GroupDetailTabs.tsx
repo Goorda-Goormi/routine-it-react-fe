@@ -30,7 +30,7 @@ export const GroupDetailTabs = ({
 
       const isLeader = member.role === 'LEADER';
       const isCertified = member.status === 'JOINED';
-      
+       const isUncertified = member.message === '미인증';
 
       return (
         <div key={member.groupMemberId}>
@@ -54,11 +54,11 @@ export const GroupDetailTabs = ({
                     </div>
                   )}
                 </div>
-                <div className="text-xs text-left text-muted-foreground">{member.message}</div>
+              
               </div>
             </div>
             <div className="flex items-center space-x-2">
-              <Badge variant={isCertified ? 'default' : 'destructive'} className="text-xs">
+              <Badge variant={isUncertified ? 'destructive' : 'default'} className="text-xs">
                 {member.message}
               </Badge>
             </div>

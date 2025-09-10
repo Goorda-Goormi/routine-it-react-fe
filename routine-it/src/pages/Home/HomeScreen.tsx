@@ -359,7 +359,7 @@ export function HomeScreen({
                       </div>
                       <div className='flex flex-col items-start ml-2'>
                         <div className="text-sm font-medium text-foreground">{group.groupName}</div>
-                        <div className="text-xs text-foreground dark:opacity-75">{group.maxMembers}명 참여</div>
+                        <div className="text-xs text-foreground dark:opacity-75">{group.currentMemberCount}명 참여</div>
                       </div>
                     </div>
 

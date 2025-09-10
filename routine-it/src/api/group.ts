@@ -48,7 +48,9 @@ export async function updateGroup(groupId: number, data: GroupRequest) {
 export async function getAllGroups(): Promise<Group[]> {
   // apiFetch가 이미 JSON을 반환하므로, 바로 변수에 할당합니다.
   try {
-    const allGroups = await apiFetch("/groups", { method: "GET" });
+    const allGroups = await apiFetch("/groups", {
+       method: "GET" 
+      });
     return allGroups; // JSON 데이터가 담긴 배열을 반환
   } catch (error) {
     // apiFetch에서 이미 에러를 throw하므로, 여기서는 단순히 다시 던지거나
@@ -248,5 +250,22 @@ export async function getUserActivitiesByDay(date: string) {
   } catch (error) {
     console.error(`Failed to fetch user activities for ${date}:`, error);
     throw new Error("사용자 활동 목록 조회 실패");
+  }
+}
+
+/**
+ * 특정 그룹의 PENDING 상태인 멤버 목록을 가져옵니다.
+ * @param groupId - 그룹 ID
+ * @returns PENDING 상태인 멤버 목록 배열
+ */
+export async function getPendingMembersByGroupId(groupId: number): Promise<GroupMemberResponse[]> {
+  try {
+    const pendingMembers = await apiFetch(`/group/${groupId}/members?status=PENDING`, {
+      method: "GET",
+    });
+    return pendingMembers;
+  } catch (error) {
+    console.error(`그룹 ${groupId}의 PENDING 멤버 조회 실패:`, error);
+    throw new Error("PENDING 멤버 조회 실패");
   }
 }

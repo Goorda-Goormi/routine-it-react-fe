@@ -10,9 +10,9 @@ import { ArrowLeft, CheckCircle, Users } from 'lucide-react';
 import { GroupRoutineDialog } from './GroupRoutineDialog';
 import { GroupChatMessages } from './GroupChatMessages';
 import { GroupChatInput } from './GroupChatInput';
-import { leaveGroup, createGroupActivity } from '../../../api/chat';
+import { leaveGroup } from '../../../api/chat';
 import { updateRankingScore } from '../../../api/ranking'; // ✅ ranking.ts에서 updateRankingScore 임포트
-
+import { createGroupActivity } from '../../../api/activity';
 import type { Group, UserProfile, GroupMemberResponse } from '../../../interfaces';
 import { fetchChatHistory } from '../../../api/chat';
 import { requestAuthApproval, getGroupMembers } from '../../../api/group';
@@ -245,7 +245,7 @@ export function GroupChatScreen({ group, groupmembers, onBack, onLeaveGroup, use
                 });
 
                 onDataRefresh();
-                onBack();
+                //onBack();
                 
                 alert('자유그룹 인증이 성공적으로 제출되었습니다.');
                     
@@ -266,7 +266,7 @@ export function GroupChatScreen({ group, groupmembers, onBack, onLeaveGroup, use
                 });
 
                 onDataRefresh(); 
-                onBack();
+               // onBack();
                 
                 alert('인증이 성공적으로 제출되었습니다.');
             }
@@ -285,11 +285,11 @@ export function GroupChatScreen({ group, groupmembers, onBack, onLeaveGroup, use
 
     return (
         <div className="flex flex-col h-screen bg-background">
-            <div className="sticky top-0 z-10 bg-background/95 backdrop-blur border-b p-4">
+            <div className="sticky top-0 z-10 bg-background/95 backdrop-blur border-b border-b-[var(--color-border-bottom-custom)] p-4">
                 <div className="mx-auto flex items-center justify-between">
                     <div className="flex-1 flex items-center space-x-3">
                         <Button variant="ghost" size="sm" onClick={onBack} className="p-1">
-                            <ArrowLeft className="h-5 w-5" />
+                            <ArrowLeft className="h-5 w-5 text-icon-secondary dark:text-white" />
                         </Button>
                         <div className="flex-1" />
                     </div>
@@ -301,15 +301,15 @@ export function GroupChatScreen({ group, groupmembers, onBack, onLeaveGroup, use
                         <Dialog open={isMembersDialogOpen} onOpenChange={setIsMembersDialogOpen}>
                             <DialogTrigger asChild>
                                 <Button variant="ghost" size="sm">
-                                    <Users className="h-4 w-4" />
+                                    <Users className="h-4 w-4 text-icon-secondary dark:text-white" />
                                 </Button>
                             </DialogTrigger>
-                            <DialogContent className="max-w-sm mx-auto">
+                            <DialogContent className="max-w-sm mx-auto text-icon-secondary dark:text-white">
                                 <DialogHeader>
                                     <DialogTitle>그룹 멤버</DialogTitle>
                                     <DialogDescription>{group.groupName} 참여 멤버</DialogDescription>
                                 </DialogHeader>
-                                <div className="space-y-3 max-h-80 overflow-y-auto">
+                                <div className="space-y-3 max-h-80 overflow-y-auto ">
                                     {groupmembers.map((member) => {
                                         const isMe = member.groupMemberId === myUserId;
                                         return (
