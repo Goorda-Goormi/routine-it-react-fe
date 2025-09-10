@@ -146,7 +146,7 @@ export function RoutineScreen({ onNavigate, allRoutines, recommendedRoutines, on
   };
 
   const renderRoutineCard = (routine: Routine, index: number, isLast: boolean, isRecommended: boolean = false) => (
-    <div key={routine.id}>
+    <div key={routine.isGroupRoutine ? `group-${routine.id}` : `personal-${routine.id}`}>
       <div
         className={`p-3 transition-colors rounded-lg ${
           (routine as Routine).completed ? 'bg-green-50/50 dark:bg-green-900/20' : 'hover:bg-accent/50'

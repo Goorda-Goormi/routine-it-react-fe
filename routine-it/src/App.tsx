@@ -954,7 +954,7 @@ const handleToggleRoutinePublic = async (routineId: number) => {
       // 4. 성공 시, 전체 루틴 목록을 다시 불러와 화면을 갱신합니다.
       await fetchPersonalRoutines();
       
-      alert(`'${recommendedRoutine.name}' 루틴이 추가되었습니다.`);
+      console.log(`'${recommendedRoutine.name}' 루틴이 추가되었습니다.`);
 
     } catch (error) {
       console.error("추천 루틴 추가 실패:", error);
