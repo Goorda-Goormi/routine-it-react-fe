@@ -7,12 +7,30 @@ import { Avatar, AvatarFallback, AvatarImage } from '../../components/ui/avatar'
 import { ArrowLeft, ChevronLeft, ChevronRight, X, Camera, Flame, TrendingUp, Calendar, Trophy, Users, CheckCircle, Target, Clock, Lock } from 'lucide-react';
 import { ImageWithFallback } from '../../components/figma/ImageWithFallback';
 import { getStreakInfo, getStreakMessage } from '../../components/utils/streakUtils';
-import type {Routine, UserProfile} from '../../interfaces';
+import type {Routine, UserProfile, Member} from '../../interfaces';
+import { getPersonalRoutinesByUser } from '../../api/personalRoutine';
+import type { PersonalRoutineResponse } from '../../api/personalRoutine';
 import { getUserProfile, type PublicUserProfile } from '../../api/user';
 
+const transformUserRoutine = (pr: PersonalRoutineResponse): Routine => ({
+  id: pr.routineId,
+  name: pr.routineName,
+  description: pr.description,
+  time: pr.startTime,
+  // ... 프론트엔드에 필요한 다른 필드들의 기본값 설정
+  isPublic: pr.isPublic,
+  reminder: pr.isAlarmOn,
+  frequency: [], // 이 화면에서는 사용하지 않으므로 빈 배열로 둬도 무방
+  isGroupRoutine: false,
+  completed: false, 
+  streak: 0, 
+  difficulty: '보통', 
+  goal: '30', 
+  category: '생활',
+});
 
 interface UserHomeScreenProps {
-  user: { id: number; };
+  user: { id: number; nickname: string; };
   onBack: () => void;
 }
 
@@ -21,32 +39,45 @@ export function UserHomeScreen({ user, onBack }: UserHomeScreenProps) {
   const todayString = today.toLocaleDateString('ko-KR', { month: 'long', day: 'numeric' });
 
   const [userProfile, setUserProfile] = useState<PublicUserProfile | null>(null);
+  const [userRoutines, setUserRoutines] = useState<Routine[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-
+  
   useEffect(() => {
-    const fetchProfile = async () => {
-      // user.id가 없는 경우 API 호출을 방지합니다.
-      if (!user?.id) {
-        setError("사용자 ID가 제공되지 않았습니다.");
-        setIsLoading(false);
-        return;
-      }
-
+    if (!user?.id) {
+      setError("사용자 ID가 제공되지 않았습니다.");
+      setIsLoading(false);
+      return;
+    }
+      const fetchAllUserData = async () => {
       try {
-        const profileData = await getUserProfile(user.id);
+        setIsLoading(true);
+        // 프로필 정보와 루틴 정보를 병렬로 가져옵니다.
+        const [profileData, routinesData] = await Promise.all([
+          getUserProfile(user.id),
+          getPersonalRoutinesByUser(user.id)
+        ]);
+        
         setUserProfile(profileData);
+
+        // 공개된 루틴만 필터링하고 변환합니다.
+        const publicRoutines = routinesData
+          .filter(routine => routine.isPublic)
+          .map(transformUserRoutine);
+        
+        setUserRoutines(publicRoutines);
+
       } catch (err) {
-        setError((err as Error).message);
+        setError("데이터를 불러오는 중 오류가 발생했습니다.");
+        console.error(err);
       } finally {
         setIsLoading(false);
       }
     };
 
-    fetchProfile();
+    fetchAllUserData();
   }, [user.id]);
-
-
+  
   const openGallery = (index: number) => {
     setSelectedPhotoIndex(index);
   };
@@ -66,34 +97,6 @@ export function UserHomeScreen({ user, onBack }: UserHomeScreenProps) {
       setSelectedPhotoIndex((selectedPhotoIndex - 1 + allVerificationPhotos.length) % allVerificationPhotos.length);
     }
   };
-
-  // 상대방의 오늘 루틴 (공개)
-  const userRoutines: Routine[] = [
-    {
-      id: 1,
-      name: '아침 요가',
-      completed: true,
-      time: '07:00',
-      streak: 8,
-      category: '운동'
-    },
-    {
-      id: 2,
-      name: '책 읽기',
-      completed: true,
-      time: '21:00',
-      streak: 15,
-      category: '학습'
-    },
-    {
-      id: 3,
-      name: '물 마시기',
-      completed: false,
-      time: '언제든',
-      streak: 22,
-      category: '건강'
-    }
-  ];
 
   // 상대방이 참여 중인 그룹
   const userGroups = [
@@ -186,7 +189,7 @@ export function UserHomeScreen({ user, onBack }: UserHomeScreenProps) {
   const completedRoutines = userRoutines.filter(routine => routine.completed).length;
   const totalRoutines = userRoutines.length;
   const completionRate = totalRoutines > 0 ? Math.round((completedRoutines / totalRoutines) * 100) : 0;
-
+  const publicRoutines = userRoutines.filter(routine => routine.isPublic);
   const getCategoryEmoji = (category: string) => {
     switch (category) {
       case '운동': return '💪';

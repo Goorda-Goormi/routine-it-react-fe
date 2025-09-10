@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Button } from '../../components/ui/button';
-import { ArrowLeft, Target, Calendar, Clock, Edit, Save, Trash2, X } from 'lucide-react';
+import { ArrowLeft, Target, Calendar, Clock, Edit, Save, Trash2, X, Bell, Globe } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card';
 import { Badge } from '../../components/ui/badge';
 import { Input } from '../../components/ui/input';
@@ -16,9 +16,11 @@ interface RoutineDetailScreenProps {
   onBack: () => void;
   onUpdateRoutine: (updatedRoutine: Routine) => void;
   onDeleteRoutine: (routineId: number, isGroupRoutine?: boolean) => void;
+  onTogglePublic: (routineId: number) => void; 
+  onToggleAlarm: (routineId: number) => void; 
 }
 
-export function RoutineDetailScreen({ routine, onBack, onUpdateRoutine, onDeleteRoutine }: RoutineDetailScreenProps) {
+export function RoutineDetailScreen({ routine, onBack, onUpdateRoutine, onDeleteRoutine, onTogglePublic, onToggleAlarm }: RoutineDetailScreenProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [editedRoutine, setEditedRoutine] = useState(routine);
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
@@ -205,6 +207,31 @@ export function RoutineDetailScreen({ routine, onBack, onUpdateRoutine, onDelete
                   <span>목표: {routine.goal || '설정되지 않음'}일 연속</span>
                 </div>
               </div>
+
+              <div className="space-y-2 border-t pt-4">
+                <div className="flex items-center justify-between text-sm text-foreground">
+                  <div className="flex items-center space-x-2">
+                    <Bell className="h-4 w-4 text-icon-secondary" />
+                    <span>톡캘린더 연동</span>
+                  </div>
+                  <Switch
+                    checked={!!routine.reminder}
+                    onCheckedChange={() => onToggleAlarm(routine.id)}
+                    disabled={routine.isGroupRoutine}
+                  />
+                </div>
+                <div className="flex items-center justify-between text-sm text-foreground">
+                  <div className="flex items-center space-x-2">
+                    <Globe className="h-4 w-4 text-icon-secondary" />
+                    <span>루틴 공개</span>
+                  </div>
+                  <Switch
+                    checked={!!routine.isPublic}
+                    onCheckedChange={() => onTogglePublic(routine.id)}
+                    disabled={routine.isGroupRoutine}
+                  />
+                </div>
+              </div>
             </CardContent>
           </Card>
         ) : (// Editing Mode
@@ -328,7 +355,7 @@ export function RoutineDetailScreen({ routine, onBack, onUpdateRoutine, onDelete
                 </Select>
               </div>
 
-              <div className="flex items-center justify-between pt-1">
+              {/* <div className="flex items-center justify-between pt-1">
                 <Label htmlFor="edit-reminder">톡캘린더 연결하기</Label>
                 <Switch
                   id="edit-reminder"
@@ -347,7 +374,7 @@ export function RoutineDetailScreen({ routine, onBack, onUpdateRoutine, onDelete
                   onCheckedChange={(checked) => setEditedRoutine({...editedRoutine, isPublic: checked})}
                   disabled={editedRoutine.isGroupRoutine}
                 />
-              </div>
+              </div> */}
             </CardContent>
           </Card>
         )}

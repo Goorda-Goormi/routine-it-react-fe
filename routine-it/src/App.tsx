@@ -31,7 +31,9 @@ import {
   createPersonalRoutine,
   getPersonalRoutinesByUser,
   updatePersonalRoutine,
-  deletePersonalRoutine 
+  deletePersonalRoutine,
+  toggleRoutinePublic, 
+  toggleRoutineAlarm 
 } from './api/personalRoutine';
 import type { PersonalRoutineResponse, PersonalRoutineCreatePayload, PersonalRoutineUpdatePayload } from './api/personalRoutine';
 import { createGroup, getAllGroups,getJoinedGroups,getGroupMembers, requestJoinGroup } from "./api/group";
@@ -56,7 +58,7 @@ const transformPersonalRoutine = (pr: PersonalRoutineResponse): Routine => {
     name: pr.routineName,
     description: pr.description,
     time: pr.startTime,
-    frequency: convertAuthDaysToFrequency(pr.repeatDays), // 기존 헬퍼 함수 재활용
+    frequency: convertAuthDaysToFrequency(pr.repeatDays), 
     isPublic: pr.isPublic,
     reminder: pr.isAlarmOn,
     
@@ -97,10 +99,15 @@ const dateOptions: Intl.DateTimeFormatOptions = {
 /**
  * '1111100' 형태의 authDays 문자열을 ['월', '화', '수', '목', '금'] 형태의 배열로 변환합니다.
  */
+const convertFrequencyToAuthDays = (frequency: string[]): string => {
+  const daysOfWeek = ['월', '화', '수', '목', '금', '토', '일'];
+  return daysOfWeek.map(day => frequency.includes(day) ? '1' : '0').join('');
+};
+
 const convertAuthDaysToFrequency = (authDays: string): string[] => {
   const daysOfWeek = ['월', '화', '수', '목', '금', '토', '일'];
   if (!authDays || authDays.length !== 7) {
-    return []; // 기본값은 빈 배열
+    return [];
   }
   return authDays.split('').map((char, index) => (char === '1' ? daysOfWeek[index] : null)).filter(Boolean) as string[];
 };
@@ -696,19 +703,33 @@ export default function App() {
 
   //6.루틴 관리 =============================================================
   
-  const handleAddRoutine = (newRoutineData: any) => {
-    const newRoutine = {
-      ...newRoutineData,
-      id: Date.now(),
-      completed: false,
-      streak: 0,
-       isGroupRoutine: false,
+  const handleCreateRoutine = async (newRoutineData: Omit<Routine, 'id' | 'completed' | 'streak'>) => {
+    if (!UserInfo) return;
+
+    const payload: PersonalRoutineCreatePayload = {
+      userId: UserInfo.id as number,
+      routineName: newRoutineData.name,
+      description: newRoutineData.description,
+      startTime: newRoutineData.time,
+      repeatDays: convertFrequencyToAuthDays(newRoutineData.frequency || []),
+      startDate: new Date().toISOString().split('T')[0], // 예시: 오늘부터
+      endDate: '2099-12-31', // 예시: 무기한
+      isAlarmOn: !!newRoutineData.reminder,
+      isPublic: newRoutineData.isPublic,
     };
-    setPersonalRoutines(prev => [...prev, newRoutine]);
+
+    try {
+      await createPersonalRoutine(payload);
+      await fetchPersonalRoutines(); // 성공 후 목록 새로고침
+      navigateBack();
+    } catch (error) {
+      console.error("루틴 생성 실패:", error);
+      alert("루틴 생성에 실패했습니다.");
+    }
   };
 
   
-  const handleUpdateRoutine = (updatedRoutine: Routine) => {
+  const handleUpdateRoutine = async (updatedRoutine: Routine) => {
     if (updatedRoutine.isGroupRoutine) {
       const overrideData: RoutineOverride = {
         time: updatedRoutine.time,
@@ -728,22 +749,40 @@ export default function App() {
       } 
       // B. 개인 루틴일 경우 -> 기존 로직 (상태 직접 수정)
       else {
-        setPersonalRoutines(prevRoutines =>
-          prevRoutines.map(routine =>
-            routine.id === updatedRoutine.id ? updatedRoutine : routine
-          )
-        );
+        const payload: PersonalRoutineUpdatePayload = {
+        routineName: updatedRoutine.name,
+        description: updatedRoutine.description,
+        startTime: updatedRoutine.time,
+        repeatDays: convertFrequencyToAuthDays(updatedRoutine.frequency || []),
+        isAlarmOn: !!updatedRoutine.reminder,
+        isPublic: updatedRoutine.isPublic,
+      };
+      try {
+        await updatePersonalRoutine(updatedRoutine.id, payload);
+        await fetchPersonalRoutines(); // 성공 후 목록 새로고침
+      } catch (error) {
+        console.error("루틴 수정 실패:", error);
+        alert("루틴 수정에 실패했습니다.");
       }
+    }
+  };
 
-      // C. 네비게이션 스택 업데이트 (화면이 최신 정보로 보이도록)
-      setNavigationStack(prevStack =>
-        prevStack.map(navItem =>
-          navItem.screen === 'routine-detail' && navItem.params.id === updatedRoutine.id
-            ? { ...navItem, params: { ...navItem.params, ...updatedRoutine } }
-            : navItem
-        )
-      );
-    };
+  const fetchPersonalRoutines = async () => {
+    if (!UserInfo) return;
+    try {
+      const routinesFromServer = await getPersonalRoutinesByUser(UserInfo.id as number);
+      const transformedRoutines = routinesFromServer.map(transformPersonalRoutine);
+      setPersonalRoutines(transformedRoutines);
+    } catch (error) {
+      console.error("개인 루틴 목록 로딩 실패:", error);
+    }
+  };
+
+  useEffect(() => {
+    if (isLoggedIn && UserInfo) {
+      fetchPersonalRoutines();
+    }
+  }, [isLoggedIn, UserInfo]);
 
   const getGroupRoutinesWithOverrides = (): Routine[] => {
   return myGroups.map(group => {
@@ -755,6 +794,52 @@ export default function App() {
     return override ? { ...routine, ...override } : routine;
   });
 };
+
+const handleToggleRoutinePublic = async (routineId: number) => {
+    try {
+      // API를 호출하여 서버의 상태를 변경합니다.
+      const updatedRoutineFromServer = await toggleRoutinePublic(routineId);
+      const transformedRoutine = transformPersonalRoutine(updatedRoutineFromServer);
+
+      // UI 상태를 즉시 업데이트합니다. (전체 목록을 다시 불러오지 않아 효율적입니다)
+      setPersonalRoutines(prevRoutines =>
+        prevRoutines.map(r => (r.id === routineId ? transformedRoutine : r))
+      );
+
+      setNavigationStack(prevStack =>
+        prevStack.map(navItem =>
+          navItem.screen === 'routine-detail' && navItem.params.id === routineId
+            ? { ...navItem, params: transformedRoutine }
+            : navItem
+        )
+      );
+    } catch (error) {
+      console.error("루틴 공개 여부 변경 실패:", error);
+      alert("설정 변경에 실패했습니다.");
+    }
+  };
+
+  const handleToggleRoutineAlarm = async (routineId: number) => {
+    try {
+      const updatedRoutineFromServer = await toggleRoutineAlarm(routineId);
+      const transformedRoutine = transformPersonalRoutine(updatedRoutineFromServer);
+      
+      setPersonalRoutines(prevRoutines =>
+        prevRoutines.map(r => (r.id === routineId ? transformedRoutine : r))
+      );
+
+      setNavigationStack(prevStack =>
+        prevStack.map(navItem =>
+          navItem.screen === 'routine-detail' && navItem.params.id === routineId
+            ? { ...navItem, params: transformedRoutine }
+            : navItem
+        )
+      );
+    } catch (error) {
+      console.error("루틴 알림 설정 변경 실패:", error);
+      alert("설정 변경에 실패했습니다.");
+    }
+  };
 
   const handleToggleCompletion = (routineId: number, isGroupRoutine?: boolean) => {
     let isCompleted = false;
@@ -825,9 +910,7 @@ export default function App() {
     setPersonalRoutines(prevRoutines => [...prevRoutines, newRoutine]);
   };
 
- 
-
-  const handleDeleteRoutine = (routineId: number, isGroupRoutine?: boolean) => {
+  const handleDeleteRoutine = async (routineId: number, isGroupRoutine?: boolean) => {
     if (isGroupRoutine) {
       // 그룹 루틴 삭제
       setGroups(prevGroups => 
@@ -843,14 +926,15 @@ export default function App() {
         })
       );
     } else {
-      // 개인 루틴 삭제
-      setPersonalRoutines(prevRoutines =>
-        // 삭제할 루틴의 ID를 제외하고 새로운 배열 생성
-        prevRoutines.filter(routine => routine.id !== routineId)
-      );
+      try {
+        await deletePersonalRoutine(routineId);
+        await fetchPersonalRoutines(); // 성공 후 목록 새로고침
+        navigateBack();
+      } catch (error) {
+        console.error("루틴 삭제 실패:", error);
+        alert("루틴 삭제에 실패했습니다.");
+      }
     }
-    // 삭제 후 이전 화면으로 돌아가기
-    navigateBack();
   };
 
   const fetchMonthlyReview = async () => {
@@ -1416,6 +1500,8 @@ const navigateTo = (screen: string, params?: any, options?: { replace?: boolean 
               onBack={navigateBack}
               onUpdateRoutine={handleUpdateRoutine}
               onDeleteRoutine={handleDeleteRoutine}
+              onTogglePublic={handleToggleRoutinePublic}
+              onToggleAlarm={handleToggleRoutineAlarm}
             />
           );
        
@@ -1484,7 +1570,7 @@ const navigateTo = (screen: string, params?: any, options?: { replace?: boolean 
           return (
             <CreateRoutineScreen 
               onBack={navigateBack} 
-              onCreateRoutine={handleAddRoutine}
+              onCreateRoutine={handleCreateRoutine}
             />
           );
         case "create-group":
@@ -1508,7 +1594,7 @@ const navigateTo = (screen: string, params?: any, options?: { replace?: boolean 
         case "user-home":
           return (
             <UserHomeScreen
-              user={currentScreen.params}
+              user={currentScreen.params as { id: number; nickname: string }}
               onBack={navigateBack}
             />
           );
