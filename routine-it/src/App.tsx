@@ -39,6 +39,7 @@ import {
   toggleRoutinePublic, 
   toggleRoutineAlarm 
 } from './api/personalRoutine';
+import { apiFetch } from "./api/client";
 import type { PersonalRoutineResponse, PersonalRoutineCreatePayload, PersonalRoutineUpdatePayload } from './api/personalRoutine';
 import { createGroup, getAllGroups,getJoinedGroups,getGroupMembers, requestJoinGroup } from "./api/group";
 import { updateRankingScore, getPersonalRankings, getUserTotalScore, getGlobalGroupRanking } from "./api/ranking";
@@ -977,33 +978,28 @@ const handleToggleRoutinePublic = async (routineId: number) => {
   };
 
   const fetchMonthlyReview = async () => {
+    if (!UserInfo) return; 
+
     try {
-      console.log("현재 accessToken:", localStorage.getItem('accessToken'));
-      // YYYY-MM 
       const date = new Date();
-      date.setMonth(date.getMonth() - 1);
+      date.setMonth(date.getMonth() - 1); // 지난달 기준
       const lastMonth = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
 
-      const response = await getMonthlyReview(lastMonth);
-      if (response.success && response.data) {
+      // POST 요청으로 수정하고, userId를 쿼리 파라미터로 전달
+      const response = await apiFetch(`/api/reviews/monthly?userId=${UserInfo.id}&monthYear=${lastMonth}`, {
+        method: 'POST',
+      });
 
-        const fullMessageFromServer = response.message;
-        const prefixToRemove = "Success. ";
-
-        const reviewContent = fullMessageFromServer.startsWith(prefixToRemove)
-          ? fullMessageFromServer.substring(prefixToRemove.length)
-          : fullMessageFromServer;
-
-        // 알림 목록에 추가 (30자 제한)
+      if (response.success) {
+        // 서버에서 메시지를 성공적으로 보냈다면, 프론트에서는 알림을 생성합니다.
         addNotification({
-          message: response.data.substring(0, 30) + '...',
+          message: `지난 달의 활동을 정리한 ${lastMonth} 월간 회고가 도착했어요.`,
           category: '회고',
-          fullContent: response.data, 
-          monthYear: lastMonth
+          monthYear: lastMonth, // ★★★ 모달을 열 때 사용할 수 있도록 monthYear 정보 추가 ★★★
         });
       }
     } catch (error) {
-      console.error("월간 회고 로딩 실패:", error);
+      console.error("월간 회고 알림 생성 실패:", error);
     }
   };
 
@@ -1061,9 +1057,27 @@ const handleToggleRoutinePublic = async (routineId: number) => {
       );
     }
     
-    // 3. 알림 종류에 따른 화면 이동 등 후속 작업
-    console.log(`${notification.id}번 알림 클릭됨`);
-    // 예: navigateTo('group-detail', { groupId: notification.relatedId });
+    if (notification.category === '회고' && UserInfo?.id) {
+      try {
+        // 1. 회고 API를 호출합니다. (monthYear는 알림 객체에 저장된 값을 사용)
+        const response = await getMonthlyReview(UserInfo.id as number, notification.monthYear);
+
+        if (response.success && response.data) {
+          // 2. 성공 시, 모달에 표시할 내용과 월 정보를 상태에 저장합니다.
+          setReviewModalContent({
+            content: response.data.messageContent, // API 응답의 실제 회고 내용
+            monthYear: response.data.monthYear,
+          });
+          // 3. 회고 모달을 엽니다.
+          setReviewModalOpen(true);
+        } else {
+          alert("회고 내용을 불러오는 데 실패했습니다: " + response.message);
+        }
+      } catch (error) {
+        console.error("월간 회고 조회 API 호출 실패:", error);
+        alert("회고 내용을 불러오는 중 오류가 발생했습니다.");
+      }
+    }
   };
   
   // 앱이 로드될 때 회고 데이터를 불러옵니다.
