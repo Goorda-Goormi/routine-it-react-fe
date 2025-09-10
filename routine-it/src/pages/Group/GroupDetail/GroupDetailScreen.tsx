@@ -73,36 +73,47 @@ export function GroupDetailScreen({
     };
 
    const handleKickMember = async (targetMemberId: number) => {
-        try {
-            const currentLeader = groupMembers.find(m => m.memberName === group.leaderName);
-            if (!currentLeader) {
-                alert("현재 리더 정보를 찾을 수 없습니다.");
-                return;
-            }
+    try {
+        const currentLeader = groupMembers.find(m => m.memberName === group.leaderName);
+        
+        if (!currentLeader || !currentLeader.groupMemberId) {
+            alert("리더의 정보를 찾을 수 없습니다.");
+            return;
+        }
 
-            // `updateGroupMemberStatus` 함수를 호출하여 멤버의 상태를 'BLOCKED'로 변경합니다.
-            const response = await updateGroupMemberStatus(groupId, {
-                leaderId: currentLeader.groupMemberId,
-                targetMemberId: targetMemberId,
-                status: "BLOCKED",
-                role: "MEMBER", // 퇴출 시 역할도 MEMBER로 설정 (선택사항)
-                approved: false
-            });
+        // --- 이 부분을 추가해주세요. ---
+        console.log("전송 데이터:", {
+            groupId: groupId,
+            leaderId: currentLeader.groupMemberId,
+            targetMemberId: targetMemberId,
+            status: "BLOCKED",
+            role: "MEMBER",
+            approved: false
+        });
+        // -----------------------------
 
-            if (response.success) {
-                alert('멤버가 성공적으로 그룹에서 내보내졌습니다.');
-                // UI를 업데이트하기 위해 멤버 목록을 다시 불러오는 로직을 추가하거나,
-                // `onOpenChange`를 통해 모달을 닫고 부모 컴포넌트에서 상태를 업데이트하도록 합니다.
-                setShowExMembersModal(false);
-                onUpdateGroup({ ...group, members: groupMembers.filter(m => m.groupMemberId !== targetMemberId) });
-            } else {
-                alert(response.message || '멤버 내보내기에 실패했습니다.');
-            }
-        } catch (error) {
-            console.error("멤버 내보내기 실패:", error);
+        const response = await updateGroupMemberStatus(groupId, {
+            groupId: groupId,  
+            leaderId: currentLeader.groupMemberId,
+            targetMemberId: targetMemberId,
+            status: "BLOCKED",
+            role: "MEMBER",
+            approved: false
+        });
+
+
+        if (response && response.status === "BLOCKED") {
+            alert('멤버가 성공적으로 그룹에서 내보내졌습니다.');
+            setShowExMembersModal(false);
+            onUpdateGroup({ ...group, members: groupMembers.filter(m => m.groupMemberId !== targetMemberId) });
+        } else {
             alert('멤버 내보내기에 실패했습니다.');
         }
-    };
+    } catch (error) {
+        console.error("멤버 내보내기 실패:", error);
+        alert('멤버 내보내기에 실패했습니다.');
+    }
+};
 
     const handleGroupDeleted = async () => {
         if (group?.groupId) {
@@ -168,7 +179,7 @@ export function GroupDetailScreen({
         fetchData();
     }, [groupId, currentUser.id]);
 
-    const handleDelegateLeader = async (targetMemberId: number, targetMemberName: string) => {
+    /*const handleDelegateLeader = async (targetMemberId: number, targetMemberName: string) => {
         try {
             const currentLeader = groupMembers.find(m => m.memberName === group.leaderName);
             if (!currentLeader) {
@@ -188,22 +199,48 @@ export function GroupDetailScreen({
             console.error("리더 위임 실패:", error);
             alert('리더 위임에 실패했습니다.');
         }
-    };
-
-    const handleOpenApprovalModal = async () => {
+    };*/
+    const handleDelegateLeader = async (targetMemberId: number, targetMemberName: string) => {
         try {
-            const inviteNotifications = await getNotificationsByType('GROUP_JOIN_REQUEST');
-            const inviteMessages = inviteNotifications.map((notification: NotificationApiResponse) => ({
-                id: notification.id,
-                user: notification.senderName
-            }));
-            setPendingInvites(inviteMessages);
-            setShowApprovalModal(true);
+            const currentLeader = groupMembers.find(m => m.memberName === group.leaderName);
+            if (!currentLeader) {
+                
+                alert("현재 리더 정보를 찾을 수 없습니다.");
+                return;
+            }
+            const currentLeaderId = currentLeader.groupMemberId;
+            const response = await delegateLeader(group.groupId, Number(currentLeaderId), targetMemberId);
+            if (response.success) {
+                setShowExMembersModal(false);
+                onUpdateGroup({ ...group, leaderName: targetMemberName, leaderId: targetMemberId });
+            }
         } catch (error) {
-            alert("알림 목록을 불러오는데 실패했습니다.");
-            console.error(error);
+            console.error("리더 위임 실패:", error);
         }
     };
+
+
+    const handleOpenApprovalModal = async () => {
+    try {
+        const inviteNotifications = await getNotificationsByType('GROUP_JOIN_REQUEST');
+        
+        // 현재 그룹의 이름(currentGroupName)과 일치하는 알림만 필터링
+        const currentGroupNotifications = inviteNotifications.filter(
+            (notification) => notification.groupName === group.groupName
+        );
+
+        const inviteMessages = currentGroupNotifications.map((notification) => ({
+            id: notification.id,
+            user: notification.senderName
+        }));
+
+        setPendingInvites(inviteMessages);
+        setShowApprovalModal(true);
+    } catch (error) {
+        alert("알림 목록을 불러오는데 실패했습니다.");
+        console.error(error);
+    }
+};
 
     const handleApprove = async (notificationId: number) => {
         try {
