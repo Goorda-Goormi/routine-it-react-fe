@@ -22,8 +22,8 @@ export async function getNotifications(): Promise<NotificationApiResponse[]> {
 export async function markNotificationAsRead(notificationId: number, isRead: boolean): Promise<NotificationApiResponse> {
   try {
     const updatedNotification = await apiFetch(`/notifications/${notificationId}/read?isRead=${isRead}`, {
-      method: "POST",
-      //method: "PUT",
+      // method: "POST",
+      method: "PUT",
     });
     return updatedNotification;
   } catch (error) {

@@ -271,6 +271,7 @@ export default function App() {
       id: Date.now(),
       date: new Date().toLocaleString('ko-KR', dateOptions),
       read: false,
+      isLocal: true,
     };
     setNotifications(prev => [newNotification, ...prev]);
   };
@@ -862,6 +863,14 @@ export default function App() {
 
       const response = await getMonthlyReview(lastMonth);
       if (response.success && response.data) {
+
+        const fullMessageFromServer = response.message;
+        const prefixToRemove = "Success. ";
+
+        const reviewContent = fullMessageFromServer.startsWith(prefixToRemove)
+          ? fullMessageFromServer.substring(prefixToRemove.length)
+          : fullMessageFromServer;
+
         // 알림 목록에 추가 (30자 제한)
         addNotification({
           message: response.data.substring(0, 30) + '...',
@@ -911,10 +920,14 @@ export default function App() {
       );
     }
 
+    if (notification.isLocal) {
+      console.log(`로컬 알림(${notification.id})을 읽음 처리했습니다. (API 호출 없음)`);
+      return; 
+    }
+
     // 2. 서버에 '읽음' 상태 전송
     try {
       await markNotificationAsRead(notification.id, true);
-      await fetchNotifications(); 
     } catch (error) {
       // 실패 시 UI 롤백 (선택적)
       console.error("알림 읽음 처리 실패:", error);
