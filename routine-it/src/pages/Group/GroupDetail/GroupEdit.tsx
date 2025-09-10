@@ -37,7 +37,6 @@ export default function GroupEdit({ open, onOpenChange, group, onSave }: GroupEd
     groupDescription: '',
     category: '',
     groupType: 'FREE',
-    hasAlarm: false,
     alarmTime: '09:00',
     maxMembers: 30,
     authDays: [] as string[],
@@ -59,7 +58,6 @@ export default function GroupEdit({ open, onOpenChange, group, onSave }: GroupEd
         groupDescription: group.description || '',
         category: group.category || '',
         groupType: group.groupType || 'FREE',
-        hasAlarm: group.alarmTime !== undefined && group.alarmTime !== null,
         alarmTime: group.alarmTime ? group.alarmTime.slice(0, 5) : '09:00',
         maxMembers: group.maxMembers || 30,
         authDays: authDaysArray,
@@ -111,10 +109,6 @@ export default function GroupEdit({ open, onOpenChange, group, onSave }: GroupEd
       newErrors.maxMembers = '최대 인원은 2명~50명 사이로 설정해주세요';
     }
 
-    if (formData.hasAlarm && !formData.alarmTime) {
-      newErrors.alarmTime = '알림 시간을 설정해주세요';
-    }
-
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -136,9 +130,9 @@ export default function GroupEdit({ open, onOpenChange, group, onSave }: GroupEd
       maxMembers: Number(formData.maxMembers),
       authDays: authDaysString,
       alarmTime: formData.alarmTime,
-      imageUrl: group.groupImageUrl || '' 
+      imageUrl: group.groupImageUrl || ''
     };
-    
+
     setIsSaving(true);
     setSaveError(null);
 
@@ -146,7 +140,7 @@ export default function GroupEdit({ open, onOpenChange, group, onSave }: GroupEd
       if (!group.groupId) {
         throw new Error("그룹 ID가 없습니다.");
       }
-      
+
       const updatedGroup = await updateGroup(group.groupId, payload);
       console.log("그룹 정보 수정 성공:", updatedGroup);
       onSave(updatedGroup);
@@ -169,9 +163,9 @@ export default function GroupEdit({ open, onOpenChange, group, onSave }: GroupEd
     return category ? category.emoji : '📋';
   };
 
- return (
+  return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md md:max-w-lg lg:max-w-xl xl:max-w-2xl h-[90vh] flex flex-col p-4 text-icon-secondary dark:text-white rounded-xl shadow-lg border">
+      <DialogContent className="sm:max-w-md max-w-lg h-[90vh] flex flex-col p-4 text-icon-secondary dark:text-white rounded-xl shadow-lg border">
         <DialogHeader className="p-4">
           <DialogTitle className="text-2xl font-bold">그룹 편집</DialogTitle>
           <DialogDescription className="text-sm text-muted-foreground">그룹 정보를 수정하고 저장하세요</DialogDescription>
@@ -199,7 +193,7 @@ export default function GroupEdit({ open, onOpenChange, group, onSave }: GroupEd
                   id="groupName"
                   placeholder="그룹 이름을 입력하세요"
                   value={formData.groupName}
-                  onChange={(e) => setFormData({...formData, groupName: e.target.value})}
+                  onChange={(e) => setFormData({ ...formData, groupName: e.target.value })}
                   className={`bg-input-background border-border text-foreground ${errors.name ? 'border-destructive' : ''}`}
                   maxLength={30}
                 />
@@ -216,7 +210,7 @@ export default function GroupEdit({ open, onOpenChange, group, onSave }: GroupEd
                   id="groupDescription"
                   placeholder="그룹에 대한 설명을 입력하세요"
                   value={formData.groupDescription}
-                  onChange={(e) => setFormData({...formData, groupDescription: e.target.value})}
+                  onChange={(e) => setFormData({ ...formData, groupDescription: e.target.value })}
                   className={`bg-input-background border-border text-foreground resize-none h-20 ${errors.description ? 'border-destructive' : ''}`}
                   maxLength={100}
                 />
@@ -229,7 +223,7 @@ export default function GroupEdit({ open, onOpenChange, group, onSave }: GroupEd
               </div>
               <div className="space-y-2">
                 <Label className="text-card-foreground">카테고리</Label>
-                <Select value={formData.category} onValueChange={(value) => setFormData({...formData, category: value})}>
+                <Select value={formData.category} onValueChange={(value) => setFormData({ ...formData, category: value })}>
                   <SelectTrigger className={`bg-input-background border-border text-foreground ${errors.category ? 'border-destructive' : ''}`}>
                     <SelectValue placeholder="카테고리를 선택하세요" />
                   </SelectTrigger>
@@ -266,33 +260,20 @@ export default function GroupEdit({ open, onOpenChange, group, onSave }: GroupEd
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <Label className="text-card-foreground font-medium">매일 알림</Label>
-                  <p className="text-xs text-muted-foreground">정해진 시간에 루틴 알림을 받습니다</p>
-                </div>
-                <Switch
-                  checked={formData.hasAlarm}
-                  onCheckedChange={(checked) => setFormData({...formData, hasAlarm: checked})}
-                  className="data-[state=checked]:bg-primary data-[state=unchecked]:bg-gray-200 dark:data-[state=unchecked]:bg-gray-700"
+              <div className="space-y-2 transition-opacity duration-300">
+                <Label htmlFor="alarmTime" className="text-card-foreground">알림 시간</Label>
+                <Input
+                  id="alarmTime"
+                  type="time"
+                  value={formData.alarmTime}
+                  onChange={(e) => setFormData({ ...formData, alarmTime: e.target.value })}
+                  className={`bg-input-background border-border text-foreground ${errors.alarmTime ? 'border-destructive' : ''}`}
                 />
+                <p className="text-xs text-muted-foreground">매일 알림을 받을 시간을 설정해주세요.</p>
+                {errors.alarmTime && (
+                  <p className="text-xs text-destructive mt-1">{errors.alarmTime}</p>
+                )}
               </div>
-              {formData.hasAlarm && (
-                <div className="space-y-2 transition-opacity duration-300">
-                  <Label htmlFor="alarmTime" className="text-card-foreground">알림 시간</Label>
-                  <Input
-                    id="alarmTime"
-                    type="time"
-                    value={formData.alarmTime}
-                    onChange={(e) => setFormData({...formData, alarmTime: e.target.value})}
-                    className={`bg-input-background border-border text-foreground ${errors.alarmTime ? 'border-destructive' : ''}`}
-                  />
-                  {errors.alarmTime && (
-                    <p className="text-xs text-destructive mt-1">{errors.alarmTime}</p>
-                  )}
-                </div>
-              )}
-
               <div className="space-y-2">
                 <Label className="text-card-foreground font-medium">반복 주기 <span className="ml-2 text-xs text-muted-foreground">{getFrequencyText()}</span></Label>
                 <div className="flex gap-2 flex-wrap mt-2">
@@ -323,7 +304,7 @@ export default function GroupEdit({ open, onOpenChange, group, onSave }: GroupEd
                 <Label className="text-card-foreground font-medium">참여 유형</Label>
                 <RadioGroup
                   value={formData.groupType}
-                  onValueChange={(value) => setFormData({...formData, groupType: value as 'FREE' | 'REQUIRED'})}
+                  onValueChange={(value) => setFormData({ ...formData, groupType: value as 'FREE' | 'REQUIRED' })}
                   className="space-y-3"
                 >
                   <Label htmlFor="FREE" className="flex items-start space-x-3 p-3 rounded-xl border-2 hover:border-green-400 cursor-pointer transition-colors has-[input[data-state=checked]]:border-green-500">
@@ -350,7 +331,7 @@ export default function GroupEdit({ open, onOpenChange, group, onSave }: GroupEd
               </div>
               <div className="space-y-2">
                 <Label htmlFor="maxMembers" className="text-card-foreground font-medium">최대 인원</Label>
-                <Select value={formData.maxMembers.toString()} onValueChange={(value) => setFormData({...formData, maxMembers: parseInt(value)})}>
+                <Select value={formData.maxMembers.toString()} onValueChange={(value) => setFormData({ ...formData, maxMembers: parseInt(value) })}>
                   <SelectTrigger className={`bg-input-background border-border text-foreground ${errors.maxMembers ? 'border-destructive' : ''}`}>
                     <SelectValue />
                   </SelectTrigger>
@@ -395,12 +376,10 @@ export default function GroupEdit({ open, onOpenChange, group, onSave }: GroupEd
                       <Users className="h-3 w-3" />
                       <span>최대 {formData.maxMembers}명</span>
                     </span>
-                    {formData.hasAlarm && (
-                      <span className="flex items-center space-x-1">
-                        <Clock className="h-3 w-3" />
-                        <span>{formData.alarmTime}</span>
-                      </span>
-                    )}
+                    <span className="flex items-center space-x-1">
+                      <Clock className="h-3 w-3" />
+                      <span>{formData.alarmTime}</span>
+                    </span>
                   </div>
                 </div>
               </CardContent>

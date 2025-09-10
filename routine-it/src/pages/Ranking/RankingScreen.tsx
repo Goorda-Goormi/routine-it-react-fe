@@ -171,6 +171,10 @@ export function RankingScreen({ groups, personalRankingData,groupRankingData, us
                           <div className="flex items-center justify-center w-8">
                             {getRankIcon(group.rank)}
                           </div>
+                          <Avatar className="w-10 h-10 rounded-full">
+                            <AvatarImage src={group.groupImageUrl || undefined} alt={group.groupName} />
+                            <AvatarFallback>{group.groupName.charAt(0)}</AvatarFallback>
+                          </Avatar>
                           <div className="flex-1">
                             <div className="flex items-center space-x-2">
                               <span className="text-sm font-medium text-foreground">{group.groupName}</span>
@@ -192,9 +196,7 @@ export function RankingScreen({ groups, personalRankingData,groupRankingData, us
                           <div className="text-xs text-foreground dark:opacity-75">총점</div>
                         </div>
                       </div>
-                      <div className="flex items-center justify-between text-xs text-foreground dark:opacity-75">
-                        <span>평균 점수: {group.averageAuthPerMember.toFixed(1)}점</span>
-                      </div>
+                      
                     </div>
                   ))
                 ) : (

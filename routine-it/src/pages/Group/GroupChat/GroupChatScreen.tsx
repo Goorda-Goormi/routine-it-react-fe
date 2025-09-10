@@ -10,7 +10,8 @@ import { ArrowLeft, CheckCircle, Users } from 'lucide-react';
 import { GroupRoutineDialog } from './GroupRoutineDialog';
 import { GroupChatMessages } from './GroupChatMessages';
 import { GroupChatInput } from './GroupChatInput';
-import { leaveGroup, createGroupActivity } from '../../../api/chat'; // ✅ createGroupActivity 임포트
+import { leaveGroup, createGroupActivity } from '../../../api/chat';
+import { updateRankingScore } from '../../../api/ranking'; // ✅ ranking.ts에서 updateRankingScore 임포트
 
 import type { Group, UserProfile, GroupMemberResponse } from '../../../interfaces';
 import { fetchChatHistory } from '../../../api/chat';
@@ -206,67 +207,75 @@ export function GroupChatScreen({ group, groupmembers, onBack, onLeaveGroup, use
     };
 
     const handleAuthSubmit = async (data: { description: string; image: File | null; isPublic: boolean }) => {
-    if (!stompClientRef.current) {
-        alert("채팅 연결이 불안정하여 인증을 보낼 수 없습니다. 잠시 후 다시 시도해주세요.");
-        return;
-    }
-
-    try {
-        if (group.groupType === 'FREE') {
-            const activityData = {
-                description: data.description,
-                photo: data.image,
-                isPublic: data.isPublic,
-                groupId: group.groupId,
-            };
-            
-            await createGroupActivity(activityData);
-            
-            const msgBody = {
-                userId: myUserId,
-                senderNickname: myNickname,
-                message: data.description,
-                imageUrl: data.image ? URL.createObjectURL(data.image) : null,
-                messageType: 'NOTICE', 
-            };
-
-            stompClientRef.current.publish({
-                destination: `/app/chat.send/${roomId}`,
-                body: JSON.stringify(msgBody),
-            });
-            
-            alert('자유그룹 인증이 성공적으로 제출되었습니다.');
-              
-        } else {
-            // REQUIRED 그룹 인증 요청 (기존 로직)
-            const authMessage = data.description;
-            const msgBody = {
-                userId: myUserId,
-                senderNickname: myNickname,
-                message: authMessage,
-                imageUrl: data.image ? URL.createObjectURL(data.image) : null,
-                messageType: 'NOTICE', 
-            };
-
-            stompClientRef.current.publish({
-                destination: `/app/chat.send/${roomId}`,
-                body: JSON.stringify(msgBody),
-            });
-            
-            alert('인증이 성공적으로 제출되었습니다.');
+        if (!stompClientRef.current) {
+            alert("채팅 연결이 불안정하여 인증을 보낼 수 없습니다. 잠시 후 다시 시도해주세요.");
+            return;
         }
-    } catch (error) {
-        // 오류 응답 확인
-        if (error.name === 'AuthError' || (error.response && error.response.status === 401)) {
-            alert('인증이 만료되었습니다. 다시 로그인해주세요.');
-            // 여기에서 로그인 페이지로 리디렉션하는 로직을 추가
-            // 예: window.location.href = '/login';
-        } else {
-            alert('인증 제출에 실패했습니다.');
+
+        try {
+            if (group.groupType === 'FREE') {
+                const activityData = {
+                    description: data.description,
+                    photo: data.image,
+                    isPublic: data.isPublic,
+                    groupId: group.groupId,
+                };
+                
+                await createGroupActivity(activityData);
+
+                // ✅ 추가된 부분: 랭킹 점수 업데이트
+                try {
+                    await updateRankingScore(myUserId, group.groupId, 1);
+                    console.log("✅ 랭킹 점수 업데이트 성공: 자유그룹 인증");
+                } catch (rankingError) {
+                    console.error("🚨 랭킹 점수 업데이트 실패:", rankingError);
+                }
+                
+                const msgBody = {
+                    userId: myUserId,
+                    senderNickname: myNickname,
+                    message: data.description,
+                    imageUrl: data.image ? URL.createObjectURL(data.image) : null,
+                    messageType: 'NOTICE', 
+                };
+
+                stompClientRef.current.publish({
+                    destination: `/app/chat.send/${roomId}`,
+                    body: JSON.stringify(msgBody),
+                });
+                
+                alert('자유그룹 인증이 성공적으로 제출되었습니다.');
+                    
+            } else {
+                // REQUIRED 그룹 인증 요청 (기존 로직)
+                const authMessage = data.description;
+                const msgBody = {
+                    userId: myUserId,
+                    senderNickname: myNickname,
+                    message: authMessage,
+                    imageUrl: data.image ? URL.createObjectURL(data.image) : null,
+                    messageType: 'NOTICE', 
+                };
+
+                stompClientRef.current.publish({
+                    destination: `/app/chat.send/${roomId}`,
+                    body: JSON.stringify(msgBody),
+                });
+                
+                alert('인증이 성공적으로 제출되었습니다.');
+            }
+        } catch (error) {
+            // 오류 응답 확인
+            if (error.name === 'AuthError' || (error.response && error.response.status === 401)) {
+                alert('인증이 만료되었습니다. 다시 로그인해주세요.');
+                // 여기에서 로그인 페이지로 리디렉션하는 로직을 추가
+                // 예: window.location.href = '/login';
+            } else {
+                alert('인증 제출에 실패했습니다.');
+            }
+            console.error("🚨 최종 에러 핸들링:", error);
         }
-        console.error("🚨 최종 에러 핸들링:", error);
-    }
-};
+    };
 
     return (
         <div className="flex flex-col h-screen bg-background">

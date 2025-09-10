@@ -5,274 +5,268 @@ import { GroupDetailTabs } from './GroupDetailTabs';
 import { GroupMemberManager } from './GroupMemberManager';
 import GroupEdit from './GroupEdit';
 import { GroupApproval } from './GroupApproval';
-import { GroupRoutineDialog } from '../GroupChat/GroupRoutineDialog';
 import type { AuthMessage, GroupMemberResponse, NotificationApiResponse } from "../../../interfaces";
-import { deleteGroup, delegateLeader } from '../../../api/group';
+import { deleteGroup, delegateLeader, getUserActivitiesByDay,updateGroupMemberStatus } from '../../../api/group';
 import { getGroupTop3Ranking } from '../../../api/ranking';
 import type { GlobalGroupRankingData } from '../../Ranking/RankingScreen';
-import { getPendingAuthMembers, updateAuthStatus, requestAuthApproval } from '../../../api/group';
 import { getNotificationsByType, markNotificationAsRead } from '../../../api/notification';
+import { fetchChatHistory } from '../../../api/chat';
 
 interface GroupDetailScreenProps {
-  groupId: number;
-  groups: any[];
-  onBack: () => void;
-  onNavigate: (screen: string, params?: any) => void;
-  onUpdateGroup: (group: any) => void;
-  currentUser: { nickname: string; id: string | number; profileImageUrl?: string };
-  groupMembers: GroupMemberResponse[];
-  onDeleteGroupSuccess: () => void;
-  myid: number;
-  onGroupJoined: () => void;
-  isJoined: boolean;
+    groupId: number;
+    groups: any[];
+    onBack: () => void;
+    onNavigate: (screen: string, params?: any) => void;
+    onUpdateGroup: (group: any) => void;
+    currentUser: { nickname: string; id: string | number; profileImageUrl?: string };
+    groupMembers: GroupMemberResponse[];
+    onDeleteGroupSuccess: () => void;
+    myid: number;
+    onGroupJoined: () => void;
+    isJoined: boolean;
 }
 
 export function GroupDetailScreen({
-  groupId,
-  groups,
-  onBack,
-  onNavigate,
-  onUpdateGroup,
-  currentUser,
-  groupMembers,
-  onDeleteGroupSuccess,
-  myid,
-  onGroupJoined,
-  isJoined,
+    groupId,
+    groups,
+    onBack,
+    onNavigate,
+    onUpdateGroup,
+    currentUser,
+    groupMembers,
+    onDeleteGroupSuccess,
+    myid,
+    onGroupJoined,
+    isJoined,
 }: GroupDetailScreenProps) {
-  const [isEditing, setIsEditing] = useState(false);
-  const [showExMembersModal, setShowExMembersModal] = useState(false);
-  const [showApprovalModal, setShowApprovalModal] = useState(false);
-  const [showRoutineModal, setShowRoutineModal] = useState(false);
-  const [pendingAuths, setPendingAuths] = useState<AuthMessage[]>([]);
-  const [pendingInvites, setPendingInvites] = useState<any[]>([]);
+    const [isEditing, setIsEditing] = useState(false);
+    const [showExMembersModal, setShowExMembersModal] = useState(false);
+    const [showApprovalModal, setShowApprovalModal] = useState(false);
+    const [pendingInvites, setPendingInvites] = useState<any[]>([]);
 
-  const group = groups.find((g) => g.groupId === groupId);
+    const group = groups.find((g) => g.groupId === groupId);
 
-  if (!group) {
-    return <div>그룹 정보를 불러오는 중이거나, 그룹을 찾을 수 없습니다.</div>;
-  }
-
-  const isLeader = group?.leaderName === currentUser.nickname;
-  const [weeklyRanking, setWeeklyRanking] = useState<GlobalGroupRankingData[]>([]);
-  const recentActivities = [
-    { id: 1, nickname: '루티니', action: '운동 인증 완료', time: '10분 전', image: null },
-    { id: 2, nickname: '관습박', action: '목표 달성!', time: '1시간 전', image: null },
-    { id: 3, nickname: '지속성', action: '운동 인증 완료', time: '2시간 전', image: null },
-  ];
-
-  const handleChatClick = () => onNavigate('group-chat', group);
-  const handleRoutineAuthClick = () => setShowRoutineModal(true);
-  const handleMemberClick = (member: any) => onNavigate('user-home', member);
-
-  const handleKickMember = (groupMemberId: string | number) => {
-    alert('멤버를 그룹에서 내보냈습니다.');
-    setShowExMembersModal(false);
-  };
-
-  const handleAuthSubmit = async (data: { description: string; image: File | null; isPublic: boolean }) => {
-    const leader = groupMembers.find(member => member.role === 'LEADER');
-    if (!leader) {
-      alert('그룹 리더 정보를 찾을 수 없어 인증을 요청할 수 없습니다.');
-      setShowRoutineModal(false);
-      return;
+    if (!group) {
+        return <div>그룹 정보를 불러오는 중이거나, 그룹을 찾을 수 없습니다.</div>;
     }
-    try {
-      const authData = {
-      leaderId: leader.groupMemberId,
-      targetMemberId: myid, // 현재 로그인한 사용자의 ID
-      activityDate: new Date().toISOString().split('T')[0], // 오늘 날짜 (YYYY-MM-DD)
-      imageUrl: "https://placeholder.com/image.jpg", 
-    };
 
-    await requestAuthApproval(groupId, authData);
-    alert('인증이 성공적으로 제출되었습니다.');
-    setShowRoutineModal(false);
+    const isLeader = group?.leaderName === currentUser.nickname;
+    const [weeklyRanking, setWeeklyRanking] = useState<GlobalGroupRankingData[]>([]);
+    const [recentActivities, setRecentActivities] = useState<any[]>([]);
 
-  } catch (error) {
-    alert('인증 제출에 실패했습니다.');
-    console.error(error);
-  }
-};
+    const handleChatClick = () => onNavigate('group-chat', group);
+    const handleMemberClick = (member: any) => onNavigate('user-home', member);
 
-  const handleGroupDeleted = async () => {
-    if (group?.groupId) {
-      try {
-        await deleteGroup(group.groupId);
-        alert("그룹이 성공적으로 삭제되었습니다.");
-        onDeleteGroupSuccess();
-      } catch (error) {
-        console.error("그룹 삭제 실패:", error);
-        alert("그룹 삭제에 실패했습니다.");
-      }
-    }
-  };
+   const handleKickMember = async (targetMemberId: number) => {
+        try {
+            const currentLeader = groupMembers.find(m => m.memberName === group.leaderName);
+            if (!currentLeader) {
+                alert("현재 리더 정보를 찾을 수 없습니다.");
+                return;
+            }
 
-  useEffect(() => {
-    const fetchRanking = async () => {
-      if (!currentUser || currentUser.id === undefined || currentUser.id === null) {
-        console.error("사용자 정보가 없어 랭킹을 불러올 수 없습니다.");
-        setWeeklyRanking([]);
-        return;
-      }
-      try {
-        const response = await getGroupTop3Ranking(groupId, Number(currentUser.id));
-        if (response && response.data && response.data.top3Users) {
-          setWeeklyRanking(response.data.top3Users);
-        } else {
-          console.error("API 응답 구조가 예상과 다릅니다:", response);
-          setWeeklyRanking([]);
+            // `updateGroupMemberStatus` 함수를 호출하여 멤버의 상태를 'BLOCKED'로 변경합니다.
+            const response = await updateGroupMemberStatus(groupId, {
+                leaderId: currentLeader.groupMemberId,
+                targetMemberId: targetMemberId,
+                status: "BLOCKED",
+                role: "MEMBER", // 퇴출 시 역할도 MEMBER로 설정 (선택사항)
+                approved: false
+            });
+
+            if (response.success) {
+                alert('멤버가 성공적으로 그룹에서 내보내졌습니다.');
+                // UI를 업데이트하기 위해 멤버 목록을 다시 불러오는 로직을 추가하거나,
+                // `onOpenChange`를 통해 모달을 닫고 부모 컴포넌트에서 상태를 업데이트하도록 합니다.
+                setShowExMembersModal(false);
+                onUpdateGroup({ ...group, members: groupMembers.filter(m => m.groupMemberId !== targetMemberId) });
+            } else {
+                alert(response.message || '멤버 내보내기에 실패했습니다.');
+            }
+        } catch (error) {
+            console.error("멤버 내보내기 실패:", error);
+            alert('멤버 내보내기에 실패했습니다.');
         }
-      } catch (error) {
-        console.error("랭킹 데이터 가져오기 실패:", error);
-        setWeeklyRanking([]);
-      }
     };
-    fetchRanking();
-  }, [groupId, currentUser.id]);
 
-  const handleDelegateLeader = async (targetMemberId: number, targetMemberName: string) => {
-    try {
-      const currentLeader = groupMembers.find(m => m.memberName === group.leaderName);
-      if (!currentLeader) {
-        alert("현재 리더 정보를 찾을 수 없습니다.");
-        return;
-      }
-      const currentLeaderId = currentLeader.groupMemberId;
-      const response = await delegateLeader(group.groupId, Number(currentLeaderId), targetMemberId);
-      if (response.success) {
-        alert(`그룹 리더가 ${targetMemberName}님으로 성공적으로 위임되었습니다.`);
-        setShowExMembersModal(false);
-        onUpdateGroup({ ...group, leaderName: targetMemberName, leaderId: targetMemberId });
-      } else {
-        alert(response.message || '리더 위임에 실패했습니다.');
-      }
-    } catch (error) {
-      console.error("리더 위임 실패:", error);
-      alert('리더 위임에 실패했습니다.');
-    }
-  };
+    const handleGroupDeleted = async () => {
+        if (group?.groupId) {
+            try {
+                await deleteGroup(group.groupId);
+                alert("그룹이 성공적으로 삭제되었습니다.");
+                onDeleteGroupSuccess();
+            } catch (error) {
+                console.error("그룹 삭제 실패:", error);
+                alert("그룹 삭제에 실패했습니다.");
+            }
+        }
+    };
 
-  // 새로운 인터페이스에 맞게 알림 데이터를 가져오는 함수
-  const handleOpenApprovalModal = async () => {
-    try {
-      // 루틴 인증 요청 알림 조회
-      const authNotifications = await getNotificationsByType('GROUP_TODAY_AUTH_REQUEST');
-      console.log('루틴 인증 요청 API 원본 데이터:', authNotifications);
-      const authMessages = authNotifications.map((notification: NotificationApiResponse) => ({
-        id: notification.id,
-        nickname: notification.senderName,
-        message: notification.content,
-        //imageUrl: notification.imageUrl, // 인터페이스에 imageUrl이 없으므로 임시로 추가
-        //routineId: notification.relatedId, // 인터페이스에 relatedId를 routineId로 매핑
-       // userId: notification.relatedId // 사용자 ID도 relatedId로 가정
-      }));
-      console.log('루틴 인증 요청 가공된 데이터:', authMessages);
-      setPendingAuths(authMessages);
+    useEffect(() => {
+        const fetchData = async () => {
+            // 랭킹 데이터 가져오기
+            if (currentUser && currentUser.id !== undefined && currentUser.id !== null) {
+                try {
+                    const response = await getGroupTop3Ranking(groupId, Number(currentUser.id));
+                    if (response && response.data && response.data.top3Users) {
+                        setWeeklyRanking(response.data.top3Users);
+                    } else {
+                        console.error("API 응답 구조가 예상과 다릅니다:", response);
+                        setWeeklyRanking([]);
+                    }
+                } catch (error) {
+                    console.error("랭킹 데이터 가져오기 실패:", error);
+                    setWeeklyRanking([]);
+                }
+            }
 
-      // 그룹 가입 요청 알림 조회
-      const inviteNotifications = await getNotificationsByType('GROUP_JOIN_REQUEST');
-      console.log('그룹 가입 요청 API 원본 데이터:', inviteNotifications);
-      const inviteMessages = inviteNotifications.map((notification: NotificationApiResponse) => ({
-        id: notification.id,
-        user: notification.senderName
-      }));
-      console.log('그룹 가입 요청 가공된 데이터:', inviteMessages);
-      setPendingInvites(inviteMessages);
+            // 최근 활동 (인증 내역) 데이터 가져오기
+            try {
+                const response = await fetchChatHistory(groupId, 50);
+                const chatHistory = response.data?.content || [];
+                
+                const authMessages = chatHistory
+                    .filter(msg => msg.messageType === 'NOTICE')
+                    .map(msg => {
+                        // UTC 시간을 KST(UTC+9)로 변환
+                        const date = new Date(msg.sentAt);
+                        date.setHours(date.getHours() + 9);
+                        const kstTime = date.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' });
 
-      setShowApprovalModal(true);
-    } catch (error) {
-      alert("알림 목록을 불러오는데 실패했습니다.");
-      console.error(error);
-    }
-  };
+                        return {
+                            id: msg.messageId, // 고유 ID로 사용
+                            nickname: msg.senderNickname,
+                            action: '루틴 인증 완료',
+                            time: kstTime,
+                            imageUrl: msg.imageUrl,
+                        };
+                    });
+                
+                setRecentActivities(authMessages);
+                console.log("최근 인증 내역 (KST):", authMessages); // 콘솔에 출력
+            } catch (error) {
+                console.error("채팅 인증 내역 로딩 실패:", error);
+                setRecentActivities([]);
+            }
+        };
 
-  // 루틴 인증 승인 및 거절을 위한 핸들러
-  const handleApprove = async (notificationId: number) => {
-    try {
-      await markNotificationAsRead(notificationId, true);
-      alert("인증을 승인했습니다.");
-      setPendingAuths(prev => prev.filter(p => p.id !== notificationId));
-      setShowApprovalModal(false);
-    } catch (error) {
-      alert("승인 처리에 실패했습니다.");
-      console.error(error);
-    }
-  };
+        fetchData();
+    }, [groupId, currentUser.id]);
 
-  const handleReject = async (notificationId: number) => {
-    try {
-      await markNotificationAsRead(notificationId, true);
-      alert("인증을 거절했습니다.");
-      setPendingAuths(prev => prev.filter(p => p.id !== notificationId));
-      setShowApprovalModal(false);
-    } catch (error) {
-      alert("거절 처리에 실패했습니다.");
-      console.error(error);
-    }
-  };
+    const handleDelegateLeader = async (targetMemberId: number, targetMemberName: string) => {
+        try {
+            const currentLeader = groupMembers.find(m => m.memberName === group.leaderName);
+            if (!currentLeader) {
+                alert("현재 리더 정보를 찾을 수 없습니다.");
+                return;
+            }
+            const currentLeaderId = currentLeader.groupMemberId;
+            const response = await delegateLeader(group.groupId, Number(currentLeaderId), targetMemberId);
+            if (response.success) {
+                alert(`그룹 리더가 ${targetMemberName}님으로 성공적으로 위임되었습니다.`);
+                setShowExMembersModal(false);
+                onUpdateGroup({ ...group, leaderName: targetMemberName, leaderId: targetMemberId });
+            } else {
+                alert(response.message || '리더 위임에 실패했습니다.');
+            }
+        } catch (error) {
+            console.error("리더 위임 실패:", error);
+            alert('리더 위임에 실패했습니다.');
+        }
+    };
 
-  return (
-    <div className="min-h-screen relative">
-      <GroupDetailHeader
-        group={group}
-        isJoined={isJoined}
-        isLeader={isLeader}
-        onBack={onBack}
-        onChatClick={handleChatClick}
-        onRoutineAuthClick={handleRoutineAuthClick}
-        onOpenEdit={() => setIsEditing(true)}
-        onOpenApproval={handleOpenApprovalModal}
-        onOpenExMembers={() => setShowExMembersModal(true)}
-        pendingAuthCount={pendingAuths.length}
-        groupMembers={groupMembers}
-        onGroupDeleted={handleGroupDeleted}
-        myid={myid}
-        onGroupJoined={onGroupJoined}
-      />
-      <div className="p-4 space-y-4">
-        <GroupDetailTabs
-          weeklyRanking={weeklyRanking}
-          recentActivities={recentActivities}
-          onMemberClick={handleMemberClick}
-          groupMembers={groupMembers}
-        />
-      </div>
-      <GroupEdit
-        open={isEditing}
-        onOpenChange={setIsEditing}
-        group={group}
-        onSave={(updatedGroup) => {
-          onUpdateGroup({ ...group, ...updatedGroup });
-          setIsEditing(false);
-        }}
-      />
-      <GroupMemberManager
-        open={showExMembersModal}
-        onOpenChange={setShowExMembersModal}
-        members={groupMembers}
-        onKickMember={handleKickMember}
-        onDelegateLeader={handleDelegateLeader}
-        isLeader={isLeader}
-      />
-      <Dialog open={showApprovalModal} onOpenChange={setShowApprovalModal}>
-        <DialogContent className="max-w-md text-icon-secondary dark:text-white">
-          <GroupApproval
-            authMessages={pendingAuths}
-            inviteMessages={pendingInvites}
-            onApprove={handleApprove}
-            onReject={handleReject}
-            onClose={() => setShowApprovalModal(false)}
-          />
-        </DialogContent>
-      </Dialog>
-      <GroupRoutineDialog
-        isOpen={showRoutineModal}
-        onOpenChange={setShowRoutineModal}
-        onAuthSubmit={handleAuthSubmit}
-        group={group}
-        selectedRoutine={group?.routines?.[0] || null}
-      />
-    </div>
-  );
+    const handleOpenApprovalModal = async () => {
+        try {
+            const inviteNotifications = await getNotificationsByType('GROUP_JOIN_REQUEST');
+            const inviteMessages = inviteNotifications.map((notification: NotificationApiResponse) => ({
+                id: notification.id,
+                user: notification.senderName
+            }));
+            setPendingInvites(inviteMessages);
+            setShowApprovalModal(true);
+        } catch (error) {
+            alert("알림 목록을 불러오는데 실패했습니다.");
+            console.error(error);
+        }
+    };
+
+    const handleApprove = async (notificationId: number) => {
+        try {
+            await markNotificationAsRead(notificationId, true);
+            alert("그룹 가입을 승인했습니다.");
+            setPendingInvites(prev => prev.filter(p => p.id !== notificationId));
+            setShowApprovalModal(false);
+        } catch (error) {
+            alert("승인 처리에 실패했습니다.");
+            console.error(error);
+        }
+    };
+
+    const handleReject = async (notificationId: number) => {
+        try {
+            await markNotificationAsRead(notificationId, true);
+            alert("그룹 가입을 거절했습니다.");
+            setPendingInvites(prev => prev.filter(p => p.id !== notificationId));
+            setShowApprovalModal(false);
+        } catch (error) {
+            alert("거절 처리에 실패했습니다.");
+            console.error(error);
+        }
+    };
+
+    return (
+        <div className="min-h-screen relative">
+            <GroupDetailHeader
+                group={group}
+                isJoined={isJoined}
+                isLeader={isLeader}
+                onBack={onBack}
+                onChatClick={handleChatClick}
+                onOpenEdit={() => setIsEditing(true)}
+                onOpenApproval={handleOpenApprovalModal}
+                onOpenExMembers={() => setShowExMembersModal(true)}
+                pendingAuthCount={0}
+                groupMembers={groupMembers}
+                onGroupDeleted={handleGroupDeleted}
+                myid={myid}
+                onGroupJoined={onGroupJoined}
+            />
+            <div className="p-4 space-y-4">
+                <GroupDetailTabs
+                    weeklyRanking={weeklyRanking}
+                    recentActivities={recentActivities}
+                    onMemberClick={handleMemberClick}
+                    groupMembers={groupMembers}
+                />
+            </div>
+            <GroupEdit
+                open={isEditing}
+                onOpenChange={setIsEditing}
+                group={group}
+                onSave={(updatedGroup) => {
+                    onUpdateGroup({ ...group, ...updatedGroup });
+                    setIsEditing(false);
+                }}
+            />
+            <GroupMemberManager
+                open={showExMembersModal}
+                onOpenChange={setShowExMembersModal}
+                members={groupMembers}
+                onKickMember={handleKickMember}
+                onDelegateLeader={handleDelegateLeader}
+                isLeader={isLeader}
+            />
+            <Dialog open={showApprovalModal} onOpenChange={setShowApprovalModal}>
+                <DialogContent className="max-w-md text-icon-secondary dark:text-white">
+                    <GroupApproval
+                        authMessages={[]}
+                        inviteMessages={pendingInvites}
+                        onApprove={handleApprove}
+                        onReject={handleReject}
+                        onClose={() => setShowApprovalModal(false)}
+                    />
+                </DialogContent>
+            </Dialog>
+        </div>
+    );
 }

@@ -30,6 +30,7 @@ export const GroupDetailTabs = ({
 
       const isLeader = member.role === 'LEADER';
       const isCertified = member.status === 'JOINED';
+      
 
       return (
         <div key={member.groupMemberId}>
@@ -97,27 +98,31 @@ export const GroupDetailTabs = ({
           </CardHeader>
           <CardContent className="pt-0">
             <div className="space-y-0">
-              {weeklyRanking.map((item, index) => (
-                <div key={item.rank}>
-                  <div className="flex items-center justify-between p-3 border border-border/50 rounded-lg hover:bg-accent/30 transition-colors">
-                    <div className="flex items-center space-x-3">
-                      <div className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center">
-                        <span className="text-xs font-bold text-primary">{item.rank}</span>
+             {weeklyRanking.length > 0 ? (
+                weeklyRanking.map((item, index) => (
+                  <div key={item.rank}>
+                    <div className="flex items-center justify-between p-3 border border-border/50 rounded-lg hover:bg-accent/30 transition-colors">
+                      <div className="flex items-center space-x-3">
+                        <div className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center">
+                          <span className="text-xs font-bold text-primary">{item.rank}</span>
+                        </div>
+                        <span className="text-sm font-medium text-card-foreground">{item.nickname}</span>
                       </div>
-                      <span className="text-sm font-medium text-card-foreground">{item.nickname}</span>
+                      <div className="flex items-center space-x-2">
+                        <span className="text-sm font-bold text-card-foreground">{item.score}점</span>
+                        <div
+                          className={`w-2 h-2 rounded-full ${
+                            item.change === 'up' ? 'bg-green-500' : item.change === 'down' ? 'bg-red-500' : 'bg-gray-400'
+                          }`}
+                        ></div>
+                      </div>
                     </div>
-                    <div className="flex items-center space-x-2">
-                      <span className="text-sm font-bold text-card-foreground">{item.score}%</span>
-                      <div
-                        className={`w-2 h-2 rounded-full ${
-                          item.change === 'up' ? 'bg-green-500' : item.change === 'down' ? 'bg-red-500' : 'bg-gray-400'
-                        }`}
-                      ></div>
-                    </div>
+                    {index < weeklyRanking.length - 1 && <div className="h-2"></div>}
                   </div>
-                  {index < weeklyRanking.length - 1 && <div className="h-2"></div>}
-                </div>
-              ))}
+                ))
+             ) : (
+                <div className="py-8 text-center text-sm text-muted-foreground">아직 순위 내역이 없습니다.</div>
+              )}
             </div>
           </CardContent>
         </Card>
@@ -132,7 +137,8 @@ export const GroupDetailTabs = ({
           </CardHeader>
           <CardContent className="pt-0">
             <div className="space-y-0">
-              {recentActivities.map((activity, index) => (
+              {recentActivities.length > 0 ? (
+              recentActivities.map((activity, index) => (
                 <div key={activity.id}>
                   <div className="flex items-center space-x-3 p-3 border border-border/50 rounded-lg hover:bg-accent/30 transition-colors">
                     <Avatar className="h-8 w-8">
@@ -148,7 +154,10 @@ export const GroupDetailTabs = ({
                   </div>
                   {index < recentActivities.length - 1 && <div className="h-2"></div>}
                 </div>
-              ))}
+              ))
+              ) : (
+                <div className="py-8 text-center text-sm text-muted-foreground">아직 활동 내역이 없습니다.</div>
+              )}
             </div>
           </CardContent>
         </Card>
