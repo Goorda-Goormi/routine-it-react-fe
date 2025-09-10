@@ -109,7 +109,7 @@ export const GroupDetailTabs = ({
                         <span className="text-sm font-medium text-card-foreground">{item.nickname}</span>
                       </div>
                       <div className="flex items-center space-x-2">
-                        <span className="text-sm font-bold text-card-foreground">{item.score}%</span>
+                        <span className="text-sm font-bold text-card-foreground">{item.score}점</span>
                         <div
                           className={`w-2 h-2 rounded-full ${
                             item.change === 'up' ? 'bg-green-500' : item.change === 'down' ? 'bg-red-500' : 'bg-gray-400'
@@ -138,25 +138,25 @@ export const GroupDetailTabs = ({
           <CardContent className="pt-0">
             <div className="space-y-0">
               {recentActivities.length > 0 ? (
-                recentActivities.map((activity, index) => (
-                  <div key={activity.id}>
-                    <div className="flex items-center space-x-3 p-3 border border-border/50 rounded-lg hover:bg-accent/30 transition-colors">
-                      <Avatar className="h-8 w-8">
-                        <AvatarFallback className="text-xs">{activity.nickname[0]}</AvatarFallback>
-                      </Avatar>
-                      <div className="flex-1">
-                        <div className="text-sm">
-                          <span className="font-medium text-card-foreground">{activity.nickname}</span>
-                          <span className="text-muted-foreground"> {activity.action}</span>
-                        </div>
-                        <div className="text-xs text-muted-foreground">{activity.time}</div>
+              recentActivities.map((activity, index) => (
+                <div key={activity.id}>
+                  <div className="flex items-center space-x-3 p-3 border border-border/50 rounded-lg hover:bg-accent/30 transition-colors">
+                    <Avatar className="h-8 w-8">
+                      <AvatarFallback className="text-xs">{activity.nickname[0]}</AvatarFallback>
+                    </Avatar>
+                    <div className="flex-1">
+                      <div className="text-sm">
+                        <span className="font-medium text-card-foreground">{activity.nickname}</span>
+                        <span className="text-muted-foreground"> {activity.action}</span>
                       </div>
+                      <div className="text-xs text-muted-foreground">{activity.time}</div>
                     </div>
-                    {index < recentActivities.length - 1 && <div className="h-2"></div>}
                   </div>
-                ))
-                ) : (
-                  <div className="py-8 text-center text-sm text-muted-foreground">아직 활동 내역이 없습니다.</div>
+                  {index < recentActivities.length - 1 && <div className="h-2"></div>}
+                </div>
+              ))
+              ) : (
+                <div className="py-8 text-center text-sm text-muted-foreground">아직 활동 내역이 없습니다.</div>
               )}
             </div>
           </CardContent>

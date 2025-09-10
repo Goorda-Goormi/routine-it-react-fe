@@ -27,7 +27,7 @@ interface GroupDetailHeaderProps {
   onBack: () => void;
  // onJoinGroup: () => void;
   onChatClick: () => void;
-  onRoutineAuthClick: () => void;
+  //onRoutineAuthClick: () => void;
   onOpenEdit: () => void;
   onOpenApproval: () => void;
   onOpenExMembers: () => void;
@@ -46,7 +46,7 @@ export const GroupDetailHeader = ({
   onBack,
  // onJoinGroup,
   onChatClick,
-  onRoutineAuthClick,
+  //onRoutineAuthClick,
   onOpenEdit,
   onOpenApproval,
   onOpenExMembers,
@@ -105,6 +105,7 @@ console.log('--- GroupDetailHeader Variables ---');
     }
   };
 
+  
   return (
     <div className="sticky top-0 z-10 bg-background/95 backdrop-blur ">
       <div className="flex items-center justify-between backdrop-blur p-4 border-b border-b-[var(--color-border-bottom-custom)]">
