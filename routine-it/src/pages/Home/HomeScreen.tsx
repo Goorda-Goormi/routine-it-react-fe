@@ -59,7 +59,6 @@ export function HomeScreen({
   userTotalScore
   
 }: HomeScreenProps) {
-  console.log('🟢 HomeScreen이 받은 userTotalScore:', userTotalScore);
   const today = new Date();
   const todayString = today.toLocaleDateString('ko-KR', { month: 'long', day: 'numeric' });
 

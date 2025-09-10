@@ -1406,12 +1406,11 @@ const fetchRankingData = async () => {
 // 사용자 총 점수를 가져오는 별도의 함수 (필요한 곳에서 재사용 가능)
 const fetchUserTotalScore = async () => {
   if (!isLoggedIn) return;
-  console.log('2️⃣ 총점수 가져오기 시작!');
   
   setLoadingUserTotalScore(true);
   try {
     const response = await getUserTotalScore();
-    console.log('3️⃣ API 응답:', response);
+  
      if (response.success) {
       setUserTotalScore(response.data);
        console.log("사용자 총 점수 조회 성공:", response.data);

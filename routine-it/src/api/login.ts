@@ -52,11 +52,14 @@ export const getUserInfo = async (): Promise<UserProfile> => {
 
 // export const getUserInfo = async (): Promise<UserProfile> => {
 //     try {
-//     const [authResult, profileResult, settingsResult] = await Promise.all([
+//     const [authResult, profileResult] = await Promise.all([
 //       apiFetch('/api/auth/me'), 
 //       apiFetch('/api/users/me'),
-//       apiFetch('/api/settings')
 //     ]);
+
+//     const settingsResult = await apiFetch('/api/settings');
+
+//     const localMaxStreak = Number(localStorage.getItem('maxStreakDays')) || 0;
 
 //     // 두 API 결과 병합
 //     const authData = authResult.data;
@@ -66,16 +69,19 @@ export const getUserInfo = async (): Promise<UserProfile> => {
 //     const mergedUserData: UserProfile = {
 //       id: authData.id,
 //       email: authData.email,
+
 //       nickname: profileData.nickname,
 //       profileImageUrl: profileData.profileImageUrl,
 //       profileMessage: profileData.profileMessage,
+
 //       isAlarmOn: settingsData.isAlarmOn,
 //       isDarkMode: settingsData.isDarkMode,
-//       joinDate: '', 
+//       joinDate: '',
 //       level: 0,
 //       exp: 0,
 //       maxExp: 3000,
 //       streakDays: 0,
+//       maxStreakDays: localMaxStreak
 //     };
 
 //     return mergedUserData;
@@ -85,7 +91,6 @@ export const getUserInfo = async (): Promise<UserProfile> => {
 //     throw new Error('사용자 정보를 불러오는 데 실패했습니다.');
 //   }
 // };
-
 // 토큰 갱신 api
 export const refreshAuthToken = async () => {
   try {
