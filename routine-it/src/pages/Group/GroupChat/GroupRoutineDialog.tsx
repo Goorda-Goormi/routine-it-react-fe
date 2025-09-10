@@ -5,7 +5,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { Label } from '../../../components/ui/label';
 import { Textarea } from '../../../components/ui/textarea';
 import { Camera, CheckCircle } from 'lucide-react';
-import type { Routine } from '../../../interfaces';
+import type { Group, Routine } from '../../../interfaces';
 
 interface GroupRoutineDialogProps {
   // 모달을 열고 닫는 상태
@@ -14,10 +14,10 @@ interface GroupRoutineDialogProps {
   // 인증 완료 시 호출될 함수
   onAuthSubmit: (data: { description: string; image: File | null; isPublic: boolean }) => void;
   selectedRoutine: Routine | null; 
-  isMandatory: boolean;
+  group:Group;
 }
 
-export function GroupRoutineDialog({ isOpen, onOpenChange, onAuthSubmit,isMandatory }: GroupRoutineDialogProps) {
+export function GroupRoutineDialog({ isOpen, onOpenChange, onAuthSubmit,group }: GroupRoutineDialogProps) {
   const [authData, setAuthData] = useState({
     description: '',
     image: null as File | null,
@@ -32,7 +32,7 @@ export function GroupRoutineDialog({ isOpen, onOpenChange, onAuthSubmit,isMandat
   };
 
   const handleSubmit = () => {
-     if (isMandatory && !authData.image) {
+     if (group.groupType==="REQUIRED" && !authData.image) {
         alert('의무 참여 그룹은 사진 인증이 필수입니다!');
         return;
     }
@@ -47,6 +47,7 @@ export function GroupRoutineDialog({ isOpen, onOpenChange, onAuthSubmit,isMandat
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
+      {group && (
       <DialogContent className="max-w-sm mx-auto dark:text-white">
         <DialogHeader>
           <DialogTitle className="text-card-foreground">루틴 인증하기</DialogTitle>
@@ -66,7 +67,7 @@ export function GroupRoutineDialog({ isOpen, onOpenChange, onAuthSubmit,isMandat
           </div>
           <div>
             <Label htmlFor="image" className="text-card-foreground">
-              사진 첨부 ({isMandatory ? '필수' : '선택'})
+              사진 첨부 ({group.groupType==="REQUIRED" ? '필수' : '선택'})
               </Label>
             <div className="mt-2">
               <input type="file" id="image" accept="image/*" onChange={handleImageSelect} className="hidden" />
@@ -96,12 +97,13 @@ export function GroupRoutineDialog({ isOpen, onOpenChange, onAuthSubmit,isMandat
           <Button 
             onClick={handleSubmit} 
             className="w-full bg-green-600 hover:bg-green-700 text-gray-700"
-              disabled={!authData.description.trim() || (isMandatory && !authData.image)}
+              disabled={!authData.description.trim() || (group.groupType==="REQUIRED" && !authData.image)}
           >
             인증 완료
           </Button>
         </div>
       </DialogContent>
+      )}
     </Dialog>
   );
 }

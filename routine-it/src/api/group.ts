@@ -151,12 +151,19 @@ interface AuthRequestPayload {
 }
 
 export async function requestAuthApproval(groupId: number, authData: AuthRequestPayload) {
+  // approved: true 필드를 추가하여 서버에 승인 요청을 보냅니다.
+  // 이 API가 인증 요청과 승인을 동시에 처리하는 것으로 보입니다.
+  const payload = {
+    ...authData,
+    groupId,
+    approved: true // 랭킹 업데이트를 위해 true로 설정
+  };
+
   return apiFetch(`/group/${groupId}/approve-auth`, {
     method: 'POST',
-    body: JSON.stringify({ ...authData, groupId }),
+    body: JSON.stringify(payload),
   });
 }
-
 
 // 그룹 가입 요청 (인증 필요)
 export async function requestJoinGroup(groupId: number, groupMemberId: number) {
@@ -222,5 +229,23 @@ export async function updateGroupMemberStatus(
   } catch (error) {
     console.error("그룹 멤버 상태 변경 실패:", error);
     throw error;
+  }
+}
+
+
+/**
+ * 인증된 사용자의 특정 날짜 활동 내역을 조회합니다.
+ * @param date - YYYY-MM-DD 형식의 날짜 문자열
+ * @returns 활동 목록 배열
+ */
+export async function getUserActivitiesByDay(date: string) {
+  try {
+    const activities = await apiFetch(`/user-activities/day?date=${date}`, {
+      method: "GET",
+    });
+    return activities;
+  } catch (error) {
+    console.error(`Failed to fetch user activities for ${date}:`, error);
+    throw new Error("사용자 활동 목록 조회 실패");
   }
 }

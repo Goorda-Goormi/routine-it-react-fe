@@ -1241,7 +1241,8 @@ const fetchRankingData = async () => {
      const month = String(now.getMonth() + 1).padStart(2, '0');
      const monthYear = `${year}-${month}`;
     const globalGroupRankingResponse = await getGlobalGroupRanking(monthYear);
-     setGroupRankingData(globalGroupRankingResponse);
+    console.log("그룹 랭킹 API 응답:", globalGroupRankingResponse); 
+    setGroupRankingData(globalGroupRankingResponse);
   } catch (error) {
     console.error("랭킹 데이터 로딩 실패:", error);
     setPersonalRankingData(null);
