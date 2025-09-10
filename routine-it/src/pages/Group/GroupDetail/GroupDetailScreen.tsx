@@ -6,7 +6,7 @@ import { GroupMemberManager } from './GroupMemberManager';
 import GroupEdit from './GroupEdit';
 import { GroupApproval } from './GroupApproval';
 import type { AuthMessage, GroupMemberResponse, NotificationApiResponse } from "../../../interfaces";
-import { deleteGroup, delegateLeader, getUserActivitiesByDay } from '../../../api/group';
+import { deleteGroup, delegateLeader, getUserActivitiesByDay,updateGroupMemberStatus } from '../../../api/group';
 import { getGroupTop3Ranking } from '../../../api/ranking';
 import type { GlobalGroupRankingData } from '../../Ranking/RankingScreen';
 import { getNotificationsByType, markNotificationAsRead } from '../../../api/notification';
@@ -57,9 +57,36 @@ export function GroupDetailScreen({
     const handleChatClick = () => onNavigate('group-chat', group);
     const handleMemberClick = (member: any) => onNavigate('user-home', member);
 
-    const handleKickMember = (groupMemberId: string | number) => {
-        alert('멤버를 그룹에서 내보냈습니다.');
-        setShowExMembersModal(false);
+   const handleKickMember = async (targetMemberId: number) => {
+        try {
+            const currentLeader = groupMembers.find(m => m.memberName === group.leaderName);
+            if (!currentLeader) {
+                alert("현재 리더 정보를 찾을 수 없습니다.");
+                return;
+            }
+
+            // `updateGroupMemberStatus` 함수를 호출하여 멤버의 상태를 'BLOCKED'로 변경합니다.
+            const response = await updateGroupMemberStatus(groupId, {
+                leaderId: currentLeader.groupMemberId,
+                targetMemberId: targetMemberId,
+                status: "BLOCKED",
+                role: "MEMBER", // 퇴출 시 역할도 MEMBER로 설정 (선택사항)
+                approved: false
+            });
+
+            if (response.success) {
+                alert('멤버가 성공적으로 그룹에서 내보내졌습니다.');
+                // UI를 업데이트하기 위해 멤버 목록을 다시 불러오는 로직을 추가하거나,
+                // `onOpenChange`를 통해 모달을 닫고 부모 컴포넌트에서 상태를 업데이트하도록 합니다.
+                setShowExMembersModal(false);
+                onUpdateGroup({ ...group, members: groupMembers.filter(m => m.groupMemberId !== targetMemberId) });
+            } else {
+                alert(response.message || '멤버 내보내기에 실패했습니다.');
+            }
+        } catch (error) {
+            console.error("멤버 내보내기 실패:", error);
+            alert('멤버 내보내기에 실패했습니다.');
+        }
     };
 
     const handleGroupDeleted = async () => {

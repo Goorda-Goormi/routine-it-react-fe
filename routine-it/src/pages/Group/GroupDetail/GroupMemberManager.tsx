@@ -44,7 +44,8 @@ export function GroupMemberManager({ open, onOpenChange, members, onKickMember, 
 
   const handleConfirmDelegate = () => {
     if (memberToDelegateId) {
-      onDelegateLeader(memberToDelegateId);
+      const member = members.find(m => m.groupMemberId === memberToDelegateId);
+      onDelegateLeader(memberToDelegateId, member?.memberName ?? '');
       setMemberToDelegateId(null);
       setShowDelegateConfirmDialog(false);
       onOpenChange(false);
