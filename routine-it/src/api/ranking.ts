@@ -21,25 +21,26 @@ export interface RankingResponse {
 
 // 랭킹 점수 업데이트
 // POST /api/rankings/update-score
+// API 문서에 맞게 authCount를 파라미터로 사용
 export const updateRankingScore = async (
-  userId: number,
-  score: number,
-  groupId?: number,
+     userId: number,
+     groupId: number,
+    authCount: number
 ): Promise<any> => {
-  try {
-    const params = new URLSearchParams();
-    params.append('userId', String(userId));
-    params.append('score', String(score));
-    if (groupId) {
-      params.append('groupId', String(groupId));
+    try {
+        console.log("updateRankingScore 함수에 전달된 groupId:", groupId);
+        const params = new URLSearchParams();
+        params.append('userId', String(userId));
+        params.append('groupId', String(groupId));
+        params.append('authCount', String(authCount));
+         console.log("API 호출 URL 파라미터:", params.toString());
+        return await apiFetch(`/api/rankings/update-score?${params.toString()}`, {
+        method: 'POST',
+     });
+    } catch (error) {
+        console.error("랭킹 점수 업데이트 실패:", error);
+        throw error;
     }
-    return await apiFetch(`/api/rankings/update-score?${params.toString()}`, {
-      method: 'POST',
-    });
-  } catch (error) {
-    console.error("랭킹 점수 업데이트 실패:", error);
-    throw error;
-  }
 };
 
 // 수정된 getPersonalRankings 함수

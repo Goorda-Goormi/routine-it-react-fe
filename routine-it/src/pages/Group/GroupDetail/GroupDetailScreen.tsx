@@ -270,7 +270,7 @@ export function GroupDetailScreen({
         isOpen={showRoutineModal}
         onOpenChange={setShowRoutineModal}
         onAuthSubmit={handleAuthSubmit}
-        isMandatory={group?.isMandatory}
+        group={group}
         selectedRoutine={group?.routines?.[0] || null}
       />
     </div>
