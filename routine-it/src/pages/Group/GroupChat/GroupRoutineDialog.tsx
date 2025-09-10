@@ -1,4 +1,4 @@
-// src/components/GroupRoutineDialog.tsx
+// src/components/GroupChat/GroupRoutineDialog.tsx
 import React, { useState } from 'react';
 import { Button } from '../../../components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '../../../components/ui/dialog';
@@ -8,16 +8,15 @@ import { Camera, CheckCircle } from 'lucide-react';
 import type { Group, Routine } from '../../../interfaces';
 
 interface GroupRoutineDialogProps {
-  // 모달을 열고 닫는 상태
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
-  // 인증 완료 시 호출될 함수
+  // ✅ group 데이터를 onAuthSubmit 함수에 추가로 전달
   onAuthSubmit: (data: { description: string; image: File | null; isPublic: boolean }) => void;
   selectedRoutine: Routine | null; 
-  group:Group;
+  group: Group;
 }
 
-export function GroupRoutineDialog({ isOpen, onOpenChange, onAuthSubmit,group }: GroupRoutineDialogProps) {
+export function GroupRoutineDialog({ isOpen, onOpenChange, onAuthSubmit, group }: GroupRoutineDialogProps) {
   const [authData, setAuthData] = useState({
     description: '',
     image: null as File | null,
@@ -37,9 +36,9 @@ export function GroupRoutineDialog({ isOpen, onOpenChange, onAuthSubmit,group }:
         return;
     }
     
-    if (authData.description.trim()) {
+    if (authData.description.trim() || authData.image) {
+      // ✅ onAuthSubmit 함수 호출
       onAuthSubmit(authData);
-      // 모달 닫기 전에 상태 초기화
       setAuthData({ description: '', image: null, isPublic: true });
       onOpenChange(false);
     }

@@ -1,4 +1,3 @@
-// GroupChatScreen.jsx
 import React, { useState, useEffect, useRef } from 'react';
 import SockJS from 'sockjs-client';
 import { Client } from '@stomp/stompjs';
@@ -11,13 +10,12 @@ import { ArrowLeft, CheckCircle, Users } from 'lucide-react';
 import { GroupRoutineDialog } from './GroupRoutineDialog';
 import { GroupChatMessages } from './GroupChatMessages';
 import { GroupChatInput } from './GroupChatInput';
-import { leaveGroup } from '../../../api/chat';
+import { leaveGroup, createGroupActivity } from '../../../api/chat'; // ✅ createGroupActivity 임포트
 
 import type { Group, UserProfile, GroupMemberResponse } from '../../../interfaces';
-import { fetchChatHistory } from '../../../api/chat'; // ✅ 추가된 import
-import { requestAuthApproval, getGroupMembers } from '../../../api/group'; 
+import { fetchChatHistory } from '../../../api/chat';
+import { requestAuthApproval, getGroupMembers } from '../../../api/group';
 
-// 👉 API 기본 URL, WS 연결 URL
 export const BASE_URL = "http://54.180.93.1:8080";
 const WS_CONNECTION_URL = `${BASE_URL}/ws`;
 
@@ -28,7 +26,7 @@ export interface Message {
     senderNickname: string;
     message: string | null;
     imageUrl: string | null;
-    messageType: 'TALK' | 'AUTH' | 'IMAGE' | 'ALBUM' | 'ONLINE' | 'OFFLINE';
+    messageType: 'TALK' | 'AUTH' | 'NOTICE' | 'IMAGE' | 'ALBUM' | 'ONLINE' | 'OFFLINE' | 'MEMBER_JOIN' | 'MEMBER_LEAVE';
     sentAt: string | null;
     isMe: boolean;
     reactions?: { [key: string]: number };
@@ -44,41 +42,27 @@ export function GroupChatScreen({ group, groupmembers, onBack, onLeaveGroup, use
 
     const myUserId = userInfo.id;
     const myNickname = userInfo.nickname;
-    const roomId = group.groupId; // 그룹 채팅방 ID
+    const roomId = group.groupId;
 
-    // 🔌 채팅 기록 로드 및 웹소켓 연결
     useEffect(() => {
-    // 1. 과거 메시지 기록을 불러오는 비동기 함수
-    const loadChatHistory = async () => {
-        try {
-            // fetchChatHistory 함수 호출
-            const response = await fetchChatHistory(roomId, 20); 
+        const loadChatHistory = async () => {
+            try {
+                const response = await fetchChatHistory(roomId, 20);
+                let messagesFromServer = response.data?.content || [];
+                messagesFromServer = messagesFromServer.reverse();
+                const updatedHistory = messagesFromServer.map(msg => ({
+                    ...msg,
+                    isMe: (msg.messageType === 'MEMBER_JOIN' || msg.messageType === 'MEMBER_LEAVE') ? false : msg.userId === myUserId,
+                }));
+                setMessages(updatedHistory);
+            } catch (error) {
+                console.error("채팅 기록 로딩 실패:", error);
+                setMessages([]);
+            }
+        };
 
-            // ✅ 응답 객체의 `data.content`에 메시지 배열이 들어있으므로, 이 부분을 사용합니다.
-            let messagesFromServer = response.data?.content || [];
-            
-            // ⭐️ 추가된 코드: 메시지 배열을 역순으로 정렬
-            messagesFromServer = messagesFromServer.reverse();
-            // 불러온 메시지에 isMe 속성 추가
-            const updatedHistory = messagesFromServer.map(msg => ({
-              ...msg,
-              // MEMBER_JOIN, MEMBER_LEAVE 타입에는 isMe를 항상 false로 설정
-              isMe: (msg.messageType === 'MEMBER_JOIN' || msg.messageType === 'MEMBER_LEAVE') ? false : msg.userId === myUserId,
-          }));
-
-            // 상태 업데이트
-            setMessages(updatedHistory);
-        } catch (error) {
-            console.error("채팅 기록 로딩 실패:", error);
-            // 에러 발생 시 빈 배열로 설정
-            setMessages([]);
-        }
-    };
-
-    // 과거 메시지 로드 후 웹소켓 연결
-    loadChatHistory();
+        loadChatHistory();
         
-        // 3. 웹소켓 연결 로직 (기존 코드)
         const socket = new SockJS(WS_CONNECTION_URL);
         const stompClient = new Client({
             webSocketFactory: () => socket,
@@ -86,14 +70,11 @@ export function GroupChatScreen({ group, groupmembers, onBack, onLeaveGroup, use
                 Authorization: 'Bearer ' + localStorage.getItem('accessToken'),
             },
             debug: (str) => console.log(str),
-            reconnectDelay: 5000, // 재연결 5초
+            reconnectDelay: 5000,
             onConnect: () => {
                 console.log('✅ STOMP 연결 성공');
-
-                // 구독
                 stompClient.subscribe(`/topic/room/${roomId}`, (message) => {
                     const body = JSON.parse(message.body);
-
                     const newMsg: Message = {
                         id: body.id,
                         roomId: body.roomId,
@@ -109,7 +90,6 @@ export function GroupChatScreen({ group, groupmembers, onBack, onLeaveGroup, use
                     setMessages((prev) => [...prev, newMsg]);
                 });
 
-                // 온라인 신호
                 stompClient.publish({
                     destination: `/app/chat.online/${roomId}`,
                     body: JSON.stringify({ userId: myUserId, nickname: myNickname }),
@@ -130,24 +110,18 @@ export function GroupChatScreen({ group, groupmembers, onBack, onLeaveGroup, use
 
     const handleSendMessage = (text: string) => {
         if (!text.trim()) return;
-
         const msgBody = {
             userId: myUserId,
             senderNickname: myNickname,
             message: text,
             messageType: 'TALK',
         };
-
-        // 1. 웹소켓으로 메시지 전송
         stompClientRef.current?.publish({
             destination: `/app/chat.send/${roomId}`,
             body: JSON.stringify(msgBody),
         });
-
-      
     };
 
-    // 🖼️ 이미지 보내기 (로컬 프리뷰 + 서버 전송 필요하면 백엔드 맞춤)
     const handleSendImage = (file: File) => {
         const imageUrl = URL.createObjectURL(file);
         const newMessage: Message = {
@@ -183,27 +157,6 @@ export function GroupChatScreen({ group, groupmembers, onBack, onLeaveGroup, use
         setMessages((prev) => [...prev, newMessage]);
     };
 
-    // const handleAuthSubmit = (data: { description: string; image: File | null; isPublic: boolean }) => {
-    //     const authMessage: Message = {
-    //         id: null,
-    //         roomId,
-    //         userId: myUserId,
-    //         senderNickname: myNickname,
-    //         message: data.description,
-    //         imageUrl: null,
-    //         messageType: 'AUTH',
-    //         sentAt: new Date().toISOString(),
-    //         isMe: true,
-    //         reactions: {},
-    //     };
-    //     setMessages((prevMessages) => [...prevMessages, authMessage]);
-
-    //     const routineId = group.routines?.[0]?.id || 0;
-    //     onAddAuthMessage(group.groupId, data, myNickname, myUserId, routineId);
-
-    //     setIsAuthDialogOpen(false);
-    // };
-
     const handleDeleteGroup = async () => {
         if (!window.confirm("정말로 이 채팅에서 나가시겠습니까?")) return;
         try {
@@ -238,8 +191,7 @@ export function GroupChatScreen({ group, groupmembers, onBack, onLeaveGroup, use
         if (msg.senderNickname === myNickname) {
             return userInfo;
         }
-        //const member = groupmembers.find((m) => m.groupMemberId === msg.userId);
-const member = groupmembers.find((m) => m.memberName === msg.senderNickname);
+        const member = groupmembers.find((m) => m.memberName === msg.senderNickname);
         if (!member) {
             console.warn(`사용자 정보를 찾을 수 없습니다: userId ${msg.userId}`);
             return undefined;
@@ -254,38 +206,70 @@ const member = groupmembers.find((m) => m.memberName === msg.senderNickname);
     };
 
     const handleAuthSubmit = async (data: { description: string; image: File | null; isPublic: boolean }) => {
-        try {
+    if (!stompClientRef.current) {
+        alert("채팅 연결이 불안정하여 인증을 보낼 수 없습니다. 잠시 후 다시 시도해주세요.");
+        return;
+    }
+
+    try {
+        if (group.groupType === 'FREE') {
+            const activityData = {
+                description: data.description,
+                photo: data.image,
+                isPublic: data.isPublic,
+                groupId: group.groupId,
+            };
             
-            const members = await getGroupMembers(group.groupId);
-            const leader = members.find(member => member.role === 'LEADER');
-
-            if (!leader) {
-            alert('그룹 리더 정보를 찾을 수 없어 인증을 요청할 수 없습니다.');
-            return;
-            }
-
-            const authData = {
-            leaderId: leader.groupMemberId,
-            targetMemberId: userInfo.id as number,
-            activityDate: new Date().toISOString().split('T')[0],
-       
-            imageUrl: "https://placeholder.com/image.jpg",
+            await createGroupActivity(activityData);
+            
+            const msgBody = {
+                userId: myUserId,
+                senderNickname: myNickname,
+                message: data.description,
+                imageUrl: data.image ? URL.createObjectURL(data.image) : null,
+                messageType: 'NOTICE', 
             };
 
-            // 3. 수정한 이름의 함수를 호출합니다.
-            await requestAuthApproval(group.groupId, authData);
-            alert('인증이 성공적으로 제출되었습니다.');
+            stompClientRef.current.publish({
+                destination: `/app/chat.send/${roomId}`,
+                body: JSON.stringify(msgBody),
+            });
             
+            alert('자유그룹 인증이 성공적으로 제출되었습니다.');
+              
+        } else {
+            // REQUIRED 그룹 인증 요청 (기존 로직)
+            const authMessage = data.description;
+            const msgBody = {
+                userId: myUserId,
+                senderNickname: myNickname,
+                message: authMessage,
+                imageUrl: data.image ? URL.createObjectURL(data.image) : null,
+                messageType: 'NOTICE', 
+            };
 
-        } catch (error) {
-            alert('인증 제출에 실패했습니다.');
-            console.error(error);
+            stompClientRef.current.publish({
+                destination: `/app/chat.send/${roomId}`,
+                body: JSON.stringify(msgBody),
+            });
+            
+            alert('인증이 성공적으로 제출되었습니다.');
         }
-    };
+    } catch (error) {
+        // 오류 응답 확인
+        if (error.name === 'AuthError' || (error.response && error.response.status === 401)) {
+            alert('인증이 만료되었습니다. 다시 로그인해주세요.');
+            // 여기에서 로그인 페이지로 리디렉션하는 로직을 추가
+            // 예: window.location.href = '/login';
+        } else {
+            alert('인증 제출에 실패했습니다.');
+        }
+        console.error("🚨 최종 에러 핸들링:", error);
+    }
+};
 
     return (
         <div className="flex flex-col h-screen bg-background">
-            {/* 헤더 */}
             <div className="sticky top-0 z-10 bg-background/95 backdrop-blur border-b p-4">
                 <div className="mx-auto flex items-center justify-between">
                     <div className="flex-1 flex items-center space-x-3">
@@ -343,22 +327,20 @@ const member = groupmembers.find((m) => m.memberName === msg.senderNickname);
                     </div>
                 </div>
             </div>
-
             <GroupChatMessages
                 messages={messages}
                 myUserId={myUserId}
                 getUserInfo={getUserInfo}
-                handleReactionClick={handleReactionClick}
                 userInfo={userInfo}
+                group={group}
             />
             <GroupChatInput handleSendMessage={handleSendMessage} handleSendImage={handleSendImage} handleSendAlbum={handleSendAlbum} />
-
             <GroupRoutineDialog
                 isOpen={isAuthDialogOpen}
                 onOpenChange={setIsAuthDialogOpen}
                 onAuthSubmit={handleAuthSubmit}
-                isMandatory={group.groupType === 'REQUIRED'}
-                selectedRoutine={group.routines?.[0] || null}
+                selectedRoutine={group?.routines?.[0] || null}
+                group={group}
             />
         </div>
     );
