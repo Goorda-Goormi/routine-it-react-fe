@@ -58,7 +58,7 @@ const GroupCard = ({ group, onNavigate, onJoinGroup }: { group: Group, onNavigat
         참여하기
       </Button>
     </div>
-    <p className="text-xs text-left text-muted-foreground mb-2">{group.groupDescription}</p>
+    <p className="text-xs text-left text-muted-foreground mb-2">{group.description}</p>
     <div className="flex items-center justify-between text-xs text-muted-foreground">
       <span>{getCategoryEmoji(group.category)} {getCategoryName(group.category)}</span>
       <span>👥 {group.currentMemberCount}명</span>
@@ -68,7 +68,6 @@ const GroupCard = ({ group, onNavigate, onJoinGroup }: { group: Group, onNavigat
 );
 
 export function AllGroupsSection({ groups, onNavigate, onJoinGroup }: AllGroupsSectionProps) {
-  //const [visibleCount, setVisibleCount] = useState(2); // 초기값 2로 변경
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [selectedType, setSelectedType] = useState('all');
   const [showAll, setShowAll] = useState(false);
@@ -87,10 +86,8 @@ export function AllGroupsSection({ groups, onNavigate, onJoinGroup }: AllGroupsS
   return matchesCategory && matchesType;
   });
 
- // MyGroupsSection처럼 showAll 상태에 따라 렌더링할 그룹 목록을 결정
-  const groupsToShow = showAll ? filteredGroups : filteredGroups.slice(0, 2);
 
-  // 버튼을 렌더링할지 결정하는 변수
+  const groupsToShow = showAll ? filteredGroups : filteredGroups.slice(0, 2);
   const shouldShowToggleButton = filteredGroups.length > 2;
   
 

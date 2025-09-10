@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '../../../components/ui
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../../components/ui/tabs';
 import { Badge } from '../../../components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '../../../components/ui/avatar';
-import { Trophy, Calendar, Crown } from 'lucide-react';
+import { Trophy, Calendar, Crown, Users } from 'lucide-react';
 import type { GroupMemberResponse } from '../../../interfaces';
 
 interface GroupDetailTabsProps {
@@ -79,7 +79,10 @@ export const GroupDetailTabs = ({
       <TabsContent value="members" className="mt-4">
         <Card>
           <CardHeader className="pb-3">
-            <CardTitle className="text-base text-card-foreground">그룹 멤버</CardTitle>
+            <CardTitle className="flex items-center space-x-2 text-base text-card-foreground">
+              <Users className="h-4 w-4 icon-accent" />
+              <span>그룹 멤버</span>
+              </CardTitle>
           </CardHeader>
           <CardContent className="pt-0">
             <div className="space-y-0">

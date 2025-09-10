@@ -1,4 +1,4 @@
-//import api from "./api";
+
 import { apiFetch } from "./client";
 import type { GroupMemberResponse, Group } from "../interfaces";
 
@@ -14,7 +14,6 @@ export interface GroupRequest {
 }
 
 //그룹 생성
-
 export async function createGroup(data: GroupRequest) {
   try {
     const createdData = await apiFetch("/groups", {
@@ -46,15 +45,12 @@ export async function updateGroup(groupId: number, data: GroupRequest) {
 
 // 전체 그룹 리스트 조회
 export async function getAllGroups(): Promise<Group[]> {
-  // apiFetch가 이미 JSON을 반환하므로, 바로 변수에 할당합니다.
   try {
     const allGroups = await apiFetch("/groups", {
        method: "GET" 
       });
-    return allGroups; // JSON 데이터가 담긴 배열을 반환
+    return allGroups; 
   } catch (error) {
-    // apiFetch에서 이미 에러를 throw하므로, 여기서는 단순히 다시 던지거나
-    // 특정 에러 메시지를 추가하면 됩니다.
     console.error("Failed to fetch all groups:", error);
     throw new Error("전체 그룹 조회 실패");
   }
@@ -65,7 +61,7 @@ export async function getAllGroups(): Promise<Group[]> {
 export async function getJoinedGroups(): Promise<Group[]> {
   try {
     const joinedGroups = await apiFetch("/groups/joined", { method: "GET" });
-    return joinedGroups; // JSON 데이터가 담긴 배열을 반환
+    return joinedGroups; 
   } catch (error) {
     console.error("Failed to fetch joined groups:", error);
     throw new Error("가입된 그룹 조회 실패");
@@ -83,8 +79,8 @@ export async function getGroupDetail(groupId: number) {
     throw new Error("그룹 상세 조회 실패");
   }
 }
-// 그룹 멤버 목록 조회
 
+// 그룹 멤버 목록 조회
 export async function getGroupMembers(groupId: number): Promise<GroupMemberResponse[]> {
   try {
     const members = await apiFetch(`/group/${groupId}/members`, {
@@ -98,14 +94,13 @@ export async function getGroupMembers(groupId: number): Promise<GroupMemberRespo
 }
 
 // 그룹 탈퇴 (그룹 삭제)
-
 export async function deleteGroup(groupId: number) {
   try {
     await apiFetch(`/groups/${groupId}`, {
       method: "DELETE",
     });
     console.log(`그룹 ${groupId} 탈퇴 성공`);
-    return true; // 성공적으로 탈퇴했음을 알리기 위해 true 반환
+    return true; 
   } catch (error) {
     console.error(`그룹 ${groupId} 탈퇴 실패:`, error);
     throw new Error("그룹 탈퇴 실패");
@@ -129,7 +124,7 @@ interface UpdateAuthStatusPayload {
   groupId: number;
   leaderId: number;
   targetMemberId: number;
-  approved: boolean; // true: 승인, false: 거절
+  approved: boolean;
 }
 
 export async function updateAuthStatus(payload: UpdateAuthStatusPayload) {
@@ -139,7 +134,7 @@ export async function updateAuthStatus(payload: UpdateAuthStatusPayload) {
   });
 }
 
-// ▼▼▼ 아래 함수를 새로 추가하세요 ▼▼▼
+
 /**
  * 그룹 루틴을 인증합니다.
  * @param groupId - 그룹 ID
@@ -153,12 +148,10 @@ interface AuthRequestPayload {
 }
 
 export async function requestAuthApproval(groupId: number, authData: AuthRequestPayload) {
-  // approved: true 필드를 추가하여 서버에 승인 요청을 보냅니다.
-  // 이 API가 인증 요청과 승인을 동시에 처리하는 것으로 보입니다.
   const payload = {
     ...authData,
     groupId,
-    approved: true // 랭킹 업데이트를 위해 true로 설정
+    approved: true // 랭킹 업데이트를 위해 true
   };
 
   return apiFetch(`/group/${groupId}/approve-auth`, {

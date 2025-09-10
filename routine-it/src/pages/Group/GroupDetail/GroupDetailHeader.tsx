@@ -4,7 +4,6 @@ import {
   Users,
   MessageCircle,
   Settings,
-  Crown,
 } from 'lucide-react';
 import { Card, CardContent } from '../../../components/ui/card';
 import { Button } from '../../../components/ui/button';
@@ -18,23 +17,20 @@ import {
 } from '../../../components/ui/dropdown-menu';
 
 import type { Group, GroupMemberResponse } from '../../../interfaces';
-import { deleteGroup, requestJoinGroup } from '../../../api/group';
+import {  requestJoinGroup } from '../../../api/group';
 
 interface GroupDetailHeaderProps {
   group: Group;
   isJoined: boolean;
   isLeader: boolean;
   onBack: () => void;
- // onJoinGroup: () => void;
   onChatClick: () => void;
-  //onRoutineAuthClick: () => void;
   onOpenEdit: () => void;
   onOpenApproval: () => void;
   onOpenExMembers: () => void;
   pendingAuthCount: number;
   groupMembers: GroupMemberResponse[];
   onGroupDeleted: () => void; 
-  //myid: string | number;
   myid : number;
   onGroupJoined: () => void;
 }
@@ -44,9 +40,7 @@ export const GroupDetailHeader = ({
   isJoined,
   isLeader,
   onBack,
- // onJoinGroup,
   onChatClick,
-  //onRoutineAuthClick,
   onOpenEdit,
   onOpenApproval,
   onOpenExMembers,
@@ -118,7 +112,7 @@ console.log('--- GroupDetailHeader Variables ---');
           <h1 className="font-bold text-card-foreground">그룹 상세</h1>
         </div>
         <div className="flex items-center space-x-2">
-          <Button variant="ghost" size="sm" className="text-card-foreground hover:text-card-foreground"></Button>
+         
           <DropdownMenu>
             <DropdownMenuTrigger asChild disabled={!isLeader}>
               <Button

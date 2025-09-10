@@ -6,7 +6,6 @@ import { Textarea } from '../../../components/ui/textarea';
 import { Label } from '../../../components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../../components/ui/select';
 import { RadioGroup, RadioGroupItem } from '../../../components/ui/radio-group';
-import { Switch } from '../../../components/ui/switch';
 import { Badge } from '../../../components/ui/badge';
 import { Alert, AlertDescription, AlertTitle } from '../../../components/ui/alert';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '../../../components/ui/dialog';

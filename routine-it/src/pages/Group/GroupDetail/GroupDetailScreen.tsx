@@ -5,7 +5,7 @@ import { GroupDetailTabs } from './GroupDetailTabs';
 import { GroupMemberManager } from './GroupMemberManager';
 import GroupEdit from './GroupEdit';
 import { GroupApproval } from './GroupApproval';
-import type { AuthMessage, GroupMemberResponse, NotificationApiResponse } from "../../../interfaces";
+import type {  GroupMemberResponse } from "../../../interfaces";
 import { 
     deleteGroup, 
     delegateLeader, 
@@ -49,86 +49,8 @@ export function GroupDetailScreen({
     const [showApprovalModal, setShowApprovalModal] = useState(false);
     const [pendingInvites, setPendingInvites] = useState<GroupMemberResponse[]>([]);
     const [pendingAuthCount, setPendingAuthCount] = useState(0);
-
-    const group = groups.find((g) => g.groupId === groupId);
-
-    if (!group) {
-        return <div>그룹 정보를 불러오는 중이거나, 그룹을 찾을 수 없습니다.</div>;
-    }
-
-    const isLeader = group?.leaderName === currentUser.nickname;
     const [weeklyRanking, setWeeklyRanking] = useState<GlobalGroupRankingData[]>([]);
     const [recentActivities, setRecentActivities] = useState<any[]>([]);
-
-    const handleChatClick = () => onNavigate('group-chat', group);
-    
-    const handleMemberClick = (member: GroupMemberResponse) => {
-        if (!member || !member.userId || !member.memberName) {
-            console.error("전달된 멤버 객체에 필수 정보가 없습니다:", member);
-            return;
-        }
-        
-        const userForNav = {
-            id: member.userId,
-            nickname: member.memberName,
-        };
-
-        onNavigate('user-home', userForNav);
-    };
-
-    const handleKickMember = async (targetMemberId: number) => {
-        try {
-            const currentLeader = groupMembers.find(m => m.memberName === group.leaderName);
-            
-            if (!currentLeader || !currentLeader.groupMemberId) {
-                alert("리더의 정보를 찾을 수 없습니다.");
-                return;
-            }
-
-            console.log("전송 데이터:", {
-                groupId: groupId,
-                leaderId: currentLeader.groupMemberId,
-                targetMemberId: targetMemberId,
-                status: "BLOCKED",
-                role: "MEMBER",
-                approved: false
-            });
-
-            const response = await updateGroupMemberStatus(groupId, {
-                groupId: groupId,  
-                leaderId: currentLeader.groupMemberId,
-                targetMemberId: targetMemberId,
-                status: "BLOCKED",
-                role: "MEMBER",
-                approved: false
-            });
-
-
-            if (response && response.status === "BLOCKED") {
-                alert('멤버가 성공적으로 그룹에서 내보내졌습니다.');
-                setShowExMembersModal(false);
-                onUpdateGroup({ ...group, members: groupMembers.filter(m => m.groupMemberId !== targetMemberId) });
-            } else {
-                alert('멤버 내보내기에 실패했습니다.');
-            }
-        } catch (error) {
-            console.error("멤버 내보내기 실패:", error);
-            alert('멤버 내보내기에 실패했습니다.');
-        }
-    };
-
-    const handleGroupDeleted = async () => {
-        if (group?.groupId) {
-            try {
-                await deleteGroup(group.groupId);
-                alert("그룹이 성공적으로 삭제되었습니다.");
-                onDeleteGroupSuccess();
-            } catch (error) {
-                console.error("그룹 삭제 실패:", error);
-                alert("그룹 삭제에 실패했습니다.");
-            }
-        }
-    };
 
     useEffect(() => {
         const fetchData = async () => {
@@ -177,6 +99,86 @@ export function GroupDetailScreen({
 
         fetchData();
     }, [groupId, currentUser.id]);
+    
+    const group = groups.find((g) => g.groupId === groupId);
+
+    if (!group) {
+        return <div>그룹 정보를 불러오는 중이거나, 그룹을 찾을 수 없습니다.</div>;
+    }
+
+    const isLeader = group?.leaderName === currentUser.nickname;
+    
+    const handleChatClick = () => onNavigate('group-chat', group);
+    
+    const handleMemberClick = (member: GroupMemberResponse) => {
+        if (!member || !member.userId || !member.memberName) {
+            console.error("전달된 멤버 객체에 필수 정보가 없습니다:", member);
+            return;
+        }
+        
+        const userForNav = {
+            id: member.userId,
+            nickname: member.memberName,
+        };
+
+        onNavigate('user-home', userForNav);
+    };
+
+    const handleKickMember = async (targetMemberId: number) => {
+        try {
+            const currentLeader = groupMembers.find(m => m.memberName === group.leaderName);
+            
+            if (!currentLeader || !currentLeader.groupMemberId) {
+                alert("리더의 정보를 찾을 수 없습니다.");
+                return;
+            }
+
+            console.log("전송 데이터:", {
+                groupId: groupId,
+                leaderId: currentLeader.groupMemberId,
+                targetMemberId: targetMemberId,
+                status: "BLOCKED",
+                role: "MEMBER",
+                approved: false
+            });
+
+            const response = await updateGroupMemberStatus(groupId, {
+                groupId: groupId,
+                leaderId: currentLeader.groupMemberId,
+                targetMemberId: targetMemberId,
+                status: "BLOCKED",
+                role: "MEMBER",
+                approved: false
+            });
+
+
+            if (response && response.status === "BLOCKED") {
+                alert('멤버가 성공적으로 그룹에서 내보내졌습니다.');
+                setShowExMembersModal(false);
+                onUpdateGroup({ ...group, members: groupMembers.filter(m => m.groupMemberId !== targetMemberId) });
+            } else {
+                alert('멤버 내보내기에 실패했습니다.');
+            }
+        } catch (error) {
+            console.error("멤버 내보내기 실패:", error);
+            alert('멤버 내보내기에 실패했습니다.');
+        }
+    };
+
+    const handleGroupDeleted = async () => {
+        if (group?.groupId) {
+            try {
+                await deleteGroup(group.groupId);
+                alert("그룹이 성공적으로 삭제되었습니다.");
+                onDeleteGroupSuccess();
+            } catch (error) {
+                console.error("그룹 삭제 실패:", error);
+                alert("그룹 삭제에 실패했습니다.");
+            }
+        }
+    };
+
+    
 
     const handleDelegateLeader = async (targetMemberId: number, targetMemberName: string) => {
         try {
