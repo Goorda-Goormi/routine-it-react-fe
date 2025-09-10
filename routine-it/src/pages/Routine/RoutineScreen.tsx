@@ -34,8 +34,8 @@ export interface RecommendedRoutine {
 interface RoutineScreenProps {
   onNavigate: (screen: string, params?: any) => void;
   allRoutines: Routine[];
-  recommendedRoutines: RecommendedRoutine[]; // [수정] App.tsx로부터 추천 루틴 데이터를 Props로 받도록 추가
-  onToggleCompletion: (routineId: number, isGroupRoutine?: boolean) => void;
+  recommendedRoutines: RecommendedRoutine[]; 
+  onCompletePersonalRoutine: (routineId: number) => void;
   onAddRecommendedRoutine: (routine: RecommendedRoutine) => void;
   onOpenAttendanceModal: () => void;
   onOpenStreakModal: (streakDays: number) => void;
@@ -47,12 +47,10 @@ interface RoutineScreenProps {
   //pendingAuthMessages: { [groupId: number]: AuthMessage[] };
 }
 
-export function RoutineScreen({ onNavigate, allRoutines, recommendedRoutines, onToggleCompletion, onAddRecommendedRoutine, onOpenAttendanceModal, onOpenStreakModal, onOpenBadgeModal, initialUserInfo, participatingGroups, allGroups }: RoutineScreenProps) {
+export function RoutineScreen({ onNavigate, allRoutines, recommendedRoutines, onCompletePersonalRoutine, onAddRecommendedRoutine, onOpenAttendanceModal, onOpenStreakModal, onOpenBadgeModal, initialUserInfo, participatingGroups, allGroups }: RoutineScreenProps) {
   const [activeFilter, setActiveFilter] = useState('today');
   const todayDay = getTodayDayOfWeek();
-  const [isGroupDialogOpen, setIsGroupDialogOpen] = useState(false);
-  const [selectedRoutine, setSelectedRoutine] = useState<Routine | null>(null);
- 
+  
   const todayRoutines = allRoutines.filter(routine => {
     if (routine.frequency && Array.isArray(routine.frequency)) {
       return routine.frequency.includes(todayDay);
@@ -97,57 +95,6 @@ export function RoutineScreen({ onNavigate, allRoutines, recommendedRoutines, on
     onNavigate('create-routine');
   };
 
-  const handleGroupAuthClick = (routine: Routine, e: React.MouseEvent) => {
-    e.stopPropagation();
-    setSelectedRoutine(routine);
-    setIsGroupDialogOpen(true);
-  };
-
-  const handleGroupAuthSubmit = async (data: { description: string; image: File | null; isPublic: boolean }) => {
-    if (!selectedRoutine) return;
-
-    const group = (participatingGroups || []).find(g => 
-        g.routines?.some(r => r.id === selectedRoutine.id)
-    );
-    
-    
-    if (group && group.groupId) {
-      try {
-          // 1. 해당 그룹의 전체 멤버 목록을 불러옵니다.
-          const members = await getGroupMembers(group.groupId);
-          
-          // 2. 멤버 목록에서 리더(role === 'LEADER')를 찾습니다.
-          const leader = members.find(member => member.role === 'LEADER');
-          
-          // 3. 리더를 찾지 못하면 오류 처리 후 함수를 종료합니다.
-          if (!leader) {
-            alert('그룹 리더 정보를 찾을 수 없어 인증을 요청할 수 없습니다.');
-            setIsGroupDialogOpen(false);
-            return;
-          }
-
-          // 4. API 명세서에 맞는 AuthRequestPayload 객체를 생성합니다.
-          const authData = {
-            leaderId: leader.groupMemberId, // 찾은 리더의 ID를 사용합니다.
-            targetMemberId: initialUserInfo.id as number,
-            activityDate: new Date().toISOString().split('T')[0],
-            // TODO: 실제 이미지 업로드 후 받은 URL로 교체해야 합니다.
-            imageUrl: "https://placeholder.com/image.jpg", 
-          };
-
-          // 5. 새로 만든 객체로 API를 호출합니다.
-          await requestAuthApproval(group.groupId, authData);
-          alert('인증이 성공적으로 제출되었습니다.');
-
-      } catch (error) {
-          alert('인증 제출에 실패했습니다.');
-          console.error(error);
-      }
-  }
-
-    setIsGroupDialogOpen(false);
-};
-
   const getButtonOrCheckbox = (routine: Routine) => {
     const groupId = (participatingGroups || []).find(group => 
       group.routines?.some(r => r.id === routine.id)
@@ -163,9 +110,15 @@ export function RoutineScreen({ onNavigate, allRoutines, recommendedRoutines, on
         } else {
           return (
             <button
-              onClick={(e) => handleGroupAuthClick(routine, e)}
-              className="w-auto h-8 rounded-full flex items-center justify-center transition-colors px-2 py-1 text-xs text-foreground border border-border/60 hover:bg-accent"
-            >  
+              onClick={(e) => {
+                e.stopPropagation();
+                const group = participatingGroups.find(g => g.groupId === routine.id);
+                if (group) {
+                  onNavigate('group-chat', group);
+                }
+              }}
+              className="w-auto h-8 rounded-full flex items-center justify-center ... px-3 py-1 text-xs ..."
+            >
               <span className="flex items-center">
                 {routine.type === '의무참여' && <Camera className="h-3 w-3 mr-1 text-foreground/70" />}
                 인증
@@ -178,7 +131,7 @@ export function RoutineScreen({ onNavigate, allRoutines, recommendedRoutines, on
         <button
           onClick={(e) => {
             e.stopPropagation();
-            onToggleCompletion(routine.id);
+            onCompletePersonalRoutine(routine.id);
             onOpenAttendanceModal(); 
           }}
           className={`w-8 h-8 rounded-full flex items-center justify-center transition-colors m-0 border-0 ${
@@ -364,13 +317,6 @@ export function RoutineScreen({ onNavigate, allRoutines, recommendedRoutines, on
           </Card>
         </TabsContent>
       </Tabs>
-      <GroupRoutineDialog
-        isOpen={isGroupDialogOpen}
-        onOpenChange={setIsGroupDialogOpen}
-        onAuthSubmit={handleGroupAuthSubmit}
-        selectedRoutine={selectedRoutine}
-        isMandatory={selectedRoutine?.type === '의무참여'}
-      />
     </div>
   );
 }

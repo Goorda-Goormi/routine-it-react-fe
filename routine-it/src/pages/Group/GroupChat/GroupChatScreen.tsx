@@ -34,7 +34,7 @@ export interface Message {
     albumImages?: string[];
 }
 
-export function GroupChatScreen({ group, groupmembers, onBack, onLeaveGroup, userInfo }) {
+export function GroupChatScreen({ group, groupmembers, onBack, onLeaveGroup, userInfo, onDataRefresh }) {
     const [isAuthDialogOpen, setIsAuthDialogOpen] = useState(false);
     const [isMembersDialogOpen, setIsMembersDialogOpen] = useState(false);
     const [messages, setMessages] = useState<Message[]>([]);
@@ -243,6 +243,9 @@ export function GroupChatScreen({ group, groupmembers, onBack, onLeaveGroup, use
                     destination: `/app/chat.send/${roomId}`,
                     body: JSON.stringify(msgBody),
                 });
+
+                onDataRefresh();
+                onBack();
                 
                 alert('자유그룹 인증이 성공적으로 제출되었습니다.');
                     
@@ -261,6 +264,9 @@ export function GroupChatScreen({ group, groupmembers, onBack, onLeaveGroup, use
                     destination: `/app/chat.send/${roomId}`,
                     body: JSON.stringify(msgBody),
                 });
+
+                onDataRefresh(); 
+                onBack();
                 
                 alert('인증이 성공적으로 제출되었습니다.');
             }

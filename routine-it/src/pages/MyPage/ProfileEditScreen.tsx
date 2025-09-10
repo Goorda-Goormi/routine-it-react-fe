@@ -38,7 +38,6 @@ export function ProfileEditScreen({
     email: userInfo.email,
     profileMessage: userInfo.profileMessage,
     profileImageUrl: userInfo.profileImageUrl
-    // 초기 prop에 없는 필드는 예시 데이터로 추가
   });
 
   // 아바타 URL 상태 추가

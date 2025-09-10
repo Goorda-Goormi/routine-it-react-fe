@@ -55,7 +55,22 @@ export function GroupDetailScreen({
     const [recentActivities, setRecentActivities] = useState<any[]>([]);
 
     const handleChatClick = () => onNavigate('group-chat', group);
-    const handleMemberClick = (member: any) => onNavigate('user-home', member);
+    const handleMemberClick = (member: GroupMemberResponse) => {
+      // 1. 클릭된 멤버 객체에 필요한 정보(userId, memberName)가 있는지 확인합니다.
+      if (!member || !member.userId || !member.memberName) {
+        console.error("전달된 멤버 객체에 필수 정보가 없습니다:", member);
+        return;
+      }
+      
+      // 2. UserHomeScreen에서 필요로 하는 형식({ id, nickname })으로 객체를 만들어줍니다.
+      const userForNav = {
+        id: member.userId,       // member 객체의 'userId'를 'id'로 매핑
+        nickname: member.memberName, // member 객체의 'memberName'을 'nickname'으로 매핑
+      };
+
+      // 3. onNavigate 함수를 호출하여 화면을 전환합니다.
+      onNavigate('user-home', userForNav);
+    };
 
    const handleKickMember = async (targetMemberId: number) => {
         try {

@@ -72,10 +72,13 @@ export interface Member {
 // API 응답에 정확히 매핑되는 인터페이스
 export interface GroupMemberResponse {
   groupMemberId: number;
+  userId: number;        // ✨ 이 필드가 있는지 확인
+  nickname: string; 
   groupName: string;
   memberName: string;
   status: 'PENDING' | 'JOINED' | 'BLOCKED' | 'LEFT';
   role: 'LEADER' | 'MEMBER';
+  profileImageUrl: string;
   message: string;
   createdAt: string;
   updatedAt: string;

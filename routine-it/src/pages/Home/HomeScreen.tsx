@@ -4,11 +4,11 @@ import { Button } from '../../components/ui/button';
 import { Progress } from '../../components/ui/progress';
 import { Badge } from '../../components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '../../components/ui/avatar';
-import { Calendar, Target, Trophy, Users, Camera, CheckCircle, Plus, TrendingUp, Clock, Heart, MessageCircle, Flame, ChevronLeft, ChevronRight, X } from 'lucide-react';
+import { Target, Users, Camera, CheckCircle, Plus, TrendingUp, ChevronLeft, ChevronRight, X } from 'lucide-react';
 import { ImageWithFallback } from '../../components/figma/ImageWithFallback';
 import { getStreakInfo, getStreakMessage } from '../../components/utils/streakUtils';
 import { GroupRoutineDialog } from '../../pages/Group/GroupChat/GroupRoutineDialog';
-import type { AuthMessage,Routine,Group,Member,PendingAuthMap } from '../../interfaces';
+import type { Routine, Group, Member, GroupMemberResponse } from '../../interfaces';
 
 const getTodayDayOfWeek = () => {
   const dayOfWeek = ['일', '월', '화', '수', '목', '금', '토'];
@@ -28,16 +28,14 @@ interface HomeScreenProps {
   onNavigate: (screen: string, params?: any) => void;
   userInfo: UserInfo;
   routines: Routine[];
-  onToggleCompletion: (routineId: number, isGroupRoutine?: boolean) => void;
+  onCompletePersonalRoutine: (routineId: number) => void;
   streakDays: number;
   participatingGroups: Group[];
   //pendingAuthMessages: PendingAuthMap;
   onOpenAttendanceModal: () => void;
   onOpenStreakModal: (streakDays: number) => void;
   onOpenBadgeModal: (badgeName: string, badgeImage: string) => void;
-//   onAddAuthMessage: (groupId: number, data: any, nickname: string, userId: string | number, routineId: number) => void;
-//   onApproveAuthMessage: (groupId: number, authId: number) => void;
-//   onRejectAuthMessage: (groupId: number, authId: number) => void;
+  userTotalScore: number | null;
 }
 
 interface VerificationPhoto {
@@ -52,22 +50,19 @@ export function HomeScreen({
   onNavigate,
   userInfo,
   routines,
-  onToggleCompletion,
+  onCompletePersonalRoutine,
   streakDays,
   participatingGroups,
-  //pendingAuthMessages,
   onOpenAttendanceModal,
   onOpenStreakModal,
   onOpenBadgeModal,
-  //onAddAuthMessage,
-  //onApproveAuthMessage,
-  //onRejectAuthMessage,
+  userTotalScore
+  
 }: HomeScreenProps) {
+  console.log('🟢 HomeScreen이 받은 userTotalScore:', userTotalScore);
   const today = new Date();
   const todayString = today.toLocaleDateString('ko-KR', { month: 'long', day: 'numeric' });
 
-  const [isGroupDialogOpen, setIsGroupDialogOpen] = useState(false);
-  const [selectedRoutine, setSelectedRoutine] = useState<Routine | null>(null);
   const [routineStates, setRoutineStates] = useState<Record<number, 'completed' | 'pending' | 'initial'>>({});
 
   useEffect(() => {
@@ -81,13 +76,7 @@ export function HomeScreen({
     setRoutineStates(newRoutineStates);
   }, [routines]);
 
-  const handleGroupAuthClick = (routine: Routine, e: React.MouseEvent) => {
-    e.stopPropagation();
-      console.log('클릭된 루틴:', routine);
-    setSelectedRoutine(routine);
-    setIsGroupDialogOpen(true);
-  };
-
+  
   const streakInfo = getStreakInfo(streakDays);
 
   const todayDay = getTodayDayOfWeek();
@@ -118,8 +107,18 @@ export function HomeScreen({
     onNavigate('group-detail', group);
   };
 
-  const handleMemberClick = (member: Member) => {
-    onNavigate('user-home', member);
+  const handleMemberClick = (member: Member & { userId?: number }) => {
+
+    const memberId = member.id || member.userId;
+    if (!memberId) {
+      console.error("클릭된 멤버 객체에 id 또는 userId가 없습니다!", member);
+      return; // ID가 없으면 네비게이션을 막습니다.
+    }
+    const userForNav = {
+      id: member.id, 
+      nickname: member.nickname,
+    };
+    onNavigate('user-home', userForNav);
   };
 
   const handlePhotoClick = (index: number) => {
@@ -140,28 +139,6 @@ export function HomeScreen({
     if (selectedPhotoIndex !== null && selectedPhotoIndex < publicVerificationPhotos.length - 1) {
       setSelectedPhotoIndex(selectedPhotoIndex + 1);
     }
-  };
-
-  const toggleRoutineCompletion = (routineId: number, e: React.MouseEvent) => {
-    e.stopPropagation();
-    onToggleCompletion(routineId);
-  };
-
-  const handleGroupAuthSubmit = (data: { description: string; image: File | null; isPublic: boolean }) => {
-    if (!selectedRoutine) return;
-
-    const groupId = participatingGroups.find(group => group.routines?.some(r => r.id === selectedRoutine.id))?.groupId;
-
-    if (groupId) {
-      //(groupId, { ...data, id: Date.now() }, userInfo.nickname ?? '', userInfo.id, selectedRoutine.id);
-
-      setRoutineStates(prevStates => ({
-        ...prevStates,
-        [selectedRoutine.id]: 'pending',
-      }));
-    }
-
-    setIsGroupDialogOpen(false);
   };
 
   const completedRoutines = allTodayRoutines.filter(routine => {
@@ -219,7 +196,7 @@ export function HomeScreen({
                   <TrendingUp className="h-4 w-4 text-white" />
                 </div>
                 <div className="text-center">
-                  <div className="text-xl font-bold text-card-lavender-text">{userInfo.exp.toLocaleString()}</div>
+                  <div className="text-xl font-bold text-card-lavender-text">{(userTotalScore ?? 0).toLocaleString()}</div>
                   <div className="text-xs font-normal text-card-lavender-text/80">누적점수</div>
                 </div>
               </div>
@@ -302,16 +279,16 @@ export function HomeScreen({
                             <div className="w-8 h-8 rounded-full flex items-center justify-center transition-colors p-0 m-0 bg-green-500">
                               <CheckCircle className="h-5 w-5 text-white" />
                             </div>
-                          ) : isPending ? (
-                            <Badge
-                              variant="secondary"
-                              className="bg-orange-100 text-orange-600 border border-orange-300 dark:bg-orange-900/40 dark:text-orange-300 dark:border-orange-800"
-                            >
-                              승인 대기
-                            </Badge>
                           ) : (
                             <button
-                              onClick={(e) => handleGroupAuthClick(routine, e)}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                const group = participatingGroups.find(g => g.groupId === routine.id);
+                                if (group) {
+                                  // 그룹 채팅 화면으로 이동시킵니다.
+                                  onNavigate('group-chat', group);
+                                }
+                              }}
                               className="w-auto h-8 rounded-full flex items-center justify-center transition-colors px-3 py-1 text-xs text-foreground border-2 border-border/60 hover:bg-accent"
                             >
                               <span className="flex items-center">
@@ -323,7 +300,7 @@ export function HomeScreen({
                         ) : (
                           <button
                             onClick={(e) => {
-                              toggleRoutineCompletion(routine.id, e);
+                              onCompletePersonalRoutine(routine.id);
                               onOpenAttendanceModal();
                             }}
                             className={`w-8 h-8 rounded-full flex items-center justify-center transition-colors m-0 border-0 ${
@@ -368,19 +345,17 @@ export function HomeScreen({
                     onClick={() => handleGroupClick(group)}
                   >
                     <div className="flex items-center space-x-3 flex-1">
-                      <div className="flex -space-x-2 w-20">
-                        {group.recentMembers && group.recentMembers.slice(0, 3).map((member, memberIndex) => (
-                          <Avatar
+                      <div className="flex space-x-2 w-20">
+                        {group.recentMembers && group.recentMembers.map((member:  Member) => (
+                          <div
                             key={member.id}
-                            className="w-8 h-8 border-2 border-background cursor-pointer hover:scale-110 transition-transform"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleMemberClick(member);
-                            }}
+                            className="cursor-pointer hover:scale-110 transition-transform" 
                           >
-                            <AvatarImage src={member.profileImageUrl} alt={member.nickname} />
-                            <AvatarFallback className="text-xs">{member.nickname.charAt(0)}</AvatarFallback>
-                          </Avatar>
+                            <Avatar className="w-8 h-8 border-2 border-background">
+                              <AvatarImage src={member.profileImageUrl} alt={member.nickname} />
+                              <AvatarFallback className="text-xs">{member.nickname.charAt(0)}</AvatarFallback>
+                            </Avatar>
+                          </div>
                         ))}
                       </div>
                       <div className='flex flex-col items-start ml-2'>
@@ -444,13 +419,6 @@ export function HomeScreen({
           </div>
         </CardContent>
       </Card>
-      <GroupRoutineDialog
-        isOpen={isGroupDialogOpen}
-        onOpenChange={setIsGroupDialogOpen}
-        onAuthSubmit={handleGroupAuthSubmit}
-        selectedRoutine={selectedRoutine}
-        isMandatory={selectedRoutine?.type === '의무참여'}
-      />
 
       {/* 갤러리 모달 */}
             {selectedPhotoIndex !== null && (
