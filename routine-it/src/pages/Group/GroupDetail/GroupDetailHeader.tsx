@@ -180,13 +180,7 @@ console.log('--- GroupDetailHeader Variables ---');
                     <MessageCircle className="h-4 w-4 mr-2 icon-primary" />
                     채팅하기
                   </Button>
-                  <Button
-                    onClick={onRoutineAuthClick}
-                    variant="outline"
-                    className="flex-1 text-card-foreground border-border hover:bg-accent hover:text-card-foreground"
-                  >
-                    인증하기
-                  </Button>
+                  
                 </div>
               )}
             </div>
