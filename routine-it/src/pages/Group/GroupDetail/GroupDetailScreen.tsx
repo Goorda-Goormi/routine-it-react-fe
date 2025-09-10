@@ -206,19 +206,26 @@ export function GroupDetailScreen({
 
 
     const handleOpenApprovalModal = async () => {
-        try {
-            const inviteNotifications = await getNotificationsByType('GROUP_JOIN_REQUEST');
-            const inviteMessages = inviteNotifications.map((notification: NotificationApiResponse) => ({
-                id: notification.id,
-                user: notification.senderName
-            }));
-            setPendingInvites(inviteMessages);
-            setShowApprovalModal(true);
-        } catch (error) {
-            alert("알림 목록을 불러오는데 실패했습니다.");
-            console.error(error);
-        }
-    };
+    try {
+        const inviteNotifications = await getNotificationsByType('GROUP_JOIN_REQUEST');
+        
+        // 현재 그룹의 이름(currentGroupName)과 일치하는 알림만 필터링
+        const currentGroupNotifications = inviteNotifications.filter(
+            (notification) => notification.groupName === group.groupName
+        );
+
+        const inviteMessages = currentGroupNotifications.map((notification) => ({
+            id: notification.id,
+            user: notification.senderName
+        }));
+
+        setPendingInvites(inviteMessages);
+        setShowApprovalModal(true);
+    } catch (error) {
+        alert("알림 목록을 불러오는데 실패했습니다.");
+        console.error(error);
+    }
+};
 
     const handleApprove = async (notificationId: number) => {
         try {
