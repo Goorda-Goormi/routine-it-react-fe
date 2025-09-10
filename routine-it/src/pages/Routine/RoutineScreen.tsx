@@ -29,6 +29,7 @@ export interface RecommendedRoutine {
   streak: number;
   difficulty: string;
   isGroupRoutine: boolean;
+  isPublic: boolean;
 }
 
 interface RoutineScreenProps {

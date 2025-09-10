@@ -929,25 +929,37 @@ const handleToggleRoutinePublic = async (routineId: number) => {
   }
 };
 
-  const handleAddRecommendedRoutine = (recommendedRoutine: RecommendedRoutine) => {
-    // 추천 루틴 데이터를 기반으로 새로운 루틴 객체 생성
-    const newRoutine = {
-        id: Math.random(),
-        name: recommendedRoutine.name,
-        description: recommendedRoutine.description,
-        category: recommendedRoutine.category,
-        difficulty: recommendedRoutine.difficulty,
-        time: '09:00',
-        frequency: ["월", "화", "수", "목", "금", "토", "일"],
-        reminder: true,
-        goal: '30',
-        completed: false,
-        streak: 0,
-        isGroupRoutine: false,
-        isPublic: true
+  const handleAddRecommendedRoutine = async (recommendedRoutine: RecommendedRoutine) => {
+    if (!UserInfo) {
+      alert("로그인 정보가 없습니다.");
+      return;
+    }
+
+    const payload: PersonalRoutineCreatePayload = {
+      userId: UserInfo.id as number,
+      routineName: recommendedRoutine.name,
+      description: recommendedRoutine.description,
+      startTime: recommendedRoutine.time,
+      repeatDays: convertFrequencyToAuthDays(recommendedRoutine.frequency || []),
+      startDate: new Date().toISOString().split('T')[0], // 시작일은 오늘로 설정
+      endDate: '2099-12-31', // 종료일은 먼 미래로 설정
+      isAlarmOn: recommendedRoutine.reminder,
+      isPublic: recommendedRoutine.isPublic,
     };
 
-    setPersonalRoutines(prevRoutines => [...prevRoutines, newRoutine]);
+    try {
+      // 3. 개인 루틴 생성 API를 호출합니다.
+      await createPersonalRoutine(payload);
+      
+      // 4. 성공 시, 전체 루틴 목록을 다시 불러와 화면을 갱신합니다.
+      await fetchPersonalRoutines();
+      
+      alert(`'${recommendedRoutine.name}' 루틴이 추가되었습니다.`);
+
+    } catch (error) {
+      console.error("추천 루틴 추가 실패:", error);
+      alert("루틴 추가에 실패했습니다.");
+    }
   };
 
   const handleDeleteRoutine = async (routineId: number, isGroupRoutine?: boolean) => {
