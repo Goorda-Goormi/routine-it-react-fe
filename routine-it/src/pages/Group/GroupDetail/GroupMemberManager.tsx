@@ -4,15 +4,12 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { Avatar, AvatarFallback } from '../../../components/ui/avatar';
 import { MinusCircle, Crown } from 'lucide-react';
 import type { GroupMemberResponse } from '../../../interfaces';
-import { delegateLeader } from '../../../api/group';
 
-// 컴포넌트 prop 인터페이스를 업데이트합니다.
 interface GroupMemberManagerProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   members: GroupMemberResponse[];
   onKickMember: (memberId: number) => void;
-  //onDelegateLeader: (memberId: number) => void;
   isLeader: boolean;
   onDelegateLeader: (newLeaderId: number, newLeaderName: string) => void; 
 }
@@ -21,7 +18,6 @@ export function GroupMemberManager({ open, onOpenChange, members, onKickMember, 
   const [showKickConfirmDialog, setShowKickConfirmDialog] = useState(false);
   const [showDelegateConfirmDialog, setShowDelegateConfirmDialog] = useState(false);
   const [memberToKickId, setMemberToKickId] = useState<number | null>(null);
-  //const [memberToDelegateId, setMemberToDelegateId] = useState<string | null>(null);
  const [memberToDelegateId, setMemberToDelegateId] = useState<number | null>(null);
 
   const handleKickClick = (memberId: number) => {

@@ -825,6 +825,7 @@ export default function App() {
     console.log ('1️⃣ 데이터 새로고침 시작!');
     fetchUserActivities();
     fetchUserTotalScore();
+    fetchRankingData();
   };
 
   const fetchPersonalRoutines = async () => {
@@ -1573,11 +1574,6 @@ const navigateTo = (screen: string, params?: any, options?: { replace?: boolean 
 
 // 9. 화면 렌더링 및 모달 =============================================================
 
-  //const currentScreen =
-    //navigationStack.length > 0
-      //? navigationStack[navigationStack.length - 1]
-      //: null;
-
   const renderScreen = () => {
     if (!isLoggedIn) {
       return <LoginScreen onLogin={handleKakaoLogin} />;
@@ -1602,12 +1598,8 @@ const navigateTo = (screen: string, params?: any, options?: { replace?: boolean 
             />
           );
        
-        case "group-detail": { 
-        //const groupId = currentScreen.params.groupId;
-        //const members = groupMembers[groupId] || [];
-        //const myId = UserInfo?.id; 
-        //const isJoined = myGroups.some(joinedGroup => joinedGroup.groupId === groupId);
-           console.log('넘어온 params:', currentScreen.params);
+          case "group-detail": { 
+            console.log('넘어온 params:', currentScreen.params);
           console.log('넘어온 groupId:', groupId);
           console.log('해당 그룹의 멤버 groupmembers:', members);
           console.log('그룹상세 groups:', groups);
@@ -1620,10 +1612,6 @@ const navigateTo = (screen: string, params?: any, options?: { replace?: boolean 
             onBack={navigateBack}
             onNavigate={navigateTo}
             onUpdateGroup={handleUpdateGroup}
-            // pendingAuthMessages={pendingAuthMessages}
-            // onAddAuthMessage={handleAddAuthMessage}
-            // onApproveAuthMessage={handleApproveAuthMessage}
-            // onRejectAuthMessage={handleRejectAuthMessage}
             currentUser={UserInfo} 
             groupMembers={members}
             onDeleteGroupSuccess={handleDeleteGroupSuccess}
@@ -1677,12 +1665,9 @@ const navigateTo = (screen: string, params?: any, options?: { replace?: boolean 
               group={currentScreen.params}
               groupmembers={members}
               onBack={navigateBack}
-               //onAddAuthMessage={handleAddAuthMessage}
-               //groupMembers={groupMembers}
-                onLeaveGroup={handleLeaveGroup}
-                userInfo={UserInfo}
-                onDataRefresh={handleDataRefresh}
-                //streakDays={streakDays}
+              onLeaveGroup={handleLeaveGroup}
+              userInfo={UserInfo}
+              onDataRefresh={handleDataRefresh}
             />
           );
         }
@@ -1773,9 +1758,9 @@ const navigateTo = (screen: string, params?: any, options?: { replace?: boolean 
         return <RankingScreen 
                   groups={groups}
                   personalRankingData={personalRankingData}
-                  groupRankingData={groupRankingData} // props로 전달
-                  userTotalScore={userTotalScore} // props로 전달
-                  loadingGroupRanking={loadingGroupRanking} // props로 전달
+                  groupRankingData={groupRankingData} 
+                  userTotalScore={userTotalScore} 
+                  loadingGroupRanking={loadingGroupRanking} 
                   loadingUserTotalScore={loadingUserTotalScore}
                 />}
       case "mypage":

@@ -6,7 +6,6 @@ import { Textarea } from '../../../components/ui/textarea';
 import { Label } from '../../../components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../../components/ui/select';
 import { RadioGroup, RadioGroupItem } from '../../../components/ui/radio-group';
-import { Switch } from '../../../components/ui/switch';
 import { Badge } from '../../../components/ui/badge';
 import { Alert, AlertDescription, AlertTitle } from '../../../components/ui/alert';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '../../../components/ui/dialog';
@@ -165,7 +164,7 @@ export default function GroupEdit({ open, onOpenChange, group, onSave }: GroupEd
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md max-w-lg h-[90vh] flex flex-col p-4 text-icon-secondary dark:text-white rounded-xl shadow-lg border">
+      <DialogContent className="sm:max-w max-w-lg h-[90vh] flex flex-col p-4 text-icon-secondary dark:text-white rounded-xl shadow-lg border">
         <DialogHeader className="p-4">
           <DialogTitle className="text-2xl font-bold">그룹 편집</DialogTitle>
           <DialogDescription className="text-sm text-muted-foreground">그룹 정보를 수정하고 저장하세요</DialogDescription>

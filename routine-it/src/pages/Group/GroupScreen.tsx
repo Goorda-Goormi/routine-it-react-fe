@@ -16,7 +16,7 @@ interface GroupScreenProps {
 export function GroupScreen({ onNavigate, groups, myGroups, onNewGroup, onJoinGroup }: GroupScreenProps) {
   const [searchTerm, setSearchTerm] = useState('');
 
-  // ✅ 수정된 부분: group.name이 유효한 값인지 확인
+  // group.name이 유효한 값인지 확인
   const filteredGroups = groups.filter(group =>
     (group.groupName || '').toLowerCase().includes(searchTerm.toLowerCase())
   );

@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '../../../components/ui
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../../components/ui/tabs';
 import { Badge } from '../../../components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '../../../components/ui/avatar';
-import { Trophy, Calendar, Crown } from 'lucide-react';
+import { Trophy, Calendar, Crown, Users } from 'lucide-react';
 import type { GroupMemberResponse } from '../../../interfaces';
 
 interface GroupDetailTabsProps {
@@ -30,7 +30,7 @@ export const GroupDetailTabs = ({
 
       const isLeader = member.role === 'LEADER';
       const isCertified = member.status === 'JOINED';
-      
+       const isUncertified = member.message === '미인증';
 
       return (
         <div key={member.groupMemberId}>
@@ -54,11 +54,11 @@ export const GroupDetailTabs = ({
                     </div>
                   )}
                 </div>
-                <div className="text-xs text-left text-muted-foreground">{member.message}</div>
+              
               </div>
             </div>
             <div className="flex items-center space-x-2">
-              <Badge variant={isCertified ? 'default' : 'destructive'} className="text-xs">
+              <Badge variant={isUncertified ? 'destructive' : 'default'} className="text-xs">
                 {member.message}
               </Badge>
             </div>
@@ -79,7 +79,10 @@ export const GroupDetailTabs = ({
       <TabsContent value="members" className="mt-4">
         <Card>
           <CardHeader className="pb-3">
-            <CardTitle className="text-base text-card-foreground">그룹 멤버</CardTitle>
+            <CardTitle className="flex items-center space-x-2 text-base text-card-foreground">
+              <Users className="h-4 w-4 icon-accent" />
+              <span>그룹 멤버</span>
+              </CardTitle>
           </CardHeader>
           <CardContent className="pt-0">
             <div className="space-y-0">

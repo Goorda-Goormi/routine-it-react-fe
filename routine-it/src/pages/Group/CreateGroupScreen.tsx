@@ -338,7 +338,7 @@ export function CreateGroupScreen({ onBack, onCreateGroup }: CreateGroupScreenPr
               <Label className="text-card-foreground">참여 유형</Label>
               <RadioGroup
                 value={formData.groupType}
-                onValueChange={(value) => setFormData({ ...formData, groupType: value })}
+                onValueChange={(value) => setFormData({ ...formData, groupType: value as 'FREE' | 'REQUIRED' })}
                 className="space-y-3"
               >
                 <Label
