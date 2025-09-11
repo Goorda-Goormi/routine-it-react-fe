@@ -7,8 +7,8 @@ import { Avatar, AvatarFallback, AvatarImage } from '../../components/ui/avatar'
 import { Target, Users, Camera, CheckCircle, Plus, TrendingUp, ChevronLeft, ChevronRight, X } from 'lucide-react';
 import { ImageWithFallback } from '../../components/figma/ImageWithFallback';
 import { getStreakInfo, getStreakMessage } from '../../components/utils/streakUtils';
-import { GroupRoutineDialog } from '../../pages/Group/GroupChat/GroupRoutineDialog';
 import type { Routine, Group, Member, GroupMemberResponse } from '../../interfaces';
+import { getUserAuthPhotos } from '../../api/activity';
 
 const getTodayDayOfWeek = () => {
   const dayOfWeek = ['일', '월', '화', '수', '목', '금', '토'];
@@ -28,7 +28,7 @@ interface HomeScreenProps {
   onNavigate: (screen: string, params?: any) => void;
   userInfo: UserInfo;
   routines: Routine[];
-  onCompletePersonalRoutine: (routineId: number) => void;
+  onTogglePersonalRoutine: (routineId: number) => void;
   streakDays: number;
   participatingGroups: Group[];
   //pendingAuthMessages: PendingAuthMap;
@@ -41,8 +41,8 @@ interface HomeScreenProps {
 interface VerificationPhoto {
   id: number;
   routine: string;
-  image: string;
-  date: string;
+  imageUrl: string; 
+  activityDate: string;
   isPublic: boolean;
 }
 
@@ -50,7 +50,7 @@ export function HomeScreen({
   onNavigate,
   userInfo,
   routines,
-  onCompletePersonalRoutine,
+  onTogglePersonalRoutine,
   streakDays,
   participatingGroups,
   onOpenAttendanceModal,
@@ -61,20 +61,6 @@ export function HomeScreen({
 }: HomeScreenProps) {
   const today = new Date();
   const todayString = today.toLocaleDateString('ko-KR', { month: 'long', day: 'numeric' });
-
-  const [routineStates, setRoutineStates] = useState<Record<number, 'completed' | 'pending' | 'initial'>>({});
-
-  useEffect(() => {
-    const newRoutineStates: Record<number, 'completed' | 'initial'> = {};
-    (routines || []).forEach(routine => {
-    // 이제 개인 루틴과 그룹 루틴 모두 동일한 로직을 사용합니다.
-    // 단순히 'completed' 필드가 true인지 false인지만 확인합니다.
-    newRoutineStates[routine.id] = routine.completed ? 'completed' : 'initial';
-  });
-
-    setRoutineStates(newRoutineStates);
-  }, [routines]);
-
   
   const streakInfo = getStreakInfo(streakDays);
 
@@ -84,15 +70,22 @@ export function HomeScreen({
     return routine.frequency && routine.frequency.includes(todayDay);
   });
 
-  const myVerificationPhotos: VerificationPhoto[] = [
-    {
-      id: 1,
-      routine: '아침 운동',
-      image: 'https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?fit=crop',
-      date: '오늘',
-      isPublic: true,
-    },
-  ]
+  const [myVerificationPhotos, setMyVerificationPhotos] = useState<VerificationPhoto[]>([]);
+
+  useEffect(() => {
+    const fetchMyPhotos = async () => {
+      try {
+        // userId 없이 호출하여 내 사진을 가져옵니다.
+        const photosData = await getUserAuthPhotos();
+        // API 응답 구조에 맞게 activityInfos에서 데이터를 추출합니다.
+        setMyVerificationPhotos(photosData?.activityInfos || []);
+      } catch (error) {
+        console.error("내 인증 사진 로딩 실패:", error);
+      }
+    };
+
+    fetchMyPhotos();
+  }, []);
 
   const publicVerificationPhotos = myVerificationPhotos.filter(photo => photo.isPublic);
 
@@ -104,20 +97,6 @@ export function HomeScreen({
 
   const handleGroupClick = (group: Group) => {
     onNavigate('group-detail', group);
-  };
-
-  const handleMemberClick = (member: Member & { userId?: number }) => {
-
-    const memberId = member.id || member.userId;
-    if (!memberId) {
-      console.error("클릭된 멤버 객체에 id 또는 userId가 없습니다!", member);
-      return; // ID가 없으면 네비게이션을 막습니다.
-    }
-    const userForNav = {
-      id: member.id, 
-      nickname: member.nickname,
-    };
-    onNavigate('user-home', userForNav);
   };
 
   const handlePhotoClick = (index: number) => {
@@ -140,12 +119,7 @@ export function HomeScreen({
     }
   };
 
-  const completedRoutines = allTodayRoutines.filter(routine => {
-    if (routine.isGroupRoutine) {
-      return routineStates[routine.id] === 'completed';
-    }
-    return routine.completed;
-  }).length;
+  const completedRoutines = allTodayRoutines.filter(routine => routine.completed).length;
 
   const totalRoutines = allTodayRoutines.length;
   const completionRate = totalRoutines > 0 ? Math.round((completedRoutines / totalRoutines) * 100) : 0;
@@ -248,21 +222,21 @@ export function HomeScreen({
           <div className="space-y-0">
             {allTodayRoutines.length > 0 ? (
               allTodayRoutines.map((routine: Routine, index: number) => {
-                const currentState = routineStates[routine.id] || 'initial';
-                const isPending = currentState === 'pending';
-                const isCompleted = currentState === 'completed';
+                // const currentState = routineStates[routine.id] || 'initial';
+                // const isPending = currentState === 'pending';
+                // const isCompleted = currentState === 'completed';
 
                 return (
                   <div key={routine.isGroupRoutine ? `group-${routine.id}` : `personal-${routine.id}`}>
                     <div
                       className={`flex items-center justify-between rounded-lg p-3 transition-colors ${
-                        isCompleted ? 'bg-green-50/50 dark:bg-green-900/20' : 'hover:bg-accent/50'
+                        routine.completed ? 'bg-green-50/50 dark:bg-green-900/20' : 'hover:bg-accent/50'
                       } ${index < routines.length - 1 ? 'mb-1' : ''}`}
                     >
                       <div className="flex items-center space-x-3 flex-1 cursor-pointer " onClick={() => handleRoutineClick(routine)}>
                         <div className="flex items-center space-x-3">
                           <div className='flex flex-col items-start ml-2'>
-                            <div className={`text-sm font-medium ${isCompleted ? 'text-green-700 dark:text-green-400 line-through' : 'text-foreground'}`}>
+                            <div className={`text-sm font-medium ${routine.completed ? 'text-green-700 dark:text-green-400 line-through' : 'text-foreground'}`}>
                               {routine.name}
                             </div>
                             <div className="text-xs text-foreground dark:opacity-75">
@@ -274,7 +248,7 @@ export function HomeScreen({
 
                       <div className="flex items-center space-x-2 h-[30px]">
                         {routine.isGroupRoutine ? (
-                          isCompleted ? (
+                          routine.completed ? (
                             <div className="w-8 h-8 rounded-full flex items-center justify-center transition-colors p-0 m-0 bg-green-500">
                               <CheckCircle className="h-5 w-5 text-white" />
                             </div>
@@ -299,8 +273,7 @@ export function HomeScreen({
                         ) : (
                           <button
                             onClick={(e) => {
-                              onCompletePersonalRoutine(routine.id);
-                              onOpenAttendanceModal();
+                              onTogglePersonalRoutine(routine.id);
                             }}
                             className={`w-8 h-8 rounded-full flex items-center justify-center transition-colors m-0 border-0 ${
                               routine.completed ? 'bg-green-500 hover:bg-green-600' : 'border-2 border-border/60 hover:border-green-500'
@@ -344,20 +317,17 @@ export function HomeScreen({
                     onClick={() => handleGroupClick(group)}
                   >
                     <div className="flex items-center space-x-3 flex-1">
-                      <div className="flex space-x-2 w-20">
-                        {group.recentMembers && group.recentMembers.map((member:  Member) => (
-                          <div
-                            key={member.id}
-                            className="cursor-pointer hover:scale-110 transition-transform" 
-                          >
-                            <Avatar className="w-8 h-8 border-2 border-background">
-                              <AvatarImage src={member.profileImageUrl} alt={member.nickname} />
-                              <AvatarFallback className="text-xs">{member.nickname.charAt(0)}</AvatarFallback>
+                      <div className="flex w-14">
+                        
+                          <div className="cursor-pointer hover:scale-110 transition-transform" >
+                            <Avatar className="w-12 h-12">
+                              <AvatarImage src={group.groupImageUrl} alt={group.groupName} />
+                              <AvatarFallback>{group.groupName.charAt(0)}</AvatarFallback>
                             </Avatar>
                           </div>
-                        ))}
+                        
                       </div>
-                      <div className='flex flex-col items-start ml-2'>
+                      <div className='flex flex-col items-start'>
                         <div className="text-sm font-medium text-foreground">{group.groupName}</div>
                         <div className="text-xs text-foreground dark:opacity-75">{group.maxMembers}명 참여</div>
                       </div>
@@ -389,33 +359,43 @@ export function HomeScreen({
           </CardTitle>
         </CardHeader>
         <CardContent className="pt-0">
-          <div className="grid grid-cols-3 gap-3">
-            {publicVerificationPhotos.map((photo, index) => (
-              <div
-                key={photo.id}
-                className="space-y-2 cursor-pointer"
-                onClick={() => handlePhotoClick(index)}
-              >
-                <div className="relative rounded-lg overflow-hidden aspect-square">
-                  <ImageWithFallback
-                    src={photo.image}
-                    alt={photo.routine}
-                    className="w-full h-full object-cover"
-                  />
-                  <div className="absolute inset-0 bg-black/20 opacity-0 hover:opacity-100 transition-opacity flex items-end">
-                    <div className="p-2">
-                      <span className="text-xs text-white bg-black/50 px-2 py-1 rounded">
-                        {photo.date}
-                      </span>
+          {publicVerificationPhotos.length > 0 ? (
+            <div className="grid grid-cols-3 gap-3">
+              {publicVerificationPhotos.map((photo, index) => (
+                <div
+                  key={photo.id}
+                  className="space-y-2 cursor-pointer"
+                  onClick={() => handlePhotoClick(index)}
+                >
+                  <div className="relative rounded-lg overflow-hidden aspect-square">
+                    <ImageWithFallback
+                      src={photo.imageUrl} // imageUrl로 수정
+                      alt={photo.routine}
+                      className="w-full h-full object-cover"
+                    />
+                    <div className="absolute inset-0 bg-black/20 opacity-0 hover:opacity-100 transition-opacity flex items-end">
+                      <div className="p-2">
+                        <span className="text-xs text-white bg-black/50 px-2 py-1 rounded">
+                          {photo.activityDate}
+                        </span>
+                      </div>
                     </div>
                   </div>
-                </div>
                 <div className="text-xs text-foreground font-medium text-center">
                   {photo.routine}
                 </div>
               </div>
             ))}
           </div>
+          ) : (
+            <div className="text-center py-8">
+              <Camera className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+              <p className="text-sm text-muted-foreground mb-2">아직 인증사진이 없습니다.</p>
+              <p className="text-xs text-muted-foreground">
+                루틴을 완료하고 기록으로 남겨보세요!
+              </p>
+            </div>
+          )}
         </CardContent>
       </Card>
 
@@ -435,7 +415,7 @@ export function HomeScreen({
                   {/* 사진 */}
                   <div className="flex-1 w-full flex items-center justify-center p-4">
                     <img 
-                      src={publicVerificationPhotos[selectedPhotoIndex].image} 
+                      src={publicVerificationPhotos[selectedPhotoIndex].imageUrl} 
                       alt={publicVerificationPhotos[selectedPhotoIndex].routine} 
                       className="max-w-full max-h-full object-contain"
                     />
@@ -470,6 +450,7 @@ export function HomeScreen({
                 </div>
               </div>
             )}
+    <div className='h-3'></div>
     </div>
   );
 }

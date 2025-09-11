@@ -36,7 +36,7 @@ interface RoutineScreenProps {
   onNavigate: (screen: string, params?: any) => void;
   allRoutines: Routine[];
   recommendedRoutines: RecommendedRoutine[]; 
-  onCompletePersonalRoutine: (routineId: number) => void;
+  onTogglePersonalRoutine: (routineId: number) => void;
   onAddRecommendedRoutine: (routine: RecommendedRoutine) => void;
   onOpenAttendanceModal: () => void;
   onOpenStreakModal: (streakDays: number) => void;
@@ -48,7 +48,7 @@ interface RoutineScreenProps {
   //pendingAuthMessages: { [groupId: number]: AuthMessage[] };
 }
 
-export function RoutineScreen({ onNavigate, allRoutines, recommendedRoutines, onCompletePersonalRoutine, onAddRecommendedRoutine, onOpenAttendanceModal, onOpenStreakModal, onOpenBadgeModal, initialUserInfo, participatingGroups, allGroups }: RoutineScreenProps) {
+export function RoutineScreen({ onNavigate, allRoutines, recommendedRoutines, onTogglePersonalRoutine, onAddRecommendedRoutine, onOpenAttendanceModal, onOpenStreakModal, onOpenBadgeModal, initialUserInfo, participatingGroups, allGroups }: RoutineScreenProps) {
   const [activeFilter, setActiveFilter] = useState('today');
   const todayDay = getTodayDayOfWeek();
   
@@ -132,8 +132,8 @@ export function RoutineScreen({ onNavigate, allRoutines, recommendedRoutines, on
         <button
           onClick={(e) => {
             e.stopPropagation();
-            onCompletePersonalRoutine(routine.id);
-            onOpenAttendanceModal(); 
+            onTogglePersonalRoutine(routine.id);
+             
           }}
           className={`w-8 h-8 rounded-full flex items-center justify-center transition-colors m-0 border-0 ${
             routine.completed ? 'bg-green-500 hover:bg-green-600' : 'border-2 border-muted-foreground/60 hover:border-green-500'

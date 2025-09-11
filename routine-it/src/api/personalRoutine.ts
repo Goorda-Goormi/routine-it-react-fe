@@ -47,7 +47,18 @@ export const createPersonalRoutine = async (payload: PersonalRoutineCreatePayloa
  * 특정 사용자의 모든 개인 루틴 목록을 조회합니다.
  */
 export const getPersonalRoutinesByUser = async (userId: number): Promise<PersonalRoutineResponse[]> => {
-  return await apiFetch(`/api/personal-routines/user/${userId}`);
+  try {
+    const routinesArray = await apiFetch(`/api/personal-routines/user/${userId}`);
+
+    // apiFetch가 반환한 값이 배열인지 확인하고, 배열이 아니면 빈 배열을 반환합니다.
+    // 이렇게 하면 routinesArray가 null이나 undefined일 때 발생하는 오류를 막을 수 있습니다.
+    return Array.isArray(routinesArray) ? routinesArray : [];
+
+  } catch (error) {
+    console.error('getPersonalRoutinesByUser API 호출 실패:', error);
+    // 함수 실행 중 에러가 발생해도 앱이 멈추지 않도록 빈 배열을 반환합니다.
+    return [];
+  }
 };
 
 /**

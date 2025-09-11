@@ -59,10 +59,14 @@ export async function getAllGroups(): Promise<Group[]> {
 }
 
 
-// 가입된 그룹 리스트 조회
-export async function getJoinedGroups(): Promise<Group[]> {
+/**
+ * 가입된 그룹 리스트를 조회합니다.
+ * @param userId 특정 사용자의 ID (없으면 내 정보 조회)
+ */
+export async function getJoinedGroups(userId?: number): Promise<Group[]> {
   try {
-    const joinedGroups = await apiFetch("/groups/joined", { method: "GET" });
+    const endpoint = userId ? `/groups/joined?userId=${userId}` : '/groups/joined'
+    const joinedGroups = await apiFetch(endpoint, { method: "GET" });
     return joinedGroups; // JSON 데이터가 담긴 배열을 반환
   } catch (error) {
     console.error("Failed to fetch joined groups:", error);

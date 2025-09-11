@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Search, Bell, Camera, User, Settings, HelpCircle, LogOut } from 'lucide-react';
+import { Search, ArrowLeft, Bell, Camera, User, Settings, HelpCircle, LogOut } from 'lucide-react';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger, DropdownMenuLabel } from './ui/dropdown-menu';
@@ -16,6 +16,8 @@ interface TopNavBarProps {
     profileImageUrl: string;
     nickname?: string;
   };
+  showBackButton?: boolean;
+  onBackClick?: () => void;  
 }
 
 // 알림 카테고리
@@ -35,7 +37,7 @@ export interface Notification {
   isLocal?: boolean;
 }
 
-export function TopNavBar({ onSearch, onNotificationClick, notifications, onProfileMenuClick, userInfo }: TopNavBarProps) {
+export function TopNavBar({ onSearch, onNotificationClick, notifications, onProfileMenuClick, userInfo, showBackButton, onBackClick }: TopNavBarProps) {
   const [searchQuery, setSearchQuery] = useState('');
 
   const handleSearchSubmit = (e: React.FormEvent) => {
@@ -59,12 +61,24 @@ export function TopNavBar({ onSearch, onNotificationClick, notifications, onProf
       <div className="flex items-center justify-between">
         {/* 로고 및 앱 이름 */}
         <div className="flex items-center space-x-3">
+          <div className="flex items-center space-x-3">
+          {showBackButton && (
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              onClick={onBackClick}
+              className="flex h-8 w-8 text-primary hover:text-primary p-1 mr-2"
+            >
+              <ArrowLeft className="h-5 w-5 icon-secondary" />
+            </Button>
+          )}
           <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary">
             <div className="h-5 w-5 bg-primary-foreground rounded-full flex items-center justify-center">
               <div className="h-2.5 w-2.5 bg-primary rounded-full"></div>
             </div>
           </div>
           <h1 className="text-lg font-semibold text-card-foreground">루틴잇</h1>
+        </div>
         </div>
 
         {/* 우측 버튼들 */}
