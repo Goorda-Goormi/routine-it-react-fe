@@ -810,6 +810,7 @@ export default function App() {
     console.log ('1️⃣ 데이터 새로고침 시작!');
     fetchUserActivities();
     fetchUserTotalScore();
+    fetchRankingData();
   };
 
   const fetchPersonalRoutines = async () => {

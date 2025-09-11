@@ -223,11 +223,12 @@ export function GroupChatScreen({ group, groupmembers, onBack, onLeaveGroup, use
                 
                 await createGroupActivity(activityData);
 
-                // ✅ 추가된 부분: 랭킹 점수 업데이트
+            
                 try {
                     await updateRankingScore(myUserId, group.groupId, 1);
                     console.log("✅ 랭킹 점수 업데이트 성공: 자유그룹 인증");
-                } catch (rankingError) {
+                    onDataRefresh();
+                  } catch (rankingError) {
                     console.error("🚨 랭킹 점수 업데이트 실패:", rankingError);
                 }
                 
