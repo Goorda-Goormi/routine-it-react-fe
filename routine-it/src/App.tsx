@@ -541,14 +541,6 @@ export default function App() {
     }
   }, []);
 
-   //groups 상태가 변경될 때마다 groupRoutines 업데이트
-  //  useEffect(() => {
-  //   const newGroupRoutines: Routine[] = groups.flatMap(group => 
-  //     group.routines?.map(routine => ({ ...routine, isGroupRoutine: true })) || []
-  //   );
-  //   setGroupRoutines(newGroupRoutines);
-  // }, [groups]);
-
   // UserInfo(서버) 상태와 isDarkMode(UI) 상태를 동기화
   useEffect(() => {
     if (UserInfo) {
@@ -565,7 +557,7 @@ export default function App() {
     }
   }, [isDarkMode]);
 
-  useEffect(() => {
+  /*useEffect(() => {
   const fetchMembers = async () => {
     // 현재 화면이 group-detail이고, groupId가 존재하는지 확인
     if (currentScreen && currentScreen.screen === "group-detail" && currentScreen.params.groupId) {
@@ -586,7 +578,35 @@ export default function App() {
   };
 
   fetchMembers();
-}, [navigationStack, isJoined]);
+}, [navigationStack, isJoined]);*/
+const fetchMembers = async (groupId: number) => {
+    try {
+        const members = await getGroupMembers(groupId);
+        setGroupMembers(prevMembers => ({
+            ...prevMembers,
+            [groupId]: members,
+        }));
+    } catch (error) {
+        console.error("그룹 멤버 조회 실패:", error);
+    }
+};
+
+// 그룹 멤버 목록을 새로고침하는 함수
+const handleGroupMembersRefresh = () => {
+  if (currentScreen && currentScreen.screen === "group-detail" && currentScreen.params.groupId) {
+    const groupId = currentScreen.params.groupId;
+    fetchMembers(groupId);
+  }
+};
+
+
+// 아래 useEffect 수정
+useEffect(() => {
+  if (currentScreen && currentScreen.screen === "group-detail" && currentScreen.params.groupId) {
+    const groupId = currentScreen.params.groupId;
+    fetchMembers(groupId);
+  }
+}, [navigationStack, myGroups]);
   
 
   //5. 사용자/계정 관리 =============================================================
@@ -1401,6 +1421,8 @@ const handleAddGroup = async (newGroupData: any) => {
     
   };
 
+  
+
 
 const handleDeleteGroupSuccess = () => {
  
@@ -1618,7 +1640,7 @@ const navigateTo = (screen: string, params?: any, options?: { replace?: boolean 
             myid={myId ?? 0}
             onGroupJoined={fetchGroupData}
             isJoined={isJoined}
-           
+           onRefreshMembers={handleGroupMembersRefresh} 
           />
         );
       }

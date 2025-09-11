@@ -29,6 +29,7 @@ interface GroupDetailScreenProps {
     myid: number;
     onGroupJoined: () => void;
     isJoined: boolean;
+    onRefreshMembers: () => void; 
 }
 
 export function GroupDetailScreen({
@@ -43,6 +44,7 @@ export function GroupDetailScreen({
     myid,
     onGroupJoined,
     isJoined,
+    onRefreshMembers,
 }: GroupDetailScreenProps) {
     const [isEditing, setIsEditing] = useState(false);
     const [showExMembersModal, setShowExMembersModal] = useState(false);
@@ -156,6 +158,7 @@ export function GroupDetailScreen({
                 alert('멤버가 성공적으로 그룹에서 내보내졌습니다.');
                 setShowExMembersModal(false);
                 onUpdateGroup({ ...group, members: groupMembers.filter(m => m.groupMemberId !== targetMemberId) });
+                onRefreshMembers();
             } else {
                 alert('멤버 내보내기에 실패했습니다.');
             }
@@ -189,9 +192,11 @@ export function GroupDetailScreen({
             }
             const currentLeaderId = currentLeader.groupMemberId;
             const response = await delegateLeader(group.groupId, Number(currentLeaderId), targetMemberId);
-            if (response.success) {
+            if (response && response.role === "LEADER") {
+                alert("리더 위임이 완료되었습니다.");
                 setShowExMembersModal(false);
                 onUpdateGroup({ ...group, leaderName: targetMemberName, leaderId: targetMemberId });
+                onRefreshMembers();
             }
         } catch (error) {
             console.error("리더 위임 실패:", error);
@@ -237,7 +242,9 @@ export function GroupDetailScreen({
                     ...group, 
                     currentMemberCount: group.currentMemberCount + 1,
                     members: [...groupMembers, response]
+                
                 });
+                onRefreshMembers();
             } else {
                 alert("승인 처리에 실패했습니다.");
             }
@@ -267,6 +274,7 @@ export function GroupDetailScreen({
             alert("그룹 가입을 거절했습니다.");
             setPendingInvites(prev => prev.filter(p => p.groupMemberId !== targetMemberId));
             setPendingAuthCount(prev => prev - 1);
+            onRefreshMembers();
         } catch (error) {
             console.error("거절 처리에 실패했습니다:", error);
             alert("거절 처리에 실패했습니다.");
