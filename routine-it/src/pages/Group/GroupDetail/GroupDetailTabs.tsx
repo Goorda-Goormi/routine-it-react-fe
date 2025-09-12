@@ -114,7 +114,6 @@ export const GroupDetailTabs = ({
                                         <div key={item.rank}>
                                             <div className="flex items-center justify-between p-3 border border-border/50 rounded-lg hover:bg-accent/30 transition-colors">
                                                 <div className="flex items-center space-x-3">
-                                                    {/* 등수와 프로필 이미지를 묶고, 닉네임과 간격 조정 */}
                                                     <div className="flex items-center space-x-3">
                                                         <div className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center">
                                                             <span className="text-xs font-bold text-primary">{item.rank}</span>

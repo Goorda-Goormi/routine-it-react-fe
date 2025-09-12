@@ -104,7 +104,6 @@ export function GroupDetailScreen({
             }
         };
 
-        // 추가: 멤버 프로필 조회 로직
         const fetchMemberProfiles = async () => {
             const profiles: Record<number, string> = {};
             const fetchPromises = groupMembers.map(async (member) => {
@@ -320,7 +319,6 @@ export function GroupDetailScreen({
                 onGroupDeleted={handleGroupDeleted}
                 myid={myid}
                 onGroupJoined={onGroupJoined}
-                isJoined={isJoined}
             />
             <div className="p-4 space-y-4">
                 <GroupDetailTabs
