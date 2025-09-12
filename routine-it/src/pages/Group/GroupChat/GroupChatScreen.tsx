@@ -377,6 +377,7 @@ export function GroupChatScreen({ group, groupmembers, onBack, onLeaveGroup, use
                 getUserInfo={getUserInfo}
                 userInfo={userInfo}
                 group={group}
+                memberProfiles={memberProfiles}
             />
             <GroupChatInput handleSendMessage={handleSendMessage} handleSendImage={handleSendImage} handleSendAlbum={handleSendAlbum} />
             <GroupRoutineDialog

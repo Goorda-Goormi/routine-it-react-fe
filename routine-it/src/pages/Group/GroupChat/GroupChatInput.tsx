@@ -38,7 +38,7 @@ export function GroupChatInput({ handleSendMessage, handleSendImage, handleSendA
 
   return (
     <div className="sticky bottom-0 border-t border-t-[var(--color-border-bottom-custom)] bg-background">
-      <div className="max-w-md mx-auto p-4">
+      <div className=" mx-auto p-4">
         <div className="flex items-end space-x-2">
           <div className="flex-1">
             <div className="flex items-center space-x-2 bg-muted rounded-lg p-2">
