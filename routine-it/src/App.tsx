@@ -1769,51 +1769,40 @@ const navigateTo = (screen: string, params?: any, options?: { replace?: boolean 
     const todayString = new Date().toISOString().split('T')[0];
 
     try {
-    // 2. 서버에 오늘 출석이 유효한지 먼저 확인합니다.
-    const hasAttendedToday = await checkAttendance(todayString);
+      const hasAttendedToday = await checkAttendance(todayString);
 
-    // 3. 서버에서 '출석 인정(true)' 응답을 받았을 때만 아래 로직을 실행합니다.
-    if (hasAttendedToday) {
+      if (hasAttendedToday) {
 
-    await fetchTotalAttendance();
+        const newDates = [...new Set([...attendanceDates, todayString])]; 
+        setAttendanceDates(newDates);
+        localStorage.setItem('attendanceDates', JSON.stringify(newDates));
 
-    // --- 2. 출석 날짜 배열 업데이트 ---
-    const newDates = [...attendanceDates];
-    if (!newDates.includes(todayString)) {
-      newDates.push(todayString);
-      localStorage.setItem('attendanceDates', JSON.stringify(newDates));
-      setAttendanceDates(newDates);
+        let consecutiveCount = 0;
+        const dateChecker = new Date(); 
+        while (newDates.includes(dateChecker.toISOString().split('T')[0])) {
+          consecutiveCount++;
+          dateChecker.setDate(dateChecker.getDate() - 1); 
+        }
+
+        const currentMaxStreak = UserInfo?.maxStreakDays ?? 0;
+        if (consecutiveCount > currentMaxStreak && UserInfo) {
+          console.log(`🎉 최고 기록 경신! 새로운 최고 연속 출석일: ${consecutiveCount}일`);
+          setUserInfo({ ...UserInfo, maxStreakDays: consecutiveCount });
+          localStorage.setItem('maxStreakDays', String(consecutiveCount));
+          
+        }
+
+        await fetchTotalAttendance();
+
+        const newAttendanceCount = attendanceCount + 1;
+        setAttendanceCount(newAttendanceCount);
+        localStorage.setItem('attendanceCount', String(newAttendanceCount));
+        handleNextModalSequence(consecutiveCount, newAttendanceCount);
+      }
+    } catch (error) {
+      console.error("오늘 출석 여부 확인 중 에러 발생:", error);
     }
-    
-    // --- 3. 현재 '연속 출석일' 계산 및 '최고 기록' 업데이트 ---
-    let consecutiveCount = 0;
-    const dateChecker = new Date(); // 오늘부터 시작
-
-    // 출석 기록에 날짜가 있는지 확인하며 하루씩 뒤로 갑니다.
-    while (newDates.includes(dateChecker.toISOString().split('T')[0])) {
-      consecutiveCount++;
-      dateChecker.setDate(dateChecker.getDate() - 1); // 어제 날짜로 변경
-    }
-
-    const currentMaxStreak = UserInfo?.maxStreakDays ?? 0;
-    if (consecutiveCount > currentMaxStreak && UserInfo) {
-      const newMaxStreak = consecutiveCount;
-      setUserInfo({ ...UserInfo, maxStreakDays: consecutiveCount });
-      
-      localStorage.setItem('maxStreakDays', String(newMaxStreak));
-    }
-
-    // --- 4. 기존 출석 처리 및 다음 모달 호출 로직 (그대로 유지) ---
-    const newAttendanceCount = attendanceCount + 1;
-    setAttendanceCount(newAttendanceCount);
-    localStorage.setItem('attendanceCount', String(newAttendanceCount));
-
-    handleNextModalSequence(consecutiveCount, newAttendanceCount);
-  }
-} catch (error) {
-    console.error("오늘 출석 여부 확인 중 에러 발생:", error);
-  }
-};
+  };
 
   const handleCloseStreakModal = () => {
     setStreakModalOpen(false);
