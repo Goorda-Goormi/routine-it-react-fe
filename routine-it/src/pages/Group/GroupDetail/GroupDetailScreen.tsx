@@ -5,17 +5,18 @@ import { GroupDetailTabs } from './GroupDetailTabs';
 import { GroupMemberManager } from './GroupMemberManager';
 import GroupEdit from './GroupEdit';
 import { GroupApproval } from './GroupApproval';
-import type {  GroupMemberResponse } from "../../../interfaces";
-import { 
-    deleteGroup, 
-    delegateLeader, 
-    getUserActivitiesByDay, 
+import type { GroupMemberResponse } from "../../../interfaces";
+import {
+    deleteGroup,
+    delegateLeader,
+    getUserActivitiesByDay,
     updateGroupMemberStatus,
-    getPendingMembersByGroupId, 
+    getPendingMembersByGroupId,
 } from '../../../api/group';
 import { getGroupTop3Ranking } from '../../../api/ranking';
 import type { GlobalGroupRankingData } from '../../Ranking/RankingScreen';
 import { fetchChatHistory } from '../../../api/chat';
+import { getUserProfile } from '../../../api/user';
 
 interface GroupDetailScreenProps {
     groupId: number;
@@ -29,7 +30,7 @@ interface GroupDetailScreenProps {
     myid: number;
     onGroupJoined: () => void;
     isJoined: boolean;
-    onRefreshMembers: () => void; 
+    onRefreshMembers: () => void;
 }
 
 export function GroupDetailScreen({
@@ -54,6 +55,10 @@ export function GroupDetailScreen({
     const [weeklyRanking, setWeeklyRanking] = useState<GlobalGroupRankingData[]>([]);
     const [recentActivities, setRecentActivities] = useState<any[]>([]);
 
+    // 추가: 멤버별 프로필 이미지 URL을 저장할 상태
+    const [memberProfiles, setMemberProfiles] = useState<Record<number, string>>({});
+
+
     useEffect(() => {
         const fetchData = async () => {
             if (currentUser && currentUser.id !== undefined && currentUser.id !== null) {
@@ -74,7 +79,7 @@ export function GroupDetailScreen({
             try {
                 const response = await fetchChatHistory(groupId, 50);
                 const chatHistory = response.data?.content || [];
-                
+
                 const authMessages = chatHistory
                     .filter(msg => msg.messageType === 'NOTICE')
                     .map(msg => {
@@ -83,14 +88,14 @@ export function GroupDetailScreen({
                         const kstTime = date.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' });
 
                         return {
-                            id: msg.messageId, 
+                            id: msg.messageId,
                             nickname: msg.senderNickname,
                             action: '루틴 인증 완료',
                             time: kstTime,
                             imageUrl: msg.imageUrl,
                         };
                     });
-                
+
                 setRecentActivities(authMessages);
                 console.log("최근 인증 내역 (KST):", authMessages);
             } catch (error) {
@@ -99,9 +104,31 @@ export function GroupDetailScreen({
             }
         };
 
+        // 추가: 멤버 프로필 조회 로직
+        const fetchMemberProfiles = async () => {
+            const profiles: Record<number, string> = {};
+            const fetchPromises = groupMembers.map(async (member) => {
+                if (member.userId) {
+                    try {
+                        const profileData = await getUserProfile(member.userId);
+                        profiles[member.userId] = profileData.profileImageUrl;
+                    } catch (error) {
+                        console.error(`Failed to fetch profile for user ${member.userId}:`, error);
+                        profiles[member.userId] = '';
+                    }
+                }
+            });
+            await Promise.all(fetchPromises);
+            setMemberProfiles(profiles);
+        };
+
         fetchData();
-    }, [groupId, currentUser.id]);
-    
+
+        if (groupMembers.length > 0) {
+            fetchMemberProfiles();
+        }
+    }, [groupId, currentUser.id, groupMembers]);
+
     const group = groups.find((g) => g.groupId === groupId);
 
     if (!group) {
@@ -109,15 +136,15 @@ export function GroupDetailScreen({
     }
 
     const isLeader = group?.leaderName === currentUser.nickname;
-    
+
     const handleChatClick = () => onNavigate('group-chat', group);
-    
+
     const handleMemberClick = (member: GroupMemberResponse) => {
         if (!member || !member.userId || !member.memberName) {
             console.error("전달된 멤버 객체에 필수 정보가 없습니다:", member);
             return;
         }
-        
+
         const userForNav = {
             id: member.userId,
             nickname: member.memberName,
@@ -129,7 +156,6 @@ export function GroupDetailScreen({
     const handleKickMember = async (targetMemberId: number) => {
         try {
             const currentLeader = groupMembers.find(m => m.memberName === group.leaderName);
-            
             if (!currentLeader || !currentLeader.groupMemberId) {
                 alert("리더의 정보를 찾을 수 없습니다.");
                 return;
@@ -181,8 +207,6 @@ export function GroupDetailScreen({
         }
     };
 
-    
-
     const handleDelegateLeader = async (targetMemberId: number, targetMemberName: string) => {
         try {
             const currentLeader = groupMembers.find(m => m.memberName === group.leaderName);
@@ -206,7 +230,7 @@ export function GroupDetailScreen({
     const handleOpenApprovalModal = async () => {
         try {
             const pendingMembers = await getPendingMembersByGroupId(groupId);
-            
+
             setPendingInvites(pendingMembers);
             setPendingAuthCount(pendingMembers.length);
             setShowApprovalModal(true);
@@ -237,12 +261,11 @@ export function GroupDetailScreen({
                 alert("그룹 가입을 승인했습니다.");
                 setPendingInvites(prev => prev.filter(p => p.groupMemberId !== targetMemberId));
                 setPendingAuthCount(prev => prev - 1);
-                
-                onUpdateGroup({ 
-                    ...group, 
+
+                onUpdateGroup({
+                    ...group,
                     currentMemberCount: group.currentMemberCount + 1,
                     members: [...groupMembers, response]
-                
                 });
                 onRefreshMembers();
             } else {
@@ -297,6 +320,7 @@ export function GroupDetailScreen({
                 onGroupDeleted={handleGroupDeleted}
                 myid={myid}
                 onGroupJoined={onGroupJoined}
+                isJoined={isJoined}
             />
             <div className="p-4 space-y-4">
                 <GroupDetailTabs
@@ -304,6 +328,7 @@ export function GroupDetailScreen({
                     recentActivities={recentActivities}
                     onMemberClick={handleMemberClick}
                     groupMembers={groupMembers}
+                    memberProfiles={memberProfiles}
                 />
             </div>
             <GroupEdit
