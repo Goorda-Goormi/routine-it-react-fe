@@ -99,36 +99,37 @@ export const getGroupTop3Ranking = async (
 
 // 그룹별 전체 랭킹 조회
 export async function getGlobalGroupRanking(
-  monthYear?: string,
-  category?: string,
-  groupType?: 'OPTIONAL' | 'MANDATORY',
-  page: number = 0,
-  size: number = 20
+    monthYear?: string,
+    category?: string,
+    groupType?: 'OPTIONAL' | 'MANDATORY',
+    page: number = 0,
+    size: number = 20
 ): Promise<GlobalGroupRankingData> {
-  try {
-    const params = new URLSearchParams({
-      page: page.toString(),
-      size: size.toString(),
-    });
-    if (monthYear) {
-      params.append("monthYear", monthYear);
-    }
-    if (category) {
-      params.append("category", category);
-    }
-    if (groupType) {
-      params.append("groupType", groupType);
-    }
+    try {
+        const params = new URLSearchParams({
+            page: page.toString(),
+            size: size.toString(),
+        });
+        if (monthYear) {
+            params.append("monthYear", monthYear);
+        }
+        if (category) {
+            params.append("category", category);
+        }
+        if (groupType) {
+            params.append("groupType", groupType);
+        }
 
-    const response = await apiFetch(`/api/rankings/groups/global?${params.toString()}`, {
-      method: "GET",
-    });
+        const response = await apiFetch(`/api/rankings/groups/global?${params.toString()}`, {
+            method: "GET",
+        });
 
-    return response.data[0];
-  } catch (error) {
-    console.error("그룹별 전체 랭킹 조회 실패:", error);
-    throw error;
-  }
+        // ✅ 수정된 부분: response 객체 전체를 반환합니다.
+        return response as GlobalGroupRankingData;
+    } catch (error) {
+        console.error("그룹별 전체 랭킹 조회 실패:", error);
+        throw error;
+    }
 }
 
 /**

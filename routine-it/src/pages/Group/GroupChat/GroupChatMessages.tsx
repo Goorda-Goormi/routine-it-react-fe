@@ -133,12 +133,10 @@ export function GroupChatMessages({ messages, myUserId, getUserInfo, group, memb
                             
                             {/* MEMBER_JOIN, MEMBER_LEAVE 메시지 렌더링 로직 */}
                             {['MEMBER_JOIN', 'MEMBER_LEAVE'].includes(msg.messageType) ? (
-                                <div key={`system-${msg.id || index}`} className="flex items-center my-2">
-                                    <div className="flex-grow border-t border-muted-foreground/30" />
-                                    <span className="mx-3 text-xs text-muted-foreground text-center">
+                                <div key={`system-${msg.id || index}`} className="flex justify-center my-2">
+                                    <span className="text-xs text-muted-foreground bg-gray-100 dark:bg-zinc-700/50 rounded-lg px-3 py-1.5 font-light">
                                         {msg.message}
                                     </span>
-                                    <div className="flex-grow border-t border-muted-foreground/30" />
                                 </div>
                             ) : (
                                 <div
