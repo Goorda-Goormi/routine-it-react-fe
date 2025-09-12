@@ -1,4 +1,3 @@
-// GroupChatScreen.jsx
 import React, { useState, useEffect, useRef } from 'react';
 import SockJS from 'sockjs-client';
 import { Client } from '@stomp/stompjs';
@@ -12,12 +11,13 @@ import { GroupRoutineDialog } from './GroupRoutineDialog';
 import { GroupChatMessages } from './GroupChatMessages';
 import { GroupChatInput } from './GroupChatInput';
 import { leaveGroup } from '../../../api/chat';
-
+import { updateRankingScore } from '../../../api/ranking'; 
+import { createGroupActivity } from '../../../api/activity';
 import type { Group, UserProfile, GroupMemberResponse } from '../../../interfaces';
-import { fetchChatHistory } from '../../../api/chat'; // ✅ 추가된 import
-import { submitAuthentication } from '../../../api/group'; 
+import { fetchChatHistory } from '../../../api/chat';
+import { requestAuthApproval, getGroupMembers } from '../../../api/group';
+import { getUserProfile } from '../../../api/user';
 
-// 👉 API 기본 URL, WS 연결 URL
 export const BASE_URL = "http://54.180.93.1:8080";
 const WS_CONNECTION_URL = `${BASE_URL}/ws`;
 
@@ -28,57 +28,70 @@ export interface Message {
     senderNickname: string;
     message: string | null;
     imageUrl: string | null;
-    messageType: 'TALK' | 'AUTH' | 'IMAGE' | 'ALBUM' | 'ONLINE' | 'OFFLINE';
+    messageType: 'TALK' | 'AUTH' | 'NOTICE' | 'IMAGE' | 'ALBUM' | 'ONLINE' | 'OFFLINE' | 'MEMBER_JOIN' | 'MEMBER_LEAVE';
     sentAt: string | null;
     isMe: boolean;
     reactions?: { [key: string]: number };
     albumImages?: string[];
 }
 
-export function GroupChatScreen({ group, groupmembers, onBack, onLeaveGroup, userInfo }) {
+export function GroupChatScreen({ group, groupmembers, onBack, onLeaveGroup, userInfo, onDataRefresh }) {
     const [isAuthDialogOpen, setIsAuthDialogOpen] = useState(false);
     const [isMembersDialogOpen, setIsMembersDialogOpen] = useState(false);
     const [messages, setMessages] = useState<Message[]>([]);
-
+     const [memberProfiles, setMemberProfiles] = useState<Record<number, string>>({});
     const stompClientRef = useRef<Client | null>(null);
 
     const myUserId = userInfo.id;
     const myNickname = userInfo.nickname;
-    const roomId = group.groupId; // 그룹 채팅방 ID
+    const roomId = group.groupId;
 
-    // 🔌 채팅 기록 로드 및 웹소켓 연결
+     useEffect(() => {
+        const fetchProfiles = async () => {
+            const profiles: Record<number, string> = {};
+            // groupmembers 배열이 유효할 때만 프로필을 조회합니다.
+            if (groupmembers && groupmembers.length > 0) {
+                // 프로필 조회를 위해 모든 멤버의 userId에 대한 Promise 배열을 생성합니다.
+                const profilePromises = groupmembers.map(member =>
+                    getUserProfile(member.userId)
+                );
+                // 모든 프로필 정보를 한 번에 비동기적으로 가져옵니다.
+                const userProfiles = await Promise.allSettled(profilePromises);
+
+                userProfiles.forEach((result, index) => {
+                    const member = groupmembers[index];
+                    // 요청이 성공적으로 완료되었을 때만 프로필 이미지를 저장합니다.
+                    if (result.status === 'fulfilled' && result.value) {
+                        profiles[member.userId] = result.value.profileImageUrl;
+                    }
+                });
+            }
+            // 모든 프로필 조회 후 상태를 한 번에 업데이트합니다.
+            setMemberProfiles(profiles);
+        };
+
+        fetchProfiles();
+    }, [groupmembers]); // ✅ groupmembers 데이터가 변경될 때마다 프로필을 다시 조회합니다.
+
     useEffect(() => {
-    // 1. 과거 메시지 기록을 불러오는 비동기 함수
-    const loadChatHistory = async () => {
-        try {
-            // fetchChatHistory 함수 호출
-            const response = await fetchChatHistory(roomId, 20); 
+        const loadChatHistory = async () => {
+            try {
+                const response = await fetchChatHistory(roomId, 20);
+                let messagesFromServer = response.data?.content || [];
+                messagesFromServer = messagesFromServer.reverse();
+                const updatedHistory = messagesFromServer.map(msg => ({
+                    ...msg,
+                    isMe: (msg.messageType === 'MEMBER_JOIN' || msg.messageType === 'MEMBER_LEAVE') ? false : msg.userId === myUserId,
+                }));
+                setMessages(updatedHistory);
+            } catch (error) {
+                console.error("채팅 기록 로딩 실패:", error);
+                setMessages([]);
+            }
+        };
 
-            // ✅ 응답 객체의 `data.content`에 메시지 배열이 들어있으므로, 이 부분을 사용합니다.
-            let messagesFromServer = response.data?.content || [];
-            
-            // ⭐️ 추가된 코드: 메시지 배열을 역순으로 정렬
-            messagesFromServer = messagesFromServer.reverse();
-            // 불러온 메시지에 isMe 속성 추가
-            const updatedHistory = messagesFromServer.map(msg => ({
-              ...msg,
-              // MEMBER_JOIN, MEMBER_LEAVE 타입에는 isMe를 항상 false로 설정
-              isMe: (msg.messageType === 'MEMBER_JOIN' || msg.messageType === 'MEMBER_LEAVE') ? false : msg.userId === myUserId,
-          }));
+        loadChatHistory();
 
-            // 상태 업데이트
-            setMessages(updatedHistory);
-        } catch (error) {
-            console.error("채팅 기록 로딩 실패:", error);
-            // 에러 발생 시 빈 배열로 설정
-            setMessages([]);
-        }
-    };
-
-    // 과거 메시지 로드 후 웹소켓 연결
-    loadChatHistory();
-        
-        // 3. 웹소켓 연결 로직 (기존 코드)
         const socket = new SockJS(WS_CONNECTION_URL);
         const stompClient = new Client({
             webSocketFactory: () => socket,
@@ -86,14 +99,11 @@ export function GroupChatScreen({ group, groupmembers, onBack, onLeaveGroup, use
                 Authorization: 'Bearer ' + localStorage.getItem('accessToken'),
             },
             debug: (str) => console.log(str),
-            reconnectDelay: 5000, // 재연결 5초
+            reconnectDelay: 5000,
             onConnect: () => {
                 console.log('✅ STOMP 연결 성공');
-
-                // 구독
                 stompClient.subscribe(`/topic/room/${roomId}`, (message) => {
                     const body = JSON.parse(message.body);
-
                     const newMsg: Message = {
                         id: body.id,
                         roomId: body.roomId,
@@ -108,8 +118,6 @@ export function GroupChatScreen({ group, groupmembers, onBack, onLeaveGroup, use
                     };
                     setMessages((prev) => [...prev, newMsg]);
                 });
-
-                // 온라인 신호
                 stompClient.publish({
                     destination: `/app/chat.online/${roomId}`,
                     body: JSON.stringify({ userId: myUserId, nickname: myNickname }),
@@ -130,24 +138,18 @@ export function GroupChatScreen({ group, groupmembers, onBack, onLeaveGroup, use
 
     const handleSendMessage = (text: string) => {
         if (!text.trim()) return;
-
         const msgBody = {
             userId: myUserId,
             senderNickname: myNickname,
             message: text,
             messageType: 'TALK',
         };
-
-        // 1. 웹소켓으로 메시지 전송
         stompClientRef.current?.publish({
             destination: `/app/chat.send/${roomId}`,
             body: JSON.stringify(msgBody),
         });
-
-      
     };
 
-    // 🖼️ 이미지 보내기 (로컬 프리뷰 + 서버 전송 필요하면 백엔드 맞춤)
     const handleSendImage = (file: File) => {
         const imageUrl = URL.createObjectURL(file);
         const newMessage: Message = {
@@ -183,27 +185,6 @@ export function GroupChatScreen({ group, groupmembers, onBack, onLeaveGroup, use
         setMessages((prev) => [...prev, newMessage]);
     };
 
-    // const handleAuthSubmit = (data: { description: string; image: File | null; isPublic: boolean }) => {
-    //     const authMessage: Message = {
-    //         id: null,
-    //         roomId,
-    //         userId: myUserId,
-    //         senderNickname: myNickname,
-    //         message: data.description,
-    //         imageUrl: null,
-    //         messageType: 'AUTH',
-    //         sentAt: new Date().toISOString(),
-    //         isMe: true,
-    //         reactions: {},
-    //     };
-    //     setMessages((prevMessages) => [...prevMessages, authMessage]);
-
-    //     const routineId = group.routines?.[0]?.id || 0;
-    //     onAddAuthMessage(group.groupId, data, myNickname, myUserId, routineId);
-
-    //     setIsAuthDialogOpen(false);
-    // };
-
     const handleDeleteGroup = async () => {
         if (!window.confirm("정말로 이 채팅에서 나가시겠습니까?")) return;
         try {
@@ -238,8 +219,7 @@ export function GroupChatScreen({ group, groupmembers, onBack, onLeaveGroup, use
         if (msg.senderNickname === myNickname) {
             return userInfo;
         }
-        //const member = groupmembers.find((m) => m.groupMemberId === msg.userId);
-const member = groupmembers.find((m) => m.memberName === msg.senderNickname);
+        const member = groupmembers.find((m) => m.memberName === msg.senderNickname);
         if (!member) {
             console.warn(`사용자 정보를 찾을 수 없습니다: userId ${msg.userId}`);
             return undefined;
@@ -254,30 +234,90 @@ const member = groupmembers.find((m) => m.memberName === msg.senderNickname);
     };
 
     const handleAuthSubmit = async (data: { description: string; image: File | null; isPublic: boolean }) => {
-    const formData = new FormData();
-    formData.append('description', data.description);
-    if (data.image) {
-      formData.append('image', data.image);
-    }
+        if (!stompClientRef.current) {
+            alert("채팅 연결이 불안정하여 인증을 보낼 수 없습니다. 잠시 후 다시 시도해주세요.");
+            return;
+        }
 
-    try {
-      await submitAuthentication(group.groupId, formData);
-      alert('인증이 성공적으로 제출되었습니다.');
-      // 인증 제출 후 필요한 작업 (예: 모달 닫기)
-    } catch (error) {
-      alert('인증 제출에 실패했습니다.');
-      console.error(error);
-    }
-  };
+        try {
+            if (group.groupType === 'FREE') {
+                const activityData = {
+                    description: data.description,
+                    photo: data.image,
+                    isPublic: data.isPublic,
+                    groupId: group.groupId,
+                };
+                
+                await createGroupActivity(activityData);
+
+            
+                try {
+                    await updateRankingScore(myUserId, group.groupId, 1);
+                    console.log("✅ 랭킹 점수 업데이트 성공: 자유그룹 인증");
+                    onDataRefresh();
+                  } catch (rankingError) {
+                    console.error("🚨 랭킹 점수 업데이트 실패:", rankingError);
+                }
+                
+                const msgBody = {
+                    userId: myUserId,
+                    senderNickname: myNickname,
+                    message: data.description,
+                    imageUrl: data.image ? URL.createObjectURL(data.image) : null,
+                    messageType: 'NOTICE', 
+                };
+
+                stompClientRef.current.publish({
+                    destination: `/app/chat.send/${roomId}`,
+                    body: JSON.stringify(msgBody),
+                });
+
+                onDataRefresh();
+                //onBack();
+                
+                alert('자유그룹 인증이 성공적으로 제출되었습니다.');
+                    
+            } else {
+                // REQUIRED 그룹 인증 요청 (기존 로직)
+                const authMessage = data.description;
+                const msgBody = {
+                    userId: myUserId,
+                    senderNickname: myNickname,
+                    message: authMessage,
+                    imageUrl: data.image ? URL.createObjectURL(data.image) : null,
+                    messageType: 'NOTICE', 
+                };
+
+                stompClientRef.current.publish({
+                    destination: `/app/chat.send/${roomId}`,
+                    body: JSON.stringify(msgBody),
+                });
+
+                onDataRefresh(); 
+               // onBack();
+                
+                alert('인증이 성공적으로 제출되었습니다.');
+            }
+        } catch (error) {
+            // 오류 응답 확인
+            if (error.name === 'AuthError' || (error.response && error.response.status === 401)) {
+                alert('인증이 만료되었습니다. 다시 로그인해주세요.');
+                // 여기에서 로그인 페이지로 리디렉션하는 로직을 추가
+                // 예: window.location.href = '/login';
+            } else {
+                alert('인증 제출에 실패했습니다.');
+            }
+            console.error("🚨 최종 에러 핸들링:", error);
+        }
+    };
 
     return (
         <div className="flex flex-col h-screen bg-background">
-            {/* 헤더 */}
-            <div className="sticky top-0 z-10 bg-background/95 backdrop-blur border-b p-4">
+            <div className="sticky top-0 z-10 bg-background/95 backdrop-blur border-b border-b-[var(--color-border-bottom-custom)] p-4">
                 <div className="mx-auto flex items-center justify-between">
                     <div className="flex-1 flex items-center space-x-3">
                         <Button variant="ghost" size="sm" onClick={onBack} className="p-1">
-                            <ArrowLeft className="h-5 w-5" />
+                            <ArrowLeft className="h-5 w-5 text-icon-secondary dark:text-white" />
                         </Button>
                         <div className="flex-1" />
                     </div>
@@ -289,21 +329,22 @@ const member = groupmembers.find((m) => m.memberName === msg.senderNickname);
                         <Dialog open={isMembersDialogOpen} onOpenChange={setIsMembersDialogOpen}>
                             <DialogTrigger asChild>
                                 <Button variant="ghost" size="sm">
-                                    <Users className="h-4 w-4" />
+                                    <Users className="h-4 w-4 text-icon-secondary dark:text-white" />
                                 </Button>
                             </DialogTrigger>
-                            <DialogContent className="max-w-sm mx-auto">
+                            <DialogContent className="max-w-sm mx-auto text-icon-secondary dark:text-white">
                                 <DialogHeader>
                                     <DialogTitle>그룹 멤버</DialogTitle>
                                     <DialogDescription>{group.groupName} 참여 멤버</DialogDescription>
                                 </DialogHeader>
-                                <div className="space-y-3 max-h-80 overflow-y-auto">
+                                <div className="space-y-3 max-h-80 overflow-y-auto ">
                                     {groupmembers.map((member) => {
+                                        const profileImage = memberProfiles[member.userId];
                                         const isMe = member.groupMemberId === myUserId;
                                         return (
                                             <div key={member.groupMemberId} className="flex items-center space-x-3 p-2 rounded-lg hover:bg-accent/50">
                                                 <Avatar className="h-10 w-10">
-                                                    <AvatarImage src={isMe ? userInfo.profileImageUrl : member.profileImageUrl} alt={member.memberName} />
+                                                    <AvatarImage src={profileImage || member.profileImageUrl || ''} alt={`${member.nickname} 프로필`} />
                                                     <AvatarFallback>{member.memberName}</AvatarFallback>
                                                 </Avatar>
                                                 <div className="flex-1">
@@ -330,22 +371,21 @@ const member = groupmembers.find((m) => m.memberName === msg.senderNickname);
                     </div>
                 </div>
             </div>
-
             <GroupChatMessages
                 messages={messages}
                 myUserId={myUserId}
                 getUserInfo={getUserInfo}
-                handleReactionClick={handleReactionClick}
                 userInfo={userInfo}
+                group={group}
+                memberProfiles={memberProfiles}
             />
             <GroupChatInput handleSendMessage={handleSendMessage} handleSendImage={handleSendImage} handleSendAlbum={handleSendAlbum} />
-
             <GroupRoutineDialog
                 isOpen={isAuthDialogOpen}
                 onOpenChange={setIsAuthDialogOpen}
                 onAuthSubmit={handleAuthSubmit}
-                isMandatory={group.groupType === 'REQUIRED'}
-                selectedRoutine={group.routines?.[0] || null}
+                selectedRoutine={group?.routines?.[0] || null}
+                group={group}
             />
         </div>
     );

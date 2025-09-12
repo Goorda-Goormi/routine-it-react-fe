@@ -27,19 +27,59 @@ import { LoadingSpinner } from "./components/ui/loading-spinner";
 import { MonthlyReviewModal } from './components/modules/MonthlyReviewModal';
 import { startKakaoLogin, getUserInfo } from "./api/login"; 
 import { completeSignup, logoutUser, deleteAccount } from './api/auth';
-import { createGroup, getAllGroups,getJoinedGroups,getGroupMembers } from "./api/group";
+import { 
+  createPersonalActivity,
+  getUserActivitiesByDay,
+  updateActivity,
+  getTotalAttendanceDays,
+  checkAttendance
+} from './api/activity';
+import { 
+  createPersonalRoutine,
+  getPersonalRoutinesByUser,
+  updatePersonalRoutine,
+  deletePersonalRoutine,
+  toggleRoutinePublic, 
+  toggleRoutineAlarm 
+} from './api/personalRoutine';
+import { apiFetch } from "./api/client";
+import type { PersonalRoutineResponse, PersonalRoutineCreatePayload, PersonalRoutineUpdatePayload } from './api/personalRoutine';
+import { createGroup, getAllGroups,getJoinedGroups,getGroupMembers, requestJoinGroup } from "./api/group";
 import { updateRankingScore, getPersonalRankings, getUserTotalScore, getGlobalGroupRanking } from "./api/ranking";
 import { getMonthlyReview } from './api/review';
 import type { IPersonalRankingResponse, UserTotalScoreResponse } from './interfaces';
 import type { GlobalGroupRankingData } from "./pages/Ranking/RankingScreen";import { toggleDarkMode as toggleDarkModeAPI, toggleAlarm as toggleAlarmAPI } from './api/setting';
 import { getNotifications, markNotificationAsRead } from "./api/notification";
 import type { NotificationApiResponse, NotificationType } from "./interfaces";
-import { User, Bell, Camera } from 'lucide-react'
+import { User, Bell, Camera, Clock } from 'lucide-react'
+
+const BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
 interface NavigationState {
   screen: string;
   params?: any;
 }
+
+const transformPersonalRoutine = (pr: PersonalRoutineResponse): Routine => {
+  return {
+    id: pr.routineId,
+    name: pr.routineName,
+    description: pr.description,
+    time: pr.startTime,
+    frequency: convertAuthDaysToFrequency(pr.repeatDays), 
+    isPublic: pr.isPublic,
+    reminder: pr.isAlarmOn,
+    
+    isGroupRoutine: false,
+    completed: false, 
+    streak: 0, 
+    difficulty: '쉬움',
+    goal: '30', 
+    category: '생활',
+  };
+};
+
+type RoutineOverride = Partial<Pick<Routine, 'time' | 'frequency' | 'reminder' | 'goal'>>;
 
 /**
  * { hour: 8, minute: 0 } 형태의 alarmTime 객체를 '08:00' 형태의 문자열로 변환합니다.
@@ -54,13 +94,28 @@ const convertAlarmTimeToTimeString = (alarmTime: { hour?: number; minute?: numbe
   return `${hour}:${minute}`;
 };
 
+  // 날짜 포맷 옵션 (연, 월, 일, 시, 분)
+const dateOptions: Intl.DateTimeFormatOptions = {
+  year: 'numeric',
+  month: 'numeric',
+  day: 'numeric',
+  hour: '2-digit',
+  minute: '2-digit',
+  hour12: true,
+};
+
 /**
  * '1111100' 형태의 authDays 문자열을 ['월', '화', '수', '목', '금'] 형태의 배열로 변환합니다.
  */
+const convertFrequencyToAuthDays = (frequency: string[]): string => {
+  const daysOfWeek = ['월', '화', '수', '목', '금', '토', '일'];
+  return daysOfWeek.map(day => frequency.includes(day) ? '1' : '0').join('');
+};
+
 const convertAuthDaysToFrequency = (authDays: string): string[] => {
   const daysOfWeek = ['월', '화', '수', '목', '금', '토', '일'];
   if (!authDays || authDays.length !== 7) {
-    return []; // 기본값은 빈 배열
+    return [];
   }
   return authDays.split('').map((char, index) => (char === '1' ? daysOfWeek[index] : null)).filter(Boolean) as string[];
 };
@@ -86,6 +141,7 @@ const transformGroupToRoutine = (group: Group): Routine => {
     streak: 0,
     goal: '30',
     reminder: true,
+    isPublic: true,
   };
   
 };
@@ -121,14 +177,18 @@ const transformNotification = (apiNotif: NotificationApiResponse): Notification 
       category = '홈';
   }
 
+  const dateString = apiNotif.createdAt 
+    ? new Date(apiNotif.createdAt).toLocaleString('ko-KR', dateOptions) // <-- 옵션 적용
+    : '시간 정보 없음';
+
   return {
     id: apiNotif.id,
     message: apiNotif.content,
     category: category,
-    date: new Date(apiNotif.createdAt).toLocaleString(), // 날짜 형식 변환
+    date: dateString, // 수정된 날짜 문자열을 사용합니다.
     read: apiNotif.read,
     icon: icon,
-    // relatedId가 필요하다면 API 응답에 groupId 같은 필드를 추가해야 합니다.
+    isLocal: false, // 서버에서 온 알림이므로 false
   };
 };
 
@@ -162,6 +222,10 @@ export default function App() {
   //const [pendingAuthMessages, setPendingAuthMessages] = useState<PendingAuthMap>({});
   const [navigationStack, setNavigationStack] = useState<NavigationState[]>([]);
   const [isDarkMode, setIsDarkMode] = useState(false);
+  const [completedActivityIds, setCompletedActivityIds] = useState({
+    personal: new Map<number, number>(),
+    group: new Map<number, number>(),
+  });
   const [isAttendanceModalOpen, setAttendanceModalOpen] = useState(false);
   const [isStreakModalOpen, setStreakModalOpen] = useState(false);
   const [isBadgeModalOpen, setBadgeModalOpen] = useState(false);
@@ -174,6 +238,8 @@ export default function App() {
     }
     return null;
   });
+
+  const [groupRoutineOverrides, setGroupRoutineOverrides] = useState<Record<number, RoutineOverride>>({});
 
   const [routineCompletionCount, setRoutineCompletionCount] = useState<number>(() => {
     return Number(localStorage.getItem('routineCompletionCount')) || 0;
@@ -197,11 +263,7 @@ export default function App() {
     return [];
   });
   
-  const [streakDays, setStreakDays] = useState(() => {
-    const savedStreak = localStorage.getItem('streakDays');
-    return savedStreak ? Number(savedStreak) : 0;
-  });
-
+  const [streakDays, setStreakDays] = useState(0);
   const [UserInfo, setUserInfo] = useState<UserProfile | null>(null); // 초기 상태를 null로 변경
   const [isLoading, setIsLoading] = useState<boolean>(false);
 
@@ -211,8 +273,10 @@ export default function App() {
  const [myGroups, setMyGroups] = useState<Group[]>([]);
   const [isLoadingGroups, setIsLoadingGroups] = useState(true);
 
-  const [groupRoutines, setGroupRoutines] = useState<Routine[]>([]);
+  //const [groupRoutines, setGroupRoutines] = useState<Routine[]>([]);
   const [error, setError] = useState<string | null>(null);
+
+  const [remindersSentToday, setRemindersSentToday] = useState<Record<number, boolean>>({});
 
   const [isReviewModalOpen, setReviewModalOpen] = useState(false);
   const [reviewModalContent, setReviewModalContent] = useState({ content: '', monthYear: '' });
@@ -220,11 +284,19 @@ export default function App() {
     const newNotification: Notification = {
       ...notification,
       id: Date.now(),
-      date: '방금 전',
+      date: new Date().toLocaleString('ko-KR', dateOptions),
       read: false,
+      isLocal: true,
     };
     setNotifications(prev => [newNotification, ...prev]);
   };
+
+  useEffect(() => {
+    const savedOverrides = localStorage.getItem('groupRoutineOverrides');
+    if (savedOverrides) {
+      setGroupRoutineOverrides(JSON.parse(savedOverrides));
+    }
+  }, []);
 
   useEffect(() => {
     const dummyNotifications: Notification[] = [
@@ -248,7 +320,8 @@ export default function App() {
       completed: false,
       streak: 0,
       difficulty: '쉬움',
-      isGroupRoutine: false
+      isGroupRoutine: false,
+      isPublic: true
     },
     {
       id: 8,
@@ -262,7 +335,8 @@ export default function App() {
       completed: false,
       streak: 0,
       difficulty: '쉬움',
-      isGroupRoutine: false
+      isGroupRoutine: false,
+      isPublic: true
     },
     {
       id: 9,
@@ -276,7 +350,8 @@ export default function App() {
       completed: false,
       streak: 0,
       difficulty: '보통',
-      isGroupRoutine: false
+      isGroupRoutine: false,
+      isPublic: true
     },
     {
       id: 10,
@@ -290,7 +365,8 @@ export default function App() {
       completed: false,
       streak: 0,
       difficulty: '보통',
-      isGroupRoutine: false
+      isGroupRoutine: false,
+      isPublic: true
     },
     {
       id: 11,
@@ -304,7 +380,8 @@ export default function App() {
       completed: false,
       streak: 0,
       difficulty: '쉬움',
-      isGroupRoutine: false
+      isGroupRoutine: false,
+      isPublic: true
     },
     {
       id: 12,
@@ -318,9 +395,22 @@ export default function App() {
       completed: false,
       streak: 0,
       difficulty: '쉬움',
-      isGroupRoutine: false
+      isGroupRoutine: false,
+      isPublic: true
     }
   ]);
+
+  const fetchTotalAttendance = async () => {
+    //if (!isLoggedIn) return;
+    try {
+      // targetUserId 없이 호출하여 '내' 누적 출석일을 가져옵니다.
+      const totalDays = await getTotalAttendanceDays();
+      console.log('✅ [App.tsx] fetchTotalAttendance API 응답:', totalDays);
+      setStreakDays(totalDays);
+    } catch (error) {
+      console.error("누적 출석일 조회 실패:", error);
+    }
+  };
 
    const [groupMembers, setGroupMembers] = useState<Record<number, GroupMemberResponse[]>>({});
   
@@ -332,8 +422,9 @@ export default function App() {
         const groupId = currentScreen && currentScreen.params ? currentScreen.params.groupId : undefined;
         const members = groupId !== undefined ? (groupMembers[groupId] || []) : [];
         const myId = UserInfo?.id; 
-        const isJoined = groupId !== undefined ? myGroups.some(joinedGroup => joinedGroup.groupId === groupId) : false;
-  //2. 유틸리티 함수 ============================================
+        const isJoined = groupId !== undefined ? myGroups.some(joinedGroup => joinedGroup.groupId === groupId) : false; 
+
+        //2. 유틸리티 함수 ============================================
   const badgeInfo = {
     '첫걸음': {
       image: 'https://i.ibb.co/6P0D6kX/first-step-badge.png',
@@ -357,6 +448,7 @@ export default function App() {
 
   const fetchUserInfo = async () => {
     setIsLoading(true);
+    console.log('A. fetchUserInfo 함수 시작.');
     const token = localStorage.getItem('accessToken');
     if (!token) {
       console.error("인증 토큰이 없습니다.");
@@ -365,13 +457,18 @@ export default function App() {
     }
       
     try {
+      console.log('B. getUserInfo API 호출 직전...');
       const userInfoData = await getUserInfo();
+      console.log('C. getUserInfo API 호출 성공! 받은 데이터:', userInfoData);
       setUserInfo(prevUserInfo => ({
         ...prevUserInfo,
         ...userInfoData,
       }));
-
+      console.log('D. setUserInfo 호출 완료.'); // <-- 로그 D
     } catch (error) {
+      // ▼▼▼ 이 로그를 추가해서 에러를 확인하세요! ▼▼▼
+      console.log('E. fetchUserInfo의 catch 블록 실행됨!', error);
+      
       console.error("사용자 정보 조회 에러:", error);
       localStorage.removeItem('accessToken');
       setIsLoggedIn(false);
@@ -387,30 +484,28 @@ export default function App() {
     setError(null);
     try {
       const allGroups = await getAllGroups();
-      const joinedGroups = await getJoinedGroups();
+      const joinedGroupsFromServer: any[] = await getJoinedGroups();
 
-      /*
+      const transformedJoinedGroups: Group[] = joinedGroupsFromServer.map((group: any) => {
+        // group.recentMembers 배열을 순회하며 각 멤버(apiMember)를 UI용 Member 타입으로 변환합니다.
+        const transformedMembers: Member[] = (group.recentMembers || []).map(
+          (apiMember: GroupMemberResponse) => ({
+            id: apiMember.userId, // 👈 'userId'를 'id'로 변환하는 가장 중요한 부분입니다.
+            nickname: apiMember.nickname,
+            profileImageUrl: apiMember.profileImageUrl,
+          })
+        );
+        // 변환된 멤버 배열(transformedMembers)을 기존 그룹 객체에 다시 할당합니다.
+        return { ...group, recentMembers: transformedMembers };
+      });
+
+      // 중복 제거는 변환이 완료된 데이터를 기준으로 수행합니다.
+      const uniqueJoinedGroups = Array.from(
+        new Map(transformedJoinedGroups.map((group) => [group.groupId, group])).values()
+      );
+      
+      setMyGroups(uniqueJoinedGroups);
       setGroups(allGroups);
-      setMyGroups(joinedGroups);
-      */
-
-      // 1. 받아온 '가입한 그룹' 목록을 '루틴' 객체 배열로 변환합니다.
-      const transformedRoutines = joinedGroups.map(transformGroupToRoutine);
-
-      // 2. 변환된 루틴 데이터를 새로운 state에 저장합니다.
-      setGroupRoutines(transformedRoutines);
-
-      // 3. 원본 그룹 데이터는 myGroups state에 저장하여 그룹 목록 UI 등에서 사용합니다.
-      setMyGroups(joinedGroups);
-      setGroups(allGroups);
-
-    //  const joinedGroupIds = new Set(joinedGroups.map((g: Group) => g.groupId));
-
-    //   // allGroups 중에서 joinedGroupIds에 포함된 그룹만 필터링합니다.
-    //   const filteredJoinedGroups = allGroups.filter((g: Group) => joinedGroupIds.has(g.groupId));
-
-    //   setGroups(allGroups);
-    //    setMyGroups(filteredJoinedGroups); 
 
     } catch (err) {
       console.error("Failed to fetch groups:", err);
@@ -427,44 +522,41 @@ export default function App() {
 
   //웹 페이지 로드 시 로그인 상태 확인
   useEffect(() => {
+  const checkAuthAndFetchUser = async () => {
     const params = new URLSearchParams(window.location.search);
-    const accessToken = params.get('accessToken');
-    const isNewUserParam = params.get('isNewUser');
-    const storedToken = localStorage.getItem('accessToken');
-
-    if (accessToken) {
-      localStorage.setItem('accessToken', accessToken);
-      setIsLoggedIn(true);
-      fetchUserInfo(); // 로그인 성공 시 사용자 정보 즉시 불러오기
-      fetchGroupData();
-        
-      if (isNewUserParam === 'true') {
-        setIsNewUser(true);
-        setIsLoginModalOpen(true);
-      }
-      //  fetchGroupData();
-      // setIsNewUser(true);
-      // setIsLoginModalOpen(true);
+    let token = params.get('accessToken');
+    if (token) {
+      localStorage.setItem('accessToken', token);
       window.history.replaceState({}, document.title, window.location.pathname);
-      
     } else {
-      //const storedToken = localStorage.getItem('accessToken');
-      if (storedToken) {
-        setIsLoggedIn(true);
-        fetchUserInfo(); // 로컬 스토리지에 토큰이 있을 경우 사용자 정보 불러오기
-        fetchGroupData();
-        fetchUserTotalScore();
-      }
+      token = localStorage.getItem('accessToken');
     }
-  }, []);
 
-   //groups 상태가 변경될 때마다 groupRoutines 업데이트
-  //  useEffect(() => {
-  //   const newGroupRoutines: Routine[] = groups.flatMap(group => 
-  //     group.routines?.map(routine => ({ ...routine, isGroupRoutine: true })) || []
-  //   );
-  //   setGroupRoutines(newGroupRoutines);
-  // }, [groups]);
+    if (token) {
+      setIsLoggedIn(true);
+      await fetchUserInfo(); 
+    }
+  };
+
+  checkAuthAndFetchUser();
+}, []);
+
+
+useEffect(() => {
+  if (isLoggedIn && UserInfo) {
+    const fetchRemainingData = async () => {
+      await Promise.all([
+        fetchUserActivities(),
+        fetchPersonalRoutines(),
+        fetchUserTotalScore(),
+        fetchTotalAttendance(),
+        fetchGroupData(),
+        fetchNotifications()
+      ]);
+    };
+    fetchRemainingData();
+  }
+}, [UserInfo]);
 
   // UserInfo(서버) 상태와 isDarkMode(UI) 상태를 동기화
   useEffect(() => {
@@ -482,28 +574,35 @@ export default function App() {
     }
   }, [isDarkMode]);
 
-  useEffect(() => {
-  const fetchMembers = async () => {
-    // 현재 화면이 group-detail이고, groupId가 존재하는지 확인
-    if (currentScreen && currentScreen.screen === "group-detail" && currentScreen.params.groupId) {
-      const groupId = currentScreen.params.groupId;
-      try {
-        const members = await getGroupMembers(groupId);
-        console.log(`그룹 ID ${groupId}의 멤버:`, members); // ✨ 콘솔 출력 추가
-        
-        // 상태에 멤버 정보 저장
-        setGroupMembers(prevMembers => ({
-          ...prevMembers,
-          [groupId]: members,
-        }));
-      } catch (error) {
-        console.error("그룹 멤버 조회 실패:", error);
-      }
-    }
-  };
 
-  fetchMembers();
-}, [navigationStack, isJoined]);
+const fetchMembers = async (groupId: number) => {
+    try {
+        const members = await getGroupMembers(groupId);
+        setGroupMembers(prevMembers => ({
+            ...prevMembers,
+            [groupId]: members,
+        }));
+    } catch (error) {
+        console.error("그룹 멤버 조회 실패:", error);
+    }
+};
+
+// 그룹 멤버 목록을 새로고침하는 함수
+const handleGroupMembersRefresh = () => {
+  if (currentScreen && currentScreen.screen === "group-detail" && currentScreen.params.groupId) {
+    const groupId = currentScreen.params.groupId;
+    fetchMembers(groupId);
+  }
+};
+
+
+// 아래 useEffect 수정
+useEffect(() => {
+  if (currentScreen && currentScreen.screen === "group-detail" && currentScreen.params.groupId) {
+    const groupId = currentScreen.params.groupId;
+    fetchMembers(groupId);
+  }
+}, [navigationStack, myGroups]);
   
 
   //5. 사용자/계정 관리 =============================================================
@@ -549,22 +648,36 @@ export default function App() {
 
   const handleLogout = async() => {
     try {
-    // 분리된 로그아웃 API 함수를 호출합니다.
-    await logoutUser();
+        console.log('🚪 Logging out...');
+        
+        // 서버에 로그아웃을 요청하여 서버 세션 및 쿠키를 무효화합니다.
+        await fetch(`${BASE_URL}/api/auth/logout`, {
+            method: 'POST',
+            credentials: 'include', // 쿠키(refreshToken)를 함께 보내기 위해 필수
+            headers: {
+                'Content-Type': 'application/json',
+                Authorization: `Bearer ${localStorage.getItem('accessToken')}`,
+            },
+        });
+        
+        console.log('✅ Logout request sent to server');
+        
+    } catch (error) {
+        console.error('⚠️ Logout request failed:', error);
+    } finally {
+        // 요청 성공 여부와 관계없이 로컬 데이터를 모두 정리합니다.
+        localStorage.removeItem('accessToken');
+        localStorage.removeItem('refreshToken'); // 혹시 남아있을 경우를 대비
+        
+        console.log('✅ Local tokens cleared');
+        
+        // 상태를 초기화하고 로그인 페이지로 이동합니다.
+        setIsLoggedIn(false);
+        setUserInfo(null);
+        window.location.href = '/login';
+    }
+  };
 
-    // 클라이언트 상태를 초기화합니다.
-    setIsLoggedIn(false);
-    setActiveTab("home");
-    setNavigationStack([]);
-    
-    alert('로그아웃 되었습니다.');
-
-  } catch (error) {
-    console.error("로그아웃 에러:", error);
-    // API 모듈에서 전달된 에러 메시지를 사용자에게 보여줍니다.
-    alert((error as Error).message);
-  }
-};
 
   const handleDeleteAccount = async () => {
     const isConfirmed = window.confirm("계정 탈퇴 시 모든 정보가 삭제되며 복구할 수 없습니다. 정말로 탈퇴하시겠습니까?");
@@ -617,124 +730,287 @@ export default function App() {
 
   //6.루틴 관리 =============================================================
   
-  const handleAddRoutine = (newRoutineData: any) => {
-    const newRoutine = {
-      ...newRoutineData,
-      id: Date.now(),
-      completed: false,
-      streak: 0,
-       isGroupRoutine: false,
+  const fetchUserActivities = async () => {
+    if (!isLoggedIn) return;
+    const today = new Date().toISOString().split('T')[0];
+    try {
+      const activities = await getUserActivitiesByDay(today);
+      const personalMap = new Map<number, number>();
+      const groupMap = new Map<number, number>();
+
+      if (Array.isArray(activities)) {
+      activities.forEach((activity: any) => {
+        if (activity.activityType === 'PERSONAL_ROUTINE_COMPLETE' && activity.personalRoutineId) {
+          personalMap.set(activity.personalRoutineId, activity.activityId);
+        } else if (activity.activityType === 'GROUP_AUTH_COMPLETE' && activity.groupId) {
+          groupMap.set(activity.groupId, activity.activityId);
+        }
+      });
+    }
+
+      setCompletedActivityIds({ personal: personalMap, group: groupMap });
+    } catch (error) {
+      console.error("오늘의 활동 내역 조회 실패:", error);
+    }
+  };
+
+  // useEffect(() => {
+  //   console.log(`[상태 체크] isLoggedIn: ${isLoggedIn}, UserInfo가 있나?: ${!!UserInfo}`);
+  //   if (isLoggedIn && UserInfo) {
+  //     fetchUserActivities(); 
+  //     fetchPersonalRoutines(); 
+  //     fetchUserTotalScore(); 
+  //   }
+  // }, [isLoggedIn, UserInfo]); 
+
+
+  useEffect(() => {
+    setPersonalRoutines(prevRoutines =>
+      prevRoutines.map(routine => ({
+        ...routine,
+        completed: completedActivityIds.personal.has(routine.id),
+      }))
+    );
+  }, [completedActivityIds]);
+
+  const handleCreateRoutine = async (newRoutineData: Omit<Routine, 'id' | 'completed' | 'streak'>) => {
+    if (!UserInfo) return;
+
+    const payload: PersonalRoutineCreatePayload = {
+      userId: UserInfo.id as number,
+      routineName: newRoutineData.name,
+      description: newRoutineData.description,
+      startTime: newRoutineData.time,
+      repeatDays: convertFrequencyToAuthDays(newRoutineData.frequency || []),
+      startDate: new Date().toISOString().split('T')[0], // 예시: 오늘부터
+      endDate: '2099-12-31', // 예시: 무기한
+      isAlarmOn: !!newRoutineData.reminder,
+      isPublic: newRoutineData.isPublic,
     };
-    setPersonalRoutines(prev => [...prev, newRoutine]);
+
+    try {
+      await createPersonalRoutine(payload);
+      await fetchPersonalRoutines(); // 성공 후 목록 새로고침
+      navigateBack();
+    } catch (error) {
+      console.error("루틴 생성 실패:", error);
+      alert("루틴 생성에 실패했습니다.");
+    }
   };
 
   
-  const handleUpdateRoutine = (updatedRoutine: Routine) => {
+  const handleUpdateRoutine = async (updatedRoutine: Routine) => {
     if (updatedRoutine.isGroupRoutine) {
-      setGroups(prevGroups => 
-            prevGroups.map(group => {
-                if (group.routines && Array.isArray(group.routines)) {
-                    const groupHasRoutine = group.routines.some(r => r.id === updatedRoutine.id);
-                    if (groupHasRoutine) {
-                        return {
-                            ...group,
-                            routines: group.routines.map(r => r.id === updatedRoutine.id ? updatedRoutine : r)
-                        };
-                    }
-                }
-                return group;
-            })
-        );
-    } else {
+      const overrideData: RoutineOverride = {
+        time: updatedRoutine.time,
+        frequency: updatedRoutine.frequency,
+        reminder: updatedRoutine.reminder,
+        goal: updatedRoutine.goal,
+      }
+
+      const newOverrides = {
+        ...groupRoutineOverrides,
+        [updatedRoutine.id]: overrideData,
+      };
+
+      setGroupRoutineOverrides(newOverrides);
+      localStorage.setItem('groupRoutineOverrides', JSON.stringify(newOverrides));
+      
+      } 
+      // B. 개인 루틴일 경우 -> 기존 로직 (상태 직접 수정)
+      else {
+        const payload: PersonalRoutineUpdatePayload = {
+        routineName: updatedRoutine.name,
+        description: updatedRoutine.description,
+        startTime: updatedRoutine.time,
+        repeatDays: convertFrequencyToAuthDays(updatedRoutine.frequency || []),
+        isAlarmOn: !!updatedRoutine.reminder,
+        isPublic: updatedRoutine.isPublic,
+      };
+      try {
+        await updatePersonalRoutine(updatedRoutine.id, payload);
+        await fetchPersonalRoutines(); // 성공 후 목록 새로고침
+      } catch (error) {
+        console.error("루틴 수정 실패:", error);
+        alert("루틴 수정에 실패했습니다.");
+      }
+    }
+  };
+
+  const handleDataRefresh = () => {
+    console.log ('1️⃣ 데이터 새로고침 시작!');
+    fetchUserActivities();
+    fetchUserTotalScore();
+    fetchRankingData();
+  };
+
+  const fetchPersonalRoutines = async () => {
+    if (!UserInfo) return;
+    try {
+      const routinesFromServer = await getPersonalRoutinesByUser(UserInfo.id as number);
+      
+      console.log('2. [컴포넌트] API 함수로부터 전달받은 데이터:', routinesFromServer); // 이 줄은 여전히 실행되지 않을 겁니다.
+
+      const transformedRoutines = (routinesFromServer || []).map(transformPersonalRoutine);
+      
+      console.log('3. [컴포넌트] 화면에 저장하기 직전 최종 데이터:', transformedRoutines);
+
+      setPersonalRoutines(transformedRoutines);
+    } catch (error) {
+      // ▼▼▼ 이 로그를 추가해서 어떤 에러가 잡히는지 확인하세요! ▼▼▼
+      console.log('🔴 App.tsx의 catch 블록에서 에러 발견!', error);
+      
+      console.error("개인 루틴 목록 로딩 실패:", error);
+    }
+  };
+
+  const getGroupRoutinesWithOverrides = (): Routine[] => {
+  return myGroups.map(group => {
+      const routine = transformGroupToRoutine(group);
+      const override = groupRoutineOverrides[group.groupId];
+  
+      routine.completed = completedActivityIds.group.has(group.groupId);
+
+    return override ? { ...routine, ...override } : routine;
+  });
+};
+
+const handleToggleRoutinePublic = async (routineId: number) => {
+    try {
+      // API를 호출하여 서버의 상태를 변경합니다.
+      const updatedRoutineFromServer = await toggleRoutinePublic(routineId);
+      const transformedRoutine = transformPersonalRoutine(updatedRoutineFromServer);
+
+      // UI 상태를 즉시 업데이트합니다. (전체 목록을 다시 불러오지 않아 효율적입니다)
       setPersonalRoutines(prevRoutines =>
-        prevRoutines.map(routine =>
-          routine.id === updatedRoutine.id ? updatedRoutine : routine
+        prevRoutines.map(r => (r.id === routineId ? transformedRoutine : r))
+      );
+
+      setNavigationStack(prevStack =>
+        prevStack.map(navItem =>
+          navItem.screen === 'routine-detail' && navItem.params.id === routineId
+            ? { ...navItem, params: transformedRoutine }
+            : navItem
         )
       );
+    } catch (error) {
+      console.error("루틴 공개 여부 변경 실패:", error);
+      alert("설정 변경에 실패했습니다.");
     }
-
-    setNavigationStack(prevStack =>
-      prevStack.map(navItem =>
-        navItem.screen === 'routine-detail' && navItem.params.id === updatedRoutine.id
-          ? { ...navItem, params: updatedRoutine }
-          : navItem
-      )
-    );
   };
 
+  const handleToggleRoutineAlarm = async (routineId: number) => {
+    try {
+      const updatedRoutineFromServer = await toggleRoutineAlarm(routineId);
+      const transformedRoutine = transformPersonalRoutine(updatedRoutineFromServer);
+      
+      setPersonalRoutines(prevRoutines =>
+        prevRoutines.map(r => (r.id === routineId ? transformedRoutine : r))
+      );
 
+      setNavigationStack(prevStack =>
+        prevStack.map(navItem =>
+          navItem.screen === 'routine-detail' && navItem.params.id === routineId
+            ? { ...navItem, params: transformedRoutine }
+            : navItem
+        )
+      );
+    } catch (error) {
+      console.error("루틴 알림 설정 변경 실패:", error);
+      alert("설정 변경에 실패했습니다.");
+    }
+  };
 
-  const handleToggleCompletion = (routineId: number, isGroupRoutine?: boolean) => {
-    let isCompleted = false;
-    let routineOwner = isGroupRoutine ? 'group' : 'personal';
+  const handleTogglePersonalRoutineCompletion = async (routineId: number) => {
+    console.log(`--- 루틴(${routineId}) 클릭됨 ---`);
+  console.log('현재 완료된 루틴 Map:', completedActivityIds.personal);
+  console.log(`이 루틴은 완료 상태인가? ->`, completedActivityIds.personal.has(routineId));
+    const isCompleted = completedActivityIds.personal.has(routineId);
 
-    const updateCompletionState = (routines: Routine[]) => {
-    return routines.map(routine => {
-      if (routine.id === routineId) {
-        isCompleted = !routine.completed;
-        return { ...routine, completed: !routine.completed };
+    try {
+    if (isCompleted) {
+      // --- 루틴 취소 로직 ---
+      const activityId = completedActivityIds.personal.get(routineId);
+      if (activityId) {
+        await updateActivity(activityId, 'NOT_COMPLETED');
+        // 완료 횟수 1 감소
+        setRoutineCompletionCount(prev => {
+          const newCount = Math.max(0, prev - 1);
+          localStorage.setItem('routineCompletionCount', String(newCount));
+          return newCount;
+        });
       }
-      return routine;
-    });
-  };
-
-    if (isGroupRoutine) {
-      setGroups(prevGroups => prevGroups.map(group => ({
-        ...group,
-        routines: updateCompletionState(group.routines || [])
-      })));
     } else {
-      setPersonalRoutines(prev => updateCompletionState(prev));
-    }
-     if (isCompleted) {
-      // 개인 루틴 완료 시에만 출석 모달 호출
-      if (routineOwner === 'personal') {
-        handleOpenAttendanceModal();
-      }
-
+      // --- 루틴 완료 로직 ---
+      await createPersonalActivity(routineId);
+      // 완료 횟수 1 증가
       const newRoutineCount = routineCompletionCount + 1;
       setRoutineCompletionCount(newRoutineCount);
       localStorage.setItem('routineCompletionCount', String(newRoutineCount));
 
+      // '루틴 마스터' 배지 획득 조건 확인
       if (newRoutineCount >= 100 && !earnedBadges.includes('루틴 마스터')) {
-      const badgeName: BadgeType = '루틴 마스터';
-      // 상태와 로컬스토리지에 즉시 저장
-      setEarnedBadges(prev => {
-        const newEarned = [...prev, badgeName];
-        localStorage.setItem('earnedBadges', JSON.stringify(newEarned));
-        return newEarned;
-      });
+        const badgeName: BadgeType = '루틴 마스터';
+        
+        // 상태와 로컬스토리지에 배지 정보 저장
+        setEarnedBadges(prev => {
+          const newEarned = [...prev, badgeName];
+          localStorage.setItem('earnedBadges', JSON.stringify(newEarned));
+          return newEarned;
+        });
       
+      // 배지 획득 모달 띄우기
       setBadgeName(badgeName);
       setBadgeImage(badgeInfo[badgeName].image);
       setBadgeModalOpen(true);
     }
+
+    // 4. 출석 모달 띄우기 (배지 획득 여부와 관계없이 항상 실행)
+    handleOpenAttendanceModal();
+  } 
+  
+  await Promise.all([fetchUserActivities(), fetchUserTotalScore()]);
+
+  } catch (error) {
+    alert("루틴 상태 변경에 실패했습니다.");
+    console.error("개인 루틴 완료/취소 처리 실패:", error);
   }
 };
 
-  const handleAddRecommendedRoutine = (recommendedRoutine: RecommendedRoutine) => {
-    // 추천 루틴 데이터를 기반으로 새로운 루틴 객체 생성
-    const newRoutine = {
-        id: Math.random(),
-        name: recommendedRoutine.name,
-        description: recommendedRoutine.description,
-        category: recommendedRoutine.category,
-        difficulty: recommendedRoutine.difficulty,
-        time: '09:00',
-        frequency: ["월", "화", "수", "목", "금", "토", "일"],
-        reminder: true,
-        goal: '30',
-        completed: false,
-        streak: 0,
-         isGroupRoutine: false,
+  const handleAddRecommendedRoutine = async (recommendedRoutine: RecommendedRoutine) => {
+    if (!UserInfo) {
+      alert("로그인 정보가 없습니다.");
+      return;
+    }
+
+    const payload: PersonalRoutineCreatePayload = {
+      userId: UserInfo.id as number,
+      routineName: recommendedRoutine.name,
+      description: recommendedRoutine.description,
+      startTime: recommendedRoutine.time,
+      repeatDays: convertFrequencyToAuthDays(recommendedRoutine.frequency || []),
+      startDate: new Date().toISOString().split('T')[0], // 시작일은 오늘로 설정
+      endDate: '2099-12-31', // 종료일은 먼 미래로 설정
+      isAlarmOn: recommendedRoutine.reminder,
+      isPublic: recommendedRoutine.isPublic,
     };
 
-    setPersonalRoutines(prevRoutines => [...prevRoutines, newRoutine]);
+    try {
+      // 3. 개인 루틴 생성 API를 호출합니다.
+      await createPersonalRoutine(payload);
+      
+      // 4. 성공 시, 전체 루틴 목록을 다시 불러와 화면을 갱신합니다.
+      await fetchPersonalRoutines();
+      
+      console.log(`'${recommendedRoutine.name}' 루틴이 추가되었습니다.`);
+
+    } catch (error) {
+      console.error("추천 루틴 추가 실패:", error);
+      alert("루틴 추가에 실패했습니다.");
+    }
   };
 
- 
-
-  const handleDeleteRoutine = (routineId: number, isGroupRoutine?: boolean) => {
+  const handleDeleteRoutine = async (routineId: number, isGroupRoutine?: boolean) => {
     if (isGroupRoutine) {
       // 그룹 루틴 삭제
       setGroups(prevGroups => 
@@ -750,36 +1026,40 @@ export default function App() {
         })
       );
     } else {
-      // 개인 루틴 삭제
-      setPersonalRoutines(prevRoutines =>
-        // 삭제할 루틴의 ID를 제외하고 새로운 배열 생성
-        prevRoutines.filter(routine => routine.id !== routineId)
-      );
+      try {
+        await deletePersonalRoutine(routineId);
+        await fetchPersonalRoutines(); // 성공 후 목록 새로고침
+        navigateBack();
+      } catch (error) {
+        console.error("루틴 삭제 실패:", error);
+        alert("루틴 삭제에 실패했습니다.");
+      }
     }
-    // 삭제 후 이전 화면으로 돌아가기
-    navigateBack();
   };
 
   const fetchMonthlyReview = async () => {
+    if (!UserInfo) return; 
+
     try {
-      console.log("현재 accessToken:", localStorage.getItem('accessToken'));
-      // YYYY-MM 
       const date = new Date();
-      date.setMonth(date.getMonth() - 1);
+      date.setMonth(date.getMonth() - 1); // 지난달 기준
       const lastMonth = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
 
-      const response = await getMonthlyReview(lastMonth);
-      if (response.success && response.data) {
-        // 알림 목록에 추가 (30자 제한)
+      // POST 요청으로 수정하고, userId를 쿼리 파라미터로 전달
+      const response = await apiFetch(`/api/reviews/monthly?userId=${UserInfo.id}&monthYear=${lastMonth}`, {
+        method: 'POST',
+      });
+
+      if (response.success) {
+        // 서버에서 메시지를 성공적으로 보냈다면, 프론트에서는 알림을 생성합니다.
         addNotification({
-          message: response.data.substring(0, 30) + '...',
+          message: `지난 달의 활동을 정리한 ${lastMonth} 월간 회고가 도착했어요.`,
           category: '회고',
-          fullContent: response.data, 
-          monthYear: lastMonth
+          monthYear: lastMonth, // ★★★ 모달을 열 때 사용할 수 있도록 monthYear 정보 추가 ★★★
         });
       }
     } catch (error) {
-      console.error("월간 회고 로딩 실패:", error);
+      console.error("월간 회고 알림 생성 실패:", error);
     }
   };
 
@@ -819,6 +1099,11 @@ export default function App() {
       );
     }
 
+    if (notification.isLocal) {
+      console.log(`로컬 알림(${notification.id})을 읽음 처리했습니다. (API 호출 없음)`);
+      return; 
+    }
+
     // 2. 서버에 '읽음' 상태 전송
     try {
       await markNotificationAsRead(notification.id, true);
@@ -832,9 +1117,27 @@ export default function App() {
       );
     }
     
-    // 3. 알림 종류에 따른 화면 이동 등 후속 작업
-    console.log(`${notification.id}번 알림 클릭됨`);
-    // 예: navigateTo('group-detail', { groupId: notification.relatedId });
+    if (notification.category === '회고' && UserInfo?.id) {
+      try {
+        // 1. 회고 API를 호출합니다. (monthYear는 알림 객체에 저장된 값을 사용)
+        const response = await getMonthlyReview(UserInfo.id as number, notification.monthYear);
+
+        if (response.success && response.data) {
+          // 2. 성공 시, 모달에 표시할 내용과 월 정보를 상태에 저장합니다.
+          setReviewModalContent({
+            content: response.data.messageContent, // API 응답의 실제 회고 내용
+            monthYear: response.data.monthYear,
+          });
+          // 3. 회고 모달을 엽니다.
+          setReviewModalOpen(true);
+        } else {
+          alert("회고 내용을 불러오는 데 실패했습니다: " + response.message);
+        }
+      } catch (error) {
+        console.error("월간 회고 조회 API 호출 실패:", error);
+        alert("회고 내용을 불러오는 중 오류가 발생했습니다.");
+      }
+    }
   };
   
   // 앱이 로드될 때 회고 데이터를 불러옵니다.
@@ -844,6 +1147,54 @@ export default function App() {
     }
   }, [isLoggedIn]);
 
+  // 루틴 시작 5분 전 알림을 위한 useEffect
+  // ------------------------------------------------------------------
+  useEffect(() => {
+    // 1분마다 실행되는 타이머를 설정합니다.
+    const timer = setInterval(() => {
+      const now = new Date();
+      const allRoutines = [...personalRoutines, ...getGroupRoutinesWithOverrides()];
+
+      allRoutines.forEach(routine => {
+        // 조건: 1. 알림이 켜져 있고, 2. 시간이 설정되어 있으며, 3. 오늘 아직 알림을 보내지 않았어야 함
+        if (routine.reminder && routine.time && !remindersSentToday[routine.id]) {
+          
+          // '08:30'과 같은 시간 문자열을 파싱합니다.
+          const [hours, minutes] = routine.time.split(':').map(Number);
+          
+          // 오늘 날짜를 기준으로 루틴 실행 시간을 Date 객체로 만듭니다.
+          const routineTime = new Date();
+          routineTime.setHours(hours, minutes, 0, 0);
+
+          // 현재 시간과 루틴 시간의 차이를 분(minute)으로 계산합니다.
+          const diffInMinutes = (routineTime.getTime() - now.getTime()) / 1000 / 60;
+
+          // 차이가 정확히 5분일 때 알림을 보냅니다.
+          if (Math.round(diffInMinutes) === 5) {
+            console.log(`'${routine.name}' 5분 전 알림 생성!`);
+            
+            // 기존 알림 추가 함수를 사용하여 새 알림을 생성합니다.
+            addNotification({
+              message: `'${routine.name}' 시작 5분 전입니다.`,
+              category: '홈', // '홈' 또는 '그룹' 카테고리로 설정 가능
+              icon: <Clock className="h-4 w-4 text-primary" />,
+            });
+
+            // 알림을 보냈다고 기록하여 중복을 방지합니다.
+            setRemindersSentToday(prev => ({
+              ...prev,
+              [routine.id]: true,
+            }));
+          }
+        }
+      });
+    }, 60000); // 60000ms = 1분
+
+    // 컴포넌트가 사라질 때 타이머를 정리하여 메모리 누수를 방지합니다.
+    return () => clearInterval(timer);
+
+  }, [personalRoutines, remindersSentToday]); // 의존성 배열
+
   
    //7.그룹 관련 =============================================================
   
@@ -851,155 +1202,40 @@ export default function App() {
    * (유지) 사용자가 그룹 가입을 '요청'했을 때 호출됩니다.
    * - '의무 참여' 그룹인 경우, 리더에게 알림을 생성합니다.
    */
-  const handleJoinGroupRequest = (group: Group) => {
-    // 그룹 리더에게 보낼 알림 생성
-    addNotification({
-      message: `${UserInfo?.nickname || '사용자'}님이 '${group.groupName}' 그룹 참여를 신청했습니다.`,
-      category: '그룹',
-      relatedId: group.groupId,
-    });
-    alert('그룹 가입 요청이 전송되었습니다. 리더의 승인을 기다려주세요.');
-    // 여기에 실제 API 호출 로직을 추가하시면 됩니다.
-    // 예: requestJoinGroup(group.groupId, UserInfo.id);
+  const handleJoinGroupRequest = async (groupId: number) => {
+
+    const group = groups.find(g => g.groupId === groupId);
+    if (!group || !UserInfo || !UserInfo.id) {
+      console.error("가입 요청 실패: 사용자 또는 그룹 정보가 없습니다.", { group, UserInfo });
+      alert("사용자 또는 그룹 정보를 찾을 수 없어 가입 요청에 실패했습니다.");
+      return;
+    }
+
+    try {
+      await requestJoinGroup(groupId, UserInfo.id as number);
+
+      if (group.groupType === 'FREE') {
+        // --- 자유 참여 그룹일 경우 ---
+        alert(`'${group.groupName}' 그룹에 참여했습니다!`);
+        // 그룹 목록을 새로고침하여 UI에 즉시 반영합니다.
+        fetchGroupData(); 
+      } else {
+        // --- 의무 참여 그룹일 경우 ---
+        // 리더에게 보낼 알림을 생성합니다.
+        addNotification({
+          message: `${UserInfo.nickname || '사용자'}님이 '${group.groupName}' 그룹 참여를 신청했습니다.`,
+          category: '그룹',
+          relatedId: group.groupId,
+          isLocal: true, 
+        });
+        alert('그룹 가입 요청이 전송되었습니다. 리더의 승인을 기다려주세요.');
+      }
+
+    } catch (error) {
+      console.error("그룹 가입 요청 API 실패:", error);
+      alert("그룹 가입 요청 중 오류가 발생했습니다.");
+    }
   };
-
-  // 루틴 인증 메시지를 추가하는 함수에 groupId 추가
-//   const handleAddAuthMessage = (
-//   groupId: number, 
-//   data: { description: string; image: File | null; isPublic: boolean }, 
-//   nickname: string,
-//   userId: string | number, // userId 추가
-//   routineId: number // routineId 추가
-// ) => {
-//   const newAuthMessage: AuthMessage = {
-//     id: Date.now(),
-//     nickname: nickname,
-//     userId: userId, // userId 저장
-//     message: data.description,
-//     imageUrl: data.image ? URL.createObjectURL(data.image) : null,
-//     routineId: routineId, // routineId 저장
-//   };
-  
-//   setPendingAuthMessages(prevMessages => ({
-//     ...prevMessages,
-//     [groupId]: [...(prevMessages[groupId] || []), newAuthMessage]
-//   }));
-  
-//   console.log('인증 데이터 제출:', data);
-//   alert('인증이 제출되었습니다!');
-// };
-
-  // 루틴 인증을 승인하는 함수에 groupId 추가
-  // const handleApproveAuthMessage = (groupId: number, authId: number) => {
-  //   // 1. 승인할 인증 메시지 찾기
-  //   const messageToApprove = pendingAuthMessages[groupId]?.find(msg => msg.id === authId);
-  //   if (!messageToApprove) return;
-
-  //   // 인증을 요청한 사용자에게 보낼 알림 생성
-  //   addNotification({
-  //     message: `그룹 루틴 인증이 승인되었습니다. (+20점)`,
-  //     category: '그룹',
-  //     relatedId: groupId,
-  //   });  
-
-  //   setPendingAuthMessages(prevMessages => ({
-  //     ...prevMessages,
-  //     [groupId]: (prevMessages[groupId] || []).filter(msg => msg.id !== authId)
-  //   }));
-
-  //모든 루틴 목록에서 승인된 루틴 정보를 찾습니다.
-  // const allRoutines = [...personalRoutines, ...groupRoutines];
-  // const approvedRoutine = allRoutines.find(r => r.id === messageToApprove.routineId);
-
-  // if (approvedRoutine && UserInfo) {
-  //     const score = calculateScoreByDifficulty(approvedRoutine.difficulty);
-  //     const memberId = Number(messageToApprove.userId); // 인증을 올린 멤버의 ID
-
-  //     // 4. 랭킹 점수 업데이트 API 호출 (groupId 포함)
-  //     updateRankingScore(memberId, score, groupId)
-  //       .then(response => {
-  //         console.log(`그룹 루틴 인증 (${messageToApprove.nickname}님): ${score}점 획득 성공`, response);
-          
-  //         // 만약 내 인증이 승인된 것이라면, 화면의 총점을 즉시 업데이트합니다.
-  //         if (memberId === UserInfo.id) {
-  //           fetchUserTotalScore();
-  //         }
-  //       })
-  //       .catch(error => {
-  //         console.error("그룹 루틴 점수 업데이트 실패:", error);
-  //       });
-  //   }
-
-//   // 2. 그룹 상태를 업데이트하는 로직
-//   setGroups(prevGroups => 
-//     prevGroups.map(group => {
-//       // 해당 그룹인지 확인
-//       if (group.groupId === groupId) {
-//         // 그룹 내에서 해당 루틴 찾기
-//         const updatedRoutines = group.routines?.map(routine => {
-//           if (routine.id === messageToApprove.routineId) {
-//             return {
-//               ...routine,
-//               // 루틴 완료 상태 업데이트 (예: isCertified를 true로 설정)
-//               completed: true, // 또는 별도의 인증 상태 필드 사용
-//             };
-//           }
-//           return routine;
-//         });
-
-//         // 멤버 상태 업데이트 (예: '인증' 뱃지 표시)
-//         const updatedMembers = group.recentMembers?.map(member => {
-//           if (member.id === messageToApprove.userId) {
-//             return {
-//               ...member,
-//               isCertified: true, // 인증 상태를 나타내는 필드 추가
-//             };
-//           }
-//           return member;
-//         });
-
-//         return { 
-//           ...group, 
-//           routines: updatedRoutines,
-//           recentMembers: updatedMembers 
-//         };
-//       }
-//       return group;
-//     })
-//   );
-
-//   // pendingAuthMessages 상태에서 승인된 메시지 제거
-//   setPendingAuthMessages(prevMessages => ({
-//     ...prevMessages,
-//     [groupId]: (prevMessages[groupId] || []).filter(msg => msg.id !== authId)
-//   }));
-  
-//   console.log(`${authId}번 인증을 승인했습니다.`);
-//   alert(`${authId}번 인증이 승인되었습니다.`);
-// };
-
-  // 루틴 인증을 거절하는 함수에 groupId 추가
-  // const handleRejectAuthMessage = (groupId: number, authId: number) => {
-  //   const messageToReject = pendingAuthMessages[groupId]?.find(msg => msg.id === authId);
-  //   if (!messageToReject) {
-  //     console.error("거절할 인증 메시지를 찾을 수 없습니다.");
-  //     return;
-  //   }
-
-  //   addNotification({
-  //     message: `아쉽지만, '${messageToReject.message}' 루틴 인증이 반려되었습니다.`,
-  //     category: '그룹',
-  //     relatedId: groupId
-  //   });
-
-
-  //   setPendingAuthMessages(prevMessages => ({
-  //     ...prevMessages,
-  //     [groupId]: (prevMessages[groupId] || []).filter(msg => msg.id !== authId)
-  //   }));
-  //   console.log(`${authId}번 인증을 거절했습니다.`);
-  //   alert(`${authId}번 인증이 거절되었습니다.`);
-  // };
 
 const handleAddGroup = async (newGroupData: any) => {
     try {
@@ -1040,8 +1276,11 @@ const handleAddGroup = async (newGroupData: any) => {
       )
     );
 
-    
   };
+
+  
+
+  
 
 
 const handleDeleteGroupSuccess = () => {
@@ -1077,7 +1316,9 @@ const fetchRankingData = async () => {
      const month = String(now.getMonth() + 1).padStart(2, '0');
      const monthYear = `${year}-${month}`;
     const globalGroupRankingResponse = await getGlobalGroupRanking(monthYear);
-     setGroupRankingData(globalGroupRankingResponse);
+    console.log("그룹 랭킹 API 응답:", globalGroupRankingResponse); 
+    setGroupRankingData(globalGroupRankingResponse);
+    
   } catch (error) {
     console.error("랭킹 데이터 로딩 실패:", error);
     setPersonalRankingData(null);
@@ -1095,6 +1336,7 @@ const fetchUserTotalScore = async () => {
   setLoadingUserTotalScore(true);
   try {
     const response = await getUserTotalScore();
+  
      if (response.success) {
       setUserTotalScore(response.data);
        console.log("사용자 총 점수 조회 성공:", response.data);
@@ -1214,11 +1456,6 @@ const navigateTo = (screen: string, params?: any, options?: { replace?: boolean 
 
 // 9. 화면 렌더링 및 모달 =============================================================
 
-  //const currentScreen =
-    //navigationStack.length > 0
-      //? navigationStack[navigationStack.length - 1]
-      //: null;
-
   const renderScreen = () => {
     if (!isLoggedIn) {
       return <LoginScreen onLogin={handleKakaoLogin} />;
@@ -1238,15 +1475,13 @@ const navigateTo = (screen: string, params?: any, options?: { replace?: boolean 
               onBack={navigateBack}
               onUpdateRoutine={handleUpdateRoutine}
               onDeleteRoutine={handleDeleteRoutine}
+              onTogglePublic={handleToggleRoutinePublic}
+              onToggleAlarm={handleToggleRoutineAlarm}
             />
           );
        
           case "group-detail": { 
-        //const groupId = currentScreen.params.groupId;
-        //const members = groupMembers[groupId] || [];
-        //const myId = UserInfo?.id; 
-        //const isJoined = myGroups.some(joinedGroup => joinedGroup.groupId === groupId);
-           console.log('넘어온 params:', currentScreen.params);
+            console.log('넘어온 params:', currentScreen.params);
           console.log('넘어온 groupId:', groupId);
           console.log('해당 그룹의 멤버 groupmembers:', members);
           console.log('그룹상세 groups:', groups);
@@ -1259,20 +1494,38 @@ const navigateTo = (screen: string, params?: any, options?: { replace?: boolean 
             onBack={navigateBack}
             onNavigate={navigateTo}
             onUpdateGroup={handleUpdateGroup}
-            // pendingAuthMessages={pendingAuthMessages}
-            // onAddAuthMessage={handleAddAuthMessage}
-            // onApproveAuthMessage={handleApproveAuthMessage}
-            // onRejectAuthMessage={handleRejectAuthMessage}
             currentUser={UserInfo} 
             groupMembers={members}
             onDeleteGroupSuccess={handleDeleteGroupSuccess}
             myid={myId ?? 0}
             onGroupJoined={fetchGroupData}
             isJoined={isJoined}
-           
+           onRefreshMembers={handleGroupMembersRefresh} 
           />
         );
-      } 
+      }
+      
+      case "user-home":
+        // ▼▼▼ 이 로직을 추가하세요 ▼▼▼
+
+        // 1. 현재 보고 있는 사용자의 ID를 가져옵니다.
+        const targetUser = currentScreen.params as { id: number; nickname: string };
+
+        // 2. 이 사용자가 참여한 그룹만 필터링합니다.
+        const userJoinedGroups = groups.filter(group => {
+          const membersOfGroup = groupMembers[group.groupId] || [];
+          return membersOfGroup.some(member => member.userId === targetUser.id);
+        });
+
+        // 3. 필터링된 그룹 목록을 userJoinedGroups라는 prop으로 전달합니다.
+        return (
+          <UserHomeScreen
+            user={targetUser}
+            onBack={navigateBack}
+             // 👈 이 prop을 새로 추가하세요!
+          />
+        );
+        
         case "profile-edit":
             return (
               <ProfileEditScreen 
@@ -1294,11 +1547,9 @@ const navigateTo = (screen: string, params?: any, options?: { replace?: boolean 
               group={currentScreen.params}
               groupmembers={members}
               onBack={navigateBack}
-               //onAddAuthMessage={handleAddAuthMessage}
-               //groupMembers={groupMembers}
-                onLeaveGroup={handleLeaveGroup}
-                userInfo={UserInfo}
-                //streakDays={streakDays}
+              onLeaveGroup={handleLeaveGroup}
+              userInfo={UserInfo}
+              onDataRefresh={handleDataRefresh}
             />
           );
         }
@@ -1306,7 +1557,7 @@ const navigateTo = (screen: string, params?: any, options?: { replace?: boolean 
           return (
             <CreateRoutineScreen 
               onBack={navigateBack} 
-              onCreateRoutine={handleAddRoutine}
+              onCreateRoutine={handleCreateRoutine}
             />
           );
         case "create-group":
@@ -1330,9 +1581,9 @@ const navigateTo = (screen: string, params?: any, options?: { replace?: boolean 
         case "user-home":
           return (
             <UserHomeScreen
-              user={currentScreen.params}
-              onBack={navigateBack}
-            />
+              user={currentScreen.params as { id: number; nickname: string; }}
+              onBack={navigateBack} 
+                         />
           );
         default:
           return renderMainScreen();
@@ -1350,36 +1601,30 @@ const navigateTo = (screen: string, params?: any, options?: { replace?: boolean 
         return (
           <HomeScreen 
             onNavigate={navigateTo} 
-            routines={[...personalRoutines, ...groupRoutines]}
-            onToggleCompletion={handleToggleCompletion}
+            routines={[...personalRoutines, ...getGroupRoutinesWithOverrides()]}
+            onTogglePersonalRoutine={handleTogglePersonalRoutineCompletion}
             streakDays={streakDays}
             userInfo={{...UserInfo, exp: UserInfo.exp ?? 0 }}
             participatingGroups={myGroups}
             onOpenAttendanceModal={handleOpenAttendanceModal}
             onOpenStreakModal={handleOpenStreakModal}
             onOpenBadgeModal={handleOpenBadgeModal}
-            // onAddAuthMessage={handleAddAuthMessage}
-            // pendingAuthMessages={pendingAuthMessages}
-            // onApproveAuthMessage={handleApproveAuthMessage}
-            // onRejectAuthMessage={handleRejectAuthMessage}
+            userTotalScore={userTotalScore}
           />
         );
       case "routine":
         return <RoutineScreen 
           onNavigate={navigateTo} 
-          //allRoutines={allRoutines}
-          allRoutines={[...personalRoutines, ...groupRoutines]}
+          allRoutines={[...personalRoutines, ...getGroupRoutinesWithOverrides()]}
           recommendedRoutines={recommendedRoutines}
-          onToggleCompletion={handleToggleCompletion}
+          onTogglePersonalRoutine={handleTogglePersonalRoutineCompletion}
           onAddRecommendedRoutine={handleAddRecommendedRoutine}
           onOpenAttendanceModal={handleOpenAttendanceModal}
           onOpenStreakModal={handleOpenStreakModal}
           onOpenBadgeModal={handleOpenBadgeModal}
-          //onAddAuthMessage={handleAddAuthMessage} 
           initialUserInfo={UserInfo} 
           participatingGroups={myGroups} 
           allGroups={groups}
-          //pendingAuthMessages={pendingAuthMessages} 
         />;
       case "group":
         return <GroupScreen 
@@ -1387,7 +1632,7 @@ const navigateTo = (screen: string, params?: any, options?: { replace?: boolean 
                   groups={groups} 
                   myGroups={myGroups}   
                   onNewGroup={() => navigateTo("create-group")}
-                  //onJoinGroup={handleJoinGroup}
+                  onJoinGroup={handleJoinGroupRequest}
                 />
       case "ranking":{
         console.log('그룹 목록 (랭킹):', groups);
@@ -1395,9 +1640,9 @@ const navigateTo = (screen: string, params?: any, options?: { replace?: boolean 
         return <RankingScreen 
                   groups={groups}
                   personalRankingData={personalRankingData}
-                  groupRankingData={groupRankingData} // props로 전달
-                  userTotalScore={userTotalScore} // props로 전달
-                  loadingGroupRanking={loadingGroupRanking} // props로 전달
+                  groupRankingData={groupRankingData} 
+                  userTotalScore={userTotalScore} 
+                  loadingGroupRanking={loadingGroupRanking} 
                   loadingUserTotalScore={loadingUserTotalScore}
                 />}
       case "mypage":
@@ -1407,10 +1652,16 @@ const navigateTo = (screen: string, params?: any, options?: { replace?: boolean 
             isDarkMode={isDarkMode}
             onToggleDarkMode={toggleDarkMode}
             onToggleAlarm={handleToggleAlarm}
-            user={{...UserInfo, isAlarmOn: UserInfo.isAlarmOn ?? true }}
+            user={{
+              ...UserInfo, 
+              isAlarmOn: UserInfo.isAlarmOn ?? true,
+              streakDays: streakDays 
+            }}
             onLogout={handleLogout}
             attendanceDates={attendanceDates}
             earnedBadges={earnedBadges}
+            routineCompletionCount={routineCompletionCount}
+            userTotalScore={userTotalScore}
           />
         );
       
@@ -1419,13 +1670,14 @@ const navigateTo = (screen: string, params?: any, options?: { replace?: boolean 
           <HomeScreen 
             onNavigate={navigateTo} 
             routines={personalRoutines}
-            onToggleCompletion={handleToggleCompletion}
+            onTogglePersonalRoutine={handleTogglePersonalRoutineCompletion}
             streakDays={streakDays}
             userInfo={{...UserInfo, exp: UserInfo.exp ?? 0}}
             participatingGroups={myGroups}   
             onOpenAttendanceModal={handleOpenAttendanceModal}
             onOpenStreakModal={handleOpenStreakModal}
             onOpenBadgeModal={handleOpenBadgeModal}
+            userTotalScore={userTotalScore}
             // onAddAuthMessage={handleAddAuthMessage}
             // pendingAuthMessages={pendingAuthMessages}
             // onApproveAuthMessage={handleApproveAuthMessage}
@@ -1513,33 +1765,56 @@ const navigateTo = (screen: string, params?: any, options?: { replace?: boolean 
     }
   };
 
-  const handleCloseAttendanceModal = () => {
+  const handleCloseAttendanceModal = async () => {
     setAttendanceModalOpen(false);
-    const today = new Date();
-    const todayString = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+    const todayString = new Date().toISOString().split('T')[0];
 
-    // 중복 체크 후 출석 날짜 추가 및 localStorage 업데이트
-    setAttendanceDates(prevDates => {
-      if (!prevDates.includes(todayString)) {
-        const newDates = [...prevDates, todayString];
-        localStorage.setItem('attendanceDates', JSON.stringify(newDates));
-        return newDates;
-      }
-      return prevDates;
-    });
+    try {
+    // 2. 서버에 오늘 출석이 유효한지 먼저 확인합니다.
+    const hasAttendedToday = await checkAttendance(todayString);
 
-    // 출석 인증 횟수 증가 및 localStorage 업데이트
+    // 3. 서버에서 '출석 인정(true)' 응답을 받았을 때만 아래 로직을 실행합니다.
+    if (hasAttendedToday) {
+
+    await fetchTotalAttendance();
+
+    // --- 2. 출석 날짜 배열 업데이트 ---
+    const newDates = [...attendanceDates];
+    if (!newDates.includes(todayString)) {
+      newDates.push(todayString);
+      localStorage.setItem('attendanceDates', JSON.stringify(newDates));
+      setAttendanceDates(newDates);
+    }
+    
+    // --- 3. 현재 '연속 출석일' 계산 및 '최고 기록' 업데이트 ---
+    let consecutiveCount = 0;
+    const dateChecker = new Date(); // 오늘부터 시작
+
+    // 출석 기록에 날짜가 있는지 확인하며 하루씩 뒤로 갑니다.
+    while (newDates.includes(dateChecker.toISOString().split('T')[0])) {
+      consecutiveCount++;
+      dateChecker.setDate(dateChecker.getDate() - 1); // 어제 날짜로 변경
+    }
+
+    const currentMaxStreak = UserInfo?.maxStreakDays ?? 0;
+    if (consecutiveCount > currentMaxStreak && UserInfo) {
+      const newMaxStreak = consecutiveCount;
+      setUserInfo({ ...UserInfo, maxStreakDays: consecutiveCount });
+      
+      localStorage.setItem('maxStreakDays', String(newMaxStreak));
+    }
+
+    // --- 4. 기존 출석 처리 및 다음 모달 호출 로직 (그대로 유지) ---
     const newAttendanceCount = attendanceCount + 1;
     setAttendanceCount(newAttendanceCount);
     localStorage.setItem('attendanceCount', String(newAttendanceCount));
 
-    // 스트릭 일수 증가 및 localStorage 업데이트
-    const newStreakDays = streakDays + 1;
-    setStreakDays(newStreakDays);
-    localStorage.setItem('streakDays', String(newStreakDays));
-
-    handleNextModalSequence(newStreakDays, newAttendanceCount);
-  };
+    handleNextModalSequence(consecutiveCount, newAttendanceCount);
+  }
+} catch (error) {
+    console.error("오늘 출석 여부 확인 중 에러 발생:", error);
+  }
+};
 
   const handleCloseStreakModal = () => {
     setStreakModalOpen(false);
@@ -1564,18 +1839,20 @@ const navigateTo = (screen: string, params?: any, options?: { replace?: boolean 
       className={`min-h-screen w-full bg-[var(--root-background)] flex items-center justify-center `}
     >
     
-      <div className="min-w-[360px] w-[450px] min-h-[704px] h-[800px] bg-background flex flex-col overflow-hidden rounded-lg shadow-2xl border border-border/50">
+      <div className="min-w-[360px] w-full max-w-none md:max-w-[1000px] lg:max-w-[1280px] h-[850px] bg-background flex flex-col overflow-hidden rounded-lg shadow-2xl border border-border/50">
         {!isLoggedIn ? (
           <div className="w-full h-full">{renderScreen()}</div>
         ) : (
           <>
-            {!currentScreen && UserInfo && (
+            {(!currentScreen || currentScreen.screen === 'user-home') && UserInfo && (
               <TopNavBar
                 onSearch={handleSearch}
                 onNotificationClick={handleNotificationClick}
                 onProfileMenuClick={handleProfileMenuClick}
                 userInfo={UserInfo}
                 notifications={notifications}
+                showBackButton={currentScreen?.screen === 'user-home'}
+                onBackClick={navigateBack} 
                 //pendingAuthMessages={pendingAuthMessages}
               />
             )}

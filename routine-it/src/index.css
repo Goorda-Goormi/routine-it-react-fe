@@ -33,6 +33,7 @@ body {
   width: 100%;
   height: 100%;
   font-family: var(--font-kr);
+  
 }
 
 /* 제목 */
@@ -68,6 +69,7 @@ button:focus-visible {
   padding: 2rem;
   text-align: center;
   width:100%;
+  
 }
 
 /* 로고 (필요 시만 사용) */
@@ -114,5 +116,12 @@ button:focus-visible {
   }
   a:hover {
     color: #747bff;
+  }
+}
+
+@media (min-width: 768px) {
+  #root {
+    max-width: 1280px; 
+    padding: 0;
   }
 }

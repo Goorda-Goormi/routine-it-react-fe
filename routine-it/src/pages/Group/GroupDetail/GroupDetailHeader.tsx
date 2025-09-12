@@ -4,7 +4,6 @@ import {
   Users,
   MessageCircle,
   Settings,
-  Crown,
 } from 'lucide-react';
 import { Card, CardContent } from '../../../components/ui/card';
 import { Button } from '../../../components/ui/button';
@@ -17,24 +16,21 @@ import {
   DropdownMenuTrigger,
 } from '../../../components/ui/dropdown-menu';
 
-import type { GroupMemberResponse } from '../../../interfaces';
-import { deleteGroup, requestJoinGroup } from '../../../api/group';
+import type { Group, GroupMemberResponse } from '../../../interfaces';
+import {  requestJoinGroup } from '../../../api/group';
 
 interface GroupDetailHeaderProps {
-  group: any;
+  group: Group;
   isJoined: boolean;
   isLeader: boolean;
   onBack: () => void;
- // onJoinGroup: () => void;
   onChatClick: () => void;
-  onRoutineAuthClick: () => void;
   onOpenEdit: () => void;
   onOpenApproval: () => void;
   onOpenExMembers: () => void;
   pendingAuthCount: number;
   groupMembers: GroupMemberResponse[];
   onGroupDeleted: () => void; 
-  //myid: string | number;
   myid : number;
   onGroupJoined: () => void;
 }
@@ -44,9 +40,7 @@ export const GroupDetailHeader = ({
   isJoined,
   isLeader,
   onBack,
- // onJoinGroup,
   onChatClick,
-  onRoutineAuthClick,
   onOpenEdit,
   onOpenApproval,
   onOpenExMembers,
@@ -90,8 +84,10 @@ console.log('--- GroupDetailHeader Variables ---');
   // 그룹 가입 요청 처리 함수
   const handleJoinGroup = async () => {
     try {
-      await requestJoinGroup(group.groupId, myIdAsNumber);
+      const response = await requestJoinGroup(group.groupId, myIdAsNumber);
 
+      console.log("group detailheader 그룹 가입 요청 API 응답:", response);
+      
       if (group.groupType === 'FREE') {
         alert('그룹에 성공적으로 가입되었습니다.');
       } else {
@@ -105,6 +101,7 @@ console.log('--- GroupDetailHeader Variables ---');
     }
   };
 
+  
   return (
     <div className="sticky top-0 z-10 bg-background/95 backdrop-blur ">
       <div className="flex items-center justify-between backdrop-blur p-4 border-b border-b-[var(--color-border-bottom-custom)]">
@@ -115,7 +112,7 @@ console.log('--- GroupDetailHeader Variables ---');
           <h1 className="font-bold text-card-foreground">그룹 상세</h1>
         </div>
         <div className="flex items-center space-x-2">
-          <Button variant="ghost" size="sm" className="text-card-foreground hover:text-card-foreground"></Button>
+         
           <DropdownMenu>
             <DropdownMenuTrigger asChild disabled={!isLeader}>
               <Button
@@ -164,7 +161,7 @@ console.log('--- GroupDetailHeader Variables ---');
                   <div className="text-xs text-muted-foreground">참여자</div>
                 </div>
                 <div className="text-center">
-                  <Badge variant={group.type === 'REUQIRED' ? 'destructive' : 'secondary'}>{group.type === "REQUIRED" ? "의무참여":"자유참여"}</Badge>
+                  <Badge variant={group.groupType === 'REQUIRED' ? 'destructive' : 'secondary'}>{group.groupType === "REQUIRED" ? "의무참여":"자유참여"}</Badge>
                   <div className="text-xs text-muted-foreground mt-1">그룹 유형</div>
                 </div>
                 <div className="text-center">
@@ -180,13 +177,7 @@ console.log('--- GroupDetailHeader Variables ---');
                     <MessageCircle className="h-4 w-4 mr-2 icon-primary" />
                     채팅하기
                   </Button>
-                  <Button
-                    onClick={onRoutineAuthClick}
-                    variant="outline"
-                    className="flex-1 text-card-foreground border-border hover:bg-accent hover:text-card-foreground"
-                  >
-                    인증하기
-                  </Button>
+                  
                 </div>
               )}
             </div>

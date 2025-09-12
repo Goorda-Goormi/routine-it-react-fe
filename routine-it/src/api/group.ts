@@ -1,6 +1,6 @@
-//import api from "./api";
+
 import { apiFetch } from "./client";
-import type { GroupMemberResponse } from "../interfaces";
+import type { GroupMemberResponse, Group } from "../interfaces";
 
 export interface GroupRequest {
   groupName: string;
@@ -14,7 +14,6 @@ export interface GroupRequest {
 }
 
 //그룹 생성
-
 export async function createGroup(data: GroupRequest) {
   try {
     const createdData = await apiFetch("/groups", {
@@ -45,25 +44,28 @@ export async function updateGroup(groupId: number, data: GroupRequest) {
 
 
 // 전체 그룹 리스트 조회
-export async function getAllGroups() {
-  // apiFetch가 이미 JSON을 반환하므로, 바로 변수에 할당합니다.
+export async function getAllGroups(): Promise<Group[]> {
   try {
-    const allGroups = await apiFetch("/groups", { method: "GET" });
-    return allGroups; // JSON 데이터가 담긴 배열을 반환
+    const allGroups = await apiFetch("/groups", {
+       method: "GET" 
+      });
+    return allGroups; 
   } catch (error) {
-    // apiFetch에서 이미 에러를 throw하므로, 여기서는 단순히 다시 던지거나
-    // 특정 에러 메시지를 추가하면 됩니다.
     console.error("Failed to fetch all groups:", error);
     throw new Error("전체 그룹 조회 실패");
   }
 }
 
 
-// 가입된 그룹 리스트 조회
-export async function getJoinedGroups() {
+/**
+ * 가입된 그룹 리스트를 조회합니다.
+ * @param userId 특정 사용자의 ID (없으면 내 정보 조회)
+ */
+export async function getJoinedGroups(userId?: number): Promise<Group[]> {
   try {
-    const joinedGroups = await apiFetch("/groups/joined", { method: "GET" });
-    return joinedGroups; // JSON 데이터가 담긴 배열을 반환
+    const endpoint = userId ? `/groups/joined?userId=${userId}` : '/groups/joined'
+    const joinedGroups = await apiFetch(endpoint, { method: "GET" });
+    return joinedGroups; 
   } catch (error) {
     console.error("Failed to fetch joined groups:", error);
     throw new Error("가입된 그룹 조회 실패");
@@ -81,8 +83,8 @@ export async function getGroupDetail(groupId: number) {
     throw new Error("그룹 상세 조회 실패");
   }
 }
-// 그룹 멤버 목록 조회
 
+// 그룹 멤버 목록 조회
 export async function getGroupMembers(groupId: number): Promise<GroupMemberResponse[]> {
   try {
     const members = await apiFetch(`/group/${groupId}/members`, {
@@ -96,52 +98,71 @@ export async function getGroupMembers(groupId: number): Promise<GroupMemberRespo
 }
 
 // 그룹 탈퇴 (그룹 삭제)
-
 export async function deleteGroup(groupId: number) {
   try {
     await apiFetch(`/groups/${groupId}`, {
       method: "DELETE",
     });
     console.log(`그룹 ${groupId} 탈퇴 성공`);
-    return true; // 성공적으로 탈퇴했음을 알리기 위해 true 반환
+    return true; 
   } catch (error) {
     console.error(`그룹 ${groupId} 탈퇴 실패:`, error);
     throw new Error("그룹 탈퇴 실패");
   }
 }
 
-// [추가] 특정 그룹의 인증 대기 목록을 가져오는 API
-export async function getPendingAuthentications(groupId: number) {
-  // 실제 엔드포인트는 백엔드에 맞게 수정해야 합니다. 예: /groups/{groupId}/pending-auths
-  return apiFetch(`/groups/${groupId}/pending-auths`, { method: 'GET' });
+/**
+ * 특정 그룹의 인증 대기중인 멤버 목록을 가져옵니다.
+ * @param groupId - 그룹 ID
+ */
+export async function getPendingAuthMembers(groupId: number): Promise<GroupMemberResponse[]> {
+  // 그룹 멤버 조회 API를 사용하되, status가 'PENDING'인 멤버만 필터링합니다.
+  return apiFetch(`/group/${groupId}/members?status=PENDING`, { method: 'GET' });
 }
 
-// [추가] 특정 인증을 승인하는 API
-export async function approveAuthentication(authId: number) {
-  // 실제 엔드포인트는 백엔드에 맞게 수정해야 합니다. 예: /authentications/{authId}/approve
-  return apiFetch(`/authentications/${authId}/approve`, { method: 'POST' });
+/**
+ * 리더가 멤버의 활동을 승인 또는 거절합니다.
+ * @param payload - 승인/거절 처리에 필요한 데이터
+ */
+interface UpdateAuthStatusPayload {
+  groupId: number;
+  leaderId: number;
+  targetMemberId: number;
+  approved: boolean;
 }
 
-// [추가] 특정 인증을 거절하는 API
-export async function rejectAuthentication(authId: number) {
-  return apiFetch(`/authentications/${authId}/reject`, { method: 'POST' });
+export async function updateAuthStatus(payload: UpdateAuthStatusPayload) {
+  return apiFetch(`/group/${payload.groupId}/members/status`, {
+    method: 'PUT',
+    body: JSON.stringify(payload),
+  });
 }
 
-// ▼▼▼ 아래 함수를 새로 추가하세요 ▼▼▼
+
 /**
  * 그룹 루틴을 인증합니다.
  * @param groupId - 그룹 ID
  * @param data - 인증 데이터 (설명, 이미지 등)
  */
-export async function submitAuthentication(groupId: number, data: FormData) {
-  // 실제 엔드포인트는 백엔드에 맞게 수정해야 합니다. 예: /groups/{groupId}/auth
-  // 이미지를 포함하므로 FormData를 사용하고 Content-Type 헤더를 설정하지 않습니다.
-  return apiFetch(`/groups/${groupId}/auth`, {
-    method: 'POST',
-    body: data,
-  });
+interface AuthRequestPayload {
+  leaderId: number;
+  targetMemberId: number;
+  activityDate: string; // "YYYY-MM-DD" 형식
+  imageUrl: string;
 }
 
+export async function requestAuthApproval(groupId: number, authData: AuthRequestPayload) {
+  const payload = {
+    ...authData,
+    groupId,
+    approved: true // 랭킹 업데이트를 위해 true
+  };
+
+  return apiFetch(`/group/${groupId}/approve-auth`, {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  });
+}
 
 // 그룹 가입 요청 (인증 필요)
 export async function requestJoinGroup(groupId: number, groupMemberId: number) {
@@ -178,5 +199,70 @@ export async function delegateLeader(groupId: number, leaderId: number, targetMe
   } catch (error) {
     console.error("리더 위임 실패:", error);
     throw error;
+  }
+}
+
+/**
+ * 그룹 멤버의 상태, 역할, 인증 여부 등을 변경합니다.
+ * @param groupId - 그룹 ID
+ * @param data - 업데이트할 데이터를 담은 객체
+ */
+export async function updateGroupMemberStatus(
+  groupId: number, 
+  data: {
+    groupId:number;
+    leaderId: number;
+    targetMemberId: number;
+    status: 'PENDING' | 'JOINED' | 'BLOCKED' | 'LEFT';
+    role?: 'LEADER' | 'MEMBER';
+    activityDate?: string;
+    imageUrl?: string;
+    approved?: boolean;
+  }
+) {
+  try {
+    const response = await apiFetch(`/group/${groupId}/members/status`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    });
+    return response;
+  } catch (error) {
+    console.error("그룹 멤버 상태 변경 실패:", error);
+    throw error;
+  }
+}
+
+
+/**
+ * 인증된 사용자의 특정 날짜 활동 내역을 조회합니다.
+ * @param date - YYYY-MM-DD 형식의 날짜 문자열
+ * @returns 활동 목록 배열
+ */
+export async function getUserActivitiesByDay(date: string) {
+  try {
+    const activities = await apiFetch(`/user-activities/day?date=${date}`, {
+      method: "GET",
+    });
+    return activities;
+  } catch (error) {
+    console.error(`Failed to fetch user activities for ${date}:`, error);
+    throw new Error("사용자 활동 목록 조회 실패");
+  }
+}
+
+/**
+ * 특정 그룹의 PENDING 상태인 멤버 목록을 가져옵니다.
+ * @param groupId - 그룹 ID
+ * @returns PENDING 상태인 멤버 목록 배열
+ */
+export async function getPendingMembersByGroupId(groupId: number): Promise<GroupMemberResponse[]> {
+  try {
+    const pendingMembers = await apiFetch(`/group/${groupId}/members?status=PENDING`, {
+      method: "GET",
+    });
+    return pendingMembers;
+  } catch (error) {
+    console.error(`그룹 ${groupId}의 PENDING 멤버 조회 실패:`, error);
+    throw new Error("PENDING 멤버 조회 실패");
   }
 }

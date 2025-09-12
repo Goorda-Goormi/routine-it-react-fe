@@ -37,3 +37,29 @@ export const fetchChatHistory = async (
     throw error;
   }
 };
+
+/*
+
+// 자유 그룹 활동을 생성하는 API 함수
+export const createGroupActivity = async (data) => {
+    const accessToken = localStorage.getItem('accessToken');
+    if (!accessToken) {
+        throw new Error('인증 토큰이 없습니다.');
+    }
+
+    try {
+        const response = await apiFetch(`/user-activities/create`, {
+            method: 'POST',
+        });
+
+        if (!response.ok) {
+            const errorText = await response.text();
+            throw new Error(`API 호출 실패: ${response.status} - ${errorText}`);
+        }
+
+        return await response.json();
+    } catch (error) {
+        console.error("자유 그룹 활동 생성 오류:", error);
+        throw error;
+    }
+};*/

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Button } from '../../components/ui/button';
-import { ArrowLeft, Target, Calendar, Clock, Edit, Save, Trash2, X } from 'lucide-react';
+import { ArrowLeft, Target, Calendar, Clock, Edit, Save, Trash2, X, Bell, Globe } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card';
 import { Badge } from '../../components/ui/badge';
 import { Input } from '../../components/ui/input';
@@ -16,12 +16,15 @@ interface RoutineDetailScreenProps {
   onBack: () => void;
   onUpdateRoutine: (updatedRoutine: Routine) => void;
   onDeleteRoutine: (routineId: number, isGroupRoutine?: boolean) => void;
+  onTogglePublic: (routineId: number) => void; 
+  onToggleAlarm: (routineId: number) => void; 
 }
 
-export function RoutineDetailScreen({ routine, onBack, onUpdateRoutine, onDeleteRoutine }: RoutineDetailScreenProps) {
+export function RoutineDetailScreen({ routine, onBack, onUpdateRoutine, onDeleteRoutine, onTogglePublic, onToggleAlarm }: RoutineDetailScreenProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [editedRoutine, setEditedRoutine] = useState(routine);
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
+  const [isTimeEnabled, setIsTimeEnabled] = useState(!!routine.time); 
   
   // 선택된 요일들을 상태로 관리합니다.
   const daysOfWeek = ['월', '화', '수', '목', '금', '토', '일'];
@@ -204,6 +207,31 @@ export function RoutineDetailScreen({ routine, onBack, onUpdateRoutine, onDelete
                   <span>목표: {routine.goal || '설정되지 않음'}일 연속</span>
                 </div>
               </div>
+
+              <div className="space-y-2 border-t pt-4">
+                <div className="flex items-center justify-between text-sm text-foreground">
+                  <div className="flex items-center space-x-2">
+                    <Bell className="h-4 w-4 text-icon-secondary" />
+                    <span>톡캘린더 연동</span>
+                  </div>
+                  <Switch
+                    checked={!!routine.reminder}
+                    onCheckedChange={() => onToggleAlarm(routine.id)}
+                    disabled={routine.isGroupRoutine}
+                  />
+                </div>
+                <div className="flex items-center justify-between text-sm text-foreground">
+                  <div className="flex items-center space-x-2">
+                    <Globe className="h-4 w-4 text-icon-secondary" />
+                    <span>루틴 공개</span>
+                  </div>
+                  <Switch
+                    checked={!!routine.isPublic}
+                    onCheckedChange={() => onTogglePublic(routine.id)}
+                    disabled={routine.isGroupRoutine}
+                  />
+                </div>
+              </div>
             </CardContent>
           </Card>
         ) : (// Editing Mode
@@ -218,6 +246,8 @@ export function RoutineDetailScreen({ routine, onBack, onUpdateRoutine, onDelete
                   id="edit-name"
                   value={editedRoutine.name}
                   onChange={(e) => setEditedRoutine({...editedRoutine, name: e.target.value})}
+                  disabled={editedRoutine.isGroupRoutine}
+                  aria-readonly={editedRoutine.isGroupRoutine}
                 />
                 {errors.name && <p className="text-destructive text-sm mt-1">{errors.name}</p>}
               </div>
@@ -227,6 +257,7 @@ export function RoutineDetailScreen({ routine, onBack, onUpdateRoutine, onDelete
                 <Select 
                   value={editedRoutine.category} 
                   onValueChange={(value) => setEditedRoutine({...editedRoutine, category: value})}
+                  disabled={editedRoutine.isGroupRoutine}
                 >
                   <SelectTrigger>
                     <SelectValue />
@@ -247,6 +278,7 @@ export function RoutineDetailScreen({ routine, onBack, onUpdateRoutine, onDelete
                 <Select 
                   value={editedRoutine.difficulty} 
                   onValueChange={(value) => setEditedRoutine({...editedRoutine, difficulty: value})}
+                  disabled={editedRoutine.isGroupRoutine}
                 >
                   <SelectTrigger>
                     <SelectValue />
@@ -266,6 +298,8 @@ export function RoutineDetailScreen({ routine, onBack, onUpdateRoutine, onDelete
                   id="edit-description"
                   value={editedRoutine.description}
                   onChange={(e) => setEditedRoutine({...editedRoutine, description: e.target.value})}
+                  disabled={editedRoutine.isGroupRoutine}
+                  aria-readonly={editedRoutine.isGroupRoutine}
                 />
               </div>
 
@@ -281,7 +315,7 @@ export function RoutineDetailScreen({ routine, onBack, onUpdateRoutine, onDelete
               </div>
               
               <div>
-                <Label className='pl-3' htmlFor="frequency">
+                <Label  htmlFor="frequency">
                   반복 주기 <span className="text-sm text-gray-500">{getFrequencyText(selectedDays)}</span>
                 </Label>
                 <div className="flex justify-center gap-5 pt-2">
@@ -301,7 +335,7 @@ export function RoutineDetailScreen({ routine, onBack, onUpdateRoutine, onDelete
                 {errors.frequency && <p className="text-destructive text-sm mt-1 text-center">{errors.frequency}</p>}
               </div>
 
-              <div>
+              <div className='pt-3'>
                 <Label htmlFor="edit-goal">목표 연속일</Label>
                 <Select 
                   value={editedRoutine.goal} 
@@ -321,14 +355,26 @@ export function RoutineDetailScreen({ routine, onBack, onUpdateRoutine, onDelete
                 </Select>
               </div>
 
-              <div className="flex items-center justify-between">
-                <Label htmlFor="edit-reminder">알림 켜기</Label>
+              {/* <div className="flex items-center justify-between pt-1">
+                <Label htmlFor="edit-reminder">톡캘린더 연결하기</Label>
                 <Switch
                   id="edit-reminder"
                   checked={!!editedRoutine.reminder}
                   onCheckedChange={(checked) => setEditedRoutine({...editedRoutine, reminder: checked})}
                 />
               </div>
+
+              <div className="flex items-center justify-between">
+                <div>
+                  <Label className="pb-3 pt-3">루틴 공개하기</Label>
+                  <p className="text-sm text-muted-foreground pl-3">다른 사용자가 내 프로필에서 이 루틴을 볼 수 있도록 허용합니다.</p>
+                </div>
+                <Switch
+                  checked={!!editedRoutine.isPublic}
+                  onCheckedChange={(checked) => setEditedRoutine({...editedRoutine, isPublic: checked})}
+                  disabled={editedRoutine.isGroupRoutine}
+                />
+              </div> */}
             </CardContent>
           </Card>
         )}

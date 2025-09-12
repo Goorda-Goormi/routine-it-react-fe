@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Search, Bell, Camera, User, Settings, HelpCircle, LogOut } from 'lucide-react';
+import { Search, ArrowLeft, Bell, Camera, User, Settings, HelpCircle, LogOut } from 'lucide-react';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger, DropdownMenuLabel } from './ui/dropdown-menu';
@@ -16,6 +16,8 @@ interface TopNavBarProps {
     profileImageUrl: string;
     nickname?: string;
   };
+  showBackButton?: boolean;
+  onBackClick?: () => void;  
 }
 
 // 알림 카테고리
@@ -32,9 +34,10 @@ export interface Notification {
   relatedId?: number; // 그룹 ID 등 관련 정보
   fullContent?: string; 
   monthYear?: string;
+  isLocal?: boolean;
 }
 
-export function TopNavBar({ onSearch, onNotificationClick, notifications, onProfileMenuClick, userInfo }: TopNavBarProps) {
+export function TopNavBar({ onSearch, onNotificationClick, notifications, onProfileMenuClick, userInfo, showBackButton, onBackClick }: TopNavBarProps) {
   const [searchQuery, setSearchQuery] = useState('');
 
   const handleSearchSubmit = (e: React.FormEvent) => {
@@ -43,9 +46,10 @@ export function TopNavBar({ onSearch, onNotificationClick, notifications, onProf
   };
 
   const [activeCategory, setActiveCategory] = useState<NotificationCategory>('홈');
+  const [justReadId, setJustReadId] = useState<number | null>(null);
   const filteredNotifications = notifications.filter(
-      (n) => n.category === activeCategory
-    );
+    (n) => n.category === activeCategory && (!n.read || n.id === justReadId)
+  );
 
   // 아바타의 첫 글자를 가져오는 함수
   const getInitial = (nickname?: string) => {
@@ -57,6 +61,17 @@ export function TopNavBar({ onSearch, onNotificationClick, notifications, onProf
       <div className="flex items-center justify-between">
         {/* 로고 및 앱 이름 */}
         <div className="flex items-center space-x-3">
+          <div className="flex items-center space-x-3">
+          {showBackButton && (
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              onClick={onBackClick}
+              className="flex h-8 w-8 text-primary hover:text-primary p-1 mr-2"
+            >
+              <ArrowLeft className="h-5 w-5 icon-secondary" />
+            </Button>
+          )}
           <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary">
             <div className="h-5 w-5 bg-primary-foreground rounded-full flex items-center justify-center">
               <div className="h-2.5 w-2.5 bg-primary rounded-full"></div>
@@ -64,11 +79,17 @@ export function TopNavBar({ onSearch, onNotificationClick, notifications, onProf
           </div>
           <h1 className="text-lg font-semibold text-card-foreground">루틴잇</h1>
         </div>
+        </div>
 
         {/* 우측 버튼들 */}
         <div className="flex items-center space-x-2">
           {/* 알림 버튼 */}
-          <DropdownMenu>
+          <DropdownMenu onOpenChange={(isOpen) => {
+            // 메뉴가 닫힐 때(isOpen이 false일 때) 임시 ID를 초기화
+            if (!isOpen) {
+              setJustReadId(null);
+            }
+          }}>
             <DropdownMenuTrigger asChild>
               <Button 
                 variant="ghost" 
@@ -110,8 +131,17 @@ export function TopNavBar({ onSearch, onNotificationClick, notifications, onProf
                     {filteredNotifications.map((note) => (
                       <DropdownMenuItem 
                         key={note.id} 
-                        className="p-3 h-auto items-start space-x-3 cursor-pointer"
-                        onClick={() => onNotificationClick(note)} // 메뉴가 닫히지 않도록 방지
+                        className={`p-3 h-auto items-start space-x-3 cursor-pointer transition-opacity ${
+                          note.read ? 'opacity-50' : ''
+                        }`}
+                        
+                        onSelect={(event) => {
+                          event.preventDefault();
+                          onNotificationClick(note);
+                          if (!note.read) {
+                            setJustReadId(note.id);
+                          }
+                        }}
                       >
                         <div className="flex-shrink-0 flex items-center justify-center w-8 h-8 rounded-full bg-primary/10 text-primary-foreground/80">
                            {note.icon ? note.icon : <Bell className="h-4 w-4 icon-secondary" />}

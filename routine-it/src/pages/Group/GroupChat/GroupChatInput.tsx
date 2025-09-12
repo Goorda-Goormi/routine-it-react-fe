@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { Button } from '../../../components/ui/button';
 import { Input } from '../../../components/ui/input';
 import { Popover, PopoverContent, PopoverTrigger } from '../../../components/ui/popover';
@@ -12,7 +12,15 @@ interface GroupChatInputProps {
 
 export function GroupChatInput({ handleSendMessage, handleSendImage, handleSendAlbum }: GroupChatInputProps) {
   const [message, setMessage] = useState('');
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
 
+
+   const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+     const textarea = e.target;
+     textarea.style.height = 'auto';
+     textarea.style.height = `${textarea.scrollHeight}px`;
+    setMessage(textarea.value);
+  };
   // 이모티콘 목록
   const emojis = ['😀', '😂', '👍', '❤️', '👏', '💪', '🎉', '🔥', '🤔', '😊', '😭', '😎', '👌', '🙏', '🤯'];
 
@@ -23,11 +31,14 @@ export function GroupChatInput({ handleSendMessage, handleSendImage, handleSendA
   const onSendMessage = () => {
     handleSendMessage(message);
     setMessage('');
+    if (textareaRef.current) {
+      textareaRef.current.style.height = 'auto';
+    }
   };
 
   return (
     <div className="sticky bottom-0 border-t border-t-[var(--color-border-bottom-custom)] bg-background">
-      <div className="max-w-md mx-auto p-4">
+      <div className=" mx-auto p-4">
         <div className="flex items-end space-x-2">
           <div className="flex-1">
             <div className="flex items-center space-x-2 bg-muted rounded-lg p-2">
@@ -56,13 +67,17 @@ export function GroupChatInput({ handleSendMessage, handleSendImage, handleSendA
               >
                 <Image className="h-4 w-4 icon-secondary" />
               </Button>
-              <Input
+              <textarea
+                ref={textareaRef}
                 value={message}
-                onChange={(e) => setMessage(e.target.value)}
+                onChange={handleInputChange}
                 placeholder="메시지를 입력하세요..."
-                className="border-0 bg-transparent focus-visible:ring-0 p-0 text-foreground placeholder:text-muted-foreground"
+                className="w-full border-0 bg-transparent focus:outline-none p-0 text-foreground placeholder:text-muted-foreground resize-none"
+                rows={1}
+                style={{ maxHeight: '100px' }}
                 onKeyPress={(e) => {
-                  if (e.key === 'Enter') {
+                  if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault(); // 기본 줄 바꿈 방지
                     onSendMessage();
                   }
                 }}

@@ -7,45 +7,172 @@ import { Avatar, AvatarFallback, AvatarImage } from '../../components/ui/avatar'
 import { ArrowLeft, ChevronLeft, ChevronRight, X, Camera, Flame, TrendingUp, Calendar, Trophy, Users, CheckCircle, Target, Clock, Lock } from 'lucide-react';
 import { ImageWithFallback } from '../../components/figma/ImageWithFallback';
 import { getStreakInfo, getStreakMessage } from '../../components/utils/streakUtils';
-import type {Routine, UserProfile} from '../../interfaces';
+import type {Routine, UserProfile, Member, Group} from '../../interfaces';
+import { getPersonalRoutinesByUser, type PersonalRoutineResponse } from '../../api/personalRoutine';
 import { getUserProfile, type PublicUserProfile } from '../../api/user';
+import { getUserAuthPhotos, getUserActivitiesByDay, getTotalAttendanceDays } from '../../api/activity';
+import { getJoinedGroups } from '../../api/group'; 
 
+interface AuthPhoto {
+  id: number;
+  routine: string; 
+  imageUrl: string;
+  activityDate: string;
+  isPublic: boolean;
+}
+
+const getTodayDayOfWeek = () => {
+  const dayOfWeek = ['일', '월', '화', '수', '목', '금', '토'];
+  const today = new Date();
+  return dayOfWeek[today.getDay()];
+};
+
+// '1111100' -> ['월', '화', '수', '목', '금']
+const convertAuthDaysToFrequency = (authDays: string): string[] => {
+  const daysOfWeek = ['월', '화', '수', '목', '금', '토', '일'];
+  if (!authDays || authDays.length !== 7) return [];
+  return authDays.split('').map((char, index) => (char === '1' ? daysOfWeek[index] : null)).filter(Boolean) as string[];
+};
+
+// { hour: 8, minute: 0 } -> '08:00'
+const convertAlarmTimeToTimeString = (alarmTime: { hour?: number; minute?: number }): string => {
+  if (!alarmTime || typeof alarmTime.hour !== 'number' || typeof alarmTime.minute !== 'number') {
+    return '09:00';
+  }
+  const hour = String(alarmTime.hour).padStart(2, '0');
+  const minute = String(alarmTime.minute).padStart(2, '0');
+  return `${hour}:${minute}`;
+};
+
+// Group -> Routine
+const transformGroupToRoutine = (group: Group): Routine => ({
+  id: group.groupId,
+  name: group.groupName,
+  description: group.description,
+  category: group.category,
+  time: convertAlarmTimeToTimeString(group.alarmTime),
+  frequency: convertAuthDaysToFrequency(group.authDays),
+  isGroupRoutine: true,
+  completed: false, // 기본값 설정
+  difficulty: '보통',
+  goal: '30',
+  reminder: true,
+  isPublic: true,
+  streak: 0,
+});
+
+const transformUserRoutine = (pr: PersonalRoutineResponse): Routine => ({
+  id: pr.routineId,
+  name: pr.routineName,
+  description: pr.description,
+  time: pr.startTime,
+  // ... 프론트엔드에 필요한 다른 필드들의 기본값 설정
+  isPublic: pr.isPublic,
+  reminder: pr.isAlarmOn,
+  frequency: convertAuthDaysToFrequency(pr.repeatDays), 
+  isGroupRoutine: false,
+  completed: false, 
+  streak: 0, 
+  difficulty: '보통', 
+  goal: '30', 
+  category: '생활',
+});
 
 interface UserHomeScreenProps {
-  user: { id: number; };
+  user: { id: number; nickname: string; };
   onBack: () => void;
+  
 }
 
 export function UserHomeScreen({ user, onBack }: UserHomeScreenProps) {
+  console.log('1. [UserHomeScreen 시작] props로 받은 user:', user);
+
   const today = new Date();
   const todayString = today.toLocaleDateString('ko-KR', { month: 'long', day: 'numeric' });
 
   const [userProfile, setUserProfile] = useState<PublicUserProfile | null>(null);
+  const [userRoutines, setUserRoutines] = useState<Routine[]>([]);
+  const [completedActivities, setCompletedActivities] = useState({
+    personal: new Map<number, number>(),
+    group: new Map<number, number>(),
+  });
+  const [totalAttendance, setTotalAttendance] = useState(0);
+  const streakInfo = getStreakInfo(totalAttendance);
+  const [joinedGroups, setJoinedGroups] = useState<Group[]>([]);
+  const [verificationPhotos, setVerificationPhotos] = useState<AuthPhoto[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-
+  const [selectedPhotoIndex, setSelectedPhotoIndex] = useState<number | null>(null);
+  
   useEffect(() => {
-    const fetchProfile = async () => {
-      // user.id가 없는 경우 API 호출을 방지합니다.
-      if (!user?.id) {
-        setError("사용자 ID가 제공되지 않았습니다.");
-        setIsLoading(false);
-        return;
-      }
-
+    if (!user?.id) {
+      setError("사용자 ID가 제공되지 않았습니다.");
+      setIsLoading(false);
+      return;
+    }
+      const fetchAllUserData = async () => {
       try {
-        const profileData = await getUserProfile(user.id);
+        const today = new Date().toISOString().split('T')[0];
+        const [
+          profileData,
+          personalRoutinesData,
+          joinedGroupsData,
+          activitiesData,
+          totalAttendanceData,
+          photosData
+        ] = await Promise.all([
+          getUserProfile(user.id),
+          getPersonalRoutinesByUser(user.id),
+          getJoinedGroups(user.id),
+          getUserActivitiesByDay(today, user.id),
+          getTotalAttendanceDays({ targetUserId: user.id }),
+          getUserAuthPhotos(user.id)
+        ]);
+
+        const personalMap = new Map<number, number>();
+        const groupMap = new Map<number, number>();
+        if (Array.isArray(activitiesData)) {
+          activitiesData.forEach((activity: any) => {
+            if (activity.activityType === 'PERSONAL_ROUTINE_COMPLETE' && activity.personalRoutineId) {
+              personalMap.set(activity.personalRoutineId, activity.activityId);
+            } else if (activity.activityType === 'GROUP_AUTH_COMPLETE' && activity.groupId) {
+              groupMap.set(activity.groupId, activity.activityId);
+            }
+          });
+        }
+        setCompletedActivities({ personal: personalMap, group: groupMap });
+
+        const publicPersonalRoutines = (personalRoutinesData || [])
+          .filter(routine => routine.isPublic)
+          .map(transformUserRoutine);
+        const groupRoutines = (joinedGroupsData || []).map(transformGroupToRoutine);
+
+        const allRoutines = [...publicPersonalRoutines, ...groupRoutines];
+        const routinesWithCompletion = allRoutines.map(routine => ({
+          ...routine,
+          completed: routine.isGroupRoutine
+            ? groupMap.has(routine.id)
+            : personalMap.has(routine.id),
+        }));
+
+        setUserRoutines(routinesWithCompletion);
         setUserProfile(profileData);
+        setJoinedGroups(joinedGroupsData || []);
+        setTotalAttendance(totalAttendanceData);
+        setVerificationPhotos(photosData?.activityInfos || []);
+
       } catch (err) {
-        setError((err as Error).message);
+        setError("데이터를 불러오는 중 오류가 발생했습니다.");
+        console.error(err);
       } finally {
         setIsLoading(false);
       }
     };
 
-    fetchProfile();
+    fetchAllUserData();
   }, [user.id]);
-
+ 
+  const publicVerificationPhotos = verificationPhotos.filter(photo => photo.isPublic);
 
   const openGallery = (index: number) => {
     setSelectedPhotoIndex(index);
@@ -56,113 +183,18 @@ export function UserHomeScreen({ user, onBack }: UserHomeScreenProps) {
   };
 
   const showNextPhoto = () => {
-    if (selectedPhotoIndex !== null) {
-      setSelectedPhotoIndex((selectedPhotoIndex + 1) % allVerificationPhotos.length);
-    }
-  };
+  if (selectedPhotoIndex !== null) {
+    const newIndex = (selectedPhotoIndex + 1) % publicVerificationPhotos.length;
+    setSelectedPhotoIndex(newIndex);
+  }
+};
 
   const showPrevPhoto = () => {
-    if (selectedPhotoIndex !== null) {
-      setSelectedPhotoIndex((selectedPhotoIndex - 1 + allVerificationPhotos.length) % allVerificationPhotos.length);
-    }
-  };
-
-  // 상대방의 오늘 루틴 (공개)
-  const userRoutines: Routine[] = [
-    {
-      id: 1,
-      name: '아침 요가',
-      completed: true,
-      time: '07:00',
-      streak: 8,
-      category: '운동'
-    },
-    {
-      id: 2,
-      name: '책 읽기',
-      completed: true,
-      time: '21:00',
-      streak: 15,
-      category: '학습'
-    },
-    {
-      id: 3,
-      name: '물 마시기',
-      completed: false,
-      time: '언제든',
-      streak: 22,
-      category: '건강'
-    }
-  ];
-
-  // 상대방이 참여 중인 그룹
-  const userGroups = [
-    {
-      id: 1,
-      name: '아침 운동 챌린지',
-      members: 12,
-      recentMembers: [
-        { id: 1, nickname: '민수민수', profileImageUrl: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=40&h=40&fit=crop&crop=face' },
-        { id: 2, nickname: '지영쓰', profileImageUrl: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=40&h=40&fit=crop&crop=face' },
-        { id: 3, nickname: '철수박', profileImageUrl: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=40&h=40&fit=crop&crop=face' }
-      ]
-    },
-    {
-      id: 2,
-      name: '독서 모임',
-      members: 8,
-      recentMembers: [
-        { id: 4, nickname: '수현', profileImageUrl: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=40&h=40&fit=crop&crop=face' },
-        { id: 5, nickname: '지영쓰', profileImageUrl: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=40&h=40&fit=crop&crop=face' }
-      ]
-    }
-  ];
-
-  // 인증 사진 데이터 (공개여부에 따라 필터링)
-  const allVerificationPhotos = [
-    { 
-      id: 1, 
-      routine: '아침 요가', 
-      image: 'https://images.unsplash.com/photo-1544367567-0f2fcb009e0b', 
-      date: '오늘',
-      isPublic: true
-    },
-    { 
-      id: 2, 
-      routine: '책 읽기', 
-      image: 'https://images.unsplash.com/photo-1506126613408-eca07ce68773', 
-      date: '어제',
-      isPublic: true
-    },
-    { 
-      id: 3, 
-      routine: '물 마시기', 
-      image: 'https://images.unsplash.com/photo-1544367567-0f2fcb009e0b', 
-      date: '11월 13일',
-      isPublic: false // 비공개
-    },
-    { 
-      id: 4, 
-      routine: '명상', 
-      image: 'https://images.unsplash.com/photo-1506905925346-21bda4d32df4', 
-      date: '11월 12일',
-      isPublic: true
-    },
-    { 
-      id: 5, 
-      routine: '일기 쓰기', 
-      image: 'https://images.unsplash.com/photo-1455390582262-044cdead277a', 
-      date: '11월 11일',
-      isPublic: false // 비공개
-    },
-    { 
-      id: 6, 
-      routine: '산책', 
-      image: 'https://images.unsplash.com/photo-1518611012118-696072aa579a', 
-      date: '11월 10일',
-      isPublic: true
-    }
-  ];
+  if (selectedPhotoIndex !== null) {
+    const newIndex = (selectedPhotoIndex - 1 + publicVerificationPhotos.length) % publicVerificationPhotos.length;
+    setSelectedPhotoIndex(newIndex);
+  }
+};
 
 
   if (isLoading) {
@@ -176,17 +208,16 @@ export function UserHomeScreen({ user, onBack }: UserHomeScreenProps) {
   if (!userProfile) {
     return <div>사용자 정보를 찾을 수 없습니다.</div>;
   }
-
-  const streakInfo = getStreakInfo(0);
-  const [selectedPhotoIndex, setSelectedPhotoIndex] = useState<number | null>(null);
-  const publicVerificationPhotos = allVerificationPhotos.filter(photo => photo.isPublic);
-  const totalPhotos = allVerificationPhotos.length;
+  const todayDay = getTodayDayOfWeek();
+  const todaysRoutines = userRoutines.filter(routine => 
+    routine.frequency && routine.frequency.includes(todayDay)
+  );
+  const totalPhotos = verificationPhotos.length;
   const publicPhotosCount = publicVerificationPhotos.length;
-
-  const completedRoutines = userRoutines.filter(routine => routine.completed).length;
-  const totalRoutines = userRoutines.length;
+  const totalRoutines = todaysRoutines.length;
+  const completedRoutines = todaysRoutines.filter(routine => routine.completed).length;
   const completionRate = totalRoutines > 0 ? Math.round((completedRoutines / totalRoutines) * 100) : 0;
-
+  const publicRoutines = userRoutines.filter(routine => routine.isPublic);
   const getCategoryEmoji = (category: string) => {
     switch (category) {
       case '운동': return '💪';
@@ -198,57 +229,37 @@ export function UserHomeScreen({ user, onBack }: UserHomeScreenProps) {
   };
 
   return (
-    <div className="h-full flex flex-col p-4">
-      {/* 헤더 */}
-      <div className="flex items-center space-x-3 mb-6">
-        <Button 
-          variant="ghost" 
-          size="sm" 
-          onClick={onBack}
-          className="text-primary hover:text-primary p-1"
-        >
-          <ArrowLeft className="h-5 w-5 icon-secondary" />
-        </Button>
-        <div>
-          <h1 className="text-lg text-left font-medium text-primary">
-            {userProfile.nickname}님의 홈
-          </h1>
-          <p className="text-sm text-muted-foreground">
-            {todayString} • 공개된 정보만 표시됩니다
-          </p>
-        </div>
-      </div>
-
+    <div className="h-full flex flex-col p-6">
       {/* 콘텐츠 */}
-      <div className="flex-1 overflow-auto space-y-6 mx-1">
+      <div className="flex-1 px-4 pb-6 space-y-4">
         {/* 사용자 정보 및 현황 */}
         <div className="space-y-4">
           <div className="flex items-center space-x-4">
-            <Avatar className="w-16 h-16">
-              <AvatarImage src={userProfile.profileImageUrl} alt={userProfile.nickname} />
-              <AvatarFallback className="text-lg">{userProfile.nickname.charAt(0)}</AvatarFallback>
-            </Avatar>
+            
             <div className="flex flex-col flex-1 ml-1">
-              <div className="flex items-center justify-between w-90">
+              <div className="flex items-center justify-between ">
                 <div className="flex items-center space-x-2 mb-1">
-                  <h2 className="text-xl font-bold text-muted-foreground">{userProfile.nickname}</h2>
-                  {/*<Badge variant="secondary" className="text-xs">Lv.{userProfile.level}</Badge>*/}
+                  <h2 className="text-xl bg-font-semibold text-foreground">{userProfile.nickname}님의 홈</h2>
+                  
                 </div>
-                {/*<p className="text-sm font-semibold text-muted-foreground mt-0.5">{userProfile.joinDate}에 가입</p>*/}
               </div>
               <div className="text-sm text-left text-muted-foreground font-semibold">
-                "{userProfile.profileMessage}"
+                "응원의 한마디{userProfile.profileMessage}"
               </div>
             </div>
+            <Avatar className="w-14 h-14 mr-2">
+              <AvatarImage src={userProfile.profileImageUrl} alt={userProfile.nickname} />
+              <AvatarFallback className="text-lg">{userProfile.nickname?.charAt(0) || 'U'}</AvatarFallback>
+            </Avatar>
           </div>
 
           {/* 완료 현황 및 연속 출석 카드 */}
           <div className="grid grid-cols-3 gap-3">
-            {/* 완료일수 - 노란색 계열 */}
-            <Card className="card-yellow dark:card-shadow">
+            {/* 완료일수 */}
+            <Card className="bg-card-yellow-bg border border-card-yellow-border dark:border-none dark:card-shadow">
               <CardContent className="p-4">
                 <div className="flex flex-col items-center space-y-2">
-                  <div className="flex items-center justify-center w-8 h-8 rounded-full bg-amber-500">
+                  <div className="flex items-center justify-center w-8 h-8 rounded-full bg-orange-500 dark:bg-orange-700">
                     <CheckCircle className="h-4 w-4 text-white" />
                   </div>
                   <div className="text-center">
@@ -260,14 +271,14 @@ export function UserHomeScreen({ user, onBack }: UserHomeScreenProps) {
             </Card>
 
             {/* 누적점수 - 아이보리 계열 */}
-            <Card className="card-ivory dark:card-shadow">
+            <Card className="bg-card-lavender-bg border border-card-lavender-border dark:border-none dark:card-shadow">
               <CardContent className="p-4">
                 <div className="flex flex-col items-center space-y-2">
-                  <div className="flex items-center justify-center w-8 h-8 rounded-full bg-orange-500">
+                  <div className="flex items-center justify-center w-8 h-8 rounded-full bg-purple-500 dark:bg-purple-800">
                     <TrendingUp className="h-4 w-4 text-white" />
                   </div>
                   <div className="text-center">
-                    {/*<div className="text-xl font-bold">{(userProfile.exp ?? 0) .toLocaleString()}</div>*/}
+                    <div className="text-xl font-bold">{(userProfile.totalScore ?? 0).toLocaleString()}</div>
                     <div className="text-xs">누적점수</div>
                   </div>
                 </div>
@@ -275,14 +286,14 @@ export function UserHomeScreen({ user, onBack }: UserHomeScreenProps) {
             </Card>
 
             {/* 동적 연속 출석 */}
-            <Card className={`${streakInfo.bgColor} ${streakInfo.borderColor} dark:card-shadow`}>
+            <Card className={`${streakInfo.containBgColor} border ${streakInfo.borderColor} dark:border-none dark:card-shadow`}>
               <CardContent className="p-4">
                 <div className="flex flex-col items-center space-y-2">
-                  <div className="text-2xl">
-                    {streakInfo.icon}
+                  <div className={`flex items-center justify-center w-8 h-8 rounded-full ${streakInfo.bgColor}`}>
+                    <div className="text-xl mb-0 bg">{streakInfo.icon}</div>
                   </div>
                   <div className="text-center">
-                    {/*<div className={`text-xl font-bold ${streakInfo.textColor}`}>{userProfile.streakDays}</div>*/}
+                    <div className={`text-xl font-bold ${streakInfo.textColor}`}>{totalAttendance}</div>
                     <div className={`text-xs ${streakInfo.subTextColor}`}>{streakInfo.stage}</div>
                   </div>
                 </div>
@@ -291,11 +302,11 @@ export function UserHomeScreen({ user, onBack }: UserHomeScreenProps) {
           </div>
 
           {/* 연속 출석 메시지 */}
-          <div className={`p-3 rounded-lg ${streakInfo.bgColor} ${streakInfo.borderColor} border dark:card-shadow`}>
-            <div className="flex items-center space-x-2">
+            <div className={`${streakInfo.containBgColor} border ${streakInfo.borderColor} rounded-lg dark:border-none dark:card-shadow`}>
+            <div className="flex items-center space-x-2 ml-3">
               <span className="text-lg">{streakInfo.icon}</span>
               <span className={`text-sm ${streakInfo.textColor}`}>
-                {/*{getStreakMessage(userProfile.streakDays)}*/}
+                {getStreakMessage(totalAttendance)}
               </span>
             </div>
           </div>
@@ -317,37 +328,41 @@ export function UserHomeScreen({ user, onBack }: UserHomeScreenProps) {
           </CardHeader>
           <CardContent className="pt-0">
             <div className="space-y-0">
-              {userRoutines.map((routine, index) => (
-                <div key={routine.id}>
-                  <div className={`flex items-center justify-between p-3 transition-colors ${
-                    routine.completed 
-                      ? 'bg-green-50/50 dark:bg-green-900/20' 
-                      : 'bg-accent/20'
-                  } ${index < userRoutines.length - 1 ? 'border-b border-border/30' : ''}`}>
-                    <div className="flex items-center space-x-3 flex-1">
-                      <div className={`w-6 h-6 rounded-full flex items-center justify-center ${
-                        routine.completed 
-                          ? 'bg-green-500'
-                          : 'border-2 border-muted-foreground'
-                      }`}>
-                        {routine.completed && <CheckCircle className="h-4 w-4 text-white" />}
-                      </div>
-                      <div>
-                        <div className={`text-sm font-medium ${
+              {todaysRoutines.length > 0 ? (
+                todaysRoutines.map((routine, index) => (
+                  <div key={routine.id}>
+                    <div className={`flex items-center justify-between p-3 transition-colors ${
+                      routine.completed 
+                        ? 'bg-green-50/50 dark:bg-green-900/20' 
+                        : 'bg-accent/20'
+                    } ${index < userRoutines.length - 1 ? 'border-b border-border/30' : ''}`}>
+                      <div className="flex items-center space-x-3 flex-1">
+                        <div className={`w-6 h-6 rounded-full flex items-center justify-center ${
                           routine.completed 
-                            ? 'text-green-700 dark:text-green-400 line-through' 
-                            : 'text-foreground'
+                            ? 'bg-green-500'
+                            : 'border-2 border-muted-foreground'
                         }`}>
-                          {getCategoryEmoji(routine.category)} {routine.name}
+                          {routine.completed && <CheckCircle className="h-4 w-4 text-white" />}
                         </div>
-                        <div className="text-xs text-muted-foreground">
-                          {routine.time} • {routine.streak}일 연속
+                        <div>
+                          <div className={`text-sm text-left font-medium ${
+                            routine.completed 
+                              ? 'text-green-700 dark:text-green-400 line-through' 
+                              : 'text-foreground'
+                          }`}>
+                            {getCategoryEmoji(routine.category)} {routine.name}
+                          </div>
+                          <div className="text-xs text-muted-foreground">
+                            {routine.time} • {routine.streak}일 연속
+                          </div>
                         </div>
                       </div>
                     </div>
                   </div>
-                </div>
-              ))}
+                ))
+              ) : (
+                <p className="text-center text-sm text-muted-foreground py-4">오늘은 예정된 루틴이 없습니다.</p>
+              )}
             </div>
           </CardContent>
         </Card>
@@ -362,28 +377,30 @@ export function UserHomeScreen({ user, onBack }: UserHomeScreenProps) {
           </CardHeader>
           <CardContent className="pt-0">
             <div className="space-y-0">
-              {userGroups.map((group, index) => (
-                <div key={group.id}>
-                  <div className={`flex items-center justify-between p-3 hover:bg-accent/50 transition-colors ${
-                    index < userGroups.length - 1 ? 'border-b border-border/30' : ''
-                  }`}>
-                    <div className="flex items-center space-x-3 flex-1">
-                      <div className="flex -space-x-2 w-20">
-                        {group.recentMembers.slice(0, 3).map((member, memberIndex) => (
-                          <Avatar key={member.id} className="w-8 h-8 border-2 border-background">
-                            <AvatarImage src={member.profileImageUrl} alt={member.nickname} />
-                            <AvatarFallback className="text-xs">{member.nickname.charAt(0)}</AvatarFallback>
-                          </Avatar>
-                        ))}
-                      </div>
-                      <div>
-                        <div className="text-sm font-medium text-foreground">{group.name}</div>
-                        <div className="text-xs text-left text-muted-foreground">{group.members}명 참여</div>
+              {joinedGroups.length > 0 ? (
+                joinedGroups.map((group, index) => (
+                  <div key={group.groupId}>
+                    <div className={`flex items-center justify-between p-3 hover:bg-accent/50 transition-colors ${
+                      index < joinedGroups.length - 1 ? 'border-b border-border/30' : ''
+                    }`}>
+                      <div className="flex items-center space-x-3 flex-1">
+                        <div className="flex w-14">                          
+                            <Avatar className="w-12 h-12">
+                              <AvatarImage src={group.groupImageUrl} alt={group.groupName} />
+                              <AvatarFallback>{group.groupName.charAt(0)}</AvatarFallback>
+                            </Avatar>
+                        </div>
+                        <div>
+                          <div className="text-sm text-left font-medium text-foreground">{group.groupName}</div>
+                          <div className="text-xs text-left text-muted-foreground">{group.currentMemberCount}명 참여</div>
+                        </div>
                       </div>
                     </div>
                   </div>
-                </div>
-              ))}
+                ))
+              ) : (
+              <p className="text-center text-sm text-muted-foreground py-4">참여중인 그룹이 없습니다.</p>
+            )}
             </div>
           </CardContent>
         </Card>
@@ -411,7 +428,7 @@ export function UserHomeScreen({ user, onBack }: UserHomeScreenProps) {
                     {/* 인증 이미지 */}
                     <div className="relative rounded-lg overflow-hidden aspect-square">
                       <ImageWithFallback
-                        src={photo.image}
+                        src={photo.imageUrl}
                         alt={photo.routine}
                         className="w-full h-full object-cover"
                       />
@@ -427,7 +444,7 @@ export function UserHomeScreen({ user, onBack }: UserHomeScreenProps) {
                     
                     {/* 날짜 정보 */}
                     <div className="text-center">
-                      <span className="text-xs text-muted-foreground">{photo.date}</span>
+                      <span className="text-xs text-muted-foreground">{new Date(photo.activityDate).toLocaleDateString('ko-KR')}</span>
                     </div>
                   </div>
                 ))}
@@ -445,7 +462,7 @@ export function UserHomeScreen({ user, onBack }: UserHomeScreenProps) {
         </Card>
       </div>
     {/* 갤러리 모달 */}
-      {selectedPhotoIndex !== null && (
+      {selectedPhotoIndex !== null && publicVerificationPhotos[selectedPhotoIndex] && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80">
           <div className="relative h-full w-full max-w-lg flex flex-col items-center justify-center">
             {/* 닫기 버튼 */}
@@ -460,7 +477,7 @@ export function UserHomeScreen({ user, onBack }: UserHomeScreenProps) {
             {/* 사진 */}
             <div className="flex-1 w-full flex items-center justify-center p-4">
               <img 
-                src={publicVerificationPhotos[selectedPhotoIndex].image} 
+                src={publicVerificationPhotos[selectedPhotoIndex].imageUrl} 
                 alt={publicVerificationPhotos[selectedPhotoIndex].routine} 
                 className="max-w-full max-h-full object-contain"
               />

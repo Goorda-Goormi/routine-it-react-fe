@@ -19,6 +19,7 @@ export interface Notification {
   relatedId?: number; // 그룹 ID 등 관련 정보
   fullContent?: string; 
   monthYear?: string;
+  isLocal?: boolean;
 }
 
 export interface Group {
@@ -71,10 +72,13 @@ export interface Member {
 // API 응답에 정확히 매핑되는 인터페이스
 export interface GroupMemberResponse {
   groupMemberId: number;
+  userId: number;        // ✨ 이 필드가 있는지 확인
+  nickname: string; 
   groupName: string;
   memberName: string;
   status: 'PENDING' | 'JOINED' | 'BLOCKED' | 'LEFT';
   role: 'LEADER' | 'MEMBER';
+  profileImageUrl: string;
   message: string;
   createdAt: string;
   updatedAt: string;
@@ -85,9 +89,9 @@ export interface AuthMessage {
   //user: string;
   nickname: string;
   message: string;
-  imageUrl: string | null;
-  routineId: number; 
-  userId: string | number;
+  imageUrl?: string | null;
+  routineId?: number; 
+  userId?: string | number;
 }
 
 export interface Routine {
@@ -105,8 +109,7 @@ export interface Routine {
   reminder?: string | boolean;
   goal?: string;
   description?: string;
-
-
+  isPublic: boolean;
 }
 
 export interface PendingAuthMap {

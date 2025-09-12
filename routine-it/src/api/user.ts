@@ -47,8 +47,7 @@ export interface PublicUserProfile {
   nickname: string;
   profileMessage: string;
   profileImageUrl: string;
-  isAlarmOn: boolean;
-  isDarkMode: boolean;
+  totalScore: number;
 }
 
 /**
@@ -57,5 +56,6 @@ export interface PublicUserProfile {
  * @returns 사용자의 공개 프로필 정보
  */
 export const getUserProfile = async (userId: number): Promise<PublicUserProfile> => {
-  return await apiFetch(`/api/users/${userId}`);
+  const response = await apiFetch(`/api/users/${userId}`);
+  return response.data;
 };
