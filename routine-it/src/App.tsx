@@ -1815,7 +1815,7 @@ const navigateTo = (screen: string, params?: any, options?: { replace?: boolean 
       className={`min-h-screen w-full bg-[var(--root-background)] flex items-center justify-center `}
     >
     
-      <div className="min-w-[360px] w-[450px] min-h-[704px] h-[800px] bg-background flex flex-col overflow-hidden rounded-lg shadow-2xl border border-border/50">
+      <div className="min-w-[360px] w-full max-w-none md:max-w-[1000px] lg:max-w-[1280px] h-[850px] bg-background flex flex-col overflow-hidden rounded-lg shadow-2xl border border-border/50">
         {!isLoggedIn ? (
           <div className="w-full h-full">{renderScreen()}</div>
         ) : (

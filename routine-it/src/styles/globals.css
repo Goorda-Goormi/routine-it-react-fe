@@ -207,13 +207,23 @@
 @layer base {
   * {
     @apply border-border outline-ring/50;
+    
   }
 
   body {
     background-color: var(--root-background);
     @apply text-foreground;
+    min-height: 100vh;
+    display: block;
     
   }
+
+  #root {
+    margin: 0 auto;
+    width: 100%;
+    max-width: 1280px; 
+  }
+
 
   /* 아이콘 색상 클래스 */
   .icon-primary {
