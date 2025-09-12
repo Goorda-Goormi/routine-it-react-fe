@@ -11,11 +11,12 @@ import { GroupRoutineDialog } from './GroupRoutineDialog';
 import { GroupChatMessages } from './GroupChatMessages';
 import { GroupChatInput } from './GroupChatInput';
 import { leaveGroup } from '../../../api/chat';
-import { updateRankingScore } from '../../../api/ranking'; // ✅ ranking.ts에서 updateRankingScore 임포트
+import { updateRankingScore } from '../../../api/ranking'; 
 import { createGroupActivity } from '../../../api/activity';
 import type { Group, UserProfile, GroupMemberResponse } from '../../../interfaces';
 import { fetchChatHistory } from '../../../api/chat';
 import { requestAuthApproval, getGroupMembers } from '../../../api/group';
+import { getUserProfile } from '../../../api/user';
 
 export const BASE_URL = "http://54.180.93.1:8080";
 const WS_CONNECTION_URL = `${BASE_URL}/ws`;
@@ -38,12 +39,39 @@ export function GroupChatScreen({ group, groupmembers, onBack, onLeaveGroup, use
     const [isAuthDialogOpen, setIsAuthDialogOpen] = useState(false);
     const [isMembersDialogOpen, setIsMembersDialogOpen] = useState(false);
     const [messages, setMessages] = useState<Message[]>([]);
-
+     const [memberProfiles, setMemberProfiles] = useState<Record<number, string>>({});
     const stompClientRef = useRef<Client | null>(null);
 
     const myUserId = userInfo.id;
     const myNickname = userInfo.nickname;
     const roomId = group.groupId;
+
+     useEffect(() => {
+        const fetchProfiles = async () => {
+            const profiles: Record<number, string> = {};
+            // groupmembers 배열이 유효할 때만 프로필을 조회합니다.
+            if (groupmembers && groupmembers.length > 0) {
+                // 프로필 조회를 위해 모든 멤버의 userId에 대한 Promise 배열을 생성합니다.
+                const profilePromises = groupmembers.map(member =>
+                    getUserProfile(member.userId)
+                );
+                // 모든 프로필 정보를 한 번에 비동기적으로 가져옵니다.
+                const userProfiles = await Promise.allSettled(profilePromises);
+
+                userProfiles.forEach((result, index) => {
+                    const member = groupmembers[index];
+                    // 요청이 성공적으로 완료되었을 때만 프로필 이미지를 저장합니다.
+                    if (result.status === 'fulfilled' && result.value) {
+                        profiles[member.userId] = result.value.profileImageUrl;
+                    }
+                });
+            }
+            // 모든 프로필 조회 후 상태를 한 번에 업데이트합니다.
+            setMemberProfiles(profiles);
+        };
+
+        fetchProfiles();
+    }, [groupmembers]); // ✅ groupmembers 데이터가 변경될 때마다 프로필을 다시 조회합니다.
 
     useEffect(() => {
         const loadChatHistory = async () => {
@@ -63,7 +91,7 @@ export function GroupChatScreen({ group, groupmembers, onBack, onLeaveGroup, use
         };
 
         loadChatHistory();
-        
+
         const socket = new SockJS(WS_CONNECTION_URL);
         const stompClient = new Client({
             webSocketFactory: () => socket,
@@ -90,7 +118,6 @@ export function GroupChatScreen({ group, groupmembers, onBack, onLeaveGroup, use
                     };
                     setMessages((prev) => [...prev, newMsg]);
                 });
-
                 stompClient.publish({
                     destination: `/app/chat.online/${roomId}`,
                     body: JSON.stringify({ userId: myUserId, nickname: myNickname }),
@@ -312,11 +339,12 @@ export function GroupChatScreen({ group, groupmembers, onBack, onLeaveGroup, use
                                 </DialogHeader>
                                 <div className="space-y-3 max-h-80 overflow-y-auto ">
                                     {groupmembers.map((member) => {
+                                        const profileImage = memberProfiles[member.userId];
                                         const isMe = member.groupMemberId === myUserId;
                                         return (
                                             <div key={member.groupMemberId} className="flex items-center space-x-3 p-2 rounded-lg hover:bg-accent/50">
                                                 <Avatar className="h-10 w-10">
-                                                    <AvatarImage src={isMe ? userInfo.profileImageUrl : member.profileImageUrl} alt={member.memberName} />
+                                                    <AvatarImage src={profileImage || member.profileImageUrl || ''} alt={`${member.nickname} 프로필`} />
                                                     <AvatarFallback>{member.memberName}</AvatarFallback>
                                                 </Avatar>
                                                 <div className="flex-1">

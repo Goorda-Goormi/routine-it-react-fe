@@ -412,8 +412,9 @@ export default function App() {
         const groupId = currentScreen && currentScreen.params ? currentScreen.params.groupId : undefined;
         const members = groupId !== undefined ? (groupMembers[groupId] || []) : [];
         const myId = UserInfo?.id; 
-        const isJoined = groupId !== undefined ? myGroups.some(joinedGroup => joinedGroup.groupId === groupId) : false;
-  //2. 유틸리티 함수 ============================================
+        const isJoined = groupId !== undefined ? myGroups.some(joinedGroup => joinedGroup.groupId === groupId) : false; 
+
+        //2. 유틸리티 함수 ============================================
   const badgeInfo = {
     '첫걸음': {
       image: 'https://i.ibb.co/6P0D6kX/first-step-badge.png',
@@ -557,28 +558,7 @@ export default function App() {
     }
   }, [isDarkMode]);
 
-  /*useEffect(() => {
-  const fetchMembers = async () => {
-    // 현재 화면이 group-detail이고, groupId가 존재하는지 확인
-    if (currentScreen && currentScreen.screen === "group-detail" && currentScreen.params.groupId) {
-      const groupId = currentScreen.params.groupId;
-      try {
-        const members = await getGroupMembers(groupId);
-        console.log(`그룹 ID ${groupId}의 멤버:`, members); // ✨ 콘솔 출력 추가
-        
-        // 상태에 멤버 정보 저장
-        setGroupMembers(prevMembers => ({
-          ...prevMembers,
-          [groupId]: members,
-        }));
-      } catch (error) {
-        console.error("그룹 멤버 조회 실패:", error);
-      }
-    }
-  };
 
-  fetchMembers();
-}, [navigationStack, isJoined]);*/
 const fetchMembers = async (groupId: number) => {
     try {
         const members = await getGroupMembers(groupId);
@@ -1241,144 +1221,6 @@ const handleToggleRoutinePublic = async (routineId: number) => {
     }
   };
 
-  // 루틴 인증 메시지를 추가하는 함수에 groupId 추가
-//   const handleAddAuthMessage = (
-//   groupId: number, 
-//   data: { description: string; image: File | null; isPublic: boolean }, 
-//   nickname: string,
-//   userId: string | number, // userId 추가
-//   routineId: number // routineId 추가
-// ) => {
-//   const newAuthMessage: AuthMessage = {
-//     id: Date.now(),
-//     nickname: nickname,
-//     userId: userId, // userId 저장
-//     message: data.description,
-//     imageUrl: data.image ? URL.createObjectURL(data.image) : null,
-//     routineId: routineId, // routineId 저장
-//   };
-  
-//   setPendingAuthMessages(prevMessages => ({
-//     ...prevMessages,
-//     [groupId]: [...(prevMessages[groupId] || []), newAuthMessage]
-//   }));
-  
-//   console.log('인증 데이터 제출:', data);
-//   alert('인증이 제출되었습니다!');
-// };
-
-  // 루틴 인증을 승인하는 함수에 groupId 추가
-  // const handleApproveAuthMessage = (groupId: number, authId: number) => {
-  //   // 1. 승인할 인증 메시지 찾기
-  //   const messageToApprove = pendingAuthMessages[groupId]?.find(msg => msg.id === authId);
-  //   if (!messageToApprove) return;
-
-  //   // 인증을 요청한 사용자에게 보낼 알림 생성
-  //   addNotification({
-  //     message: `그룹 루틴 인증이 승인되었습니다. (+20점)`,
-  //     category: '그룹',
-  //     relatedId: groupId,
-  //   });  
-
-  //   setPendingAuthMessages(prevMessages => ({
-  //     ...prevMessages,
-  //     [groupId]: (prevMessages[groupId] || []).filter(msg => msg.id !== authId)
-  //   }));
-
-  //모든 루틴 목록에서 승인된 루틴 정보를 찾습니다.
-  // const allRoutines = [...personalRoutines, ...groupRoutines];
-  // const approvedRoutine = allRoutines.find(r => r.id === messageToApprove.routineId);
-
-  // if (approvedRoutine && UserInfo) {
-  //     const score = calculateScoreByDifficulty(approvedRoutine.difficulty);
-  //     const memberId = Number(messageToApprove.userId); // 인증을 올린 멤버의 ID
-
-  //     // 4. 랭킹 점수 업데이트 API 호출 (groupId 포함)
-  //     updateRankingScore(memberId, score, groupId)
-  //       .then(response => {
-  //         console.log(`그룹 루틴 인증 (${messageToApprove.nickname}님): ${score}점 획득 성공`, response);
-          
-  //         // 만약 내 인증이 승인된 것이라면, 화면의 총점을 즉시 업데이트합니다.
-  //         if (memberId === UserInfo.id) {
-  //           fetchUserTotalScore();
-  //         }
-  //       })
-  //       .catch(error => {
-  //         console.error("그룹 루틴 점수 업데이트 실패:", error);
-  //       });
-  //   }
-
-//   // 2. 그룹 상태를 업데이트하는 로직
-//   setGroups(prevGroups => 
-//     prevGroups.map(group => {
-//       // 해당 그룹인지 확인
-//       if (group.groupId === groupId) {
-//         // 그룹 내에서 해당 루틴 찾기
-//         const updatedRoutines = group.routines?.map(routine => {
-//           if (routine.id === messageToApprove.routineId) {
-//             return {
-//               ...routine,
-//               // 루틴 완료 상태 업데이트 (예: isCertified를 true로 설정)
-//               completed: true, // 또는 별도의 인증 상태 필드 사용
-//             };
-//           }
-//           return routine;
-//         });
-
-//         // 멤버 상태 업데이트 (예: '인증' 뱃지 표시)
-//         const updatedMembers = group.recentMembers?.map(member => {
-//           if (member.id === messageToApprove.userId) {
-//             return {
-//               ...member,
-//               isCertified: true, // 인증 상태를 나타내는 필드 추가
-//             };
-//           }
-//           return member;
-//         });
-
-//         return { 
-//           ...group, 
-//           routines: updatedRoutines,
-//           recentMembers: updatedMembers 
-//         };
-//       }
-//       return group;
-//     })
-//   );
-
-//   // pendingAuthMessages 상태에서 승인된 메시지 제거
-//   setPendingAuthMessages(prevMessages => ({
-//     ...prevMessages,
-//     [groupId]: (prevMessages[groupId] || []).filter(msg => msg.id !== authId)
-//   }));
-  
-//   console.log(`${authId}번 인증을 승인했습니다.`);
-//   alert(`${authId}번 인증이 승인되었습니다.`);
-// };
-
-  // 루틴 인증을 거절하는 함수에 groupId 추가
-  // const handleRejectAuthMessage = (groupId: number, authId: number) => {
-  //   const messageToReject = pendingAuthMessages[groupId]?.find(msg => msg.id === authId);
-  //   if (!messageToReject) {
-  //     console.error("거절할 인증 메시지를 찾을 수 없습니다.");
-  //     return;
-  //   }
-
-  //   addNotification({
-  //     message: `아쉽지만, '${messageToReject.message}' 루틴 인증이 반려되었습니다.`,
-  //     category: '그룹',
-  //     relatedId: groupId
-  //   });
-
-
-  //   setPendingAuthMessages(prevMessages => ({
-  //     ...prevMessages,
-  //     [groupId]: (prevMessages[groupId] || []).filter(msg => msg.id !== authId)
-  //   }));
-  //   console.log(`${authId}번 인증을 거절했습니다.`);
-  //   alert(`${authId}번 인증이 거절되었습니다.`);
-  // };
-
 const handleAddGroup = async (newGroupData: any) => {
     try {
       await fetchGroupData(); 
@@ -1418,8 +1260,9 @@ const handleAddGroup = async (newGroupData: any) => {
       )
     );
 
-    
   };
+
+  
 
   
 
