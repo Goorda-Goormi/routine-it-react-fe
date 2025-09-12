@@ -401,10 +401,11 @@ export default function App() {
   ]);
 
   const fetchTotalAttendance = async () => {
-    if (!isLoggedIn) return;
+    //if (!isLoggedIn) return;
     try {
       // targetUserId 없이 호출하여 '내' 누적 출석일을 가져옵니다.
       const totalDays = await getTotalAttendanceDays();
+      console.log('✅ [App.tsx] fetchTotalAttendance API 응답:', totalDays);
       setStreakDays(totalDays);
     } catch (error) {
       console.error("누적 출석일 조회 실패:", error);
@@ -447,6 +448,7 @@ export default function App() {
 
   const fetchUserInfo = async () => {
     setIsLoading(true);
+    console.log('A. fetchUserInfo 함수 시작.');
     const token = localStorage.getItem('accessToken');
     if (!token) {
       console.error("인증 토큰이 없습니다.");
@@ -455,15 +457,17 @@ export default function App() {
     }
       
     try {
+      console.log('B. getUserInfo API 호출 직전...');
       const userInfoData = await getUserInfo();
+      console.log('C. getUserInfo API 호출 성공! 받은 데이터:', userInfoData);
       setUserInfo(prevUserInfo => ({
         ...prevUserInfo,
         ...userInfoData,
       }));
-
+      console.log('D. setUserInfo 호출 완료.'); // <-- 로그 D
     } catch (error) {
       // ▼▼▼ 이 로그를 추가해서 에러를 확인하세요! ▼▼▼
-      console.log('🔴 여기서 에러! fetchUserInfo 함수 실패:', error);
+      console.log('E. fetchUserInfo의 catch 블록 실행됨!', error);
       
       console.error("사용자 정보 조회 에러:", error);
       localStorage.removeItem('accessToken');
@@ -518,40 +522,41 @@ export default function App() {
 
   //웹 페이지 로드 시 로그인 상태 확인
   useEffect(() => {
+  const checkAuthAndFetchUser = async () => {
     const params = new URLSearchParams(window.location.search);
-    const accessToken = params.get('accessToken');
-    const isNewUserParam = params.get('isNewUser');
-    
-    const initializeUserData = async () => {
-    await fetchUserInfo(); 
+    let token = params.get('accessToken');
+    if (token) {
+      localStorage.setItem('accessToken', token);
+      window.history.replaceState({}, document.title, window.location.pathname);
+    } else {
+      token = localStorage.getItem('accessToken');
+    }
 
-    fetchGroupData();
-    fetchUserTotalScore();
-    fetchTotalAttendance();
+    if (token) {
+      setIsLoggedIn(true);
+      await fetchUserInfo(); 
+    }
   };
 
-    if (accessToken) {
-      localStorage.setItem('accessToken', accessToken);
-      setIsLoggedIn(true);
-      initializeUserData();
-        
-      if (isNewUserParam === 'true') {
-        setIsNewUser(true);
-        setIsLoginModalOpen(true);
-      }
-      window.history.replaceState({}, document.title, window.location.pathname);
-      
-    } else {
-      const checkLoginStatus = async () => {
-      const storedToken = localStorage.getItem('accessToken');
-      if (storedToken) {
-        setIsLoggedIn(true);
-        initializeUserData(); // 사용자 데이터 초기화 함수 호출
-      }
-    };
-    checkLoginStatus();
-  }
+  checkAuthAndFetchUser();
 }, []);
+
+
+useEffect(() => {
+  if (isLoggedIn && UserInfo) {
+    const fetchRemainingData = async () => {
+      await Promise.all([
+        fetchUserActivities(),
+        fetchPersonalRoutines(),
+        fetchUserTotalScore(),
+        fetchTotalAttendance(),
+        fetchGroupData(),
+        fetchNotifications()
+      ]);
+    };
+    fetchRemainingData();
+  }
+}, [UserInfo]);
 
   // UserInfo(서버) 상태와 isDarkMode(UI) 상태를 동기화
   useEffect(() => {
@@ -749,14 +754,14 @@ useEffect(() => {
     }
   };
 
-  useEffect(() => {
-    console.log(`[상태 체크] isLoggedIn: ${isLoggedIn}, UserInfo가 있나?: ${!!UserInfo}`);
-    if (isLoggedIn && UserInfo) {
-      fetchUserActivities(); 
-      fetchPersonalRoutines(); 
-      fetchUserTotalScore(); 
-    }
-  }, [isLoggedIn, UserInfo]); 
+  // useEffect(() => {
+  //   console.log(`[상태 체크] isLoggedIn: ${isLoggedIn}, UserInfo가 있나?: ${!!UserInfo}`);
+  //   if (isLoggedIn && UserInfo) {
+  //     fetchUserActivities(); 
+  //     fetchPersonalRoutines(); 
+  //     fetchUserTotalScore(); 
+  //   }
+  // }, [isLoggedIn, UserInfo]); 
 
 
   useEffect(() => {
@@ -1770,11 +1775,7 @@ const navigateTo = (screen: string, params?: any, options?: { replace?: boolean 
     // 3. 서버에서 '출석 인정(true)' 응답을 받았을 때만 아래 로직을 실행합니다.
     if (hasAttendedToday) {
 
-    // --- 1. 누적 출석일 (streakDays) 업데이트 ---
-    // 이제 streakDays는 초기화되지 않고 항상 1씩 증가합니다.
-    const newCumulativeStreak = streakDays + 1;
-    setStreakDays(newCumulativeStreak);
-    localStorage.setItem('streakDays', String(newCumulativeStreak));
+    await fetchTotalAttendance();
 
     // --- 2. 출석 날짜 배열 업데이트 ---
     const newDates = [...attendanceDates];
