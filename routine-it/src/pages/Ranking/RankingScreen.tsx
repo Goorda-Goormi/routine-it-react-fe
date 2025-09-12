@@ -1,14 +1,13 @@
 // RankingScreen.tsx
-import React, { useState, useEffect } from 'react';
+import React, { useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card';
 import { Badge } from '../../components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../components/ui/tabs';
 import { Avatar, AvatarFallback, AvatarImage } from '../../components/ui/avatar';
 import { Trophy, Users, Medal, Crown, Star, Target } from 'lucide-react';
 import type { Group, IPersonalRankingResponse, IPersonalRankingData } from '../../interfaces';
-import { getGlobalGroupRanking, getUserTotalScore } from '../../api/ranking';
 
-//그룹 랭킹 인터페이스 정의
+// 그룹 랭킹 인터페이스 정의
 export interface IGroupRankingItem {
   rank: number;
   groupId: number;
@@ -24,13 +23,30 @@ export interface IGroupRankingItem {
   averageAuthPerMember: number;
 }
 
-export interface GlobalGroupRankingData {
+/*export interface GlobalGroupRankingData {
   rankings: IGroupRankingItem[];
   monthYear: string;
   totalGroups: number;
   updatedAt: string;
+}*/
+export interface GlobalGroupRankingData {
+  success: boolean;
+  message: string;
+  data: {
+    content: IGroupRankingItem[];
+    // 서버 응답에 따라 다른 속성들도 추가할 수 있습니다.
+    empty: boolean;
+    first: boolean;
+    last: boolean;
+    number: number;
+    numberOfElements: number;
+    pageable: any; 
+    size: number;
+    sort: any; 
+    totalElements: number;
+    totalPages: number;
+  };
 }
-
 
 interface RankingScreenProps {
   groups: Group[];
@@ -41,11 +57,42 @@ interface RankingScreenProps {
   loadingUserTotalScore: boolean;
 }
 
-export function RankingScreen({ groups, personalRankingData,groupRankingData, userTotalScore, loadingGroupRanking, loadingUserTotalScore }: RankingScreenProps) {
+export function RankingScreen({
+  groups,
+  personalRankingData,
+  groupRankingData,
+  userTotalScore,
+  loadingGroupRanking,
+  loadingUserTotalScore,
+}: RankingScreenProps) {
   const currentMonth = new Date().getMonth() + 1;
 
-  // personalRankingData에서 데이터를 추출하여 personalRankings 변수 정의
-  const personalRankings: IPersonalRankingData[] = personalRankingData?.data || [];
+  // 원본 개인 랭킹 데이터
+  const rawPersonalRankings: IPersonalRankingData[] = personalRankingData?.data?.content || [];
+
+  // ✅ 유저별 점수 합산 + 정렬 + rank 재계산
+  const mergedPersonalRankings = useMemo(() => {
+    const map = new Map<number, IPersonalRankingData>();
+
+    rawPersonalRankings.forEach((item) => {
+      if (map.has(item.userId)) {
+        const existing = map.get(item.userId)!;
+        map.set(item.userId, {
+          ...existing,
+          totalScore: existing.totalScore + item.totalScore,
+        });
+      } else {
+        map.set(item.userId, { ...item });
+      }
+    });
+
+    return Array.from(map.values())
+      .sort((a, b) => b.totalScore - a.totalScore)
+      .map((user, index) => ({
+        ...user,
+        currentRank: index + 1,
+      }));
+  }, [rawPersonalRankings]);
 
   const getRankIcon = (rank: number) => {
     switch (rank) {
@@ -66,6 +113,8 @@ export function RankingScreen({ groups, personalRankingData,groupRankingData, us
     return 'text-foreground';
   };
 
+const groupRankings = groupRankingData?.data?.content || [];
+
   return (
     <div className="h-full p-4">
       <Tabs defaultValue="personal" className="space-y-4">
@@ -76,8 +125,6 @@ export function RankingScreen({ groups, personalRankingData,groupRankingData, us
 
         {/* 개인별 탭 */}
         <TabsContent value="personal" className="space-y-4">
-          
-
           <Card className="dark:card-shadow">
             <CardContent className="p-4">
               <div className="flex items-center space-x-3 p-3 rounded-lg bg-gradient-to-br bg-card-yellow-bg dark:bg-card-yellow-bg dark:border-none">
@@ -85,8 +132,12 @@ export function RankingScreen({ groups, personalRankingData,groupRankingData, us
                   <Star className="h-5 w-5 text-white" />
                 </div>
                 <div className="flex-1">
-                  <div className="text-sm font-medium text-amber-800 dark:text-white">{currentMonth}월 월간 랭킹</div>
-                  <div className="text-xs text-amber-700 dark:text-white dark:opacity-90">{currentMonth + 1}월 1일 자정에 랭킹이 리셋됩니다</div>
+                  <div className="text-sm font-medium text-amber-800 dark:text-white">
+                    {currentMonth}월 월간 랭킹
+                  </div>
+                  <div className="text-xs text-amber-700 dark:text-white dark:opacity-90">
+                    {currentMonth + 1}월 1일 자정에 랭킹이 리셋됩니다
+                  </div>
                 </div>
               </div>
             </CardContent>
@@ -101,33 +152,39 @@ export function RankingScreen({ groups, personalRankingData,groupRankingData, us
             </CardHeader>
             <CardContent className="pt-0">
               <div className="space-y-3">
-                {personalRankings.length > 0 ? (
-                  personalRankings.map((user) => (
-                    <div key={user.userId} className="flex items-center justify-between p-3 rounded-lg border border-border dark:border-border">
+                {mergedPersonalRankings.length > 0 ? (
+                  mergedPersonalRankings.map((user) => (
+                    <div
+                      key={user.userId}
+                      className="flex items-center justify-between p-3 rounded-lg border"
+                    >
                       <div className="flex items-center space-x-3">
-                        <div className="flex items-center justify-center w-8">
-                          {getRankIcon(user.currentRank)}
-                        </div>
+                        <div className="w-8 flex justify-center">{getRankIcon(user.currentRank)}</div>
                         <Avatar className="w-10 h-10">
-                          <AvatarImage src={user.profileImageUrl || undefined} alt={user.nickname} />
+                          <AvatarImage
+                            src={user.profileImageUrl || undefined}
+                            alt={user.nickname}
+                          />
                           <AvatarFallback>{user.nickname.charAt(0)}</AvatarFallback>
                         </Avatar>
-                        <div className='flex flex-col items-start'>
-                          <div className="text-sm font-medium text-foreground">{user.nickname}</div>
-                          <div className="text-xs text-foreground dark:opacity-75">연속 {user.consecutiveDays}일</div>
+                        <div>
+                          <div className="text-sm font-medium">{user.nickname}</div>
+                          <div className="text-xs">연속 {user.consecutiveDays ?? 0}일</div>
                         </div>
                       </div>
                       <div className="text-right">
-                        <div className={`text-lg font-bold ${getScoreColor(user.currentRank)}`}>
+                        <div
+                          className={`text-lg font-bold ${getScoreColor(user.currentRank)}`}
+                        >
                           {user.totalScore.toLocaleString()}
                         </div>
-                        <div className="text-xs text-foreground dark:opacity-75">총점</div>
+                        <div className="text-xs text-muted-foreground">총점</div>
                       </div>
                     </div>
                   ))
                 ) : (
                   <div className="text-center text-sm text-gray-500 py-8">
-                    랭킹 데이터를 불러오는 중이거나 데이터가 없습니다.
+                    데이터가 없습니다.
                   </div>
                 )}
               </div>
@@ -144,8 +201,12 @@ export function RankingScreen({ groups, personalRankingData,groupRankingData, us
                   <Users className="h-5 w-5 text-white" />
                 </div>
                 <div className="flex-1">
-                  <div className="text-sm font-medium text-orange-800 dark:text-white">{currentMonth}월 그룹 랭킹</div>
-                  <div className="text-xs text-orange-700 dark:text-white dark:opacity-90">전체 그룹 중 순위를 확인하세요</div>
+                  <div className="text-sm font-medium text-orange-800 dark:text-white">
+                    {currentMonth}월 그룹 랭킹
+                  </div>
+                  <div className="text-xs text-orange-700 dark:text-white dark:opacity-90">
+                    전체 그룹 중 순위를 확인하세요
+                  </div>
                 </div>
               </div>
             </CardContent>
@@ -160,25 +221,39 @@ export function RankingScreen({ groups, personalRankingData,groupRankingData, us
             </CardHeader>
             <CardContent className="pt-0">
               <div className="space-y-3">
-                {/* 로딩 상태 확인 */}
                 {loadingGroupRanking ? (
-                  <div className="text-center text-sm text-gray-500 py-8">그룹 랭킹을 불러오는 중입니다...</div>
-                ) : (groupRankingData && groupRankingData.rankings.length > 0) ? (
-                  groupRankingData.rankings.map((group) => (
-                    <div key={group.groupId} className="p-3 rounded-lg border border-border dark:border-border">
+                  <div className="text-center text-sm text-gray-500 py-8">
+                    그룹 랭킹을 불러오는 중입니다...
+                  </div>
+                ) : groupRankings.length > 0 ? (
+                  groupRankings.map((group) => (
+                    <div
+                      key={group.groupId}
+                      className="p-3 rounded-lg border border-border dark:border-border"
+                    >
                       <div className="flex items-center justify-between mb-2">
                         <div className="flex items-center space-x-3">
                           <div className="flex items-center justify-center w-8">
                             {getRankIcon(group.rank)}
                           </div>
                           <Avatar className="w-10 h-10 rounded-full">
-                            <AvatarImage src={group.groupImageUrl || undefined} alt={group.groupName} />
+                            <AvatarImage
+                              src={group.groupImageUrl || undefined}
+                              alt={group.groupName}
+                            />
                             <AvatarFallback>{group.groupName.charAt(0)}</AvatarFallback>
                           </Avatar>
                           <div className="flex-1">
                             <div className="flex items-center space-x-2">
-                              <span className="text-sm font-medium text-foreground">{group.groupName}</span>
-                              <Badge variant={group.groupType === 'REQUIRED' ? 'destructive' : 'secondary'} className="text-xs">
+                              <span className="text-sm font-medium text-foreground">
+                                {group.groupName}
+                              </span>
+                              <Badge
+                                variant={
+                                  group.groupType === 'REQUIRED' ? 'destructive' : 'secondary'
+                                }
+                                className="text-xs"
+                              >
                                 {group.groupType === 'REQUIRED' ? '의무참여' : '자유참여'}
                               </Badge>
                             </div>
@@ -196,7 +271,6 @@ export function RankingScreen({ groups, personalRankingData,groupRankingData, us
                           <div className="text-xs text-foreground dark:opacity-75">총점</div>
                         </div>
                       </div>
-                      
                     </div>
                   ))
                 ) : (
