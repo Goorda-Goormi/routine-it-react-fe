@@ -12,9 +12,10 @@ interface GroupChatMessagesProps {
     getUserInfo: (message: Message) => UserProfile | null;
     userInfo: UserProfile;
     group: Group;
+    memberProfiles: Record<number, string>;
 }
 
-export function GroupChatMessages({ messages, myUserId, getUserInfo, group }: GroupChatMessagesProps) {
+export function GroupChatMessages({ messages, myUserId, getUserInfo, group, memberProfiles }: GroupChatMessagesProps) {
     const [localReactions, setLocalReactions] = useState<{ [key: string]: { [emoji: string]: number } }>({});
     const [hoveredMessageKey, setHoveredMessageKey] = useState<string | null>(null);
 
@@ -116,6 +117,7 @@ export function GroupChatMessages({ messages, myUserId, getUserInfo, group }: Gr
 
                     const showDateSeparator = isDifferentDay(msg, messages, index, renderedDates);
                     const reactionsToDisplay = localReactions[messageKey] || {};
+                     const profileImageUrl = memberProfiles[msg.userId] || null;
 
                     return (
                         <React.Fragment key={`message-${msg.id || index}`}>
@@ -147,9 +149,9 @@ export function GroupChatMessages({ messages, myUserId, getUserInfo, group }: Gr
                                 >
                                     <div className={`relative flex items-end space-x-2 max-w-[80%] ${msg.isMe ? 'flex-row-reverse space-x-reverse' : ''}`}>
                                         {!msg.isMe && (
-                                            <Avatar className="h-6 w-6">
-                                                <AvatarImage src={getUserInfo(msg)?.profileImageUrl} alt={getUserInfo(msg)?.nickname} />
-                                                <AvatarFallback className="text-xs">{getUserInfo(msg)?.nickname?.[0] || '?'}</AvatarFallback>
+                                             <Avatar className="h-6 w-6">
+                                                <AvatarImage src={profileImageUrl || ''} alt={`${msg.senderNickname} 프로필`} />
+                                                <AvatarFallback className="text-xs">{msg.senderNickname?.[0] || '?'}</AvatarFallback>
                                             </Avatar>
                                         )}
 
