@@ -96,16 +96,40 @@ export const getUserAuthPhotos = async (targetUserId?: number) => {
 };
 
 /**
- * 연속 출석 일수를 조회합니다.
- * @param baseDate 기준 날짜 (YYYY-MM-DD), 없으면 오늘 기준
+ * 기간 동안의 누적 출석 일수를 조회합니다.
+ * @param params.targetUserId 조회할 사용자의 ID (없으면 내 정보)
+ * @param params.startDate 조회 시작일 (YYYY-MM-DD)
+ * @param params.endDate 조회 종료일 (YYYY-MM-DD)
+ * @returns 출석 일수 (숫자)
  */
-export const getAttendanceStreak = async (baseDate?: string) => {
-  const params = new URLSearchParams();
-  if (baseDate) {
-    params.append('baseDate', baseDate);
+export const getTotalAttendanceDays = async (params: { 
+  targetUserId?: number; 
+  startDate?: string; 
+  endDate?: string; 
+} = {}): Promise<number> => {
+
+  const queryParams = new URLSearchParams();
+  if (params.targetUserId) {
+    queryParams.append('targetUserId', String(params.targetUserId));
   }
-  return await apiFetch(`/user-activities/attendance/streak?${params.toString()}`);
+  if (params.startDate) {
+    queryParams.append('startDate', params.startDate);
+  }
+  if (params.endDate) {
+    queryParams.append('endDate', params.endDate);
+  }
+
+  try {
+    const response = await apiFetch(`/user-activities/attendance/total?${queryParams.toString()}`);
+    // API가 숫자 값을 직접 반환하므로, 데이터가 없으면 0을 반환하도록 처리합니다.
+    return typeof response === 'number' ? response : 0;
+  } catch (error) {
+    console.error("누적 출석일 조회 실패:", error);
+    return 0; // 에러 발생 시 0을 반환
+  }
 };
+
+
 
 /**
  * 특정 날짜의 출석 여부를 확인합니다.

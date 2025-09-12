@@ -30,7 +30,9 @@ import { completeSignup, logoutUser, deleteAccount } from './api/auth';
 import { 
   createPersonalActivity,
   getUserActivitiesByDay,
-  updateActivity
+  updateActivity,
+  getTotalAttendanceDays,
+  checkAttendance
 } from './api/activity';
 import { 
   createPersonalRoutine,
@@ -261,11 +263,7 @@ export default function App() {
     return [];
   });
   
-  const [streakDays, setStreakDays] = useState(() => {
-    const savedStreak = localStorage.getItem('streakDays');
-    return savedStreak ? Number(savedStreak) : 0;
-  });
-
+  const [streakDays, setStreakDays] = useState(0);
   const [UserInfo, setUserInfo] = useState<UserProfile | null>(null); // 초기 상태를 null로 변경
   const [isLoading, setIsLoading] = useState<boolean>(false);
 
@@ -402,6 +400,17 @@ export default function App() {
     }
   ]);
 
+  const fetchTotalAttendance = async () => {
+    if (!isLoggedIn) return;
+    try {
+      // targetUserId 없이 호출하여 '내' 누적 출석일을 가져옵니다.
+      const totalDays = await getTotalAttendanceDays();
+      setStreakDays(totalDays);
+    } catch (error) {
+      console.error("누적 출석일 조회 실패:", error);
+    }
+  };
+
    const [groupMembers, setGroupMembers] = useState<Record<number, GroupMemberResponse[]>>({});
   
     const currentScreen =
@@ -512,35 +521,37 @@ export default function App() {
     const params = new URLSearchParams(window.location.search);
     const accessToken = params.get('accessToken');
     const isNewUserParam = params.get('isNewUser');
-    //const storedToken = localStorage.getItem('accessToken');
+    
+    const initializeUserData = async () => {
+    await fetchUserInfo(); 
+
+    fetchGroupData();
+    fetchUserTotalScore();
+    fetchTotalAttendance();
+  };
 
     if (accessToken) {
-      // accessToken만 localStorage에 저장합니다.
       localStorage.setItem('accessToken', accessToken);
-      
-      // refreshToken 관련 로직은 모두 제거합니다.
-      
-      console.log('✅ OAuth login successful, access token saved');
       setIsLoggedIn(true);
-      fetchUserInfo();
-      fetchGroupData();
+      initializeUserData();
         
       if (isNewUserParam === 'true') {
         setIsNewUser(true);
         setIsLoginModalOpen(true);
       }
-      // URL에서 토큰 정보를 제거합니다.
       window.history.replaceState({}, document.title, window.location.pathname);
       
     } else {
+      const checkLoginStatus = async () => {
       const storedToken = localStorage.getItem('accessToken');
       if (storedToken) {
         setIsLoggedIn(true);
-        fetchUserInfo();
-        fetchGroupData();
+        initializeUserData(); // 사용자 데이터 초기화 함수 호출
       }
-    }
-  }, []);
+    };
+    checkLoginStatus();
+  }
+}, []);
 
   // UserInfo(서버) 상태와 isDarkMode(UI) 상태를 동기화
   useEffect(() => {
@@ -1748,9 +1759,16 @@ const navigateTo = (screen: string, params?: any, options?: { replace?: boolean 
     }
   };
 
-  const handleCloseAttendanceModal = () => {
+  const handleCloseAttendanceModal = async () => {
     setAttendanceModalOpen(false);
     const todayString = new Date().toISOString().split('T')[0];
+
+    try {
+    // 2. 서버에 오늘 출석이 유효한지 먼저 확인합니다.
+    const hasAttendedToday = await checkAttendance(todayString);
+
+    // 3. 서버에서 '출석 인정(true)' 응답을 받았을 때만 아래 로직을 실행합니다.
+    if (hasAttendedToday) {
 
     // --- 1. 누적 출석일 (streakDays) 업데이트 ---
     // 이제 streakDays는 초기화되지 않고 항상 1씩 증가합니다.
@@ -1790,7 +1808,11 @@ const navigateTo = (screen: string, params?: any, options?: { replace?: boolean 
     localStorage.setItem('attendanceCount', String(newAttendanceCount));
 
     handleNextModalSequence(consecutiveCount, newAttendanceCount);
-  };
+  }
+} catch (error) {
+    console.error("오늘 출석 여부 확인 중 에러 발생:", error);
+  }
+};
 
   const handleCloseStreakModal = () => {
     setStreakModalOpen(false);

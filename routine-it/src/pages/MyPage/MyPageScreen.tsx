@@ -252,7 +252,7 @@ export function MyPageScreen({ onNavigate, isDarkMode, onToggleDarkMode, onToggl
               <div className="space-y-1">
                 <div className="flex items-center justify-between text-xs">
                   <span className="text-muted-foreground">경험치</span>
-                  <span className="text-card-foreground">{user.exp}/{user.maxExp}</span>
+                  <span className="text-card-foreground">{userTotalScore}/{user.maxExp}</span>
                 </div>
                 <Progress value={expProgress} className="h-2" />
               </div>

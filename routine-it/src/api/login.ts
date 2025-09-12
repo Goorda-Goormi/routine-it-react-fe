@@ -14,6 +14,7 @@ export const startKakaoLogin = () => {
  * @returns 병합된 사용자 정보 객체 (UserProfile)
  */
 
+
 export const getUserInfo = async (): Promise<UserProfile> => {
     try {
     // 이제 apiFetch는 바로 JSON 데이터를 반환합니다.
@@ -50,47 +51,50 @@ export const getUserInfo = async (): Promise<UserProfile> => {
   }
 };
 
-// export const getUserInfo = async (): Promise<UserProfile> => {
-//     try {
-//     const [authResult, profileResult] = await Promise.all([
-//       apiFetch('/api/auth/me'), 
-//       apiFetch('/api/users/me'),
-//     ]);
+/*
+ export const getUserInfo = async (): Promise<UserProfile> => {
+     try {
+     const [authResult, profileResult] = await Promise.all([
+       apiFetch('/api/auth/me'), 
+       apiFetch('/api/users/me'),
+     ]);
 
-//     const settingsResult = await apiFetch('/api/settings');
+     const settingsResult = await apiFetch('/api/settings');
 
-//     const localMaxStreak = Number(localStorage.getItem('maxStreakDays')) || 0;
+     const localMaxStreak = Number(localStorage.getItem('maxStreakDays')) || 0;
 
-//     // 두 API 결과 병합
-//     const authData = authResult.data;
-//     const profileData = profileResult.data;
-//     const settingsData = settingsResult.data;
+     // 두 API 결과 병합
+     const authData = authResult.data;
+     const profileData = profileResult.data;
+     const settingsData = settingsResult.data;
 
-//     const mergedUserData: UserProfile = {
-//       id: authData.id,
-//       email: authData.email,
+     const mergedUserData: UserProfile = {
+       id: authData.id,
+       email: authData.email,
 
-//       nickname: profileData.nickname,
-//       profileImageUrl: profileData.profileImageUrl,
-//       profileMessage: profileData.profileMessage,
+       nickname: profileData.nickname,
+       profileImageUrl: profileData.profileImageUrl,
+       profileMessage: profileData.profileMessage,
 
-//       isAlarmOn: settingsData.isAlarmOn,
-//       isDarkMode: settingsData.isDarkMode,
-//       joinDate: '',
-//       level: 0,
-//       exp: 0,
-//       maxExp: 3000,
-//       streakDays: 0,
-//       maxStreakDays: localMaxStreak
-//     };
+       isAlarmOn: settingsData.isAlarmOn,
+       isDarkMode: settingsData.isDarkMode,
+       joinDate: '',
+       level: 0,
+       exp: 0,
+       maxExp: 3000,
+       streakDays: 0,
+       maxStreakDays: localMaxStreak
+     };
 
-//     return mergedUserData;
-//   } catch (error) {
-//     console.error("사용자 정보 조회 에러:", error);
-//     // apiFetch가 던진 에러를 그대로 다시 던지거나, 새로운 에러 메시지로 감쌉니다.
-//     throw new Error('사용자 정보를 불러오는 데 실패했습니다.');
-//   }
-// };
+     return mergedUserData;
+   } catch (error) {
+     console.error("사용자 정보 조회 에러:", error);
+     // apiFetch가 던진 에러를 그대로 다시 던지거나, 새로운 에러 메시지로 감쌉니다.
+     throw new Error('사용자 정보를 불러오는 데 실패했습니다.');
+   }
+ };
+
+ */
 // 토큰 갱신 api
 export const refreshAuthToken = async () => {
   try {

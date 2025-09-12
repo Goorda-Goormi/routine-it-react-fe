@@ -10,7 +10,7 @@ import { getStreakInfo, getStreakMessage } from '../../components/utils/streakUt
 import type {Routine, UserProfile, Member, Group} from '../../interfaces';
 import { getPersonalRoutinesByUser, type PersonalRoutineResponse } from '../../api/personalRoutine';
 import { getUserProfile, type PublicUserProfile } from '../../api/user';
-import { getUserAuthPhotos, getUserActivitiesByDay } from '../../api/activity';
+import { getUserAuthPhotos, getUserActivitiesByDay, getTotalAttendanceDays } from '../../api/activity';
 import { getJoinedGroups } from '../../api/group'; 
 
 interface AuthPhoto {
@@ -96,6 +96,8 @@ export function UserHomeScreen({ user, onBack }: UserHomeScreenProps) {
     personal: new Map<number, number>(),
     group: new Map<number, number>(),
   });
+  const [totalAttendance, setTotalAttendance] = useState(0);
+  const streakInfo = getStreakInfo(totalAttendance);
   const [joinedGroups, setJoinedGroups] = useState<Group[]>([]);
   const [verificationPhotos, setVerificationPhotos] = useState<AuthPhoto[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -115,13 +117,15 @@ export function UserHomeScreen({ user, onBack }: UserHomeScreenProps) {
           profileData,
           personalRoutinesData,
           joinedGroupsData,
-          activitiesData, // 활동 내역 데이터
+          activitiesData,
+          totalAttendanceData,
           photosData
         ] = await Promise.all([
           getUserProfile(user.id),
           getPersonalRoutinesByUser(user.id),
           getJoinedGroups(user.id),
           getUserActivitiesByDay(today, user.id),
+          getTotalAttendanceDays({ targetUserId: user.id }),
           getUserAuthPhotos(user.id)
         ]);
 
@@ -154,6 +158,7 @@ export function UserHomeScreen({ user, onBack }: UserHomeScreenProps) {
         setUserRoutines(routinesWithCompletion);
         setUserProfile(profileData);
         setJoinedGroups(joinedGroupsData || []);
+        setTotalAttendance(totalAttendanceData);
         setVerificationPhotos(photosData?.activityInfos || []);
 
       } catch (err) {
@@ -207,7 +212,6 @@ export function UserHomeScreen({ user, onBack }: UserHomeScreenProps) {
   const todaysRoutines = userRoutines.filter(routine => 
     routine.frequency && routine.frequency.includes(todayDay)
   );
-  const streakInfo = getStreakInfo(0);
   const totalPhotos = verificationPhotos.length;
   const publicPhotosCount = publicVerificationPhotos.length;
   const totalRoutines = todaysRoutines.length;
@@ -226,30 +230,6 @@ export function UserHomeScreen({ user, onBack }: UserHomeScreenProps) {
 
   return (
     <div className="h-full flex flex-col p-6">
-      <div className='justify-start'>
-        
-      </div>
-      {/* 헤더 
-      <div className="flex items-center space-x-3 mb-6">
-        <Button 
-          variant="ghost" 
-          size="sm" 
-          onClick={onBack}
-          className="text-primary hover:text-primary p-1"
-        >
-          <ArrowLeft className="h-5 w-5 icon-secondary" />
-        </Button>
-        <div>
-          <h1 className="text-lg text-left font-medium text-primary">
-            {userProfile.nickname}님의 홈
-          </h1>
-          <p className="text-sm text-muted-foreground">
-            {todayString} • 공개된 정보만 표시됩니다
-          </p>
-        </div>
-      </div>
-      */}
-
       {/* 콘텐츠 */}
       <div className="flex-1 px-4 pb-6 space-y-4">
         {/* 사용자 정보 및 현황 */}
@@ -313,7 +293,7 @@ export function UserHomeScreen({ user, onBack }: UserHomeScreenProps) {
                     <div className="text-xl mb-0 bg">{streakInfo.icon}</div>
                   </div>
                   <div className="text-center">
-                    {/*<div className={`text-xl font-bold ${streakInfo.textColor}`}>{userProfile.streakDays}</div>*/}
+                    <div className={`text-xl font-bold ${streakInfo.textColor}`}>{totalAttendance}</div>
                     <div className={`text-xs ${streakInfo.subTextColor}`}>{streakInfo.stage}</div>
                   </div>
                 </div>
@@ -326,7 +306,7 @@ export function UserHomeScreen({ user, onBack }: UserHomeScreenProps) {
             <div className="flex items-center space-x-2 ml-3">
               <span className="text-lg">{streakInfo.icon}</span>
               <span className={`text-sm ${streakInfo.textColor}`}>
-                {/*{getStreakMessage(userProfile.streakDays)}*/}
+                {getStreakMessage(totalAttendance)}
               </span>
             </div>
           </div>
