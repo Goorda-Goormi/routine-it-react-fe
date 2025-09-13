@@ -12,7 +12,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { Clock, Users, Target, AlertCircle, Loader2 } from 'lucide-react';
 import { updateGroup, type GroupRequest } from '../../../api/group';
 import type { Group } from '../../../interfaces';
-
+import { CustomTimePicker } from '../../../components/modules/TimePicker';
 interface GroupEditProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -261,13 +261,10 @@ export default function GroupEdit({ open, onOpenChange, group, onSave }: GroupEd
             <CardContent className="space-y-4">
               <div className="space-y-2 transition-opacity duration-300">
                 <Label htmlFor="alarmTime" className="text-card-foreground">알림 시간</Label>
-                <Input
-                  id="alarmTime"
-                  type="time"
-                  value={formData.alarmTime}
-                  onChange={(e) => setFormData({ ...formData, alarmTime: e.target.value })}
-                  className={`bg-input-background border-border text-foreground ${errors.alarmTime ? 'border-destructive' : ''}`}
-                />
+                <CustomTimePicker
+                value={formData.alarmTime}
+                onChange={(newTime) => setFormData({ ...formData, alarmTime: newTime })}
+              />
                 <p className="text-xs text-muted-foreground">매일 알림을 받을 시간을 설정해주세요.</p>
                 {errors.alarmTime && (
                   <p className="text-xs text-destructive mt-1">{errors.alarmTime}</p>

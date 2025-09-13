@@ -12,7 +12,7 @@ import { ArrowLeft, Clock, Users, Target, AlertCircle, CheckSquare } from 'lucid
 import { Alert, AlertDescription } from '../../components/ui/alert';
 import { createGroup, type GroupRequest } from '../../api/group';
 import type { Group } from '../../interfaces';
-
+import { CustomTimePicker } from '../../components/modules/TimePicker';
 interface CreateGroupScreenProps {
   onBack: () => void;
   onCreateGroup: (groupData: any) => void;
@@ -288,12 +288,9 @@ export function CreateGroupScreen({ onBack, onCreateGroup }: CreateGroupScreenPr
               <Label htmlFor="alarmTime" className="text-card-foreground">
                 알림 시간
               </Label>
-              <Input
-                id="alarmTime"
-                type="time"
+              <CustomTimePicker
                 value={formData.alarmTime}
-                onChange={(e) => setFormData({ ...formData, alarmTime: e.target.value })}
-                className="bg-input-background border-border text-foreground"
+                onChange={(newTime) => setFormData({ ...formData, alarmTime: newTime })}
               />
               <p className="text-xs text-muted-foreground">매일 알림을 받을 시간을 설정해주세요.</p>
             </div>

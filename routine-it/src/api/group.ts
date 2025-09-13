@@ -11,6 +11,7 @@ export interface GroupRequest {
   category: string;
   imageUrl: string;
   maxMembers: number;
+  alarm?:boolean;
 }
 
 //그룹 생성
