@@ -14,7 +14,7 @@ export const startKakaoLogin = () => {
  * @returns 병합된 사용자 정보 객체 (UserProfile)
  */
 
-
+/*
 export const getUserInfo = async (): Promise<UserProfile> => {
     try {
     // 이제 apiFetch는 바로 JSON 데이터를 반환합니다.
@@ -50,24 +50,21 @@ export const getUserInfo = async (): Promise<UserProfile> => {
     throw new Error('사용자 정보를 불러오는 데 실패했습니다.');
   }
 };
+*/
 
-/*
  export const getUserInfo = async (): Promise<UserProfile> => {
      try {
      const [authResult, profileResult] = await Promise.all([
-       apiFetch('/api/auth/me'), 
-       apiFetch('/api/users/me'),
-     ]);
-
-     const settingsResult = await apiFetch('/api/settings');
+      apiFetch('/api/auth/me'),
+      apiFetch('/api/users/me'),
+    ]);
 
      const localMaxStreak = Number(localStorage.getItem('maxStreakDays')) || 0;
 
      // 두 API 결과 병합
      const authData = authResult.data;
      const profileData = profileResult.data;
-     const settingsData = settingsResult.data;
-
+    
      const mergedUserData: UserProfile = {
        id: authData.id,
        email: authData.email,
@@ -76,8 +73,8 @@ export const getUserInfo = async (): Promise<UserProfile> => {
        profileImageUrl: profileData.profileImageUrl,
        profileMessage: profileData.profileMessage,
 
-       isAlarmOn: settingsData.isAlarmOn,
-       isDarkMode: settingsData.isDarkMode,
+       isAlarmOn: true,
+       isDarkMode: false,
        joinDate: '',
        level: 0,
        exp: 0,
@@ -94,7 +91,7 @@ export const getUserInfo = async (): Promise<UserProfile> => {
    }
  };
 
- */
+
 // 토큰 갱신 api
 export const refreshAuthToken = async () => {
   try {

@@ -6,6 +6,7 @@ import { Label } from '../../components/ui/label';
 import { Avatar, AvatarFallback, AvatarImage } from '../../components/ui/avatar';
 import { ArrowLeft, Save, Camera, User } from 'lucide-react';
 import { updateUserProfile} from '../../api/user';
+import { checkNicknameAvailability } from '../../api/auth';
 import type { UpdateProfilePayload } from '../../interfaces';
 
 interface ProfileEditScreenProps {
@@ -40,6 +41,10 @@ export function ProfileEditScreen({
     profileImageUrl: userInfo.profileImageUrl
   });
 
+  const [originalNickname, setOriginalNickname] = useState(userInfo.nickname);
+  const [nicknameStatus, setNicknameStatus] = useState<'idle' | 'valid' | 'invalid'>('idle');
+  const [nicknameMessage, setNicknameMessage] = useState('');
+
   // 아바타 URL 상태 추가
   const [avatarUrl, setAvatarUrl] = useState(userInfo.profileImageUrl);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -53,32 +58,67 @@ export function ProfileEditScreen({
       profileImageUrl: userInfo.profileImageUrl
     });
     setAvatarUrl(userInfo.profileImageUrl);
+    setOriginalNickname(userInfo.nickname);
   }, [userInfo]);
+
+  const handleNicknameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setProfileData({ ...profileData, nickname: e.target.value });
+    // 닉네임이 변경되었으므로 확인 상태를 초기화합니다.
+    setNicknameStatus('idle');
+    setNicknameMessage('');
+  };
+
+  const handleCheckNickname = async () => {
+    const newNickname = profileData.nickname;
+    if (!newNickname) {
+      setNicknameMessage('닉네임을 입력해주세요.');
+      setNicknameStatus('invalid');
+      return;
+    }
+    if (newNickname === originalNickname) {
+      setNicknameMessage('현재 사용 중인 닉네임입니다.');
+      setNicknameStatus('idle');
+      return;
+    }
+
+    try {
+      const isAvailable = await checkNicknameAvailability(newNickname);
+      if (isAvailable) {
+        setNicknameMessage('사용 가능한 닉네임입니다.');
+        setNicknameStatus('valid');
+      } else {
+        setNicknameMessage('이미 사용 중인 닉네임입니다.');
+        setNicknameStatus('invalid');
+      }
+    } catch (error) {
+      console.error("닉네임 중복 확인 에러:", error);
+      setNicknameMessage('확인 중 오류가 발생했습니다.');
+      setNicknameStatus('invalid');
+    }
+  };
 
   // 저장 버튼 클릭 핸들러
   const handleSave = async () => {
+    if (profileData.nickname !== originalNickname && nicknameStatus !== 'valid') {
+      alert('닉네임 중복 확인을 먼저 완료해주세요.');
+      return;
+    }
+    
     try {
-    // API 함수에 전달할 데이터를 준비합니다.
-    const payload: UpdateProfilePayload = {
-      nickname: profileData.nickname,
-      profileMessage: profileData.profileMessage ?? '', 
-      profileImageUrl: profileData.profileImageUrl,
-    };
-
-    // 분리된 API 함수를 호출합니다.
-    await updateUserProfile(payload);
-
-    // 부모 컴포넌트에 프로필이 저장되었음을 알리는 함수를 호출합니다.
-    await onSaveProfile();
-
-    onBack(); // 이전 화면으로 돌아갑니다.
-    alert('프로필이 성공적으로 업데이트되었습니다.');
-
-  } catch (error) {
-    console.error("프로필 업데이트 에러:", error);
-    alert((error as Error).message);
-  }
-};
+      const payload: UpdateProfilePayload = {
+        nickname: profileData.nickname,
+        profileMessage: profileData.profileMessage ?? '', 
+        profileImageUrl: profileData.profileImageUrl,
+      };
+      await updateUserProfile(payload);
+      await onSaveProfile();
+      onBack();
+      alert('프로필이 성공적으로 업데이트되었습니다.');
+    } catch (error) {
+      console.error("프로필 업데이트 에러:", error);
+      alert((error as Error).message);
+    }
+  };
 
   // 아바타 변경 버튼 클릭 시 파일 탐색기 열기
   const handleAvatarChangeClick = () => {
@@ -160,11 +200,22 @@ export function ProfileEditScreen({
 
             <div>
               <Label htmlFor="nickname" className='ml-3.5'>닉네임</Label>
-              <Input
-                id="nickname"
-                value={profileData.nickname}
-                onChange={(e) => setProfileData({...profileData, nickname: e.target.value})}
-              />
+              <div className="flex items-center space-x-2">
+                <Input
+                  id="nickname"
+                  value={profileData.nickname}
+                  onChange={handleNicknameChange} 
+                  className="flex-grow"
+                />
+                <Button variant="outline" className="border-2" onClick={handleCheckNickname} disabled={profileData.nickname === originalNickname}>
+                  중복 확인
+                </Button>
+              </div>
+              {nicknameMessage && (
+                <p className={`text-xs mt-1 ml-1 ${nicknameStatus === 'valid' ? 'text-green-600' : 'text-destructive'}`}>
+                  {nicknameMessage}
+                </p>
+              )}
             </div>
             
             <div>

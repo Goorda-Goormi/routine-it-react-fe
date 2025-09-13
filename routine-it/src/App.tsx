@@ -52,7 +52,7 @@ import type { GlobalGroupRankingData } from "./pages/Ranking/RankingScreen";impo
 import { getNotifications, markNotificationAsRead } from "./api/notification";
 import type { NotificationApiResponse, NotificationType } from "./interfaces";
 import { User, Bell, Camera, Clock } from 'lucide-react'
-
+import { getSettings } from "./api/setting";
 const BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
 interface NavigationState {
@@ -524,17 +524,22 @@ export default function App() {
   useEffect(() => {
   const checkAuthAndFetchUser = async () => {
     const params = new URLSearchParams(window.location.search);
-    let token = params.get('accessToken');
+    const token = params.get('accessToken');
+    const isNew = params.get('isNewUser') === 'true';
     if (token) {
       localStorage.setItem('accessToken', token);
       window.history.replaceState({}, document.title, window.location.pathname);
-    } else {
-      token = localStorage.getItem('accessToken');
-    }
+    setIsLoggedIn(true);
 
-    if (token) {
+    if (isNew) {
+        setIsNewUser(true);
+        setIsLoginModalOpen(true);
+      } else {
+        await fetchUserInfo();
+      }
+    } else if (localStorage.getItem('accessToken')) {
       setIsLoggedIn(true);
-      await fetchUserInfo(); 
+      await fetchUserInfo();
     }
   };
 
@@ -645,6 +650,37 @@ useEffect(() => {
     alert((error as Error).message);
   }
 };
+
+const fetchInitialDataAfterLogin = async () => {
+    // 1. API 호출 시작을 콘솔에 기록합니다.
+    console.log('➡️ getSettings API 호출을 시도합니다.');
+    
+    setIsLoading(true);
+    try {
+      const settingsData = await getSettings();
+      
+      // 2. API 호출 성공 시 반환된 데이터를 콘솔에 기록합니다.
+      console.log('✅ getSettings API 호출 성공!');
+      console.log('받은 데이터:', settingsData);
+      
+      // TODO: 필요한 다른 API 호출 추가
+    } catch (error) {
+      // 3. API 호출 실패 시 에러 상세 정보를 콘솔에 기록합니다.
+      console.error('❌ getSettings API 호출 실패!');
+      console.error('에러 상세:', error);
+      // apiFetch에서 토큰 갱신 실패 시 리디렉션 처리하므로 추가 로직이 필요 없을 수 있음.
+    } finally {
+      setIsLoading(false);
+      // API 호출이 완료되었음을 알려줍니다. (성공/실패 무관)
+      console.log('➡️ getSettings API 호출이 완료되었습니다.');
+    }
+  };
+
+  // 수정: LoginModal의 onComplete 핸들러
+  const handleLoginComplete = async (nickname: string) => {
+    await handleNicknameSetupComplete(nickname);
+    await fetchInitialDataAfterLogin();
+  };
 
   const handleLogout = async() => {
     try {
@@ -1770,40 +1806,51 @@ const navigateTo = (screen: string, params?: any, options?: { replace?: boolean 
     const todayString = new Date().toISOString().split('T')[0];
 
     try {
-      const hasAttendedToday = await checkAttendance(todayString);
+    // 2. 서버에 오늘 출석이 유효한지 먼저 확인합니다.
+    const hasAttendedToday = await checkAttendance(todayString);
 
-      if (hasAttendedToday) {
+    // 3. 서버에서 '출석 인정(true)' 응답을 받았을 때만 아래 로직을 실행합니다.
+    if (hasAttendedToday) {
 
-        const newDates = [...new Set([...attendanceDates, todayString])]; 
-        setAttendanceDates(newDates);
-        localStorage.setItem('attendanceDates', JSON.stringify(newDates));
+    await fetchTotalAttendance();
 
-        let consecutiveCount = 0;
-        const dateChecker = new Date(); 
-        while (newDates.includes(dateChecker.toISOString().split('T')[0])) {
-          consecutiveCount++;
-          dateChecker.setDate(dateChecker.getDate() - 1); 
-        }
-
-        const currentMaxStreak = UserInfo?.maxStreakDays ?? 0;
-        if (consecutiveCount > currentMaxStreak && UserInfo) {
-          console.log(`🎉 최고 기록 경신! 새로운 최고 연속 출석일: ${consecutiveCount}일`);
-          setUserInfo({ ...UserInfo, maxStreakDays: consecutiveCount });
-          localStorage.setItem('maxStreakDays', String(consecutiveCount));
-          
-        }
-
-        await fetchTotalAttendance();
-
-        const newAttendanceCount = attendanceCount + 1;
-        setAttendanceCount(newAttendanceCount);
-        localStorage.setItem('attendanceCount', String(newAttendanceCount));
-        handleNextModalSequence(consecutiveCount, newAttendanceCount);
-      }
-    } catch (error) {
-      console.error("오늘 출석 여부 확인 중 에러 발생:", error);
+    // --- 2. 출석 날짜 배열 업데이트 ---
+    const newDates = [...attendanceDates];
+    if (!newDates.includes(todayString)) {
+      newDates.push(todayString);
+      localStorage.setItem('attendanceDates', JSON.stringify(newDates));
+      setAttendanceDates(newDates);
     }
-  };
+    
+    // --- 3. 현재 '연속 출석일' 계산 및 '최고 기록' 업데이트 ---
+    let consecutiveCount = 0;
+    const dateChecker = new Date(); // 오늘부터 시작
+
+    // 출석 기록에 날짜가 있는지 확인하며 하루씩 뒤로 갑니다.
+    while (newDates.includes(dateChecker.toISOString().split('T')[0])) {
+      consecutiveCount++;
+      dateChecker.setDate(dateChecker.getDate() - 1); // 어제 날짜로 변경
+    }
+
+    const currentMaxStreak = UserInfo?.maxStreakDays ?? 0;
+    if (consecutiveCount > currentMaxStreak && UserInfo) {
+      const newMaxStreak = consecutiveCount;
+      setUserInfo({ ...UserInfo, maxStreakDays: consecutiveCount });
+      
+      localStorage.setItem('maxStreakDays', String(newMaxStreak));
+    }
+
+    // --- 4. 기존 출석 처리 및 다음 모달 호출 로직 (그대로 유지) ---
+    const newAttendanceCount = attendanceCount + 1;
+    setAttendanceCount(newAttendanceCount);
+    localStorage.setItem('attendanceCount', String(newAttendanceCount));
+
+    handleNextModalSequence(consecutiveCount, newAttendanceCount);
+  }
+} catch (error) {
+    console.error("오늘 출석 여부 확인 중 에러 발생:", error);
+  }
+};
 
   const handleCloseStreakModal = () => {
     setStreakModalOpen(false);
@@ -1872,7 +1919,8 @@ const navigateTo = (screen: string, params?: any, options?: { replace?: boolean 
       <LoginModal // 새로 추가된 로그인 모달
         isOpen={isLoginModalOpen}
         onClose={() => setIsLoginModalOpen(false)}
-        onComplete={handleNicknameSetupComplete}
+        //onComplete={handleNicknameSetupComplete}
+        onComplete={handleLoginComplete}
       />
 
       <AttendanceModal
