@@ -9,6 +9,7 @@ import type { Group } from '../../interfaces';
 
 interface AllGroupsSectionProps {
   groups: Group[];
+  myGroups: Group[]; 
   onNavigate: (screen: string, params?: any) => void;
   onJoinGroup: (groupId: number) => void;
 }
@@ -34,11 +35,11 @@ const getCategoryEmoji = (categoryId: string) => {
   }
 };
 
-const GroupCard = ({ group, onNavigate, onJoinGroup }: { group: Group, onNavigate: any, onJoinGroup: any }) => (
+const GroupCard = ({ group, onNavigate, onJoinGroup, isJoined }: { group: Group, onNavigate: any, onJoinGroup: any, isJoined: boolean }) => (
   <div className="p-5 rounded-lg hover:bg-accent/50 transition-colors cursor-pointer" onClick={() => onNavigate('group-detail', group)}>
     <div className="flex items-center justify-between mb-1">
       <div className="flex items-center space-x-2 flex-1">
-         {group.groupImageUrl && (
+        {group.groupImageUrl && (
           <img 
             src={group.groupImageUrl} 
             alt={group.groupName} 
@@ -51,11 +52,14 @@ const GroupCard = ({ group, onNavigate, onJoinGroup }: { group: Group, onNavigat
           {group.groupType === 'REQUIRED' ? '의무참여' : '자유참여'}
         </Badge>
       </div>
-      <Button size="sm" variant="outline" 
+      <Button 
+        size="sm" 
+        variant="outline"
+        disabled={isJoined}
         onClick={(e) => {e.stopPropagation(); onJoinGroup(group.groupId);}} 
         className="text-card-foreground border-border hover:bg-accent hover:text-card-foreground text-xs px-2 py-1"
-        >
-        참여하기
+      >
+        {isJoined ? '참여 중' : '참여하기'}
       </Button>
     </div>
     <p className="text-xs text-left text-muted-foreground mb-2">{group.description}</p>
@@ -67,29 +71,30 @@ const GroupCard = ({ group, onNavigate, onJoinGroup }: { group: Group, onNavigat
   </div>
 );
 
-export function AllGroupsSection({ groups, onNavigate, onJoinGroup }: AllGroupsSectionProps) {
+export function AllGroupsSection({ groups, myGroups, onNavigate, onJoinGroup }: AllGroupsSectionProps) {
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [selectedType, setSelectedType] = useState('all');
   const [showAll, setShowAll] = useState(false);
   const sortedGroups = [...groups].sort((a, b) => b.groupId - a.groupId);
 
   const filteredGroups = sortedGroups.filter(group => {
-  // 카테고리 필터링
-  const matchesCategory = selectedCategory === 'all' || group.category === selectedCategory;
+    // 카테고리 필터링
+    const matchesCategory = selectedCategory === 'all' || group.category === selectedCategory;
 
-  // 타입 필터링
-  const matchesType = 
-    selectedType === 'all' || 
-    (selectedType === 'mandatory' && group.groupType === 'REQUIRED') || 
-    (selectedType === 'optional' && group.groupType === 'FREE');
+    // 타입 필터링
+    const matchesType = 
+      selectedType === 'all' || 
+      (selectedType === 'mandatory' && group.groupType === 'REQUIRED') || 
+      (selectedType === 'optional' && group.groupType === 'FREE');
 
-  return matchesCategory && matchesType;
+    return matchesCategory && matchesType;
   });
-
 
   const groupsToShow = showAll ? filteredGroups : filteredGroups.slice(0, 2);
   const shouldShowToggleButton = filteredGroups.length > 2;
   
+  // 참여 중인 그룹 ID를 빠르게 찾기 위한 Set 생성
+  const myGroupIds = new Set(myGroups.map(group => group.groupId));
 
   return (
     <Card>
@@ -123,9 +128,13 @@ export function AllGroupsSection({ groups, onNavigate, onJoinGroup }: AllGroupsS
             <>
               <div className="px-4 pb-4 mt-4 space-y-0 max-h-64 overflow-y-auto scrollbar-hide">
                 {groupsToShow.map((group, index) => (
-                  // 마지막 카드에만 경계선 없애는 로직 추가
                   <div key={group.groupId} className={`${index < groupsToShow.length - 1 ? 'border-b border-border/30' : ''}`}>
-                    <GroupCard group={group} onNavigate={onNavigate} onJoinGroup={onJoinGroup} />
+                    <GroupCard 
+                      group={group} 
+                      onNavigate={onNavigate} 
+                      onJoinGroup={onJoinGroup}
+                      isJoined={myGroupIds.has(group.groupId)} // isJoined prop 전달
+                    />
                   </div>
                 ))}
               </div>
@@ -137,7 +146,6 @@ export function AllGroupsSection({ groups, onNavigate, onJoinGroup }: AllGroupsS
                   </Button>
                 </div>
               )}
-              
             </>
           ) : (
             <div className="text-center py-8">
