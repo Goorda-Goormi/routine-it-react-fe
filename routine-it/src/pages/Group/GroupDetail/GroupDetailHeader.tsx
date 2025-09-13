@@ -148,8 +148,18 @@ console.log('--- GroupDetailHeader Variables ---');
         <Card>
           <CardContent className="p-4">
             <div className="text-center space-y-3">
-              <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto">
-                <Users className="h-8 w-8 text-primary" />
+              <div className="w-16 h-16 rounded-full flex items-center justify-center mx-auto overflow-hidden  border border-[var(--color-border-bottom-custom)]">
+                {group.groupImageUrl ? (
+                  <img
+                    src={group.groupImageUrl}
+                    alt={`${group.groupName} 그룹 이미지`}
+                    className="w-full h-full object-contain p-1"
+                  />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center bg-primary/10">
+                    <Users className="h-8 w-8 text-primary" />
+                  </div>
+                )}
               </div>
               <div>
                 <h2 className="font-bold text-lg text-card-foreground">{group.groupName}</h2>

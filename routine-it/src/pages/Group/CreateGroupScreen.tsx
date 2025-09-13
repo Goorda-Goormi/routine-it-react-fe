@@ -8,11 +8,13 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 import { RadioGroup, RadioGroupItem } from '../../components/ui/radio-group';
 import { Switch } from '../../components/ui/switch';
 import { Badge } from '../../components/ui/badge';
-import { ArrowLeft, Clock, Users, Target, AlertCircle, CheckSquare } from 'lucide-react';
+import { ArrowLeft, Clock, Users, Target, AlertCircle, CheckSquare, Image as ImageIcon } from 'lucide-react';
 import { Alert, AlertDescription } from '../../components/ui/alert';
 import { createGroup, type GroupRequest } from '../../api/group';
 import type { Group } from '../../interfaces';
 import { CustomTimePicker } from '../../components/modules/TimePicker';
+import { presignProfileGet,presignProfilePut } from '../../api/storage';
+
 interface CreateGroupScreenProps {
   onBack: () => void;
   onCreateGroup: (groupData: any) => void;
@@ -69,6 +71,10 @@ export function CreateGroupScreen({ onBack, onCreateGroup }: CreateGroupScreenPr
   });
 
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
+  const [selectedImage, setSelectedImage] = useState<File | null>(null);
+  const [imageUrl, setImageUrl] = useState<string>('');
+  const [isUploading, setIsUploading] = useState<boolean>(false);
+  const [uploadError, setUploadError] = useState<string>('');
 
   const handleDayToggle = (day: string) => {
     setFormData((prevData) => {
@@ -133,28 +139,61 @@ export function CreateGroupScreen({ onBack, onCreateGroup }: CreateGroupScreenPr
       return;
     }
 
-    const authDays = convertDaysToBinary(formData.authDays);
+    setIsUploading(true);
+    setUploadError('');
 
-    const payload: GroupRequest = {
-      groupName: formData.groupName,
-      groupDescription: formData.groupDescription,
-      groupType: formData.groupType,
-      alarmTime: formData.alarmTime,
-      authDays,
-      category: formData.category,
-      imageUrl: './default.png',
-      maxMembers: parseInt(formData.maxMembers.toString(), 10),
-    };
-
-    console.log('API로 전송되는 Payload:', payload);
-    console.log('사용할 토큰:', token);
+    let finalImageUrl = './default.png';
 
     try {
+      // 1. 선택된 이미지가 있다면 S3에 업로드
+      if (selectedImage) {
+        // [수정 불필요] 업로드용 URL은 apiFetch로 요청합니다. (인증 토큰 필요)
+        const presignResp = await presignProfilePut(
+          1, // TODO: 실제 userId로 변경
+          selectedImage.name,
+          selectedImage.type
+        );
+
+        // [핵심 수정] 프리사인드 URL에 파일 직접 PUT 요청
+        // apiFetch가 아닌 fetch를 직접 사용해야 합니다.
+        const putRes = await fetch(presignResp.uploadUrl, {
+          method: 'PUT',
+          body: selectedImage,
+          headers: {
+            // Content-Type 헤더만 설정합니다.
+            'Content-Type': selectedImage.type || "application/octet-stream",
+          },
+        });
+
+        if (!putRes.ok) {
+          throw new Error(`S3 업로드 실패: ${putRes.statusText}`);
+        }
+
+        // 2. 조회용 URL 요청 (이 부분도 apiFetch로 해도 무방)
+        finalImageUrl = await presignProfileGet(presignResp.key);
+      }
+
+      // 3. 그룹 생성 페이로드 구성 및 API 호출
+      const authDays = convertDaysToBinary(formData.authDays);
+      const payload: GroupRequest = {
+        groupName: formData.groupName,
+        groupDescription: formData.groupDescription,
+        groupType: formData.groupType,
+        alarmTime: formData.alarmTime,
+        authDays,
+        category: formData.category,
+        imageUrl: finalImageUrl,
+        maxMembers: parseInt(formData.maxMembers.toString(), 10),
+      };
+
       const createdGroup = await createGroup(payload);
       onCreateGroup(createdGroup);
     } catch (e) {
-      console.error('그룹 생성 실패 오류:', e);
-      alert('그룹 생성에 실패했습니다.');
+      console.error('그룹 생성 또는 이미지 업로드 실패 오류:', e);
+      alert('그룹 생성에 실패했습니다. 오류: ' + (e as Error).message);
+      setUploadError('이미지 업로드에 실패했습니다.');
+    } finally {
+      setIsUploading(false);
     }
   };
 
@@ -171,6 +210,10 @@ export function CreateGroupScreen({ onBack, onCreateGroup }: CreateGroupScreenPr
   const getCategoryEmoji = (categoryId: string) => {
     const category = categories.find((c) => c.id === categoryId);
     return category ? category.emoji : '📋';
+  };
+
+  const handleImageClick = () => {
+    document.getElementById('groupImageInput')?.click();
   };
 
   return (
@@ -202,6 +245,50 @@ export function CreateGroupScreen({ onBack, onCreateGroup }: CreateGroupScreenPr
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
+            {/*그룹 이미지 */}
+            <div className="space-y-2 flex flex-col items-center">
+              <Label htmlFor="groupImageInput" className="text-card-foreground">
+                그룹 이미지 (선택)
+              </Label>
+              <div
+                className="relative w-32 h-32 rounded-full border-2 border-border overflow-hidden group hover:border-primary transition-all duration-200 cursor-pointer"
+                onClick={handleImageClick}
+              >
+                {imageUrl ? (
+                  <img
+                    src={imageUrl}
+                    alt="그룹 이미지 미리보기"
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center bg-gray-100 dark:bg-zinc-800 text-muted-foreground">
+                    <ImageIcon className="w-10 h-10" />
+                  </div>
+                )}
+                <div className="absolute inset-0 bg-black/50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                  <span className="text-white text-xs">이미지 변경</span>
+                </div>
+              </div>
+              {uploadError && <p className="text-xs text-destructive mt-2">{uploadError}</p>}
+              {/* 실제 파일 input은 숨기기 */}
+              <Input
+                id="groupImageInput" // id 변경
+                type="file"
+                accept="image/*"
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (file) {
+                    setSelectedImage(file);
+                    setImageUrl(URL.createObjectURL(file));
+                    setUploadError('');
+                  } else {
+                    setSelectedImage(null);
+                    setImageUrl('');
+                  }
+                }}
+                className="hidden" // 클래스 추가하여 숨김
+              />
+            </div>
             {/* 그룹 이름 */}
             <div className="space-y-2">
               <Label htmlFor="groupName" className="text-card-foreground">
