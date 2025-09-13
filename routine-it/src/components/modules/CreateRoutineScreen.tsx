@@ -7,6 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 import { Textarea } from '../ui/textarea';
 import { Switch } from '../ui/switch';
 import { ArrowLeft, Save } from 'lucide-react';
+import { CustomTimePicker } from './TimePicker';
 
 interface NewRoutine {
   id: number;
@@ -41,7 +42,10 @@ export function CreateRoutineScreen({ onBack, onCreateRoutine }: CreateRoutineSc
     isPublic: true
   });
 
-  const daysOfWeek = ['월', '화', '수', '목', '금', '토', '일'];
+  const daysOfWeek = ['일', '월', '화', '수', '목', '금', '토'];
+
+  const [hour, setHour] = useState('08');
+  const [minute, setMinute] = useState('00');
 
 // 선택된 요일들을 상태로 관리합니다.
 const [selectedDays, setSelectedDays] = useState<string[]>([]);
@@ -174,11 +178,11 @@ const handleDayToggle = (day: string) => {
                   <SelectValue placeholder="카테고리를 선택하세요"  />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="운동">💪 운동</SelectItem>
-                  <SelectItem value="건강">🏥 건강</SelectItem>
-                  <SelectItem value="학습">📚 학습</SelectItem>
-                  <SelectItem value="생활">🏠 생활</SelectItem>
-                  <SelectItem value="취미">🎨 취미</SelectItem>
+                  <SelectItem value="exercise">💪 운동</SelectItem>
+                  <SelectItem value="health">🏥 건강</SelectItem>
+                  <SelectItem value="study">📚 학습</SelectItem>
+                  <SelectItem value="lifestyle">🏠 생활</SelectItem>
+                  <SelectItem value="hobby">🎨 취미</SelectItem>
                 </SelectContent>
               </Select>
               {errors.category && <p className="text-destructive text-sm mt-1">{errors.category}</p>}
@@ -213,11 +217,9 @@ const handleDayToggle = (day: string) => {
           <CardContent className="pt-0 space-y-4">
             <div>
               <Label className="pb-3 pl-3" htmlFor="time">시간</Label>
-              <Input
-                id="time"
-                type="time"
+              <CustomTimePicker
                 value={formData.time}
-                onChange={(e) => setFormData({...formData, time: e.target.value})}
+                onChange={(newTime) => setFormData({ ...formData, time: newTime })}
               />
               {errors.time && <p className="text-destructive text-sm mt-1">{errors.time}</p>}
             </div>

@@ -57,7 +57,7 @@ const categories = [
 ];
 
 export function CreateGroupScreen({ onBack, onCreateGroup }: CreateGroupScreenProps) {
-  const daysOfWeek = ['월', '화', '수', '목', '금', '토', '일'];
+  const daysOfWeek = ['일', '월', '화', '수', '목', '금', '토'];
   const [formData, setFormData] = useState({
     groupName: '',
     groupDescription: '',

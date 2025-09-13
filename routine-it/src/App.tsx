@@ -59,12 +59,19 @@ interface NavigationState {
   params?: any;
 }
 
+const getLocalDateString = (date: Date): string => {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
+
 const transformPersonalRoutine = (pr: PersonalRoutineResponse): Routine => {
   return {
     id: pr.routineId,
     name: pr.routineName,
     description: pr.description,
-    time: pr.startTime,
+    time: pr.startTime ? pr.startTime.slice(0, 5) : '',
     frequency: convertAuthDaysToFrequency(pr.repeatDays), 
     isPublic: pr.isPublic,
     reminder: pr.isAlarmOn,
@@ -107,12 +114,12 @@ const dateOptions: Intl.DateTimeFormatOptions = {
  * '1111100' 형태의 authDays 문자열을 ['월', '화', '수', '목', '금'] 형태의 배열로 변환합니다.
  */
 const convertFrequencyToAuthDays = (frequency: string[]): string => {
-  const daysOfWeek = ['월', '화', '수', '목', '금', '토', '일'];
+  const daysOfWeek = ['일', '월', '화', '수', '목', '금', '토'];
   return daysOfWeek.map(day => frequency.includes(day) ? '1' : '0').join('');
 };
 
 const convertAuthDaysToFrequency = (authDays: string): string[] => {
-  const daysOfWeek = ['월', '화', '수', '목', '금', '토', '일'];
+  const daysOfWeek = ['일', '월', '화', '수', '목', '금', '토'];
   if (!authDays || authDays.length !== 7) {
     return [];
   }
@@ -177,17 +184,17 @@ const transformNotification = (apiNotif: NotificationApiResponse): Notification 
   }
 
   const dateString = apiNotif.createdAt 
-    ? new Date(apiNotif.createdAt).toLocaleString('ko-KR', dateOptions) // <-- 옵션 적용
+    ? new Date(apiNotif.createdAt+ 'Z').toLocaleString('ko-KR', dateOptions)
     : '시간 정보 없음';
 
   return {
     id: apiNotif.id,
     message: apiNotif.content,
     category: category,
-    date: dateString, // 수정된 날짜 문자열을 사용합니다.
+    date: dateString, 
     read: apiNotif.read,
     icon: icon,
-    isLocal: false, // 서버에서 온 알림이므로 false
+    isLocal: false,
   };
 };
 
@@ -775,7 +782,7 @@ useEffect(() => {
       if (Array.isArray(activities)) {
       activities.forEach((activity: any) => {
         if (activity.activityType === 'PERSONAL_ROUTINE_COMPLETE' && activity.personalRoutineId) {
-          personalMap.set(activity.personalRoutineId, activity.activityId);
+          personalMap.set(activity.personalRoutineId, activity.userActivityId);
         } else if (activity.activityType === 'GROUP_AUTH_COMPLETE' && activity.groupId) {
           groupMap.set(activity.groupId, activity.activityId);
         }
@@ -885,15 +892,17 @@ useEffect(() => {
       
       console.log('2. [컴포넌트] API 함수로부터 전달받은 데이터:', routinesFromServer); // 이 줄은 여전히 실행되지 않을 겁니다.
 
-      const transformedRoutines = (routinesFromServer || []).map(transformPersonalRoutine);
-      
-      console.log('3. [컴포넌트] 화면에 저장하기 직전 최종 데이터:', transformedRoutines);
+      const transformedRoutines = (routinesFromServer || []).map(apiRoutine => {
+        const isCompleted = completedActivityIds.personal.has(apiRoutine.routineId);
+        const transformed = transformPersonalRoutine(apiRoutine);
+        return {
+          ...transformed,
+          completed: isCompleted,
+        };
+      });
 
       setPersonalRoutines(transformedRoutines);
     } catch (error) {
-      // ▼▼▼ 이 로그를 추가해서 어떤 에러가 잡히는지 확인하세요! ▼▼▼
-      console.log('🔴 App.tsx의 catch 블록에서 에러 발견!', error);
-      
       console.error("개인 루틴 목록 로딩 실패:", error);
     }
   };
@@ -909,54 +918,102 @@ useEffect(() => {
   });
 };
 
-const handleToggleRoutinePublic = async (routineId: number) => {
-    try {
-      // API를 호출하여 서버의 상태를 변경합니다.
-      const updatedRoutineFromServer = await toggleRoutinePublic(routineId);
-      const transformedRoutine = transformPersonalRoutine(updatedRoutineFromServer);
+const handleToggleRoutinePublic = async (routine: Routine) => {
+    if (routine.isGroupRoutine) {
+      const currentOverride = groupRoutineOverrides[routine.id] || {};
+      const newOverrides = {
+        ...groupRoutineOverrides,
+        [routine.id]: {
+          ...currentOverride,
+          isPublic: !routine.isPublic, // 현재 상태의 반대 값으로 설정
+        },
+      };
 
-      // UI 상태를 즉시 업데이트합니다. (전체 목록을 다시 불러오지 않아 효율적입니다)
-      setPersonalRoutines(prevRoutines =>
-        prevRoutines.map(r => (r.id === routineId ? transformedRoutine : r))
-      );
-
-      setNavigationStack(prevStack =>
-        prevStack.map(navItem =>
-          navItem.screen === 'routine-detail' && navItem.params.id === routineId
-            ? { ...navItem, params: transformedRoutine }
-            : navItem
-        )
-      );
-    } catch (error) {
-      console.error("루틴 공개 여부 변경 실패:", error);
-      alert("설정 변경에 실패했습니다.");
-    }
-  };
-
-  const handleToggleRoutineAlarm = async (routineId: number) => {
-    try {
-      const updatedRoutineFromServer = await toggleRoutineAlarm(routineId);
-      const transformedRoutine = transformPersonalRoutine(updatedRoutineFromServer);
+      setGroupRoutineOverrides(newOverrides);
+      localStorage.setItem('groupRoutineOverrides', JSON.stringify(newOverrides));
       
-      setPersonalRoutines(prevRoutines =>
-        prevRoutines.map(r => (r.id === routineId ? transformedRoutine : r))
-      );
-
+      // 상세 화면의 상태도 즉시 업데이트
       setNavigationStack(prevStack =>
         prevStack.map(navItem =>
-          navItem.screen === 'routine-detail' && navItem.params.id === routineId
-            ? { ...navItem, params: transformedRoutine }
+          navItem.screen === 'routine-detail' && navItem.params.id === routine.id
+            ? { ...navItem, params: { ...routine, isPublic: !routine.isPublic } }
             : navItem
         )
       );
-    } catch (error) {
-      console.error("루틴 알림 설정 변경 실패:", error);
-      alert("설정 변경에 실패했습니다.");
+    } 
+    // B. 개인 루틴일 경우 -> 기존 API 호출 로직
+    else {
+      try {
+        const updatedRoutineFromServer = await toggleRoutinePublic(routine.id);
+        const transformedRoutine = transformPersonalRoutine(updatedRoutineFromServer);
+
+        setPersonalRoutines(prevRoutines =>
+          prevRoutines.map(r => (r.id === routine.id ? transformedRoutine : r))
+        );
+
+        setNavigationStack(prevStack =>
+          prevStack.map(navItem =>
+            navItem.screen === 'routine-detail' && navItem.params.id === routine.id
+              ? { ...navItem, params: transformedRoutine }
+              : navItem
+          )
+        );
+      } catch (error) {
+        console.error("루틴 공개 여부 변경 실패:", error);
+        alert("설정 변경에 실패했습니다.");
+      }
     }
   };
+
+  const handleToggleRoutineAlarm = async (routine: Routine) => {
+    if (routine.isGroupRoutine) {
+      const currentOverride = groupRoutineOverrides[routine.id] || {};
+      const newOverrides = {
+        ...groupRoutineOverrides,
+        [routine.id]: {
+          ...currentOverride,
+          reminder: !routine.reminder, // 현재 상태의 반대 값으로 설정
+        },
+      };
+
+      setGroupRoutineOverrides(newOverrides);
+      localStorage.setItem('groupRoutineOverrides', JSON.stringify(newOverrides));
+      
+      // 상세 화면의 상태도 즉시 업데이트
+      setNavigationStack(prevStack =>
+        prevStack.map(navItem =>
+          navItem.screen === 'routine-detail' && navItem.params.id === routine.id
+            ? { ...navItem, params: { ...routine, reminder: !routine.reminder } }
+            : navItem
+        )
+      );
+    }
+    // B. 개인 루틴일 경우 -> 기존 API 호출 로직
+    else {
+      try {
+        const updatedRoutineFromServer = await toggleRoutineAlarm(routine.id);
+        const transformedRoutine = transformPersonalRoutine(updatedRoutineFromServer);
+        
+        setPersonalRoutines(prevRoutines =>
+          prevRoutines.map(r => (r.id === routine.id ? transformedRoutine : r))
+        );
+
+        setNavigationStack(prevStack =>
+          prevStack.map(navItem =>
+            navItem.screen === 'routine-detail' && navItem.params.id === routine.id
+              ? { ...navItem, params: transformedRoutine }
+              : navItem
+          )
+        );
+      } catch (error) {
+        console.error("루틴 알림 설정 변경 실패:", error);
+        alert("설정 변경에 실패했습니다.");
+      }
+    }
+  };
+
 
   const handleTogglePersonalRoutineCompletion = async (routineId: number) => {
-    console.log(`--- 루틴(${routineId}) 클릭됨 ---`);
   console.log('현재 완료된 루틴 Map:', completedActivityIds.personal);
   console.log(`이 루틴은 완료 상태인가? ->`, completedActivityIds.personal.has(routineId));
     const isCompleted = completedActivityIds.personal.has(routineId);
@@ -964,9 +1021,9 @@ const handleToggleRoutinePublic = async (routineId: number) => {
     try {
     if (isCompleted) {
       // --- 루틴 취소 로직 ---
-      const activityId = completedActivityIds.personal.get(routineId);
-      if (activityId) {
-        await updateActivity(activityId, 'NOT_COMPLETED');
+      const userActivityId = completedActivityIds.personal.get(routineId);
+      if (userActivityId) {
+        await updateActivity(userActivityId, 'NOT_COMPLETED');
         // 완료 횟수 1 감소
         setRoutineCompletionCount(prev => {
           const newCount = Math.max(0, prev - 1);
@@ -1010,6 +1067,35 @@ const handleToggleRoutinePublic = async (routineId: number) => {
     console.error("개인 루틴 완료/취소 처리 실패:", error);
   }
 };
+
+const handleGroupRoutineCompletion = () => {
+    console.log("🏆 그룹 루틴 완료! 출석 및 통계 처리를 시작합니다.");
+
+    // 1. 전체 루틴 완료 횟수 증가
+    const newRoutineCount = routineCompletionCount + 1;
+    setRoutineCompletionCount(newRoutineCount);
+    localStorage.setItem('routineCompletionCount', String(newRoutineCount));
+
+    // 2. '루틴 마스터' 배지 획득 조건 확인
+    if (newRoutineCount >= 100 && !earnedBadges.includes('루틴 마스터')) {
+      const badgeName: BadgeType = '루틴 마스터';
+      setEarnedBadges(prev => {
+        const newEarned = [...prev, badgeName];
+        localStorage.setItem('earnedBadges', JSON.stringify(newEarned));
+        return newEarned;
+      });
+      setBadgeName(badgeName);
+      setBadgeImage(badgeInfo[badgeName].image);
+      setBadgeModalOpen(true);
+    }
+
+    // 3. 출석 모달 띄우기
+    handleOpenAttendanceModal();
+
+    // 4. 데이터 새로고침 (활동 내역, 점수 등)
+    handleDataRefresh();
+  };
+
 
   const handleAddRecommendedRoutine = async (recommendedRoutine: RecommendedRoutine) => {
     if (!UserInfo) {
@@ -1584,6 +1670,7 @@ const navigateTo = (screen: string, params?: any, options?: { replace?: boolean 
               onLeaveGroup={handleLeaveGroup}
               userInfo={UserInfo}
               onDataRefresh={handleDataRefresh}
+              onGroupRoutineComplete={handleGroupRoutineCompletion}
             />
           );
         }
@@ -1608,6 +1695,8 @@ const navigateTo = (screen: string, params?: any, options?: { replace?: boolean 
               isDarkMode={isDarkMode}
               onToggleDarkMode={toggleDarkMode}
               onDeleteAccount={handleDeleteAccount} 
+              isAlarmOn={UserInfo.isAlarmOn ?? true}
+              onToggleAlarm={handleToggleAlarm}
             />
           );
         case "help":
@@ -1801,50 +1890,53 @@ const navigateTo = (screen: string, params?: any, options?: { replace?: boolean 
 
   const handleCloseAttendanceModal = async () => {
     setAttendanceModalOpen(false);
-    const todayString = new Date().toISOString().split('T')[0];
+    
+    const todayString = getLocalDateString(new Date()); 
+    console.log('1. 모달 닫힘. 오늘 날짜(KST):', todayString);
 
     try {
-    // 2. 서버에 오늘 출석이 유효한지 먼저 확인합니다.
     const hasAttendedToday = await checkAttendance(todayString);
+    console.log('2. checkAttendance API 결과:', hasAttendedToday);
 
-    // 3. 서버에서 '출석 인정(true)' 응답을 받았을 때만 아래 로직을 실행합니다.
     if (hasAttendedToday) {
-
+    console.log('3. 출석 인정됨. 연속일 계산 시작.');
     await fetchTotalAttendance();
 
-    // --- 2. 출석 날짜 배열 업데이트 ---
     const newDates = [...attendanceDates];
     if (!newDates.includes(todayString)) {
       newDates.push(todayString);
       localStorage.setItem('attendanceDates', JSON.stringify(newDates));
       setAttendanceDates(newDates);
     }
-    
-    // --- 3. 현재 '연속 출석일' 계산 및 '최고 기록' 업데이트 ---
+    console.log('4. 갱신된 출석 날짜 배열:', newDates);
     let consecutiveCount = 0;
-    const dateChecker = new Date(); // 오늘부터 시작
+    const dateChecker = new Date(); 
 
-    // 출석 기록에 날짜가 있는지 확인하며 하루씩 뒤로 갑니다.
-    while (newDates.includes(dateChecker.toISOString().split('T')[0])) {
+    while (newDates.includes(getLocalDateString(dateChecker))) {
       consecutiveCount++;
       dateChecker.setDate(dateChecker.getDate() - 1); // 어제 날짜로 변경
     }
-
+    console.log('5. 계산된 연속 출석일:', consecutiveCount);
     const currentMaxStreak = UserInfo?.maxStreakDays ?? 0;
+    console.log('6. 현재 저장된 최대 연속일 (UserInfo 기준):', currentMaxStreak);
     if (consecutiveCount > currentMaxStreak && UserInfo) {
+      console.log(`7. 새로운 기록 달성! (${consecutiveCount} > ${currentMaxStreak}). 상태와 localStorage를 업데이트합니다.`);
       const newMaxStreak = consecutiveCount;
       setUserInfo({ ...UserInfo, maxStreakDays: consecutiveCount });
       
       localStorage.setItem('maxStreakDays', String(newMaxStreak));
-    }
+    } else {
+        console.log(`7. 새로운 기록 아님. (${consecutiveCount} <= ${currentMaxStreak}). 상태 업데이트 없음.`);
+      }
 
-    // --- 4. 기존 출석 처리 및 다음 모달 호출 로직 (그대로 유지) ---
     const newAttendanceCount = attendanceCount + 1;
     setAttendanceCount(newAttendanceCount);
     localStorage.setItem('attendanceCount', String(newAttendanceCount));
 
     handleNextModalSequence(consecutiveCount, newAttendanceCount);
-  }
+  } else {
+      console.log('3. 출석 인정 안 됨. 연속일 계산을 건너뜁니다.');
+    }
 } catch (error) {
     console.error("오늘 출석 여부 확인 중 에러 발생:", error);
   }

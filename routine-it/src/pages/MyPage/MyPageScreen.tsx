@@ -447,74 +447,7 @@ export function MyPageScreen({ onNavigate, isDarkMode, onToggleDarkMode, onToggl
         </CardContent>
       </Card>
 
-      {/* 설정 메뉴 */}
-      <Card>
-        <CardHeader className="pb-4 ">
-          <CardTitle className="text-base text-card-foreground flex items-center space-x-2 ">
-            <Settings className="h-4 w-4 icon-accent " />
-            <span>설정</span>
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="pt-0">
-          <div className="space-y-1">
-            {/* 알림 설정 토글 (신규 추가) */}
-            <div className="flex items-center justify-between p-3 rounded-lg hover:bg-accent/50 transition-colors">
-              <div className="flex items-center space-x-3">
-                <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-accent">
-                  <Bell className="h-4 w-4 icon-secondary" />
-                </div>
-                <span className="text-sm font-medium text-card-foreground">알림 설정</span>
-              </div>
-              <Switch
-                checked={user.isAlarmOn}
-                onCheckedChange={onToggleAlarm}
-              />
-            </div>
-
-            {/* 다크모드 토글 */}
-            <div className="flex items-center justify-between p-3 rounded-lg hover:bg-accent/50 transition-colors">
-              <div className="flex items-center space-x-3">
-                <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-accent">
-                  <Moon className="h-4 w-4 icon-secondary" />
-                </div>
-                <span className="text-sm font-medium text-card-foreground">다크 모드</span>
-              </div>
-              <Switch
-                checked={isDarkMode}
-                onCheckedChange={onToggleDarkMode}
-              />
-            </div>
-
-            {/* 설정 버튼 */}
-            <Button
-              variant="ghost"
-              className="w-full justify-start p-3 h-auto text-card-foreground hover:text-card-foreground hover:bg-accent/50"
-              onClick={() => onNavigate('settings')}
-            >
-              <div className="flex items-center space-x-3">
-                <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-accent">
-                  <Settings className="h-4 w-4 icon-secondary" />
-                </div>
-                <span className="text-sm font-medium">앱 설정</span>
-              </div>
-            </Button>
-
-            {/* 도움말 버튼 */}
-            <Button
-              variant="ghost"
-              className="w-full justify-start p-3 h-auto text-card-foreground hover:text-card-foreground hover:bg-accent/50"
-              onClick={() => onNavigate('help')}
-            >
-              <div className="flex items-center space-x-3">
-                <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-accent">
-                  <HelpCircle className="h-4 w-4 icon-secondary" />
-                </div>
-                <span className="text-sm font-medium">도움말</span>
-              </div>
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
+      
 
       {/* 가입 정보 및 로그아웃 */}
       <div className="space-y-3">

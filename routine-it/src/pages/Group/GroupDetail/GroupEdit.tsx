@@ -28,7 +28,7 @@ const categories = [
   { id: 'hobby', name: '취미', emoji: '🎨', description: '취미와 여가 활동', hoverColor: 'hover:bg-purple-100/70 hover:text-purple-800 hover:border-purple-300/50' }
 ];
 
-const daysOfWeek = ['월', '화', '수', '목', '금', '토', '일'];
+const daysOfWeek = ['일', '월', '화', '수', '목', '금', '토'];
 
 export default function GroupEdit({ open, onOpenChange, group, onSave }: GroupEditProps) {
   const [formData, setFormData] = useState({

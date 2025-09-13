@@ -35,11 +35,11 @@ export interface Message {
     albumImages?: string[];
 }
 
-export function GroupChatScreen({ group, groupmembers, onBack, onLeaveGroup, userInfo, onDataRefresh }) {
+export function GroupChatScreen({ group, groupmembers, onBack, onLeaveGroup, userInfo, onDataRefresh, onGroupRoutineComplete }) {
     const [isAuthDialogOpen, setIsAuthDialogOpen] = useState(false);
     const [isMembersDialogOpen, setIsMembersDialogOpen] = useState(false);
     const [messages, setMessages] = useState<Message[]>([]);
-     const [memberProfiles, setMemberProfiles] = useState<Record<number, string>>({});
+    const [memberProfiles, setMemberProfiles] = useState<Record<number, string>>({});
     const stompClientRef = useRef<Client | null>(null);
 
     const myUserId = userInfo.id;
@@ -243,14 +243,18 @@ export function GroupChatScreen({ group, groupmembers, onBack, onLeaveGroup, use
             if (group.groupType === 'FREE') {
                 const activityData = {
                     description: data.description,
-                    photo: data.image,
+                    //photo: data.image,
+                    imageUrl: null, // TODO: 사진 업로드 기능 추가 시 수정 필요
                     isPublic: data.isPublic,
                     groupId: group.groupId,
                 };
                 
                 await createGroupActivity(activityData);
 
-            
+                if (onGroupRoutineComplete) {
+                    onGroupRoutineComplete();
+                }
+
                 try {
                     await updateRankingScore(myUserId, group.groupId, 1);
                     console.log("✅ 랭킹 점수 업데이트 성공: 자유그룹 인증");

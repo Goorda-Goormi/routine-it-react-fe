@@ -29,7 +29,7 @@ const getTodayDayOfWeek = () => {
 
 // '1111100' -> ['월', '화', '수', '목', '금']
 const convertAuthDaysToFrequency = (authDays: string): string[] => {
-  const daysOfWeek = ['월', '화', '수', '목', '금', '토', '일'];
+  const daysOfWeek = ['일', '월', '화', '수', '목', '금', '토'];
   if (!authDays || authDays.length !== 7) return [];
   return authDays.split('').map((char, index) => (char === '1' ? daysOfWeek[index] : null)).filter(Boolean) as string[];
 };
@@ -244,7 +244,7 @@ export function UserHomeScreen({ user, onBack }: UserHomeScreenProps) {
                 </div>
               </div>
               <div className="text-sm text-left text-muted-foreground font-semibold">
-                "응원의 한마디{userProfile.profileMessage}"
+                "{userProfile.profileMessage}"
               </div>
             </div>
             <Avatar className="w-14 h-14 mr-2">
@@ -350,7 +350,7 @@ export function UserHomeScreen({ user, onBack }: UserHomeScreenProps) {
                               ? 'text-green-700 dark:text-green-400 line-through' 
                               : 'text-foreground'
                           }`}>
-                            {getCategoryEmoji(routine.category)} {routine.name}
+                            {routine.name}
                           </div>
                           <div className="text-xs text-muted-foreground">
                             {routine.time} • {routine.streak}일 연속
