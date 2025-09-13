@@ -18,7 +18,7 @@ import { fetchChatHistory } from '../../../api/chat';
 import { requestAuthApproval, getGroupMembers } from '../../../api/group';
 import { getUserProfile } from '../../../api/user';
 
-export const BASE_URL = "http://54.180.93.1:8080";
+export const BASE_URL = "http://15.164.98.221:8080";
 const WS_CONNECTION_URL = `${BASE_URL}/ws`;
 
 export interface Message {

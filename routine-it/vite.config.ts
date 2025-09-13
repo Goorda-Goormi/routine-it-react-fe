@@ -18,12 +18,12 @@ export default defineConfig({
     port: 3000,
     proxy: {
       '/ws': {
-        target: 'http://54.180.93.1:8080',
+        target: 'http://15.164.98.221:8080',
         ws: true, // 웹소켓 프록시 활성화
         //changeOrigin: true, // 호스트 헤더 변경
       },
       '/api': {
-        target: 'http://54.180.93.1:8080',
+        target: 'http://15.164.98.221:8080',
         changeOrigin: true,
       }
     }
