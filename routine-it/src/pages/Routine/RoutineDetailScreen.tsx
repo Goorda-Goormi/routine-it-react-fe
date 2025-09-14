@@ -124,9 +124,7 @@ export function RoutineDetailScreen({ routine, onBack, onUpdateRoutine, onDelete
     if (!editedRoutine.category) {
         newErrors.category = '카테고리를 선택해주세요.';
     }
-    if (!editedRoutine.difficulty) {
-        newErrors.difficulty = '난이도를 선택해주세요.';
-    }
+    
 
     setErrors(newErrors);
 
@@ -201,12 +199,6 @@ export function RoutineDetailScreen({ routine, onBack, onUpdateRoutine, onDelete
             <CardContent className="space-y-4">
               <div className="text-sm space-y-2">
                 <div className="flex items-center space-x-2 text-foreground">
-                  <Badge 
-                    variant="outline" 
-                    className={`text-sm ${getDifficultyColor(routine.difficulty ?? '')}`}
-                  >
-                    {editedRoutine.difficulty}
-                  </Badge>
                   <p>{routine.description}</p>
                 </div>
               </div>
@@ -230,7 +222,7 @@ export function RoutineDetailScreen({ routine, onBack, onUpdateRoutine, onDelete
                 <div className="flex items-center justify-between text-sm text-foreground">
                   <div className="flex items-center space-x-2">
                     <Bell className="h-4 w-4 text-icon-secondary" />
-                    <span>톡캘린더 연동</span>
+                    <span>알림</span>
                   </div>
                   <Switch
                     checked={!!routine.reminder}
@@ -238,7 +230,19 @@ export function RoutineDetailScreen({ routine, onBack, onUpdateRoutine, onDelete
                     
                   />
                 </div>
-                <div className="flex items-center justify-between text-sm text-foreground">
+                {!routine.isGroupRoutine && (
+                  <div className="flex items-center justify-between text-sm text-foreground">
+                    <div className="flex items-center space-x-2">
+                      <Globe className="h-4 w-4 text-icon-secondary" />
+                      <span>루틴 공개</span>
+                    </div>
+                    <Switch
+                      checked={!!routine.isPublic}
+                      onCheckedChange={() => onTogglePublic(routine)}
+                    />
+                  </div>
+                )}
+                {/* <div className="flex items-center justify-between text-sm text-foreground">
                   <div className="flex items-center space-x-2">
                     <Globe className="h-4 w-4 text-icon-secondary" />
                     <span>루틴 공개</span>
@@ -248,7 +252,7 @@ export function RoutineDetailScreen({ routine, onBack, onUpdateRoutine, onDelete
                     onCheckedChange={() => onTogglePublic(routine)}
                    
                   />
-                </div>
+                </div> */}
               </div>
             </CardContent>
           </Card>
@@ -291,24 +295,6 @@ export function RoutineDetailScreen({ routine, onBack, onUpdateRoutine, onDelete
                 {errors.category && <p className="text-destructive text-sm mt-1">{errors.category}</p>}
               </div>
 
-              <div>
-                <Label htmlFor="edit-difficulty">난이도</Label>
-                <Select 
-                  value={editedRoutine.difficulty} 
-                  onValueChange={(value) => setEditedRoutine({...editedRoutine, difficulty: value})}
-                  disabled={editedRoutine.isGroupRoutine}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="쉬움">쉬움</SelectItem>
-                    <SelectItem value="보통">보통</SelectItem>
-                    <SelectItem value="어려움">어려움</SelectItem>
-                  </SelectContent>
-                </Select>
-                {errors.difficulty && <p className="text-destructive text-sm mt-1">{errors.difficulty}</p>}
-              </div>
 
               <div>
                 <Label htmlFor="edit-description">설명</Label>

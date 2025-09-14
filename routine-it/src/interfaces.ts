@@ -46,7 +46,9 @@ export interface Group {
   createdAt: string; 
   updatedAt: string; 
   active: boolean; 
-
+  membershipSettings?: {
+    isAlarmOn?: boolean;
+  }
  
   // API 응답에는 없지만, 앱 로직에서 필요한 변수
   progress?: number;
@@ -101,7 +103,6 @@ export interface Routine {
   time: string;
   completed: boolean;
   streak: number;
-  difficulty?: string;
   isGroupRoutine?: boolean;
   frequency?: string[];
   type?: string;

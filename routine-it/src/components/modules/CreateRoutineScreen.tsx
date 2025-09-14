@@ -90,9 +90,6 @@ const handleDayToggle = (day: string) => {
     if (!formData.category) {
       newErrors.category = '카테고리를 선택해주세요.';
     }
-    if (!formData.difficulty) {
-      newErrors.difficulty = '난이도를 선택해주세요.';
-    }
 
     setErrors(newErrors);
 
@@ -187,25 +184,6 @@ const handleDayToggle = (day: string) => {
               </Select>
               {errors.category && <p className="text-destructive text-sm mt-1">{errors.category}</p>}
             </div>
-
-            {/* 난이도 선택 추가 */}
-            <div>
-              <Label className="pb-3 pl-3" htmlFor="difficulty">난이도</Label>
-              <Select 
-                value={formData.difficulty} 
-                onValueChange={(value) => setFormData({...formData, difficulty: value})}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="난이도를 선택하세요"  />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="쉬움">쉬움</SelectItem>
-                  <SelectItem value="보통">보통</SelectItem>
-                  <SelectItem value="어려움">어려움</SelectItem>
-                </SelectContent>
-              </Select>
-              {errors.difficulty && <p className="text-destructive text-sm mt-1">{errors.difficulty}</p>}
-            </div>
           </CardContent>
         </Card>
 
@@ -250,13 +228,13 @@ const handleDayToggle = (day: string) => {
         {/* 알림 설정 */}
         <Card>
           <CardHeader className="pb-3 pl-3">
-            <CardTitle className="text-base">톡캘린더 설정</CardTitle>
+            <CardTitle className="text-base">알림 설정</CardTitle>
           </CardHeader>
           <CardContent className="pt-0">
             <div className="flex items-center justify-between">
               <div>
-                <Label className="pb-3 pl-3">톡캘린더에 연결하기</Label>
-                <p className="text-sm text-muted-foreground pl-3">설정한 루틴을 카카오로 확인해보세요</p>
+                <Label className="pb-3 pl-3">알림</Label>
+                <p className="text-sm text-muted-foreground pl-3">설정한 시간에 맞춰 알림을 받아보세요</p>
               </div>
               <Switch
                 checked={formData.reminder}

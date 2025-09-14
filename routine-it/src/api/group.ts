@@ -267,3 +267,15 @@ export async function getPendingMembersByGroupId(groupId: number): Promise<Group
     throw new Error("PENDING 멤버 조회 실패");
   }
 }
+
+/**
+ * 특정 그룹에 대한 나의 알림 설정을 변경합니다.
+ * @param groupId - 설정을 변경할 그룹의 ID
+ * @param isAlarmOn - 새로운 알림 상태 (true/false)
+ */
+export const updateGroupMemberAlarm = async (groupId: number, isAlarmOn: boolean): Promise<void> => {
+  // 쿼리 파라미터로 isAlarm 값을 전달합니다.
+  await apiFetch(`/group/${groupId}/members/me?isAlarm=${isAlarmOn}`, {
+    method: 'PUT',
+  });
+};

@@ -44,7 +44,7 @@ import {
 } from './api/personalRoutine';
 import { apiFetch } from "./api/client";
 import type { PersonalRoutineResponse, PersonalRoutineCreatePayload, PersonalRoutineUpdatePayload } from './api/personalRoutine';
-import { createGroup, getAllGroups,getJoinedGroups,getGroupMembers, requestJoinGroup } from "./api/group";
+import { createGroup, getAllGroups,getJoinedGroups,getGroupMembers, requestJoinGroup, updateGroupMemberAlarm } from "./api/group";
 import { updateRankingScore, getPersonalRankings, getUserTotalScore, getGlobalGroupRanking } from "./api/ranking";
 import { getMonthlyReview } from './api/review';
 import type { IPersonalRankingResponse, UserTotalScoreResponse } from './interfaces';
@@ -79,9 +79,8 @@ const transformPersonalRoutine = (pr: PersonalRoutineResponse): Routine => {
     isGroupRoutine: false,
     completed: false, 
     streak: 0, 
-    difficulty: '쉬움',
-    goal: '30', 
-    category: '생활',
+    goal: pr.goal,
+    category: pr.category, 
   };
 };
 
@@ -142,11 +141,10 @@ const transformGroupToRoutine = (group: Group): Routine => {
     type: group.groupType === 'REQUIRED' ? '의무참여' : '자율참여',
 
     // 3. Routine 객체에 필요하지만 Group 객체에 없는 필드 (기본값 설정)
-    difficulty: '보통',
     completed: false, 
     streak: 0,
     goal: '30',
-    reminder: true,
+    reminder: group.membershipSettings?.isAlarmOn ?? true,
     isPublic: true,
   };
   
@@ -196,22 +194,6 @@ const transformNotification = (apiNotif: NotificationApiResponse): Notification 
     icon: icon,
     isLocal: false,
   };
-};
-
-/**
- * 루틴 난이도에 따라 점수를 계산합니다.
- */
-const calculateScoreByDifficulty = (difficulty?: string): number => {
-  switch (difficulty) {
-    case '쉬움':
-      return 10;
-    case '보통':
-      return 20;
-    case '어려움':
-      return 30;
-    default:
-      return 10; // 난이도가 없으면 기본 점수
-  }
 };
 
 
@@ -296,6 +278,34 @@ export default function App() {
     };
     setNotifications(prev => [newNotification, ...prev]);
   };
+
+  const syncTodaysAttendance = async () => {
+    if (!isLoggedIn) return;
+    
+    const todayString = getLocalDateString(new Date());
+
+    // 이미 로컬에 오늘 출석 기록이 있으면 추가 작업을 하지 않습니다.
+    if (attendanceDates.includes(todayString)) {
+      return;
+    }
+
+    try {
+      // 서버에 오늘 활동 기록이 있는지 물어봅니다.
+      const todaysActivities = await getUserActivitiesByDay(todayString);
+      
+      // 활동 기록이 하나라도 있다면 (출석으로 인정)
+      if (todaysActivities && todaysActivities.length > 0) {
+        // 로컬 데이터에 오늘 날짜를 추가하고 저장합니다.
+        const newDates = [...attendanceDates, todayString];
+        setAttendanceDates(newDates);
+        localStorage.setItem('attendanceDates', JSON.stringify(newDates));
+        console.log('✅ 오늘 출석 기록을 서버에서 확인하여 로컬에 동기화했습니다.');
+      }
+    } catch (error) {
+      console.error("오늘 출석 기록 동기화 실패:", error);
+    }
+  };
+
 
   useEffect(() => {
     const savedOverrides = localStorage.getItem('groupRoutineOverrides');
@@ -555,6 +565,8 @@ export default function App() {
 
 useEffect(() => {
   if (isLoggedIn && UserInfo) {
+    syncTodaysAttendance();
+
     const fetchRemainingData = async () => {
       await Promise.all([
         fetchUserActivities(),
@@ -567,7 +579,7 @@ useEffect(() => {
     };
     fetchRemainingData();
   }
-}, [UserInfo]);
+}, [isLoggedIn, UserInfo]);
 
   // UserInfo(서버) 상태와 isDarkMode(UI) 상태를 동기화
   useEffect(() => {
@@ -967,27 +979,39 @@ const handleToggleRoutinePublic = async (routine: Routine) => {
 
   const handleToggleRoutineAlarm = async (routine: Routine) => {
     if (routine.isGroupRoutine) {
-      const currentOverride = groupRoutineOverrides[routine.id] || {};
-      const newOverrides = {
-        ...groupRoutineOverrides,
-        [routine.id]: {
-          ...currentOverride,
-          reminder: !routine.reminder, // 현재 상태의 반대 값으로 설정
-        },
-      };
+      try {
+      const newAlarmState = !routine.reminder;
+      await updateGroupMemberAlarm(routine.id, newAlarmState);
 
-      setGroupRoutineOverrides(newOverrides);
-      localStorage.setItem('groupRoutineOverrides', JSON.stringify(newOverrides));
+      // API 호출 성공 시, 화면에 즉시 반영하기 위해 로컬 상태를 업데이트합니다.
+      setMyGroups(prevGroups =>
+        prevGroups.map(g =>
+          g.groupId === routine.id
+            ? { 
+                ...g, 
+                membershipSettings: { 
+                  ...g.membershipSettings, 
+                  isAlarmOn: newAlarmState 
+                } 
+              }
+            : g
+        )
+      );
       
       // 상세 화면의 상태도 즉시 업데이트
       setNavigationStack(prevStack =>
         prevStack.map(navItem =>
           navItem.screen === 'routine-detail' && navItem.params.id === routine.id
-            ? { ...navItem, params: { ...routine, reminder: !routine.reminder } }
+            ? { ...navItem, params: { ...routine, reminder: newAlarmState } }
             : navItem
         )
       );
+
+    } catch (error) {
+      console.error("그룹 루틴 알림 설정 변경 실패:", error);
+      alert("알림 설정 변경에 실패했습니다.");
     }
+  } 
     // B. 개인 루틴일 경우 -> 기존 API 호출 로직
     else {
       try {
@@ -1059,8 +1083,6 @@ const handleToggleRoutinePublic = async (routine: Routine) => {
     // 4. 출석 모달 띄우기 (배지 획득 여부와 관계없이 항상 실행)
     handleOpenAttendanceModal();
   } 
-  
-  await Promise.all([fetchUserActivities(), fetchUserTotalScore()]);
 
   } catch (error) {
     alert("루틴 상태 변경에 실패했습니다.");
@@ -1092,8 +1114,6 @@ const handleGroupRoutineCompletion = () => {
     // 3. 출석 모달 띄우기
     handleOpenAttendanceModal();
 
-    // 4. 데이터 새로고침 (활동 내역, 점수 등)
-    handleDataRefresh();
   };
 
 
@@ -1893,14 +1913,11 @@ const navigateTo = (screen: string, params?: any, options?: { replace?: boolean 
     setAttendanceModalOpen(false);
     
     const todayString = getLocalDateString(new Date()); 
-    console.log('1. 모달 닫힘. 오늘 날짜(KST):', todayString);
 
     try {
     const hasAttendedToday = await checkAttendance(todayString);
-    console.log('2. checkAttendance API 결과:', hasAttendedToday);
 
     if (hasAttendedToday) {
-    console.log('3. 출석 인정됨. 연속일 계산 시작.');
     await fetchTotalAttendance();
 
     const newDates = [...attendanceDates];
@@ -1909,27 +1926,20 @@ const navigateTo = (screen: string, params?: any, options?: { replace?: boolean 
       localStorage.setItem('attendanceDates', JSON.stringify(newDates));
       setAttendanceDates(newDates);
     }
-    console.log('4. 갱신된 출석 날짜 배열:', newDates);
     let consecutiveCount = 0;
     const dateChecker = new Date(); 
 
     while (newDates.includes(getLocalDateString(dateChecker))) {
       consecutiveCount++;
-      dateChecker.setDate(dateChecker.getDate() - 1); // 어제 날짜로 변경
+      dateChecker.setDate(dateChecker.getDate() - 1);
     }
-    console.log('5. 계산된 연속 출석일:', consecutiveCount);
     const currentMaxStreak = UserInfo?.maxStreakDays ?? 0;
-    console.log('6. 현재 저장된 최대 연속일 (UserInfo 기준):', currentMaxStreak);
     if (consecutiveCount > currentMaxStreak && UserInfo) {
-      console.log(`7. 새로운 기록 달성! (${consecutiveCount} > ${currentMaxStreak}). 상태와 localStorage를 업데이트합니다.`);
       const newMaxStreak = consecutiveCount;
       setUserInfo({ ...UserInfo, maxStreakDays: consecutiveCount });
       
       localStorage.setItem('maxStreakDays', String(newMaxStreak));
-    } else {
-        console.log(`7. 새로운 기록 아님. (${consecutiveCount} <= ${currentMaxStreak}). 상태 업데이트 없음.`);
-      }
-
+    } 
     const newAttendanceCount = attendanceCount + 1;
     setAttendanceCount(newAttendanceCount);
     localStorage.setItem('attendanceCount', String(newAttendanceCount));
