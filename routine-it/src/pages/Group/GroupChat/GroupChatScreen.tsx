@@ -71,9 +71,6 @@ export function GroupChatScreen({ group, groupmembers, onBack, onLeaveGroup, use
                 const messageExists = prevMessages.some(msg => msg.id === receivedMessage.id);
                 if (messageExists) return prevMessages;
                 
-                // 새 메시지가 도착할 때, 현재 스크롤이 최하단에 있으면
-                // isAtBottomRef.current를 true로 유지하여 스크롤을 유도합니다.
-                // 그렇지 않으면 스크롤을 건드리지 않습니다.
                 return [...prevMessages, receivedMessage];
             });
         };
@@ -308,86 +305,61 @@ export function GroupChatScreen({ group, groupmembers, onBack, onLeaveGroup, use
     };
 
     const handleAuthSubmit = async (data: { description: string; image: File | null; isPublic: boolean }) => {
-        if (!stompClientRef.current) {
-            alert("채팅 연결이 불안정하여 인증을 보낼 수 없습니다. 잠시 후 다시 시도해주세요.");
-            return;
+    if (!stompClientRef.current) {
+        alert("채팅 연결이 불안정하여 인증을 보낼 수 없습니다. 잠시 후 다시 시도해주세요.");
+        return;
+    }
+
+    try {
+        if (group.groupType === 'FREE') {
+            const activityData = {
+                description: data.description,
+                imageUrl: null, 
+                isPublic: data.isPublic,
+                groupId: group.groupId,
+            };
+            
+            await createGroupActivity(activityData);
+
+            await updateRankingScore(myUserId, group.groupId, 1); 
+            console.log("✅ 랭킹 점수 업데이트 성공: 자유그룹 인증"); 
+            
+            const msgBody = {
+                userId: myUserId,
+                senderNickname: myNickname,
+                message: data.description,
+                imageUrl: data.image ? URL.createObjectURL(data.image) : null,
+                messageType: 'NOTICE', 
+            };
+            stompClientRef.current.publish({
+                destination: `/app/chat.send/${roomId}`,
+                body: JSON.stringify(msgBody),
+            }); 
+
+            alert('자유그룹 인증이 성공적으로 제출되었습니다.'); 
+        } else {
+            const authMessage = data.description; 
+            const msgBody = {
+                userId: myUserId,
+                senderNickname: myNickname,
+                message: authMessage,
+                imageUrl: data.image ? URL.createObjectURL(data.image) : null,
+                messageType: 'NOTICE', 
+            }; 
+
+            stompClientRef.current.publish({
+                destination: `/app/chat.send/${roomId}`,
+                body: JSON.stringify(msgBody),
+            }); 
+            alert('인증이 성공적으로 제출되었습니다.'); 
         }
 
-        try {
-            if (group.groupType === 'FREE') {
-                const activityData = {
-                    description: data.description,
-                    //photo: data.image,
-                    imageUrl: null, // TODO: 사진 업로드 기능 추가 시 수정 필요
-                    isPublic: data.isPublic,
-                    groupId: group.groupId,
-                };
-                
-                await createGroupActivity(activityData);
-
-                if (onGroupRoutineComplete) {
-                    onGroupRoutineComplete();
-                }
-
-                try {
-                    await updateRankingScore(myUserId, group.groupId, 1);
-                    console.log("✅ 랭킹 점수 업데이트 성공: 자유그룹 인증");
-                    onDataRefresh();
-                } catch (rankingError) {
-                    console.error("🚨 랭킹 점수 업데이트 실패:", rankingError);
-                }
-                
-                const msgBody = {
-                    userId: myUserId,
-                    senderNickname: myNickname,
-                    message: data.description,
-                    imageUrl: data.image ? URL.createObjectURL(data.image) : null,
-                    messageType: 'NOTICE', 
-                };
-
-                stompClientRef.current.publish({
-                    destination: `/app/chat.send/${roomId}`,
-                    body: JSON.stringify(msgBody),
-                });
-
-                onDataRefresh();
-                //onBack();
-                
-                alert('자유그룹 인증이 성공적으로 제출되었습니다.');
-                    
-            } else {
-                // REQUIRED 그룹 인증 요청 (기존 로직)
-                const authMessage = data.description;
-                const msgBody = {
-                    userId: myUserId,
-                    senderNickname: myNickname,
-                    message: authMessage,
-                    imageUrl: data.image ? URL.createObjectURL(data.image) : null,
-                    messageType: 'NOTICE', 
-                };
-
-                stompClientRef.current.publish({
-                    destination: `/app/chat.send/${roomId}`,
-                    body: JSON.stringify(msgBody),
-                });
-
-                onDataRefresh(); 
-               // onBack();
-                
-                alert('인증이 성공적으로 제출되었습니다.');
-            }
-        } catch (error) {
-            // 오류 응답 확인
-            if (error.name === 'AuthError' || (error.response && error.response.status === 401)) {
-                alert('인증이 만료되었습니다. 다시 로그인해주세요.');
-                // 여기에서 로그인 페이지로 리디렉션하는 로직을 추가
-                // 예: window.location.href = '/login';
-            } else {
-                alert('인증 제출에 실패했습니다.');
-            }
-            console.error("🚨 최종 에러 핸들링:", error);
-        }
-    };
+        setIsAuthDialogOpen(false);
+    } catch (error) {
+        console.error("🚨 최종 에러 핸들링:", error); 
+        alert('인증 제출에 실패했습니다.'); 
+    }
+};
 
     return (
         <div className="flex flex-col h-full bg-background">
