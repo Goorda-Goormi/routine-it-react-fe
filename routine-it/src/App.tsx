@@ -1686,6 +1686,7 @@ const navigateTo = (screen: string, params?: any, options?: { replace?: boolean 
             <CreateGroupScreen
               onBack={navigateBack}
               onCreateGroup={handleAddGroup}
+              myid={myId ?? 0}
             />
           );
         case "settings":

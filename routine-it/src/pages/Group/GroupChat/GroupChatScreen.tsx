@@ -40,101 +40,156 @@ export function GroupChatScreen({ group, groupmembers, onBack, onLeaveGroup, use
     const [isMembersDialogOpen, setIsMembersDialogOpen] = useState(false);
     const [messages, setMessages] = useState<Message[]>([]);
     const [memberProfiles, setMemberProfiles] = useState<Record<number, string>>({});
+    const [oldestMessageId, setOldestMessageId] = useState<number | undefined>(undefined);
+    const [isLoadingHistory, setIsLoadingHistory] = useState(false);
+    const messagesEndRef = useRef<HTMLDivElement>(null);    
     const stompClientRef = useRef<Client | null>(null);
 
     const myUserId = userInfo.id;
     const myNickname = userInfo.nickname;
     const roomId = group.groupId;
 
-     useEffect(() => {
-        const fetchProfiles = async () => {
-            const profiles: Record<number, string> = {};
-            // groupmembers 배열이 유효할 때만 프로필을 조회합니다.
-            if (groupmembers && groupmembers.length > 0) {
-                // 프로필 조회를 위해 모든 멤버의 userId에 대한 Promise 배열을 생성합니다.
-                const profilePromises = groupmembers.map(member =>
-                    getUserProfile(member.userId)
-                );
-                // 모든 프로필 정보를 한 번에 비동기적으로 가져옵니다.
-                const userProfiles = await Promise.allSettled(profilePromises);
+    const isNewMessageRef = useRef(false);
+    const prevScrollHeightRef = useRef(0);
+    const prevMessagesLengthRef = useRef(0);
 
-                userProfiles.forEach((result, index) => {
-                    const member = groupmembers[index];
-                    // 요청이 성공적으로 완료되었을 때만 프로필 이미지를 저장합니다.
-                    if (result.status === 'fulfilled' && result.value) {
-                        profiles[member.userId] = result.value.profileImageUrl;
-                    }
-                });
-            }
-            // 모든 프로필 조회 후 상태를 한 번에 업데이트합니다.
-            setMemberProfiles(profiles);
+      useEffect(() => {
+        const onMessageReceived = (payload) => {
+            const receivedMessage = JSON.parse(payload.body);
+            receivedMessage.isMe = receivedMessage.userId === myUserId;
+            isNewMessageRef.current = true;
+            
+            setMessages(prevMessages => {
+                // 중복 메시지 방지
+                const messageExists = prevMessages.some(msg => msg.id === receivedMessage.id);
+                if (messageExists) {
+                    return prevMessages;
+                }
+                return [...prevMessages, receivedMessage];
+            });
         };
 
-        fetchProfiles();
-    }, [groupmembers]); // ✅ groupmembers 데이터가 변경될 때마다 프로필을 다시 조회합니다.
+        const connect = () => {
+            if (!stompClientRef.current || !stompClientRef.current.connected) {
+                const socket = new SockJS(WS_CONNECTION_URL);
+                const client = new Client({
+                    webSocketFactory: () => socket,
+                    connectHeaders: { Authorization: 'Bearer ' + localStorage.getItem('accessToken') },
+                    debug: (str) => console.log(str),
+                    reconnectDelay: 5000,
+                    heartbeatIncoming: 4000,
+                    heartbeatOutgoing: 4000,
+                    onConnect: () => {
+                        console.log('✅ STOMP 연결 성공');
+                        client.subscribe(`/topic/room/${roomId}`, onMessageReceived);
+                        const joinMessage = {
+                            senderId: myUserId,
+                            senderNickname: myNickname,
+                            type: 'ENTER',
+                        };
+                        client.publish({
+                            destination: `/app/chat.online/${roomId}`,
+                            body: JSON.stringify(joinMessage),
+                        });
+                    },
+                    onStompError: (frame) => console.error('❌ STOMP 오류:', frame),
+                });
+                client.activate();
+                stompClientRef.current = client;
+            }
+        };
 
+        const disconnect = () => {
+            if (stompClientRef.current && stompClientRef.current.connected) {
+                stompClientRef.current.deactivate();
+                console.log('STOMP 연결 해제');
+            }
+        };
+
+        if (myUserId && myNickname && roomId) {
+            connect();
+        }
+
+        return () => disconnect();
+    }, [roomId, myUserId, myNickname]);
+
+    // ✅ 2. 초기 채팅 기록 로딩
+    // 이 useEffect는 myUserId와 roomId가 준비되었을 때 한 번만 실행됩니다.
     useEffect(() => {
         const loadChatHistory = async () => {
             try {
                 const response = await fetchChatHistory(roomId, 20);
-                let messagesFromServer = response.data?.content || [];
-                messagesFromServer = messagesFromServer.reverse();
+                const messagesFromServer = response.data?.content || [];
+                
+                if (messagesFromServer.length > 0) {
+                    setOldestMessageId(messagesFromServer[messagesFromServer.length - 1].id || undefined);
+                }
+                
                 const updatedHistory = messagesFromServer.map(msg => ({
                     ...msg,
                     isMe: (msg.messageType === 'MEMBER_JOIN' || msg.messageType === 'MEMBER_LEAVE') ? false : msg.userId === myUserId,
                 }));
-                setMessages(updatedHistory);
+                setMessages(updatedHistory.reverse());
             } catch (error) {
                 console.error("채팅 기록 로딩 실패:", error);
                 setMessages([]);
             }
         };
 
-        loadChatHistory();
+        if (myUserId && roomId) {
+            loadChatHistory();
+        }
+    }, [roomId, myUserId]);
 
-        const socket = new SockJS(WS_CONNECTION_URL);
-        const stompClient = new Client({
-            webSocketFactory: () => socket,
-            connectHeaders: {
-                Authorization: 'Bearer ' + localStorage.getItem('accessToken'),
-            },
-            debug: (str) => console.log(str),
-            reconnectDelay: 5000,
-            onConnect: () => {
-                console.log('✅ STOMP 연결 성공');
-                stompClient.subscribe(`/topic/room/${roomId}`, (message) => {
-                    const body = JSON.parse(message.body);
-                    const newMsg: Message = {
-                        id: body.id,
-                        roomId: body.roomId,
-                        userId: body.userId,
-                        senderNickname: body.senderNickname,
-                        message: body.message,
-                        imageUrl: body.imageUrl,
-                        messageType: body.messageType,
-                        sentAt: body.sentAt,
-                        isMe: body.userId === myUserId,
-                        reactions: {},
-                    };
-                    setMessages((prev) => [...prev, newMsg]);
-                });
-                stompClient.publish({
-                    destination: `/app/chat.online/${roomId}`,
-                    body: JSON.stringify({ userId: myUserId, nickname: myNickname }),
-                });
-            },
-            onStompError: (frame) => {
-                console.error('❌ STOMP 오류:', frame);
-            },
-        });
 
-        stompClient.activate();
-        stompClientRef.current = stompClient;
+    // ✅ 3. 메시지 상태 변경에 따른 스크롤 동작 관리
+    // 이 useEffect는 messages 배열이 업데이트될 때마다 실행됩니다.
+    useEffect(() => {
+    if (messagesEndRef.current) {
+        const chatContainer = messagesEndRef.current;
+        
+        // 새 메시지가 추가된 경우 (isNewMessageRef.current 플래그 사용)
+        if (isNewMessageRef.current) {
+            // 맨 아래로 스크롤
+            chatContainer.scrollTop = chatContainer.scrollHeight;
+            isNewMessageRef.current = false; // 플래그 초기화
+        } else {
+            // 과거 메시지가 로드된 경우 (스크롤 위치 유지)
+            const newScrollTop = chatContainer.scrollHeight - prevScrollHeightRef.current;
+            chatContainer.scrollTop = newScrollTop;
+        }
 
-        return () => {
-            stompClient.deactivate();
-        };
-    }, [roomId, myUserId, myNickname]);
+        // 다음 렌더링을 위해 현재 스크롤 높이 저장
+        prevScrollHeightRef.current = chatContainer.scrollHeight;
+    }
+}, [messages]);
+
+    const loadMoreChatHistory = async () => {
+        if (isLoadingHistory || !oldestMessageId) return;
+
+        setIsLoadingHistory(true);
+        try {
+            const response = await fetchChatHistory(roomId, 20, oldestMessageId);
+            const olderMessages = response.data?.content || [];
+            
+            if (olderMessages.length > 0) {
+                setOldestMessageId(olderMessages[olderMessages.length - 1].id || undefined);
+            }
+            
+            setMessages(prevMessages => {
+                const updatedMessages = olderMessages.map(msg => ({
+                    ...msg,
+                    isMe: (msg.messageType === 'MEMBER_JOIN' || msg.messageType === 'MEMBER_LEAVE') ? false : msg.userId === myUserId,
+                }));
+                const newMessages = updatedMessages.filter(newMsg => !prevMessages.some(oldMsg => oldMsg.id === newMsg.id));
+                return [...newMessages.reverse(), ...prevMessages];
+            });
+        } catch (error) {
+            console.error("과거 채팅 기록 로딩 실패:", error);
+        } finally {
+            setIsLoadingHistory(false);
+        }
+    };
 
     const handleSendMessage = (text: string) => {
         if (!text.trim()) return;
@@ -382,6 +437,8 @@ export function GroupChatScreen({ group, groupmembers, onBack, onLeaveGroup, use
                 userInfo={userInfo}
                 group={group}
                 memberProfiles={memberProfiles}
+                ref={messagesEndRef}
+                onScrollTop={loadMoreChatHistory}
             />
             <GroupChatInput handleSendMessage={handleSendMessage} handleSendImage={handleSendImage} handleSendAlbum={handleSendAlbum} />
             <GroupRoutineDialog

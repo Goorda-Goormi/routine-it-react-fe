@@ -18,6 +18,7 @@ import { presignProfileGet,presignProfilePut } from '../../api/storage';
 interface CreateGroupScreenProps {
   onBack: () => void;
   onCreateGroup: (groupData: any) => void;
+  myid:number;
 }
 
 const categories = [
@@ -58,7 +59,7 @@ const categories = [
   },
 ];
 
-export function CreateGroupScreen({ onBack, onCreateGroup }: CreateGroupScreenProps) {
+export function CreateGroupScreen({ onBack, onCreateGroup,myid }: CreateGroupScreenProps) {
   const daysOfWeek = ['일', '월', '화', '수', '목', '금', '토'];
   const [formData, setFormData] = useState({
     groupName: '',
@@ -147,12 +148,24 @@ export function CreateGroupScreen({ onBack, onCreateGroup }: CreateGroupScreenPr
     try {
       // 1. 선택된 이미지가 있다면 S3에 업로드
       if (selectedImage) {
+
+         console.log("📷 선택된 이미지 정보:", {
+          name: selectedImage.name,
+          type: selectedImage.type,
+          size: selectedImage.size,
+        });
         // [수정 불필요] 업로드용 URL은 apiFetch로 요청합니다. (인증 토큰 필요)
         const presignResp = await presignProfilePut(
-          1, // TODO: 실제 userId로 변경
+          myid,
           selectedImage.name,
           selectedImage.type
         );
+
+        console.log("📝 presign 요청 파라미터:", {
+        filename: selectedImage.name,
+        contentType: selectedImage.type,
+      });
+      console.log("🔗 presign 응답:", presignResp);
 
         // [핵심 수정] 프리사인드 URL에 파일 직접 PUT 요청
         // apiFetch가 아닌 fetch를 직접 사용해야 합니다.
@@ -164,6 +177,8 @@ export function CreateGroupScreen({ onBack, onCreateGroup }: CreateGroupScreenPr
             'Content-Type': selectedImage.type || "application/octet-stream",
           },
         });
+
+          console.log("⬆️ 업로드 응답:", putRes.status, putRes.statusText);
 
         if (!putRes.ok) {
           throw new Error(`S3 업로드 실패: ${putRes.statusText}`);
