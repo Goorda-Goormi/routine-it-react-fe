@@ -1,4 +1,3 @@
-// RankingScreen.tsx
 import React, { useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card';
 import { Badge } from '../../components/ui/badge';
@@ -23,18 +22,11 @@ export interface IGroupRankingItem {
   averageAuthPerMember: number;
 }
 
-/*export interface GlobalGroupRankingData {
-  rankings: IGroupRankingItem[];
-  monthYear: string;
-  totalGroups: number;
-  updatedAt: string;
-}*/
 export interface GlobalGroupRankingData {
   success: boolean;
   message: string;
   data: {
     content: IGroupRankingItem[];
-    // 서버 응답에 따라 다른 속성들도 추가할 수 있습니다.
     empty: boolean;
     first: boolean;
     last: boolean;
@@ -55,6 +47,7 @@ interface RankingScreenProps {
   userTotalScore: number | null;
   loadingGroupRanking: boolean;
   loadingUserTotalScore: boolean;
+  myid: string; 
 }
 
 export function RankingScreen({
@@ -64,6 +57,7 @@ export function RankingScreen({
   userTotalScore,
   loadingGroupRanking,
   loadingUserTotalScore,
+  myid,
 }: RankingScreenProps) {
   const currentMonth = new Date().getMonth() + 1;
 
@@ -113,7 +107,23 @@ export function RankingScreen({
     return 'text-foreground';
   };
 
-const groupRankings = groupRankingData?.data?.content || [];
+  const groupRankings = groupRankingData?.data?.content || [];
+
+  // 내가 속한 그룹 ID를 가져오는 유틸리티
+  const myGroupIds = groups.map(group => group.groupId);
+
+   const categoryMap: { [key: string]: string } = {
+    'health': '건강',
+    'exercise': '운동',
+    'study': '학습',
+    'lifestyle': '생활',
+    'hobby': '취미',
+  };
+
+  // ✅ 카테고리 번역 함수
+   const getCategoryInKorean = (category: string) => {
+    return categoryMap[category] || category; // 매핑된 값이 없으면 원본값 반환
+  };
 
   return (
     <div className="h-full p-4">
@@ -156,7 +166,12 @@ const groupRankings = groupRankingData?.data?.content || [];
                   mergedPersonalRankings.map((user) => (
                     <div
                       key={user.userId}
-                      className="flex items-center justify-between p-3 rounded-lg border"
+                      // 내 ID와 일치하면 하이라이트 클래스 적용
+                      className={`flex items-center justify-between p-3 rounded-lg border ${
+                        user.userId === parseInt(myid)
+                          ? 'border-yellow-200 bg-orange-50 dark:bg-blue-950'
+                          : ''
+                      }`}
                     >
                       <div className="flex items-center space-x-3">
                         <div className="w-8 flex justify-center">{getRankIcon(user.currentRank)}</div>
@@ -226,11 +241,16 @@ const groupRankings = groupRankingData?.data?.content || [];
                     그룹 랭킹을 불러오는 중입니다...
                   </div>
                 ) : groupRankings.length > 0 ? (
-                  groupRankings.map((group) => (
-                    <div
-                      key={group.groupId}
-                      className="p-3 rounded-lg border border-border dark:border-border"
-                    >
+                  groupRankings.map((group) => (
+                    <div
+                      key={group.groupId}
+                      // 내가 속한 그룹 ID와 일치하면 하이라이트 클래스 적용
+                      className={`p-3 rounded-lg border border-border dark:border-border ${
+                        myGroupIds.includes(group.groupId)
+                          ? 'border-yellow-200 bg-orange-50 dark:bg-blue-950'
+                          : ''
+                      }`}
+                    >
                       <div className="flex items-center justify-between mb-2">
                         <div className="flex items-center space-x-3">
                           <div className="flex items-center justify-center w-8">
@@ -258,7 +278,7 @@ const groupRankings = groupRankingData?.data?.content || [];
                               </Badge>
                             </div>
                             <div className="flex items-center space-x-2 text-xs text-foreground dark:opacity-75 mt-1">
-                              <span>{group.category}</span>
+                               <span>{getCategoryInKorean(group.category)}</span>
                               <span>•</span>
                               <span>{group.memberCount}명</span>
                             </div>

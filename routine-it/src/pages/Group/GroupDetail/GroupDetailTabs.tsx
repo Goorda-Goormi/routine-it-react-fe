@@ -12,6 +12,7 @@ interface GroupDetailTabsProps {
     onMemberClick: (member: any) => void;
     groupMembers: GroupMemberResponse[];
     memberProfiles: Record<number, string>;
+    currentUserNickname: string; // 현재 사용자 닉네임을 props로 추가
 }
 
 export const GroupDetailTabs = ({
@@ -19,7 +20,8 @@ export const GroupDetailTabs = ({
     recentActivities,
     onMemberClick,
     groupMembers,
-    memberProfiles
+    memberProfiles,
+    currentUserNickname // props로 받음
 }: GroupDetailTabsProps) => {
     console.log("GroupDetailTabs로 전달된 멤버 데이터:", groupMembers);
     console.log("최근 활동 데이터:", recentActivities);
@@ -110,9 +112,13 @@ export const GroupDetailTabs = ({
                                     const member = groupMembers.find(m => m.memberName === item.nickname);
                                     const profileImageUrl = member && member.userId ? memberProfiles[member.userId] : '';
                                     
+                                    // 현재 사용자인지 확인하는 로직
+                                    const isCurrentUser = item.nickname === currentUserNickname;
+                                    const highlightClass = isCurrentUser ? 'bg-orange-50 border-yellow-200' : 'border-border/50';
+
                                     return (
                                         <div key={item.rank}>
-                                            <div className="flex items-center justify-between p-3 border border-border/50 rounded-lg hover:bg-accent/30 transition-colors">
+                                            <div className={`flex items-center justify-between p-3 border rounded-lg hover:bg-accent/30 transition-colors ${highlightClass}`}>
                                                 <div className="flex items-center space-x-3">
                                                     <div className="flex items-center space-x-3">
                                                         <div className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center">
