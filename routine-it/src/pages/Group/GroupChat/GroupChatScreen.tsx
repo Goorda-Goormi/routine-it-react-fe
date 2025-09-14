@@ -42,29 +42,38 @@ export function GroupChatScreen({ group, groupmembers, onBack, onLeaveGroup, use
     const [memberProfiles, setMemberProfiles] = useState<Record<number, string>>({});
     const [oldestMessageId, setOldestMessageId] = useState<number | undefined>(undefined);
     const [isLoadingHistory, setIsLoadingHistory] = useState(false);
-    const messagesEndRef = useRef<HTMLDivElement>(null);    
+    const messagesEndRef = useRef<HTMLDivElement>(null);      
     const stompClientRef = useRef<Client | null>(null);
 
     const myUserId = userInfo.id;
     const myNickname = userInfo.nickname;
     const roomId = group.groupId;
 
-    const isNewMessageRef = useRef(false);
+    const isAtBottomRef = useRef(true);
     const prevScrollHeightRef = useRef(0);
     const prevMessagesLengthRef = useRef(0);
-
-      useEffect(() => {
+    
+    // ✅ 스크롤 이벤트 핸들러: 사용자가 스크롤을 움직일 때 최하단 여부 업데이트
+    const handleScroll = () => {
+        if (messagesEndRef.current) {
+            const { scrollTop, scrollHeight, clientHeight } = messagesEndRef.current;
+            isAtBottomRef.current = scrollHeight - scrollTop <= clientHeight + 10; // 여유 10px
+        }
+    };
+    
+    // ✅ 1. STOMP 연결 및 메시지 수신 로직
+    useEffect(() => {
         const onMessageReceived = (payload) => {
             const receivedMessage = JSON.parse(payload.body);
             receivedMessage.isMe = receivedMessage.userId === myUserId;
-            isNewMessageRef.current = true;
-            
+
             setMessages(prevMessages => {
-                // 중복 메시지 방지
                 const messageExists = prevMessages.some(msg => msg.id === receivedMessage.id);
-                if (messageExists) {
-                    return prevMessages;
-                }
+                if (messageExists) return prevMessages;
+                
+                // 새 메시지가 도착할 때, 현재 스크롤이 최하단에 있으면
+                // isAtBottomRef.current를 true로 유지하여 스크롤을 유도합니다.
+                // 그렇지 않으면 스크롤을 건드리지 않습니다.
                 return [...prevMessages, receivedMessage];
             });
         };
@@ -114,9 +123,9 @@ export function GroupChatScreen({ group, groupmembers, onBack, onLeaveGroup, use
     }, [roomId, myUserId, myNickname]);
 
     // ✅ 2. 초기 채팅 기록 로딩
-    // 이 useEffect는 myUserId와 roomId가 준비되었을 때 한 번만 실행됩니다.
     useEffect(() => {
         const loadChatHistory = async () => {
+            setIsLoadingHistory(true);
             try {
                 const response = await fetchChatHistory(roomId, 20);
                 const messagesFromServer = response.data?.content || [];
@@ -129,10 +138,13 @@ export function GroupChatScreen({ group, groupmembers, onBack, onLeaveGroup, use
                     ...msg,
                     isMe: (msg.messageType === 'MEMBER_JOIN' || msg.messageType === 'MEMBER_LEAVE') ? false : msg.userId === myUserId,
                 }));
+                
                 setMessages(updatedHistory.reverse());
             } catch (error) {
                 console.error("채팅 기록 로딩 실패:", error);
                 setMessages([]);
+            } finally {
+                setIsLoadingHistory(false);
             }
         };
 
@@ -141,23 +153,29 @@ export function GroupChatScreen({ group, groupmembers, onBack, onLeaveGroup, use
         }
     }, [roomId, myUserId]);
 
-
     // ✅ 3. 메시지 상태 변경에 따른 스크롤 동작 관리
-
     useEffect(() => {
-    if (messagesEndRef.current) {
         const chatContainer = messagesEndRef.current;
-        if (isNewMessageRef.current) {
+        if (!chatContainer) return;
+
+        // 과거 메시지가 로드된 경우 (스크롤 위치 보정)
+        // prevScrollHeightRef는 과거 메시지 로드 직전에 업데이트됩니다.
+        if (messages.length > prevMessagesLengthRef.current) {
+            const isAddingOlder = messages.length > 0 && messages[0]?.id && messages[1]?.id && messages[0].id < messages[1].id;
+            if (isAddingOlder) {
+                const newScrollTop = chatContainer.scrollHeight - prevScrollHeightRef.current;
+                chatContainer.scrollTop = newScrollTop;
+            }
+        }
+        
+        // 새로운 메시지가 추가된 경우 (자동 스크롤)
+        // isAtBottomRef.current가 true일 때만 최하단으로 스크롤
+        if (isAtBottomRef.current) {
             chatContainer.scrollTop = chatContainer.scrollHeight;
-            isNewMessageRef.current = false; 
-        } else {
-            const newScrollTop = chatContainer.scrollHeight - prevScrollHeightRef.current;
-            chatContainer.scrollTop = newScrollTop;
         }
 
-        prevScrollHeightRef.current = chatContainer.scrollHeight;
-    }
-}, [messages]);
+        prevMessagesLengthRef.current = messages.length;
+    }, [messages]);
 
     const loadMoreChatHistory = async () => {
         if (isLoadingHistory || !oldestMessageId) return;
@@ -171,12 +189,18 @@ export function GroupChatScreen({ group, groupmembers, onBack, onLeaveGroup, use
                 setOldestMessageId(olderMessages[olderMessages.length - 1].id || undefined);
             }
             
+            // ✅ 과거 메시지 로드 직전, 현재 스크롤 높이를 저장
+            if (messagesEndRef.current) {
+                prevScrollHeightRef.current = messagesEndRef.current.scrollHeight;
+            }
+            
             setMessages(prevMessages => {
                 const updatedMessages = olderMessages.map(msg => ({
                     ...msg,
                     isMe: (msg.messageType === 'MEMBER_JOIN' || msg.messageType === 'MEMBER_LEAVE') ? false : msg.userId === myUserId,
                 }));
                 const newMessages = updatedMessages.filter(newMsg => !prevMessages.some(oldMsg => oldMsg.id === newMsg.id));
+                
                 return [...newMessages.reverse(), ...prevMessages];
             });
         } catch (error) {
@@ -309,7 +333,7 @@ export function GroupChatScreen({ group, groupmembers, onBack, onLeaveGroup, use
                     await updateRankingScore(myUserId, group.groupId, 1);
                     console.log("✅ 랭킹 점수 업데이트 성공: 자유그룹 인증");
                     onDataRefresh();
-                  } catch (rankingError) {
+                } catch (rankingError) {
                     console.error("🚨 랭킹 점수 업데이트 실패:", rankingError);
                 }
                 
@@ -373,7 +397,6 @@ export function GroupChatScreen({ group, groupmembers, onBack, onLeaveGroup, use
                         <Button variant="ghost" size="sm" onClick={onBack} className="p-1">
                             <ArrowLeft className="h-5 w-5 text-icon-secondary dark:text-white" />
                         </Button>
-                        <div className="flex-1" />
                     </div>
                     <div className="flex flex-col items-center">
                         <h1 className="font-bold text-base">{group.groupName}</h1>
@@ -434,6 +457,7 @@ export function GroupChatScreen({ group, groupmembers, onBack, onLeaveGroup, use
                 memberProfiles={memberProfiles}
                 ref={messagesEndRef}
                 onScrollTop={loadMoreChatHistory}
+                onScroll={handleScroll}
             />
             <GroupChatInput handleSendMessage={handleSendMessage} handleSendImage={handleSendImage} handleSendAlbum={handleSendAlbum} />
             <GroupRoutineDialog

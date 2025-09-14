@@ -13,40 +13,35 @@ interface GroupChatMessagesProps {
     userInfo: UserProfile;
     group: Group;
     memberProfiles: Record<number, string>;
-    onScrollTop: () => void; // 새로 추가된 prop
+    onScrollTop: () => void; 
+    onScroll:() => void;
 }
 
 // React.forwardRef를 사용하여 ref를 받을 수 있게 컴포넌트를 감쌈
 export const GroupChatMessages = forwardRef<HTMLDivElement, GroupChatMessagesProps>(
-    ({ messages, myUserId, getUserInfo, group, memberProfiles, onScrollTop }, ref) => {
+    ({ messages, myUserId, getUserInfo, group, memberProfiles, onScrollTop, onScroll }, ref) => {
         const [localReactions, setLocalReactions] = useState<{ [key: string]: { [emoji: string]: number } }>({});
         const [hoveredMessageKey, setHoveredMessageKey] = useState<string | null>(null);
         
         const emojis = ['😀', '😂', '👍', '❤️', '👏', '💪', '🎉', '🔥', '🤔', '😊', '😭', '😎', '👌', '🙏', '🤯'];
-        // 기존의 messagesEndRef는 더 이상 필요하지 않습니다. props로 받은 ref를 사용합니다.
 
-        // 스크롤이 맨 아래로 이동하는 로직
+        // ✅ 스크롤 이벤트 핸들러 추가
         useEffect(() => {
             if (ref && typeof ref !== 'function' && ref.current) {
-                ref.current.scrollTop = ref.current.scrollHeight;
-            }
-        }, [messages, ref]);
-
-        // 스크롤 이벤트 핸들러 추가
-        useEffect(() => {
-            if (ref && typeof ref !== 'function' && ref.current) {
-                const handleScroll = () => {
+                const currentRef = ref.current;
+                
+                const handleScrollEvent = () => {
                     // 스크롤이 맨 위에 도달했을 때 (scrollTop === 0)
-                    if (ref.current && ref.current.scrollTop === 0) {
+                    if (currentRef.scrollTop === 0) {
                         onScrollTop();
                     }
+                    onScroll(); // 부모 컴포넌트의 스크롤 추적 함수 호출
                 };
 
-                const currentRef = ref.current;
-                currentRef.addEventListener('scroll', handleScroll);
-                return () => currentRef.removeEventListener('scroll', handleScroll);
+                currentRef.addEventListener('scroll', handleScrollEvent);
+                return () => currentRef.removeEventListener('scroll', handleScrollEvent);
             }
-        }, [ref, onScrollTop]);
+        }, [ref, onScrollTop, onScroll]);
 
         const formatTime = (isoString: string | null) => {
             if (!isoString) return '';
@@ -204,87 +199,70 @@ export const GroupChatMessages = forwardRef<HTMLDivElement, GroupChatMessagesPro
                                                                     ) : (
                                                                         <>
                                                                             <CheckCircle className="h-3 w-3 text-green-600 dark:text-green-400" />
-                                                                            <span className="text-xs font-medium text-green-600 dark:text-green-400">루틴 인증 완료</span>
+                                                                            <span className="text-xs font-medium text-green-600 dark:text-green-400">자유 인증 완료</span>
                                                                         </>
                                                                     )}
                                                                 </div>
-                                                                {msg.imageUrl && (
-                                                                    <img
-                                                                        src={msg.imageUrl}
-                                                                        alt="인증 사진"
-                                                                        className="max-w-[200px] rounded-lg cursor-pointer"
-                                                                        onClick={() => window.open(msg.imageUrl, '_blank')}
-                                                                    />
-                                                                )}
-                                                                {msg.message && (
-                                                                    <p className="text-sm text-left text-card-foreground/90">{msg.message}</p>
-                                                                )}
+                                                                {msg.message && <span className="text-sm">{msg.message}</span>}
+                                                                {msg.imageUrl && <img src={msg.imageUrl} alt="전송 이미지" className="max-w-[200px] h-auto rounded-md" />}
                                                             </div>
-                                                        ) : msg.messageType === 'TALK' ? (
-                                                            <p className="text-sm text-left">{msg.message}</p>
-                                                        ) : msg.messageType === 'ALBUM' && Array.isArray(msg.albumImages) && msg.albumImages.length > 0 ? (
-                                                            <div className="grid grid-cols-2 gap-2">
-                                                                {msg.albumImages.map((img, idx) => (
-                                                                    <img
-                                                                        key={idx}
-                                                                        src={img}
-                                                                        alt={`앨범 이미지 ${idx + 1}`}
-                                                                        className="w-full max-h-[150px] object-cover rounded-lg cursor-pointer"
-                                                                        onClick={() => window.open(img, '_blank')}
-                                                                    />
-                                                                ))}
-                                                            </div>
-                                                        ) : msg.messageType === 'IMAGE' && msg.imageUrl ? (
-                                                            <img
-                                                                src={msg.imageUrl}
-                                                                alt="보낸 이미지"
-                                                                className="max-w-[200px] rounded-lg cursor-pointer"
-                                                                onClick={() => window.open(msg.imageUrl, '_blank')}
-                                                            />
                                                         ) : (
-                                                            <p className="text-sm text-left">{msg.message}</p>
+                                                            <>
+                                                                {msg.messageType === 'IMAGE' && msg.imageUrl && (
+                                                                    <img src={msg.imageUrl} alt="전송 이미지" className="max-w-[200px] h-auto rounded-md" />
+                                                                )}
+                                                                {msg.messageType === 'ALBUM' && msg.albumImages && (
+                                                                    <div className="grid grid-cols-2 gap-2 max-w-[200px]">
+                                                                        {msg.albumImages.map((image, i) => (
+                                                                            <img key={i} src={image} alt={`앨범 이미지 ${i + 1}`} className="w-full h-auto rounded-md" />
+                                                                        ))}
+                                                                    </div>
+                                                                )}
+                                                                {msg.message && <div>{msg.message}</div>}
+                                                            </>
                                                         )}
                                                     </div>
-                                                    {Object.keys(reactionsToDisplay).length > 0 && (
-                                                        <div className="flex space-x-1 mt-1">
-                                                            {Object.entries(reactionsToDisplay).map(([emoji, count]) => (
-                                                                <div key={emoji} className="flex items-center text-xs p-1 rounded-full bg-secondary text-secondary-foreground">
-                                                                    <span>{emoji}</span>
-                                                                    <span className="ml-1">{count}</span>
-                                                                </div>
-                                                            ))}
-                                                        </div>
-                                                    )}
                                                 </div>
                                                 {!msg.isMe && (
                                                     <span className="text-xs text-muted-foreground ml-2">
                                                         {formatTime(msg.sentAt)}
                                                     </span>
                                                 )}
-                                            </div>
-                                            {hoveredMessageKey === messageKey && (
-                                                <Popover>
-                                                    <PopoverTrigger asChild>
-                                                        <Button
-                                                            variant="ghost"
-                                                            size="icon"
-                                                            className={`absolute bottom-0 p-1 w-6 h-6 rounded-full bg-background/90 text-card-foreground hover:bg-card hover:text-card-foreground border border-border transition-opacity duration-200 z-10 ${
-                                                                msg.isMe ? 'left-[-1rem]' : 'right-[-1rem]'
-                                                            }`}
-                                                        >
-                                                            <Smile className="w-4 h-4 icon-secondary" />
-                                                        </Button>
-                                                    </PopoverTrigger>
-                                                    <PopoverContent className="p-2 w-auto min-w-[150px] bg-background/95 backdrop-blur border-border" align="start" side="top" sideOffset={10}>
-                                                        <div className="grid grid-cols-5 gap-1 text-2xl">
-                                                            {emojis.map((emoji, index) => (
-                                                                <Button key={index} variant="ghost" className="text-2xl p-1 h-8 w-8" onClick={() => handleLocalReactionClick(messageKey, emoji)}>
+                                                {hoveredMessageKey === messageKey && (
+                                                    <Popover>
+                                                        <PopoverTrigger asChild>
+                                                            <Button
+                                                                variant="ghost"
+                                                                size="icon"
+                                                                className={`p-0 w-6 h-6 rounded-full absolute -top-3 ${msg.isMe ? '-left-3' : '-right-3'} z-10`}
+                                                            >
+                                                                <Smile className="w-4 h-4 text-muted-foreground" />
+                                                            </Button>
+                                                        </PopoverTrigger>
+                                                        <PopoverContent className="w-80 p-2 grid grid-cols-5 gap-1 shadow-lg bg-popover rounded-xl">
+                                                            {emojis.map((emoji) => (
+                                                                <Button
+                                                                    key={emoji}
+                                                                    variant="ghost"
+                                                                    size="sm"
+                                                                    className="text-lg p-1 h-8 w-8 hover:bg-muted"
+                                                                    onClick={() => handleLocalReactionClick(messageKey, emoji)}
+                                                                >
                                                                     {emoji}
                                                                 </Button>
                                                             ))}
-                                                        </div>
-                                                    </PopoverContent>
-                                                </Popover>
+                                                        </PopoverContent>
+                                                    </Popover>
+                                                )}
+                                            </div>
+                                            {Object.keys(reactionsToDisplay).length > 0 && (
+                                                <div className="absolute -bottom-2.5 flex space-x-0.5 rounded-full bg-background border px-1 py-0.5">
+                                                    {Object.entries(reactionsToDisplay).map(([emoji, count]) => (
+                                                        <span key={emoji} className="text-xs">
+                                                            {emoji} {count}
+                                                        </span>
+                                                    ))}
+                                                </div>
                                             )}
                                         </div>
                                     </div>
@@ -292,10 +270,7 @@ export const GroupChatMessages = forwardRef<HTMLDivElement, GroupChatMessagesPro
                             </React.Fragment>
                         );
                     })}
-                </div>
-           
+            </div>
         );
     }
 );
-
-export default GroupChatMessages;
