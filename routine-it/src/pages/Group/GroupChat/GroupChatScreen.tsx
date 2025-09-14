@@ -57,7 +57,7 @@ export function GroupChatScreen({ group, groupmembers, onBack, onLeaveGroup, use
     const handleScroll = () => {
         if (messagesEndRef.current) {
             const { scrollTop, scrollHeight, clientHeight } = messagesEndRef.current;
-            isAtBottomRef.current = scrollHeight - scrollTop <= clientHeight + 10; // 여유 10px
+            isAtBottomRef.current = scrollHeight - scrollTop <= clientHeight + 10; 
         }
     };
     
@@ -156,7 +156,6 @@ export function GroupChatScreen({ group, groupmembers, onBack, onLeaveGroup, use
         if (!chatContainer) return;
 
         // 과거 메시지가 로드된 경우 (스크롤 위치 보정)
-        // prevScrollHeightRef는 과거 메시지 로드 직전에 업데이트됩니다.
         if (messages.length > prevMessagesLengthRef.current) {
             const isAddingOlder = messages.length > 0 && messages[0]?.id && messages[1]?.id && messages[0].id < messages[1].id;
             if (isAddingOlder) {
@@ -166,13 +165,36 @@ export function GroupChatScreen({ group, groupmembers, onBack, onLeaveGroup, use
         }
         
         // 새로운 메시지가 추가된 경우 (자동 스크롤)
-        // isAtBottomRef.current가 true일 때만 최하단으로 스크롤
         if (isAtBottomRef.current) {
             chatContainer.scrollTop = chatContainer.scrollHeight;
         }
 
         prevMessagesLengthRef.current = messages.length;
     }, [messages]);
+
+    useEffect(() => {
+    const fetchMemberProfiles = async () => {
+      const profiles: Record<number, string> = {};
+      for (const member of groupmembers) {
+        if (member.userId === userInfo.id) {
+          profiles[member.userId] = userInfo.profileImageUrl;
+          continue;
+        }
+        try {
+          const profileData = await getUserProfile(member.userId);
+          profiles[member.userId] = profileData.profileImageUrl;
+        } catch (error) {
+          console.error(`멤버 프로필 가져오기 실패: userId ${member.userId}`, error);
+          profiles[member.userId] = ''; 
+        }
+      }
+      setMemberProfiles(profiles);
+    };
+
+    if (groupmembers && groupmembers.length > 0) {
+      fetchMemberProfiles();
+    }
+  }, [groupmembers, userInfo.id, userInfo.profileImageUrl]);
 
     const loadMoreChatHistory = async () => {
         if (isLoadingHistory || !oldestMessageId) return;
@@ -304,6 +326,7 @@ export function GroupChatScreen({ group, groupmembers, onBack, onLeaveGroup, use
         };
     };
 
+
     const handleAuthSubmit = async (data: { description: string; image: File | null; isPublic: boolean }) => {
     if (!stompClientRef.current) {
         alert("채팅 연결이 불안정하여 인증을 보낼 수 없습니다. 잠시 후 다시 시도해주세요.");
@@ -393,7 +416,7 @@ export function GroupChatScreen({ group, groupmembers, onBack, onLeaveGroup, use
                                         return (
                                             <div key={member.groupMemberId} className="flex items-center space-x-3 p-2 rounded-lg hover:bg-accent/50">
                                                 <Avatar className="h-10 w-10">
-                                                    <AvatarImage src={profileImage || member.profileImageUrl || ''} alt={`${member.nickname} 프로필`} />
+                                                     <AvatarImage src={profileImage} alt={`${member.memberName} 프로필`} /> 
                                                     <AvatarFallback>{member.memberName}</AvatarFallback>
                                                 </Avatar>
                                                 <div className="flex-1">
