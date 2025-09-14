@@ -1768,6 +1768,7 @@ const navigateTo = (screen: string, params?: any, options?: { replace?: boolean 
                   userTotalScore={userTotalScore} 
                   loadingGroupRanking={loadingGroupRanking} 
                   loadingUserTotalScore={loadingUserTotalScore}
+                  myid={myId}
                 />}
       case "mypage":
         return (
