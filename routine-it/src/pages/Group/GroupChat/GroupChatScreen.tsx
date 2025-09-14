@@ -143,23 +143,18 @@ export function GroupChatScreen({ group, groupmembers, onBack, onLeaveGroup, use
 
 
     // ✅ 3. 메시지 상태 변경에 따른 스크롤 동작 관리
-    // 이 useEffect는 messages 배열이 업데이트될 때마다 실행됩니다.
+
     useEffect(() => {
     if (messagesEndRef.current) {
         const chatContainer = messagesEndRef.current;
-        
-        // 새 메시지가 추가된 경우 (isNewMessageRef.current 플래그 사용)
         if (isNewMessageRef.current) {
-            // 맨 아래로 스크롤
             chatContainer.scrollTop = chatContainer.scrollHeight;
-            isNewMessageRef.current = false; // 플래그 초기화
+            isNewMessageRef.current = false; 
         } else {
-            // 과거 메시지가 로드된 경우 (스크롤 위치 유지)
             const newScrollTop = chatContainer.scrollHeight - prevScrollHeightRef.current;
             chatContainer.scrollTop = newScrollTop;
         }
 
-        // 다음 렌더링을 위해 현재 스크롤 높이 저장
         prevScrollHeightRef.current = chatContainer.scrollHeight;
     }
 }, [messages]);
@@ -371,7 +366,7 @@ export function GroupChatScreen({ group, groupmembers, onBack, onLeaveGroup, use
     };
 
     return (
-        <div className="flex flex-col h-screen bg-background">
+        <div className="flex flex-col h-full bg-background">
             <div className="sticky top-0 z-10 bg-background/95 backdrop-blur border-b border-b-[var(--color-border-bottom-custom)] p-4">
                 <div className="mx-auto flex items-center justify-between">
                     <div className="flex-1 flex items-center space-x-3">
