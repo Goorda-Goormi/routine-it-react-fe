@@ -779,7 +779,7 @@ useEffect(() => {
   
   const fetchUserActivities = async () => {
     if (!isLoggedIn) return;
-    const today = new Date().toISOString().split('T')[0];
+    const today = getLocalDateString(new Date());
     try {
       const activities = await getUserActivitiesByDay(today);
       const personalMap = new Map<number, number>();
@@ -1046,6 +1046,13 @@ const handleToggleRoutinePublic = async (routine: Routine) => {
       const userActivityId = completedActivityIds.personal.get(routineId);
       if (userActivityId) {
         await updateActivity(userActivityId, 'NOT_COMPLETED');
+        
+        setCompletedActivityIds(prev => {
+          const newPersonalMap = new Map(prev.personal);
+          newPersonalMap.delete(routineId); // 맵에서 해당 루틴 ID 제거
+          return { ...prev, personal: newPersonalMap };
+        });
+
         // 완료 횟수 1 감소
         setRoutineCompletionCount(prev => {
           const newCount = Math.max(0, prev - 1);
@@ -1054,14 +1061,27 @@ const handleToggleRoutinePublic = async (routine: Routine) => {
         });
       }
     } else {
-      // --- 루틴 완료 로직 ---
-      await createPersonalActivity(routineId);
+      const response = await createPersonalActivity(routineId);
+
+      const newActivity = response?.data || response;
+      const newActivityId = newActivity?.userActivityId;
+
+      if (newActivityId) {
+        setCompletedActivityIds(prev => {
+          const newPersonalMap = new Map(prev.personal);
+          newPersonalMap.set(routineId, newActivityId); // 맵에 (루틴 ID, 새 활동 ID) 추가
+          return { ...prev, personal: newPersonalMap };
+        });
+      } else {
+         console.error("활동 생성 응답에서 ID를 받지 못했습니다:", response);
+         // ⭐️ 폴백(Fallback): 만약의 경우를 대비해 서버에서 다시 불러옵니다.
+         await fetchUserActivities();
+      }
       // 완료 횟수 1 증가
       const newRoutineCount = routineCompletionCount + 1;
       setRoutineCompletionCount(newRoutineCount);
       localStorage.setItem('routineCompletionCount', String(newRoutineCount));
 
-      // '루틴 마스터' 배지 획득 조건 확인
       if (newRoutineCount >= 100 && !earnedBadges.includes('루틴 마스터')) {
         const badgeName: BadgeType = '루틴 마스터';
         
@@ -1085,6 +1105,7 @@ const handleToggleRoutinePublic = async (routine: Routine) => {
   } catch (error) {
     alert("루틴 상태 변경에 실패했습니다.");
     console.error("개인 루틴 완료/취소 처리 실패:", error);
+    await fetchUserActivities();
   }
 };
 
