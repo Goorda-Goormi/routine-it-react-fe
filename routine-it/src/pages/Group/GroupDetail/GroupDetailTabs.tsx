@@ -33,9 +33,16 @@ export const GroupDetailTabs = ({
                 return null;
             }
 
+            const isCertified = recentActivities.some(
+                (activity) => activity.nickname === member.memberName && activity.action === '루틴 인증 완료'
+            );
+
             const isLeader = member.role === 'LEADER';
-            const isUncertified = member.message === '미인증';
             
+            // 변경: isUncertified 대신 isCertified 상태를 사용합니다.
+            const statusText = isCertified ? '인증' : '미인증';
+            const badgeVariant = isCertified ? 'default' : 'destructive';
+
             const profileImageUrl = member.userId ? memberProfiles[member.userId] : '';
             return (
                 <div key={member.groupMemberId}>
@@ -65,8 +72,9 @@ export const GroupDetailTabs = ({
                             </div>
                         </div>
                         <div className="flex items-center space-x-2">
-                            <Badge variant={isUncertified ? 'destructive' : 'default'} className="text-xs">
-                                {member.message}
+                            {/* 변경: 배지 상태를 isCertified에 따라 동적으로 변경 */}
+                            <Badge variant={badgeVariant} className="text-xs">
+                                {statusText}
                             </Badge>
                         </div>
                     </div>

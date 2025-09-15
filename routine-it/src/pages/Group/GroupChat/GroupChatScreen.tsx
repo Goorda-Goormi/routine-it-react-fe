@@ -437,10 +437,20 @@ export function GroupChatScreen({ group, groupmembers, onBack, onLeaveGroup, use
       await createGroupActivity(activityData);
       await updateRankingScore(myUserId, group.groupId, 1);
 
+      const myMemberInfo = groupmembers.find(m => m.userId === myUserId);
+      if (myMemberInfo) {
+        await requestAuthApproval(group.groupId, {
+          leaderId: myUserId, 
+          targetMemberId: myMemberInfo.groupMemberId,
+          activityDate: new Date().toISOString().split('T')[0], // YYYY-MM-DD 형식
+          imageUrl: '', // 필요에 따라 실제 이미지 URL로 변경
+        });
+      }
+     
       const msgBody = {
         userId: myUserId,
         senderNickname: myNickname,
-        message: `${myNickname}님이 루틴을 인증했습니다: ${data.description}`,
+         message: data.description,
         imageUrl: data.image ? URL.createObjectURL(data.image) : null,
         messageType: 'NOTICE' as const,
       };
@@ -448,6 +458,8 @@ export function GroupChatScreen({ group, groupmembers, onBack, onLeaveGroup, use
         destination: `/app/chat.send/${roomId}`,
         body: JSON.stringify(msgBody),
       });
+
+      
 
       alert('인증이 성공적으로 제출되었습니다.');
       onGroupRoutineComplete();

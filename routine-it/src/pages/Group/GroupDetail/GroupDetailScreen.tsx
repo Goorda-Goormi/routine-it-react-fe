@@ -78,6 +78,7 @@ export function GroupDetailScreen({
 
             try {
                 const response = await fetchChatHistory(groupId, 50);
+                 console.log("group detail에서 불러온 채팅 내역:", response);
                 const chatHistory = response.data?.content || [];
 
                 const authMessages = chatHistory

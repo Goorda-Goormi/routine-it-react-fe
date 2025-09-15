@@ -215,11 +215,12 @@ export async function updateGroupMemberStatus(
     groupId:number;
     leaderId: number;
     targetMemberId: number;
-    status: 'PENDING' | 'JOINED' | 'BLOCKED' | 'LEFT';
+    status?: 'PENDING' | 'JOINED' | 'BLOCKED' | 'LEFT';
     role?: 'LEADER' | 'MEMBER';
     activityDate?: string;
     imageUrl?: string;
     approved?: boolean;
+    message?: string;
   }
 ) {
   try {
