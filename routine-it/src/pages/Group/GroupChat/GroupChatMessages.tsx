@@ -112,7 +112,21 @@ export const GroupChatMessages = forwardRef<HTMLDivElement, GroupChatMessagesPro
                 if (!newReactions[messageKey]) {
                     newReactions[messageKey] = {};
                 }
-                newReactions[messageKey][emoji] = (newReactions[messageKey][emoji] || 0) + 1;
+                const currentCount = newReactions[messageKey][emoji] || 0;
+
+                    if (currentCount > 0) {
+                         newReactions[messageKey][emoji] = currentCount - 1;
+                        if (newReactions[messageKey][emoji] === 0) {
+                             delete newReactions[messageKey][emoji];
+                                if (Object.keys(newReactions[messageKey]).length === 0) {
+                                     delete newReactions[messageKey];
+                                }
+                        }
+                     } else {
+                    // ✅ 개수가 0이면 +1 (처음 누른 경우)
+                    newReactions[messageKey][emoji] = 1;
+                }
+
                 return newReactions;
             });
         };
