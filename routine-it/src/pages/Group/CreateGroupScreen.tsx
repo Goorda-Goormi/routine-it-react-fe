@@ -13,12 +13,12 @@ import { Alert, AlertDescription } from '../../components/ui/alert';
 import { createGroup, type GroupRequest } from '../../api/group';
 import type { Group } from '../../interfaces';
 import { CustomTimePicker } from '../../components/modules/TimePicker';
-import { presignProfileGet,presignProfilePut } from '../../api/storage';
+import { presignGroupRoomPut, uploadFileToS3, presignGet } from '../../api/storage';
 
 interface CreateGroupScreenProps {
   onBack: () => void;
   onCreateGroup: (groupData: any) => void;
-  myid:number;
+  myid: number;
 }
 
 const categories = [
@@ -59,7 +59,7 @@ const categories = [
   },
 ];
 
-export function CreateGroupScreen({ onBack, onCreateGroup,myid }: CreateGroupScreenProps) {
+export function CreateGroupScreen({ onBack, onCreateGroup, myid }: CreateGroupScreenProps) {
   const daysOfWeek = ['일', '월', '화', '수', '목', '금', '토'];
   const [formData, setFormData] = useState({
     groupName: '',
@@ -143,52 +143,8 @@ export function CreateGroupScreen({ onBack, onCreateGroup,myid }: CreateGroupScr
     setIsUploading(true);
     setUploadError('');
 
-    let finalImageUrl = './default.png';
-
     try {
-      // 1. 선택된 이미지가 있다면 S3에 업로드
-      if (selectedImage) {
-
-         console.log("📷 선택된 이미지 정보:", {
-          name: selectedImage.name,
-          type: selectedImage.type,
-          size: selectedImage.size,
-        });
-        // [수정 불필요] 업로드용 URL은 apiFetch로 요청합니다. (인증 토큰 필요)
-        const presignResp = await presignProfilePut(
-          myid,
-          selectedImage.name,
-          selectedImage.type
-        );
-
-        console.log("📝 presign 요청 파라미터:", {
-        filename: selectedImage.name,
-        contentType: selectedImage.type,
-      });
-      console.log("🔗 presign 응답:", presignResp);
-
-        // [핵심 수정] 프리사인드 URL에 파일 직접 PUT 요청
-        // apiFetch가 아닌 fetch를 직접 사용해야 합니다.
-        const putRes = await fetch(presignResp.uploadUrl, {
-          method: 'PUT',
-          body: selectedImage,
-          headers: {
-            // Content-Type 헤더만 설정합니다.
-            'Content-Type': selectedImage.type || "application/octet-stream",
-          },
-        });
-
-          console.log("⬆️ 업로드 응답:", putRes.status, putRes.statusText);
-
-        if (!putRes.ok) {
-          throw new Error(`S3 업로드 실패: ${putRes.statusText}`);
-        }
-
-        // 2. 조회용 URL 요청 (이 부분도 apiFetch로 해도 무방)
-        finalImageUrl = await presignProfileGet(presignResp.key);
-      }
-
-      // 3. 그룹 생성 페이로드 구성 및 API 호출
+      // 1. 이미지 없이 그룹 생성 API를 호출합니다.
       const authDays = convertDaysToBinary(formData.authDays);
       const payload: GroupRequest = {
         groupName: formData.groupName,
@@ -197,16 +153,54 @@ export function CreateGroupScreen({ onBack, onCreateGroup,myid }: CreateGroupScr
         alarmTime: formData.alarmTime,
         authDays,
         category: formData.category,
-        imageUrl: finalImageUrl,
+        imageUrl: '', // 그룹 이미지 없이 생성 요청
         maxMembers: parseInt(formData.maxMembers.toString(), 10),
       };
 
       const createdGroup = await createGroup(payload);
-      onCreateGroup(createdGroup);
+      console.log('✅ 그룹 생성 성공:', createdGroup);
+
+      // 2. 이미지가 선택되었다면 S3에 업로드를 진행합니다.
+      let finalImageUrl = createdGroup.imageUrl;
+      if (selectedImage) {
+        try {
+          const roomId = createdGroup.roomId;
+          if (!roomId) {
+            throw new Error('그룹 생성 후 roomId를 받지 못했습니다.');
+          }
+
+          console.log('📷 그룹 이미지 업로드 시작 (roomId:', roomId, ')');
+          
+          // 사전 서명 URL 발급 (presignGroupRoomPut 사용)
+          const presignResp = await presignGroupRoomPut(roomId, myid, selectedImage);
+          console.log('🔗 presign 응답:', presignResp);
+
+          // S3에 파일 업로드
+          await uploadFileToS3(presignResp.uploadUrl, selectedImage, selectedImage.type);
+          console.log('⬆️ S3 업로드 성공!');
+
+          // 조회용 URL 발급
+          const getUrlResp = await presignGet(presignResp.key);
+          finalImageUrl = getUrlResp.url;
+          console.log('➡️ 조회용 URL 발급:', finalImageUrl);
+
+          // 서버에 업데이트된 이미지 URL로 그룹 정보 업데이트 (API 추가 필요)
+          // TODO: 그룹 이미지 URL을 업데이트하는 API가 필요합니다.
+          // await updateGroupImage(createdGroup.groupId, finalImageUrl); 
+
+        } catch (imageUploadError) {
+          console.error('이미지 업로드 실패 오류:', imageUploadError);
+          setUploadError('이미지 업로드에 실패했습니다. (그룹은 생성됨)');
+          alert('그룹은 생성되었으나 이미지 업로드에 실패했습니다. 다시 시도해주세요.');
+          // 이미지 업로드 실패하더라도 그룹 생성은 성공했으므로 다음 단계로 진행
+        }
+      }
+
+      // 3. 최종 그룹 정보로 부모 컴포넌트 상태 업데이트
+      onCreateGroup({ ...createdGroup, imageUrl: finalImageUrl });
     } catch (e) {
-      console.error('그룹 생성 또는 이미지 업로드 실패 오류:', e);
+      console.error('그룹 생성 실패 오류:', e);
       alert('그룹 생성에 실패했습니다. 오류: ' + (e as Error).message);
-      setUploadError('이미지 업로드에 실패했습니다.');
     } finally {
       setIsUploading(false);
     }
@@ -566,8 +560,9 @@ export function CreateGroupScreen({ onBack, onCreateGroup,myid }: CreateGroupScr
           <Button
             onClick={handleSubmit}
             className="flex-1 bg-primary text-primary-foreground hover:bg-primary/90"
+            disabled={isUploading}
           >
-            그룹 만들기
+            {isUploading ? '생성 중...' : '그룹 만들기'}
           </Button>
         </div>
       </div>

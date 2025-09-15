@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent } from '../../../components/ui/dialog';
 import { GroupDetailHeader } from './GroupDetailHeader';
-import { GroupDetailTabs } from './GroupDetailTabs'; // GroupDetailTabs import
+import { GroupDetailTabs } from './GroupDetailTabs';
 import { GroupMemberManager } from './GroupMemberManager';
 import GroupEdit from './GroupEdit';
 import { GroupApproval } from './GroupApproval';
@@ -55,6 +55,7 @@ export function GroupDetailScreen({
     const [weeklyRanking, setWeeklyRanking] = useState<GlobalGroupRankingData[]>([]);
     const [recentActivities, setRecentActivities] = useState<any[]>([]);
 
+    // 추가: 멤버별 프로필 이미지 URL을 저장할 상태
     const [memberProfiles, setMemberProfiles] = useState<Record<number, string>>({});
 
 
@@ -318,8 +319,6 @@ export function GroupDetailScreen({
                 onGroupDeleted={handleGroupDeleted}
                 myid={myid}
                 onGroupJoined={onGroupJoined}
-               
-                //onRefreshMembers={onRefreshMembers}
             />
             <div className="p-4 space-y-4">
                 <GroupDetailTabs
@@ -328,7 +327,6 @@ export function GroupDetailScreen({
                     onMemberClick={handleMemberClick}
                     groupMembers={groupMembers}
                     memberProfiles={memberProfiles}
-                    currentUserNickname={currentUser.nickname} 
                 />
             </div>
             <GroupEdit

@@ -833,6 +833,7 @@ useEffect(() => {
       userId: UserInfo.id as number,
       routineName: newRoutineData.name,
       description: newRoutineData.description,
+      category: newRoutineData.category,
       startTime: newRoutineData.time,
       repeatDays: convertFrequencyToAuthDays(newRoutineData.frequency || []),
       startDate: new Date().toISOString().split('T')[0], // 예시: 오늘부터
@@ -1127,6 +1128,7 @@ const handleGroupRoutineCompletion = () => {
       userId: UserInfo.id as number,
       routineName: recommendedRoutine.name,
       description: recommendedRoutine.description,
+      category: recommendedRoutine.category,
       startTime: recommendedRoutine.time,
       repeatDays: convertFrequencyToAuthDays(recommendedRoutine.frequency || []),
       startDate: new Date().toISOString().split('T')[0], // 시작일은 오늘로 설정
@@ -1419,7 +1421,15 @@ const handleAddGroup = async (newGroupData: any) => {
   };
 
   
+const [chatHistories, setChatHistories] = useState<Record<number, Message[]>>({});
 
+// 메시지를 업데이트하는 함수
+const handleUpdateMessages = (roomId: number, newMessages: Message[]) => {
+  setChatHistories(prev => ({
+    ...prev,
+    [roomId]: newMessages,
+  }));
+};
   
 
 
@@ -1691,6 +1701,7 @@ const navigateTo = (screen: string, params?: any, options?: { replace?: boolean 
               userInfo={UserInfo}
               onDataRefresh={handleDataRefresh}
               onGroupRoutineComplete={handleGroupRoutineCompletion}
+              
             />
           );
         }
@@ -1788,7 +1799,6 @@ const navigateTo = (screen: string, params?: any, options?: { replace?: boolean 
                   userTotalScore={userTotalScore} 
                   loadingGroupRanking={loadingGroupRanking} 
                   loadingUserTotalScore={loadingUserTotalScore}
-                  myid={myId}
                 />}
       case "mypage":
         return (

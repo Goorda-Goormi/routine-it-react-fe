@@ -37,7 +37,7 @@ export function CreateRoutineScreen({ onBack, onCreateRoutine }: CreateRoutineSc
     frequency: '',
     reminder: true,
     goal: '30',
-    category: '',
+    category: 'study',
     difficulty: '',
     isPublic: true
   });
