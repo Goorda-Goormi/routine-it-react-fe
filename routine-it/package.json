@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "tailwind:init": "tailwindcss init",
-    "dev": "vite",
+    "dev": "node --max-old-space-size=8192 ./node_modules/vite/bin/vite",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
     "preview": "vite preview"

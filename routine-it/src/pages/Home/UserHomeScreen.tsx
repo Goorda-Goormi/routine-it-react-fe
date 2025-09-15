@@ -54,7 +54,6 @@ const transformGroupToRoutine = (group: Group): Routine => ({
   frequency: convertAuthDaysToFrequency(group.authDays),
   isGroupRoutine: true,
   completed: false, // 기본값 설정
-  difficulty: '보통',
   goal: '30',
   reminder: true,
   isPublic: true,
@@ -73,7 +72,6 @@ const transformUserRoutine = (pr: PersonalRoutineResponse): Routine => ({
   isGroupRoutine: false,
   completed: false, 
   streak: 0, 
-  difficulty: '보통', 
   goal: '30', 
   category: '생활',
 });

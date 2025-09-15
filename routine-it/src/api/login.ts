@@ -132,7 +132,7 @@ export const refreshAuthToken = async () => {
         console.error('💥 Token refresh error:', error);
         
         // 갱신 실패 시 localStorage 정리하고 로그인 페이지로 이동
-        localStorage.removeItem('accessToken');
+        //localStorage.removeItem('accessToken');
         localStorage.removeItem('refreshToken'); // 혹시 모를 경우를 대비해 제거
         
         throw error;

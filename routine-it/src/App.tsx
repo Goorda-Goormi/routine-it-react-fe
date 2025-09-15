@@ -79,8 +79,8 @@ const transformPersonalRoutine = (pr: PersonalRoutineResponse): Routine => {
     isGroupRoutine: false,
     completed: false, 
     streak: 0, 
-    goal: pr.goal,
-    category: pr.category, 
+    goal: '30',
+    category: '', 
   };
 };
 

@@ -18,11 +18,8 @@ import { fetchChatHistory } from '../../../api/chat';
 import { requestAuthApproval, getGroupMembers } from '../../../api/group';
 import { getUserProfile } from '../../../api/user';
 
-//export const BASE_URL = "http://15.164.98.221:8080";
-//const WS_CONNECTION_URL = `${BASE_URL}/ws`;
-const currentProtocol = window.location.protocol;
-const WS_CONNECTION_URL = `${currentProtocol}//${window.location.host}/ws`;
-
+export const BASE_URL = "http://15.164.98.221:8080";
+const WS_CONNECTION_URL = `${BASE_URL}/ws`;
 
 export interface Message {
     id: number | null;
