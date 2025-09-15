@@ -1128,6 +1128,9 @@ const handleGroupRoutineCompletion = () => {
       setBadgeName(badgeName);
       setBadgeImage(badgeInfo[badgeName].image);
       setBadgeModalOpen(true);
+
+      handleGroupMembersRefresh();
+    console.log("✅ 그룹 멤버 데이터 새로고침 완료.");
     }
 
     // 3. 출석 모달 띄우기
@@ -1721,7 +1724,7 @@ const navigateTo = (screen: string, params?: any, options?: { replace?: boolean 
               userInfo={UserInfo}
               onDataRefresh={handleDataRefresh}
               onGroupRoutineComplete={handleGroupRoutineCompletion}
-              
+              onUpdateMessages={handleUpdateMessages}
             />
           );
         }
@@ -1819,6 +1822,7 @@ const navigateTo = (screen: string, params?: any, options?: { replace?: boolean 
                   userTotalScore={userTotalScore} 
                   loadingGroupRanking={loadingGroupRanking} 
                   loadingUserTotalScore={loadingUserTotalScore}
+                  myid={myId}
                 />}
       case "mypage":
         return (

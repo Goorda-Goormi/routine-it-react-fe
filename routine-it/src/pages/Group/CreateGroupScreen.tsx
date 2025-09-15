@@ -73,7 +73,8 @@ export function CreateGroupScreen({ onBack, onCreateGroup, myid }: CreateGroupSc
 
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
   const [selectedImage, setSelectedImage] = useState<File | null>(null);
-  const [imageUrl, setImageUrl] = useState<string>('');
+  //const [imageUrl, setImageUrl] = useState<string>('');
+  const [imageUrl, setImageUrl] = useState<string>('./default.png');
   const [isUploading, setIsUploading] = useState<boolean>(false);
   const [uploadError, setUploadError] = useState<string>('');
 
@@ -136,75 +137,63 @@ export function CreateGroupScreen({ onBack, onCreateGroup, myid }: CreateGroupSc
 
     const token = localStorage.getItem('accessToken');
     if (!token) {
-      alert('그룹 생성을 위해서는 로그인이 필요합니다.');
-      return;
+        alert('그룹 생성을 위해서는 로그인이 필요합니다.');
+        return;
     }
 
     setIsUploading(true);
     setUploadError('');
 
     try {
-      // 1. 이미지 없이 그룹 생성 API를 호출합니다.
-      const authDays = convertDaysToBinary(formData.authDays);
-      const payload: GroupRequest = {
-        groupName: formData.groupName,
-        groupDescription: formData.groupDescription,
-        groupType: formData.groupType,
-        alarmTime: formData.alarmTime,
-        authDays,
-        category: formData.category,
-        imageUrl: '', // 그룹 이미지 없이 생성 요청
-        maxMembers: parseInt(formData.maxMembers.toString(), 10),
-      };
-
-      const createdGroup = await createGroup(payload);
-      console.log('✅ 그룹 생성 성공:', createdGroup);
-
-      // 2. 이미지가 선택되었다면 S3에 업로드를 진행합니다.
-      let finalImageUrl = createdGroup.imageUrl;
-      if (selectedImage) {
-        try {
-          const roomId = createdGroup.roomId;
-          if (!roomId) {
-            throw new Error('그룹 생성 후 roomId를 받지 못했습니다.');
-          }
-
-          console.log('📷 그룹 이미지 업로드 시작 (roomId:', roomId, ')');
-          
-          // 사전 서명 URL 발급 (presignGroupRoomPut 사용)
-          const presignResp = await presignGroupRoomPut(roomId, myid, selectedImage);
-          console.log('🔗 presign 응답:', presignResp);
-
-          // S3에 파일 업로드
-          await uploadFileToS3(presignResp.uploadUrl, selectedImage, selectedImage.type);
-          console.log('⬆️ S3 업로드 성공!');
-
-          // 조회용 URL 발급
-          const getUrlResp = await presignGet(presignResp.key);
-          finalImageUrl = getUrlResp.url;
-          console.log('➡️ 조회용 URL 발급:', finalImageUrl);
-
-          // 서버에 업데이트된 이미지 URL로 그룹 정보 업데이트 (API 추가 필요)
-          // TODO: 그룹 이미지 URL을 업데이트하는 API가 필요합니다.
-          // await updateGroupImage(createdGroup.groupId, finalImageUrl); 
-
-        } catch (imageUploadError) {
-          console.error('이미지 업로드 실패 오류:', imageUploadError);
-          setUploadError('이미지 업로드에 실패했습니다. (그룹은 생성됨)');
-          alert('그룹은 생성되었으나 이미지 업로드에 실패했습니다. 다시 시도해주세요.');
-          // 이미지 업로드 실패하더라도 그룹 생성은 성공했으므로 다음 단계로 진행
+        const authDays = convertDaysToBinary(formData.authDays);
+        
+        // 1. 이미지가 선택된 경우에만 S3에 업로드
+        let finalImageUrl = '';
+        if (selectedImage) {
+            try {
+                // S3 업로드 로직 (기존과 동일)
+                const presignResp = await presignGroupRoomPut(myid, selectedImage);
+                await uploadFileToS3(presignResp.uploadUrl, selectedImage, selectedImage.type);
+                const getUrlResp = await presignGet(presignResp.key);
+                finalImageUrl = getUrlResp.url;
+                console.log('➡️ 조회용 URL 발급:', finalImageUrl);
+            } catch (imageUploadError) {
+                console.error('이미지 업로드 실패 오류:', imageUploadError);
+                setUploadError('이미지 업로드에 실패했습니다. (그룹은 생성되지 않음)');
+                alert('이미지 업로드에 실패했습니다. 다시 시도해주세요.');
+                setIsUploading(false);
+                return; // 이미지 업로드 실패 시 그룹 생성 중단
+            }
+        } else {
+            // 이미지가 선택되지 않은 경우 기본 이미지 URL 사용
+            finalImageUrl = './default.png'; 
         }
-      }
 
-      // 3. 최종 그룹 정보로 부모 컴포넌트 상태 업데이트
-      onCreateGroup({ ...createdGroup, imageUrl: finalImageUrl });
+        // 2. 최종 이미지 URL을 포함하여 그룹 생성 API 호출
+        const payload: GroupRequest = {
+            groupName: formData.groupName,
+            groupDescription: formData.groupDescription,
+            groupType: formData.groupType,
+            alarmTime: formData.alarmTime,
+            authDays,
+            category: formData.category,
+            imageUrl: finalImageUrl, // 최종 이미지 URL 포함
+            maxMembers: parseInt(formData.maxMembers.toString(), 10),
+        };
+
+        const createdGroup = await createGroup(payload);
+        console.log('✅ 그룹 생성 성공:', createdGroup);
+        
+        // 3. 부모 컴포넌트 상태 업데이트
+        onCreateGroup({ ...createdGroup, imageUrl: finalImageUrl });
     } catch (e) {
-      console.error('그룹 생성 실패 오류:', e);
-      alert('그룹 생성에 실패했습니다. 오류: ' + (e as Error).message);
+        console.error('그룹 생성 실패 오류:', e);
+        alert('그룹 생성에 실패했습니다. 오류: ' + (e as Error).message);
     } finally {
-      setIsUploading(false);
+        setIsUploading(false);
     }
-  };
+};
+// ...
 
   function convertDaysToBinary(days: string[]) {
     const order = ['월', '화', '수', '목', '금', '토', '일'];

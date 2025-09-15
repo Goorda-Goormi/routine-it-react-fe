@@ -1,12 +1,12 @@
 // RankingScreen.tsx
-import React, { useMemo } from 'react';
+import React, { useMemo,useState,useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card';
 import { Badge } from '../../components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../components/ui/tabs';
 import { Avatar, AvatarFallback, AvatarImage } from '../../components/ui/avatar';
 import { Trophy, Users, Medal, Crown, Star, Target } from 'lucide-react';
 import type { Group, IPersonalRankingResponse, IPersonalRankingData } from '../../interfaces';
-
+import { getUserProfile } from '../../api/user';
 // 그룹 랭킹 인터페이스 정의
 export interface IGroupRankingItem {
   rank: number;
@@ -55,6 +55,7 @@ interface RankingScreenProps {
   userTotalScore: number | null;
   loadingGroupRanking: boolean;
   loadingUserTotalScore: boolean;
+  myid: number;
 }
 
 export function RankingScreen({
@@ -64,11 +65,41 @@ export function RankingScreen({
   userTotalScore,
   loadingGroupRanking,
   loadingUserTotalScore,
+  myid,
 }: RankingScreenProps) {
   const currentMonth = new Date().getMonth() + 1;
 
+  // 불러온 사용자 프로필 URL을 저장할 상태
+  const [userProfiles, setUserProfiles] = useState<Record<number, string>>({});
+  
   // 원본 개인 랭킹 데이터
   const rawPersonalRankings: IPersonalRankingData[] = personalRankingData?.data?.content || [];
+
+  // ✅ 랭킹 데이터가 변경될 때마다 사용자 프로필 정보를 불러옵니다.
+  useEffect(() => {
+    if (rawPersonalRankings.length > 0) {
+      const uniqueUserIds = [...new Set(rawPersonalRankings.map(item => item.userId))];
+      
+      const fetchProfiles = async () => {
+        const profiles: Record<number, string> = {};
+        await Promise.all(
+          uniqueUserIds.map(async (userId) => {
+            try {
+              const profile = await getUserProfile(userId);
+              if (profile.profileImageUrl) {
+                profiles[userId] = profile.profileImageUrl;
+              }
+            } catch (error) {
+              console.error(`Failed to fetch profile for user ID ${userId}:`, error);
+            }
+          })
+        );
+        setUserProfiles(profiles);
+      };
+      
+      fetchProfiles();
+    }
+  }, [rawPersonalRankings]);
 
   // ✅ 유저별 점수 합산 + 정렬 + rank 재계산
   const mergedPersonalRankings = useMemo(() => {
@@ -91,8 +122,10 @@ export function RankingScreen({
       .map((user, index) => ({
         ...user,
         currentRank: index + 1,
+        // ✅ 불러온 프로필 URL을 사용합니다.
+        profileImageUrl: userProfiles[user.userId] || user.profileImageUrl || undefined,
       }));
-  }, [rawPersonalRankings]);
+  }, [rawPersonalRankings, userProfiles]);
 
   const getRankIcon = (rank: number) => {
     switch (rank) {
@@ -173,7 +206,7 @@ export function RankingScreen({
                         </Avatar>
                         <div>
                           <div className="text-sm font-medium">{user.nickname}</div>
-                          <div className="text-xs">연속 {user.consecutiveDays ?? 0}일</div>
+
                         </div>
                       </div>
                       <div className="text-right">

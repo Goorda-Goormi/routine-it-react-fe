@@ -140,6 +140,7 @@ export function GroupChatScreen({ group, groupmembers, onBack, onLeaveGroup, use
     try {
       const response = await fetchChatHistory(roomId, 20);
       const messagesFromServer: Message[] = response.data?.content || [];
+      console.log("초기 채팅 기록:", messagesFromServer);
 
       if (messagesFromServer.length > 0) {
         setOldestMessageId(
@@ -237,7 +238,7 @@ export function GroupChatScreen({ group, groupmembers, onBack, onLeaveGroup, use
     try {
       const response = await fetchChatHistory(roomId, 20, oldestMessageId);
       const olderMessages: Message[] = response.data?.content || [];
-
+        console.log("이전 메시지 내역:", olderMessages);
       if (olderMessages.length > 0) {
         setOldestMessageId(olderMessages[olderMessages.length - 1].id || undefined);
       }
@@ -306,7 +307,7 @@ export function GroupChatScreen({ group, groupmembers, onBack, onLeaveGroup, use
         body: JSON.stringify(msgBody),
       });
       // 5) 낙관적 UI
-      const optimistic: Message = {
+      /*const optimistic: Message = {
         id: null,
         roomId,
         userId: myUserId,
@@ -317,7 +318,7 @@ export function GroupChatScreen({ group, groupmembers, onBack, onLeaveGroup, use
         sentAt: new Date().toISOString(),
         isMe: true,
       };
-      setMessages(prev => [...prev, optimistic]);
+      setMessages(prev => [...prev, optimistic]);*/
     } catch (error) {
       console.error("이미지 업로드 및 전송 실패:", error);
       alert("이미지 전송에 실패했습니다. 다시 시도해주세요.");
@@ -449,7 +450,7 @@ export function GroupChatScreen({ group, groupmembers, onBack, onLeaveGroup, use
       });
 
       alert('인증이 성공적으로 제출되었습니다.');
-      onGroupRoutineComplete?.();
+      onGroupRoutineComplete();
     } catch (error) {
       alert('인증 제출에 실패했습니다.');
       console.error("🚨 최종 에러 핸들링:", error);
