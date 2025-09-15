@@ -47,7 +47,7 @@ interface RankingScreenProps {
   userTotalScore: number | null;
   loadingGroupRanking: boolean;
   loadingUserTotalScore: boolean;
-  myid: string; 
+  myid: string; // myId 추가
 }
 
 export function RankingScreen({
@@ -111,19 +111,6 @@ export function RankingScreen({
 
   // 내가 속한 그룹 ID를 가져오는 유틸리티
   const myGroupIds = groups.map(group => group.groupId);
-
-   const categoryMap: { [key: string]: string } = {
-    'health': '건강',
-    'exercise': '운동',
-    'study': '학습',
-    'lifestyle': '생활',
-    'hobby': '취미',
-  };
-
-  // ✅ 카테고리 번역 함수
-   const getCategoryInKorean = (category: string) => {
-    return categoryMap[category] || category; // 매핑된 값이 없으면 원본값 반환
-  };
 
   return (
     <div className="h-full p-4">
@@ -278,7 +265,7 @@ export function RankingScreen({
                               </Badge>
                             </div>
                             <div className="flex items-center space-x-2 text-xs text-foreground dark:opacity-75 mt-1">
-                               <span>{getCategoryInKorean(group.category)}</span>
+                              <span>{group.category}</span>
                               <span>•</span>
                               <span>{group.memberCount}명</span>
                             </div>
