@@ -1,0 +1,12 @@
+diff a/routine-it/src/pages/Ranking/RankingScreen.tsx b/routine-it/src/pages/Ranking/RankingScreen.tsx	(rejected hunks)
+@@ -55,7 +55,10 @@
+    userTotalScore: number | null;
+    loadingGroupRanking: boolean;
+    loadingUserTotalScore: boolean;
+++<<<<<<< HEAD
+ +  myid: string; // myId 추가
+++=======
+++>>>>>>> parent of ee39921 (Merge branch 'develop' of https://github.com/Goorda-Goormi/routine-it-react-fe into develop)
+  }
+  
+  export function RankingScreen({
