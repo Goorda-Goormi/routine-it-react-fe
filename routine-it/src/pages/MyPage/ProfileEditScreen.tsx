@@ -8,7 +8,7 @@ import { ArrowLeft, Save, Camera, User } from 'lucide-react';
 import { updateUserProfile} from '../../api/user';
 import { checkNicknameAvailability } from '../../api/auth';
 import type { UpdateProfilePayload } from '../../interfaces';
-import { presignProfilePut, presignProfileGet } from '../../api/storage'; 
+import { presignProfilePut, presignGet } from '../../api/storage'; 
 
 interface ProfileEditScreenProps {
   onBack: () => void;
@@ -154,7 +154,7 @@ export function ProfileEditScreen({
       }
 
       // 3단계: 업로드 성공 후, 화면 미리보기용 URL을 받아와 상태 업데이트
-      const newImageUrlForPreview = await presignProfileGet(key);
+      const newImageUrlForPreview = await presignGet(key);
 
       setAvatarUrl(newImageUrlForPreview); // UI 미리보기 이미지 업데이트
       
