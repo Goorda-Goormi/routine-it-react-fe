@@ -53,7 +53,7 @@ const transformGroupToRoutine = (group: Group): Routine => ({
   time: convertAlarmTimeToTimeString(group.alarmTime),
   frequency: convertAuthDaysToFrequency(group.authDays),
   isGroupRoutine: true,
-  completed: false, // 기본값 설정
+  completed: false, 
   goal: '30',
   reminder: true,
   isPublic: true,
@@ -65,7 +65,7 @@ const transformUserRoutine = (pr: PersonalRoutineResponse): Routine => ({
   name: pr.routineName,
   description: pr.description,
   time: pr.startTime,
-  // ... 프론트엔드에 필요한 다른 필드들의 기본값 설정
+
   isPublic: pr.isPublic,
   reminder: pr.isAlarmOn,
   frequency: convertAuthDaysToFrequency(pr.repeatDays), 
@@ -157,7 +157,7 @@ export function UserHomeScreen({ user, onBack }: UserHomeScreenProps) {
         setUserProfile(profileData);
         setJoinedGroups(joinedGroupsData || []);
         setTotalAttendance(totalAttendanceData);
-        setVerificationPhotos(photosData?.activityInfos || []);
+        setVerificationPhotos(photosData || []);
 
       } catch (err) {
         setError("데이터를 불러오는 중 오류가 발생했습니다.");
@@ -246,7 +246,7 @@ export function UserHomeScreen({ user, onBack }: UserHomeScreenProps) {
               </div>
             </div>
             <Avatar className="w-14 h-14 mr-2">
-              <AvatarImage src={userProfile.profileImageUrl} alt={userProfile.nickname} />
+              <AvatarImage src={userProfile.profileImageUrl} alt={userProfile.nickname} className='object-cover'/>
               <AvatarFallback className="text-lg">{userProfile.nickname?.charAt(0) || 'U'}</AvatarFallback>
             </Avatar>
           </div>
@@ -384,7 +384,7 @@ export function UserHomeScreen({ user, onBack }: UserHomeScreenProps) {
                       <div className="flex items-center space-x-3 flex-1">
                         <div className="flex w-14">                          
                             <Avatar className="w-12 h-12">
-                              <AvatarImage src={group.groupImageUrl} alt={group.groupName} />
+                              <AvatarImage className='object-cover' src={group.groupImageUrl} alt={group.groupName} />
                               <AvatarFallback>{group.groupName.charAt(0)}</AvatarFallback>
                             </Avatar>
                         </div>

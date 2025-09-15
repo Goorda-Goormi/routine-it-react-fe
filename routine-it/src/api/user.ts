@@ -1,5 +1,6 @@
 import { apiFetch } from './client';
 import type { UpdateProfilePayload } from '../interfaces';
+import { presignGet } from './storage';
 
 export interface MyProfileResponse {
   id: number;
@@ -11,12 +12,22 @@ export interface MyProfileResponse {
 
 /**
  * 현재 로그인된 사용자의 프로필 정보를 조회합니다.
- * @returns {Promise<MyProfileResponse>} 현재 사용자의 프로필 정보
+ * @returns {Promise<MyProfileResponse>} 
  */
 export const getMyProfile = async (): Promise<MyProfileResponse> => {
-  // 명세서에 따라 엔드포인트를 '/api/users/me'로 수정합니다.
   const response = await apiFetch('/api/users/me'); 
-  return response.data;
+  const profileData = response.data;
+  
+  if (profileData.profileImageUrl && !profileData.profileImageUrl.startsWith('http')) {
+    try {
+      // S3 key를 사용하여 임시 조회용 URL을 받아옵니다.
+      const { url } = await presignGet(profileData.profileImageUrl);
+      profileData.profileImageUrl = url; // 받아온 URL로 값을 교체합니다.
+    } catch (e) {
+      console.error("내 프로필 사진의 presigned URL을 가져오는데 실패했습니다:", e);
+    }
+  }
+  return profileData;
 };
 
 
@@ -56,5 +67,15 @@ export interface PublicUserProfile {
  */
 export const getUserProfile = async (userId: number): Promise<PublicUserProfile> => {
   const response = await apiFetch(`/api/users/${userId}`);
-  return response.data;
+  const profileData = response.data;
+  
+  if (profileData.profileImageUrl && !profileData.profileImageUrl.startsWith('http')) {
+    try {
+      const { url } = await presignGet(profileData.profileImageUrl);
+      profileData.profileImageUrl = url;
+    } catch (e) {
+      console.error(`사용자(ID: ${userId}) 프로필 사진의 URL을 가져오는데 실패했습니다:`, e);
+    }
+  }
+  return profileData;
 };

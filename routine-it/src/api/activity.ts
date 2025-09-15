@@ -1,6 +1,7 @@
 // src/api/activity.ts
 
 import { apiFetch } from './client';
+import { presignGet } from './storage'; 
 
 /**
  * 개인 루틴 완료 활동을 생성합니다.
@@ -97,8 +98,29 @@ export const getUserAuthPhotos = async (targetUserId?: number) => {
   if (targetUserId) {
     params.append('targetUserId', String(targetUserId));
   }
-  // API가 감싸여있지 않은 배열을 반환한다고 가정
-  return await apiFetch(`/user-activities/info?${params.toString()}`);
+   const response = await apiFetch(`/user-activities/info?${params.toString()}`);
+    let activities = Array.isArray(response) ? response : response.data;
+
+   if (Array.isArray(activities)) {
+        // map을 사용하여 각 활동의 imageUrl을 변환합니다. Promise.all로 모든 변환을 병렬 처리합니다.
+        activities = await Promise.all(
+            activities.map(async (activity) => {
+                let finalImageUrl = activity.imageUrl;
+                // imageUrl이 있고, http로 시작하지 않는다면 S3 key로 간주합니다.
+                if (finalImageUrl && !finalImageUrl.startsWith('http')) {
+                    try {
+                        const { url } = await presignGet(finalImageUrl);
+                        finalImageUrl = url;
+                    } catch (e) {
+                        console.error(`인증 사진(key: ${activity.imageUrl})의 URL을 가져오는데 실패했습니다:`, e);
+                    }
+                }
+                return { ...activity, imageUrl: finalImageUrl };
+            })
+        );
+    }
+    
+    return activities; 
 };
 
 /**

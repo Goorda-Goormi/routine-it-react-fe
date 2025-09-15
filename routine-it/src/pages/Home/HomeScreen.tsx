@@ -78,7 +78,7 @@ export function HomeScreen({
         // userId 없이 호출하여 내 사진을 가져옵니다.
         const photosData = await getUserAuthPhotos();
         // API 응답 구조에 맞게 activityInfos에서 데이터를 추출합니다.
-        setMyVerificationPhotos(photosData?.activityInfos || []);
+        setMyVerificationPhotos(photosData || []);
       } catch (error) {
         console.error("내 인증 사진 로딩 실패:", error);
       }
@@ -321,7 +321,7 @@ export function HomeScreen({
                         
                           <div className="cursor-pointer hover:scale-110 transition-transform" >
                             <Avatar className="w-12 h-12">
-                              <AvatarImage src={group.groupImageUrl} alt={group.groupName} />
+                              <AvatarImage className='object-cover' src={group.groupImageUrl} alt={group.groupName} />
                               <AvatarFallback>{group.groupName.charAt(0)}</AvatarFallback>
                             </Avatar>
                           </div>

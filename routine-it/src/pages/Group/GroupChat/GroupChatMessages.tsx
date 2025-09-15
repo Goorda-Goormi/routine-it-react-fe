@@ -159,8 +159,8 @@ export const GroupChatMessages = forwardRef<HTMLDivElement, GroupChatMessagesPro
                                     >
                                         <div className={`relative flex items-end space-x-2 max-w-[80%] ${msg.isMe ? 'flex-row-reverse space-x-reverse' : ''}`}>
                                             {!msg.isMe && (
-                                                <Avatar className="h-6 w-6">
-                                                    <AvatarImage src={profileImageUrl || ''} alt={`${msg.senderNickname} 프로필`} />
+                                                <Avatar className="h-6 w-6 ">
+                                                    <AvatarImage className='object-cover' src={profileImageUrl || ''} alt={`${msg.senderNickname} 프로필`} />
                                                     <AvatarFallback className="text-xs">{msg.senderNickname?.[0] || '?'}</AvatarFallback>
                                                 </Avatar>
                                             )}

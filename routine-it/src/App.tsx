@@ -1560,18 +1560,17 @@ const navigateTo = (screen: string, params?: any, options?: { replace?: boolean 
   const toggleDarkMode = async () => {
     if (!UserInfo) return;
 
-    // 1. 예상되는 다음 상태를 먼저 UI에 반영 (Optimistic Update)
     const nextDarkModeState = !UserInfo.isDarkMode;
     setUserInfo({ ...UserInfo, isDarkMode: nextDarkModeState });
 
     try {
-      // 2. API를 호출하여 서버의 상태를 변경
       await toggleDarkModeAPI(nextDarkModeState);
-      // 성공 시, UI는 이미 반영되었으므로 추가 작업 불필요
+      await fetchUserInfo();
+
     } catch (error) {
-      // 3. API 호출 실패 시, UI를 원래 상태로 되돌림 (Rollback)
       console.error("다크 모드 변경 실패:", error);
       setUserInfo({ ...UserInfo, isDarkMode: !nextDarkModeState });
+      await fetchUserInfo();
       alert("다크 모드 설정에 실패했습니다. 다시 시도해주세요.");
     }
   };
@@ -1579,17 +1578,19 @@ const navigateTo = (screen: string, params?: any, options?: { replace?: boolean 
   const handleToggleAlarm = async () => {
     if (!UserInfo) return;
 
-    // 1. Optimistic UI Update
     const nextAlarmState = !UserInfo.isAlarmOn;
     setUserInfo({ ...UserInfo, isAlarmOn: nextAlarmState });
 
     try {
-      // 2. API 호출
       await toggleAlarmAPI(nextAlarmState);
+      
+      await fetchUserInfo();
+
     } catch (error) {
-      // 3. Rollback on error
       console.error("알림 설정 변경 실패:", error);
       setUserInfo({ ...UserInfo, isAlarmOn: !nextAlarmState });
+      
+      await fetchUserInfo();
       alert("알림 설정에 실패했습니다. 다시 시도해주세요.");
     }
   };

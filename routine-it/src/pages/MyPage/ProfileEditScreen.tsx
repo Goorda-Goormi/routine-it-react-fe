@@ -8,7 +8,7 @@ import { ArrowLeft, Save, Camera, User } from 'lucide-react';
 import { updateUserProfile} from '../../api/user';
 import { checkNicknameAvailability } from '../../api/auth';
 import type { UpdateProfilePayload } from '../../interfaces';
-import { presignProfilePut, presignGet } from '../../api/storage'; 
+import { presignProfilePut, uploadFileToS3, presignGet } from '../../api/storage'; 
 
 interface ProfileEditScreenProps {
   onBack: () => void;
@@ -99,6 +99,48 @@ export function ProfileEditScreen({
     }
   };
 
+
+  const handleAvatarChangeClick = () => {
+    fileInputRef.current?.click();
+  };
+
+  // 파일 선택 시 실행될 핸들러
+  const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    const userId = userInfo.id;
+
+    if (!file || !userId) {
+      alert("파일을 선택하지 않았거나 사용자 정보가 없습니다.");
+      return;
+    }
+
+    try {
+      const contentType = file.type || 'image/jpeg'; 
+
+      console.log("1. Presign URL 발급 요청...");
+      const { uploadUrl, key } = await presignProfilePut(userId, file);
+
+      // 2단계: S3로 실제 파일 업로드 (인증 불필요)
+      console.log("2. S3로 파일 업로드 시작...");
+      await uploadFileToS3(uploadUrl, file, contentType);
+
+      // 3단계: 업로드된 파일의 조회용 URL 받아오기 (인증 필요, 옵션)
+      console.log("3. 조회용 URL 요청...");
+      const { url } = await presignGet(key);
+
+      // 4단계: 화면 상태 업데이트
+      setAvatarUrl(url); // UI 미리보기 이미지 업데이트
+      setProfileData({ ...profileData, profileImageUrl: key }); 
+
+      alert('사진이 변경되었습니다. "저장" 버튼을 눌러야 최종 반영됩니다.');
+
+    } catch (error) {
+      console.error('프로필 사진 업로드 실패:', error);
+      alert(`사진 업로드 중 오류가 발생했습니다: ${error.message}`);
+    }
+  };
+
+  
   // 저장 버튼 클릭 핸들러
   const handleSave = async () => {
     if (profileData.nickname !== originalNickname && nicknameStatus !== 'valid') {
@@ -119,52 +161,6 @@ export function ProfileEditScreen({
     } catch (error) {
       console.error("프로필 업데이트 에러:", error);
       alert((error as Error).message);
-    }
-  };
-
-  // 아바타 변경 버튼 클릭 시 파일 탐색기 열기
-  const handleAvatarChangeClick = () => {
-    // useRef로 참조한 input 요소의 click() 메서드 호출
-    fileInputRef.current?.click();
-  };
-
-  // 파일 선택 시 실행될 핸들러
-  const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    const userId = userInfo.id;
-
-    if (!file || !userId) {
-      alert("파일을 선택하지 않았거나 사용자 정보가 없습니다.");
-      return;
-    }
-
-    try {
-      // 1단계: 백엔드에 업로드 허가증(presigned URL) 요청
-      const { uploadUrl, key } = await presignProfilePut(userId, file.name, file.type);
-
-      // 2단계: 받은 URL로 S3에 직접 파일 업로드
-      const uploadResponse = await fetch(uploadUrl, {
-        method: 'PUT',
-        headers: { 'Content-Type': file.type },
-        body: file,
-      });
-
-      if (!uploadResponse.ok) {
-        throw new Error('S3 업로드에 실패했습니다.');
-      }
-
-      // 3단계: 업로드 성공 후, 화면 미리보기용 URL을 받아와 상태 업데이트
-      const newImageUrlForPreview = await presignGet(key);
-
-      setAvatarUrl(newImageUrlForPreview); // UI 미리보기 이미지 업데이트
-      
-      setProfileData({ ...profileData, profileImageUrl: newImageUrlForPreview });
-
-      alert('사진이 변경되었습니다. "저장" 버튼을 눌러야 최종 반영됩니다.');
-
-    } catch (error) {
-      console.error('프로필 사진 업로드 실패:', error);
-      alert('사진 업로드 중 오류가 발생했습니다.');
     }
   };
 
@@ -194,7 +190,7 @@ export function ProfileEditScreen({
               <div className="relative">
                 <Avatar className="h-20 w-20">
                   {/* avatarUrl 상태 사용 */}
-                  <AvatarImage src={avatarUrl} alt="프로필" />
+                  <AvatarImage src={avatarUrl} alt="프로필" className="object-cover" />
                   <AvatarFallback>
                     <User className="h-10 w-10" />
                   </AvatarFallback>

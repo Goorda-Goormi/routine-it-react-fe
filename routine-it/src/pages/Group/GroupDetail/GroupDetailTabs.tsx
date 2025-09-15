@@ -44,7 +44,7 @@ export const GroupDetailTabs = ({
                             <div className="relative">
                                 <Avatar className="h-8 w-8">
                                     {profileImageUrl ? (
-                                        <AvatarImage src={profileImageUrl} alt={`${member.memberName} 프로필 이미지`} />
+                                        <AvatarImage className='object-cover' src={profileImageUrl} alt={`${member.memberName} 프로필 이미지`} />
                                     ) : null}
                                     <AvatarFallback className="text-xs">{member.memberName[0]}</AvatarFallback>
                                 </Avatar>
@@ -120,7 +120,7 @@ export const GroupDetailTabs = ({
                                                         </div>
                                                         <Avatar className="h-8 w-8">
                                                             {profileImageUrl ? (
-                                                                <AvatarImage src={profileImageUrl} alt={`${item.nickname} 프로필 이미지`} />
+                                                                <AvatarImage className='object-cover' src={profileImageUrl} alt={`${item.nickname} 프로필 이미지`} />
                                                             ) : null}
                                                             <AvatarFallback className="text-xs">{item.nickname[0]}</AvatarFallback>
                                                         </Avatar>
@@ -167,7 +167,7 @@ export const GroupDetailTabs = ({
                                             <div className="flex items-center space-x-3 p-3 border border-border/50 rounded-lg hover:bg-accent/30 transition-colors">
                                                 <Avatar className="h-8 w-8">
                                                     {profileImageUrl ? (
-                                                        <AvatarImage src={profileImageUrl} alt={`${activity.nickname} 프로필 이미지`} />
+                                                        <AvatarImage className='object-cover' src={profileImageUrl} alt={`${activity.nickname} 프로필 이미지`} />
                                                     ) : null}
                                                     <AvatarFallback className="text-xs">{activity.nickname[0]}</AvatarFallback>
                                                 </Avatar>

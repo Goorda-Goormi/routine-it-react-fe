@@ -167,6 +167,7 @@ export function RankingScreen({
                           <AvatarImage
                             src={user.profileImageUrl || undefined}
                             alt={user.nickname}
+                            className='object-cover'
                           />
                           <AvatarFallback>{user.nickname.charAt(0)}</AvatarFallback>
                         </Avatar>
@@ -243,6 +244,7 @@ export function RankingScreen({
                             <AvatarImage
                               src={group.groupImageUrl || undefined}
                               alt={group.groupName}
+                              className='object-cover'
                             />
                             <AvatarFallback>{group.groupName.charAt(0)}</AvatarFallback>
                           </Avatar>

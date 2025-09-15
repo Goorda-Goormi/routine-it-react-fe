@@ -1,5 +1,7 @@
 import type { UserProfile } from '../interfaces';
 import { apiFetch } from './client';
+import { getSettings } from './setting';
+import { presignGet } from './storage';
 
 const BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
@@ -14,44 +16,6 @@ export const startKakaoLogin = () => {
  * @returns 병합된 사용자 정보 객체 (UserProfile)
  */
 
-/*
-export const getUserInfo = async (): Promise<UserProfile> => {
-    try {
-    // 이제 apiFetch는 바로 JSON 데이터를 반환합니다.
-    const authResult = await apiFetch('/api/auth/me'); 
-    const profileResult = await apiFetch('/api/users/me');
-
-    const localMaxStreak = Number(localStorage.getItem('maxStreakDays')) || 0;
-
-    // 두 API 결과 병합
-    const authData = authResult.data;
-    const profileData = profileResult.data;
-
-    const mergedUserData: UserProfile = {
-      id: authData.id,
-      email: authData.email,
-      nickname: profileData.nickname,
-      profileImageUrl: profileData.profileImageUrl,
-      profileMessage: profileData.profileMessage,
-      isAlarmOn: profileData.isAlarmOn,
-      isDarkMode: profileData.isDarkMode,
-      joinDate: '',
-      level: 0,
-      exp: 0,
-      maxExp: 3000,
-      streakDays: 0,
-      maxStreakDays: localMaxStreak
-    };
-
-    return mergedUserData;
-  } catch (error) {
-    console.error("사용자 정보 조회 에러:", error);
-    // apiFetch가 던진 에러를 그대로 다시 던지거나, 새로운 에러 메시지로 감쌉니다.
-    throw new Error('사용자 정보를 불러오는 데 실패했습니다.');
-  }
-};
-*/
-
  export const getUserInfo = async (): Promise<UserProfile> => {
      try {
      const [authResult, profileResult] = await Promise.all([
@@ -59,28 +23,36 @@ export const getUserInfo = async (): Promise<UserProfile> => {
       apiFetch('/api/users/me'),
     ]);
 
-     const localMaxStreak = Number(localStorage.getItem('maxStreakDays')) || 0;
+    const settingsData = await getSettings();
 
-     // 두 API 결과 병합
      const authData = authResult.data;
      const profileData = profileResult.data;
     
+     let finalImageUrl = profileData.profileImageUrl;
+        if (finalImageUrl && !finalImageUrl.startsWith('http')) {
+            try {
+                const { url } = await presignGet(finalImageUrl);
+                finalImageUrl = url;
+            } catch (e) {
+                console.error("프로필 사진의 presigned URL을 가져오는데 실패했습니다:", e);
+            }
+        }
      const mergedUserData: UserProfile = {
-       id: authData.id,
-       email: authData.email,
+      id: authData.id,
+      email: authData.email,
 
-       nickname: profileData.nickname,
-       profileImageUrl: profileData.profileImageUrl,
-       profileMessage: profileData.profileMessage,
+      nickname: profileData.nickname,
+      profileImageUrl: finalImageUrl,
+      profileMessage: profileData.profileMessage,
 
-       isAlarmOn: true,
-       isDarkMode: false,
+      isAlarmOn: settingsData.isAlarmOn,
+      isDarkMode: settingsData.isDarkMode,
        joinDate: '',
        level: 0,
        exp: 0,
        maxExp: 3000,
        streakDays: 0,
-       maxStreakDays: localMaxStreak
+       maxStreakDays: Number(localStorage.getItem('maxStreakDays')) || 0
      };
 
      return mergedUserData;
@@ -103,7 +75,6 @@ export const refreshAuthToken = async () => {
             headers: {
                 'Content-Type': 'application/json',
             },
-            // body는 쿠키로 전송되므로 제거합니다.
         });
         
         console.log('📡 Refresh response status:', response.status);

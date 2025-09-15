@@ -488,7 +488,7 @@ export function GroupChatScreen({ group, groupmembers, onBack, onLeaveGroup, use
                     return (
                       <div key={member.groupMemberId} className="flex items-center space-x-3 p-2 rounded-lg hover:bg-accent/50">
                         <Avatar className="h-10 w-10">
-                          <AvatarImage src={profileImage} alt={`${member.memberName} 프로필`} />
+                          <AvatarImage className='object-cover' src={profileImage} alt={`${member.memberName} 프로필`} />
                           <AvatarFallback>{member.memberName}</AvatarFallback>
                         </Avatar>
                         <div className="flex-1">
