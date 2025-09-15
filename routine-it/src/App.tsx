@@ -79,8 +79,8 @@ const transformPersonalRoutine = (pr: PersonalRoutineResponse): Routine => {
     isGroupRoutine: false,
     completed: false, 
     streak: 0, 
-    goal: '30',
-    category: '', 
+    goal: pr.goal,
+    category: pr.category, 
   };
 };
 
@@ -335,7 +335,6 @@ export default function App() {
       category: 'exercise',
       completed: false,
       streak: 0,
-      difficulty: '쉬움',
       isGroupRoutine: false,
       isPublic: true
     },
@@ -350,7 +349,6 @@ export default function App() {
       category: '',
       completed: false,
       streak: 0,
-      difficulty: '쉬움',
       isGroupRoutine: false,
       isPublic: true
     },
@@ -365,7 +363,6 @@ export default function App() {
       category: 'health',
       completed: false,
       streak: 0,
-      difficulty: '보통',
       isGroupRoutine: false,
       isPublic: true
     },
@@ -380,7 +377,6 @@ export default function App() {
       category: 'study',
       completed: false,
       streak: 0,
-      difficulty: '보통',
       isGroupRoutine: false,
       isPublic: true
     },
@@ -395,7 +391,6 @@ export default function App() {
       category: 'lifestyle',
       completed: false,
       streak: 0,
-      difficulty: '쉬움',
       isGroupRoutine: false,
       isPublic: true
     },
@@ -410,7 +405,6 @@ export default function App() {
       category: 'hobby',
       completed: false,
       streak: 0,
-      difficulty: '쉬움',
       isGroupRoutine: false,
       isPublic: true
     }
@@ -834,6 +828,7 @@ useEffect(() => {
       routineName: newRoutineData.name,
       description: newRoutineData.description,
       category: newRoutineData.category,
+      goal: newRoutineData.goal,
       startTime: newRoutineData.time,
       repeatDays: convertFrequencyToAuthDays(newRoutineData.frequency || []),
       startDate: new Date().toISOString().split('T')[0], // 예시: 오늘부터
@@ -876,6 +871,8 @@ useEffect(() => {
         const payload: PersonalRoutineUpdatePayload = {
         routineName: updatedRoutine.name,
         description: updatedRoutine.description,
+        category: updatedRoutine.category, 
+        goal: updatedRoutine.goal,  
         startTime: updatedRoutine.time,
         repeatDays: convertFrequencyToAuthDays(updatedRoutine.frequency || []),
         isAlarmOn: !!updatedRoutine.reminder,
@@ -1129,6 +1126,7 @@ const handleGroupRoutineCompletion = () => {
       routineName: recommendedRoutine.name,
       description: recommendedRoutine.description,
       category: recommendedRoutine.category,
+      goal: recommendedRoutine.goal,
       startTime: recommendedRoutine.time,
       repeatDays: convertFrequencyToAuthDays(recommendedRoutine.frequency || []),
       startDate: new Date().toISOString().split('T')[0], // 시작일은 오늘로 설정

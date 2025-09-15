@@ -6,6 +6,8 @@ export interface PersonalRoutineResponse {
   userId: number;
   routineName: string;
   description: string;
+  category: string;
+  goal: string,
   startTime: string; 
   repeatDays: string; 
   startDate: string; 
@@ -23,6 +25,7 @@ export interface PersonalRoutineCreatePayload {
   routineName: string;
   description?: string;
   category: string;
+  goal: string;
   startTime: string; 
   repeatDays: string; 
   startDate: string; 

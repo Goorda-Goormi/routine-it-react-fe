@@ -27,7 +27,6 @@ import React, { useState } from 'react';
    category: string;
    completed: boolean;
    streak: number;
-   difficulty: string;
    isGroupRoutine: boolean;
    isPublic: boolean;
  }
@@ -68,14 +67,6 @@ import React, { useState } from 'react';
      return Math.round((getCompletedCount(routines) / routines.length) * 100);
    };
 
-   const getDifficultyColor = (difficulty: string) => {
-     switch (difficulty) {
-       case '쉬움': return 'text-green-600 bg-green-50 border-green-200 dark:text-white dark:bg-green-900/30 dark:border-green-700/30';
-       case '보통': return 'text-yellow-600 bg-yellow-50 border-yellow-200 dark:text-white dark:bg-yellow-900/30 dark:border-yellow-700/30';
-       case '어려움': return 'text-red-600 bg-red-50 border-red-200 dark:text-white dark:bg-red-900/30 dark:border-red-700/30';
-       default: return 'text-gray-600 bg-gray-50 border-gray-200 dark:text-white dark:bg-gray-900/30 dark:border-gray-700/30';
-     }
-   };
    
    const getCategoryEmoji = (category: string) => {
      switch (category) {
@@ -191,9 +182,6 @@ import React, { useState } from 'react';
                    <div>
                        <div className="flex items-center space-x-2">
                            <span className="text-sm font-medium text-card-foreground">{routine.name}</span>
-                           <Badge variant="outline" className={`text-xs ${getDifficultyColor(routine.difficulty)}`}>
-                               {routine.difficulty}
-                           </Badge>
                        </div>
                        <p className="text-xs text-muted-foreground mt-1">
                            {routine.description}

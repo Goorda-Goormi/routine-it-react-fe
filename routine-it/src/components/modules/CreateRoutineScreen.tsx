@@ -18,7 +18,6 @@ interface NewRoutine {
   reminder: boolean;
   goal: string;
   category: string;
-  difficulty: string;
   completed: boolean;
   streak: number;
   isPublic: boolean;
@@ -38,7 +37,6 @@ export function CreateRoutineScreen({ onBack, onCreateRoutine }: CreateRoutineSc
     reminder: true,
     goal: '30',
     category: 'study',
-    difficulty: '',
     isPublic: true
   });
 
@@ -107,7 +105,6 @@ const handleDayToggle = (day: string) => {
       reminder: formData.reminder,
       goal: formData.goal,
       category: formData.category,
-      difficulty: formData.difficulty,
       completed: false,
       streak: 0, 
       isPublic: formData.isPublic
