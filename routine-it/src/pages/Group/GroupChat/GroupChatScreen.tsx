@@ -18,8 +18,8 @@ import { fetchChatHistory } from '../../../api/chat';
 import { requestAuthApproval, getGroupMembers } from '../../../api/group';
 import { getUserProfile } from '../../../api/user';
 
-export const BASE_URL = "http://15.164.98.221:8080";
-const WS_CONNECTION_URL = `${BASE_URL}/ws`;
+export const BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://15.164.98.221:8080";
+const WS_CONNECTION_URL = BASE_URL.replace('http://', 'ws://').replace('https://', 'wss://') + '/ws';
 
 export interface Message {
     id: number | null;
