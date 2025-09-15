@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '../../../components/ui
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../../components/ui/tabs';
 import { Badge } from '../../../components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '../../../components/ui/avatar';
-import { Trophy, Calendar, Crown, Users } from 'lucide-react';
+import { Trophy, Calendar, Crown, Users,Medal } from 'lucide-react';
 import type { GroupMemberResponse } from '../../../interfaces';
 
 interface GroupDetailTabsProps {
@@ -12,6 +12,7 @@ interface GroupDetailTabsProps {
     onMemberClick: (member: any) => void;
     groupMembers: GroupMemberResponse[];
     memberProfiles: Record<number, string>;
+    myid: number;
 }
 
 export const GroupDetailTabs = ({
@@ -19,7 +20,8 @@ export const GroupDetailTabs = ({
     recentActivities,
     onMemberClick,
     groupMembers,
-    memberProfiles
+    memberProfiles,
+    myid,
 }: GroupDetailTabsProps) => {
     console.log("GroupDetailTabs로 전달된 멤버 데이터:", groupMembers);
     console.log("최근 활동 데이터:", recentActivities);
@@ -33,6 +35,7 @@ export const GroupDetailTabs = ({
 
             const isLeader = member.role === 'LEADER';
             const isUncertified = member.message === '미인증';
+            
             const profileImageUrl = member.userId ? memberProfiles[member.userId] : '';
             return (
                 <div key={member.groupMemberId}>
@@ -110,25 +113,42 @@ export const GroupDetailTabs = ({
                                     const member = groupMembers.find(m => m.memberName === item.nickname);
                                     const profileImageUrl = member && member.userId ? memberProfiles[member.userId] : '';
                                     
+                                    // 현재 사용자의 랭킹 항목인지 확인
+                                    const isMe = member && member.userId === myid;
+
+                                    const rankIcon = (rank: number) => {
+                                        switch (rank) {
+                                            case 1: return <Crown className="h-5 w-5 text-yellow-500" />;
+                                            case 2: return <Medal className="h-5 w-5 text-gray-400" />;
+                                            case 3: return <Medal className="h-5 w-5 text-amber-600" />;
+                                            default: return <span className="text-xs font-bold text-primary">{rank}</span>;
+                                        }
+                                    };
+
                                     return (
                                         <div key={item.rank}>
-                                            <div className="flex items-center justify-between p-3 border border-border/50 rounded-lg hover:bg-accent/30 transition-colors">
+                                            <div 
+                                                className={`flex items-center justify-between p-3 border rounded-lg hover:bg-accent/30 transition-colors
+                                                ${isMe ? 'bg-orange-50' : 'border-border/50'}`}
+                                            >
                                                 <div className="flex items-center space-x-3">
-                                                    <div className="flex items-center space-x-3">
-                                                        <div className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center">
-                                                            <span className="text-xs font-bold text-primary">{item.rank}</span>
-                                                        </div>
-                                                        <Avatar className="h-8 w-8">
-                                                            {profileImageUrl ? (
-                                                                <AvatarImage className='object-cover' src={profileImageUrl} alt={`${item.nickname} 프로필 이미지`} />
-                                                            ) : null}
-                                                            <AvatarFallback className="text-xs">{item.nickname[0]}</AvatarFallback>
-                                                        </Avatar>
+                                                    <div className="w-6 h-6 flex items-center justify-center">
+                                                        {rankIcon(item.rank)}
                                                     </div>
-                                                    <span className="text-sm font-medium text-card-foreground">{item.nickname}</span>
+                                                    <Avatar className="h-8 w-8">
+                                                        {profileImageUrl ? (
+                                                            <AvatarImage className='object-cover' src={profileImageUrl} alt={`${item.nickname} 프로필 이미지`} />
+                                                        ) : null}
+                                                        <AvatarFallback className="text-xs">{item.nickname[0]}</AvatarFallback>
+                                                    </Avatar>
+                                                    <span className={`text-sm font-medium ${isMe ? 'text-orange-900' : 'text-card-foreground'}`}>
+                                                        {item.nickname}
+                                                    </span>
                                                 </div>
                                                 <div className="flex items-center space-x-2">
-                                                    <span className="text-sm font-bold text-card-foreground">{item.score}점</span>
+                                                    <span className={`text-sm font-bold ${isMe ? 'text-orange-900' : 'text-card-foreground'}`}>
+                                                        {item.score}점
+                                                    </span>
                                                     <div
                                                         className={`w-2 h-2 rounded-full ${
                                                             item.change === 'up' ? 'bg-green-500' : item.change === 'down' ? 'bg-red-500' : 'bg-gray-400'

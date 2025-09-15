@@ -97,6 +97,8 @@ export function GroupDetailScreen({
                     });
 
                 setRecentActivities(authMessages);
+
+                
                 console.log("최근 인증 내역 (KST):", authMessages);
             } catch (error) {
                 console.error("채팅 인증 내역 로딩 실패:", error);
@@ -327,6 +329,7 @@ export function GroupDetailScreen({
                     onMemberClick={handleMemberClick}
                     groupMembers={groupMembers}
                     memberProfiles={memberProfiles}
+                    myid={myid}
                 />
             </div>
             <GroupEdit
