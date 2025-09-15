@@ -192,7 +192,9 @@ export function RankingScreen({
                   mergedPersonalRankings.map((user) => (
                     <div
                       key={user.userId}
-                      className="flex items-center justify-between p-3 rounded-lg border"
+                      className={`flex items-center justify-between p-3 rounded-lg border ${
+                        myid === user.userId && ' bg-orange-50'
+                      }`}
                     >
                       <div className="flex items-center space-x-3">
                         <div className="w-8 flex justify-center">{getRankIcon(user.currentRank)}</div>
@@ -211,7 +213,9 @@ export function RankingScreen({
                       </div>
                       <div className="text-right">
                         <div
-                          className={`text-lg font-bold ${getScoreColor(user.currentRank)}`}
+                          className={`text-lg font-bold ${getScoreColor(user.currentRank)} ${
+                            myid === user.userId && 'text-white dark:text-white'
+                          }`}
                         >
                           {user.totalScore.toLocaleString()}
                         </div>
@@ -263,11 +267,13 @@ export function RankingScreen({
                     그룹 랭킹을 불러오는 중입니다...
                   </div>
                 ) : groupRankings.length > 0 ? (
-                  groupRankings.map((group) => (
-                    <div
-                      key={group.groupId}
-                      className="p-3 rounded-lg border border-border dark:border-border"
-                    >
+                  groupRankings.map((group) => (
+                    <div
+                      key={group.groupId}
+                      className={`p-3 rounded-lg border border-border dark:border-border ${
+                        myGroupIds.includes(group.groupId) && 'bg-orange-50'
+                      }`}
+                    >
                       <div className="flex items-center justify-between mb-2">
                         <div className="flex items-center space-x-3">
                           <div className="flex items-center justify-center w-8">
@@ -303,7 +309,9 @@ export function RankingScreen({
                           </div>
                         </div>
                         <div className="text-right">
-                          <div className={`text-lg font-bold ${getScoreColor(group.rank)}`}>
+                          <div className={`text-lg font-bold ${getScoreColor(group.rank)} ${
+                            myGroupIds.includes(group.groupId) && 'text-white dark:text-white'
+                          }`}>
                             {group.totalScore.toLocaleString()}
                           </div>
                           <div className="text-xs text-foreground dark:opacity-75">총점</div>
