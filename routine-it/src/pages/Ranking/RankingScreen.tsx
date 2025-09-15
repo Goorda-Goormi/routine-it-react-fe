@@ -113,7 +113,10 @@ export function RankingScreen({
     return 'text-foreground';
   };
 
-const groupRankings = groupRankingData?.data?.content || [];
+  const groupRankings = groupRankingData?.data?.content || [];
+
+  // 내가 속한 그룹 ID를 가져오는 유틸리티
+  const myGroupIds = groups.map(group => group.groupId);
 
   return (
     <div className="h-full p-4">

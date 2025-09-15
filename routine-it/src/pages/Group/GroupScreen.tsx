@@ -46,6 +46,7 @@ export function GroupScreen({ onNavigate, groups, myGroups, onNewGroup, onJoinGr
         groups={filteredGroups}
         onNavigate={onNavigate}
         onJoinGroup={onJoinGroup}
+        myGroups={myGroups}
       />
     </div>
   );

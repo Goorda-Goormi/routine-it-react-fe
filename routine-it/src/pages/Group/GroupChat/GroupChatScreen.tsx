@@ -18,7 +18,7 @@ import { fetchChatHistory } from '../../../api/chat';
 import { requestAuthApproval, getGroupMembers } from '../../../api/group';
 import { getUserProfile } from '../../../api/user';
 
-export const BASE_URL = "http://54.180.93.1:8080";
+export const BASE_URL = "http://15.164.98.221:8080";
 const WS_CONNECTION_URL = `${BASE_URL}/ws`;
 
 export interface Message {
@@ -35,106 +35,199 @@ export interface Message {
     albumImages?: string[];
 }
 
-export function GroupChatScreen({ group, groupmembers, onBack, onLeaveGroup, userInfo, onDataRefresh }) {
+export function GroupChatScreen({ group, groupmembers, onBack, onLeaveGroup, userInfo, onDataRefresh, onGroupRoutineComplete }) {
     const [isAuthDialogOpen, setIsAuthDialogOpen] = useState(false);
     const [isMembersDialogOpen, setIsMembersDialogOpen] = useState(false);
     const [messages, setMessages] = useState<Message[]>([]);
-     const [memberProfiles, setMemberProfiles] = useState<Record<number, string>>({});
+    const [memberProfiles, setMemberProfiles] = useState<Record<number, string>>({});
+    const [oldestMessageId, setOldestMessageId] = useState<number | undefined>(undefined);
+    const [isLoadingHistory, setIsLoadingHistory] = useState(false);
+    const messagesEndRef = useRef<HTMLDivElement>(null);      
     const stompClientRef = useRef<Client | null>(null);
 
     const myUserId = userInfo.id;
     const myNickname = userInfo.nickname;
     const roomId = group.groupId;
 
-     useEffect(() => {
-        const fetchProfiles = async () => {
-            const profiles: Record<number, string> = {};
-            // groupmembers 배열이 유효할 때만 프로필을 조회합니다.
-            if (groupmembers && groupmembers.length > 0) {
-                // 프로필 조회를 위해 모든 멤버의 userId에 대한 Promise 배열을 생성합니다.
-                const profilePromises = groupmembers.map(member =>
-                    getUserProfile(member.userId)
-                );
-                // 모든 프로필 정보를 한 번에 비동기적으로 가져옵니다.
-                const userProfiles = await Promise.allSettled(profilePromises);
+    const isAtBottomRef = useRef(true);
+    const prevScrollHeightRef = useRef(0);
+    const prevMessagesLengthRef = useRef(0);
+    
+    // ✅ 스크롤 이벤트 핸들러: 사용자가 스크롤을 움직일 때 최하단 여부 업데이트
+    const handleScroll = () => {
+        if (messagesEndRef.current) {
+            const { scrollTop, scrollHeight, clientHeight } = messagesEndRef.current;
+            isAtBottomRef.current = scrollHeight - scrollTop <= clientHeight + 10; 
+        }
+    };
+    
+    // ✅ 1. STOMP 연결 및 메시지 수신 로직
+    useEffect(() => {
+        const onMessageReceived = (payload) => {
+            const receivedMessage = JSON.parse(payload.body);
+            receivedMessage.isMe = receivedMessage.userId === myUserId;
 
-                userProfiles.forEach((result, index) => {
-                    const member = groupmembers[index];
-                    // 요청이 성공적으로 완료되었을 때만 프로필 이미지를 저장합니다.
-                    if (result.status === 'fulfilled' && result.value) {
-                        profiles[member.userId] = result.value.profileImageUrl;
-                    }
-                });
-            }
-            // 모든 프로필 조회 후 상태를 한 번에 업데이트합니다.
-            setMemberProfiles(profiles);
+            setMessages(prevMessages => {
+                const messageExists = prevMessages.some(msg => msg.id === receivedMessage.id);
+                if (messageExists) return prevMessages;
+                
+                return [...prevMessages, receivedMessage];
+            });
         };
 
-        fetchProfiles();
-    }, [groupmembers]); // ✅ groupmembers 데이터가 변경될 때마다 프로필을 다시 조회합니다.
+        const connect = () => {
+            if (!stompClientRef.current || !stompClientRef.current.connected) {
+                const socket = new SockJS(WS_CONNECTION_URL);
+                const client = new Client({
+                    webSocketFactory: () => socket,
+                    connectHeaders: { Authorization: 'Bearer ' + localStorage.getItem('accessToken') },
+                    debug: (str) => console.log(str),
+                    reconnectDelay: 5000,
+                    heartbeatIncoming: 4000,
+                    heartbeatOutgoing: 4000,
+                    onConnect: () => {
+                        console.log('✅ STOMP 연결 성공');
+                        client.subscribe(`/topic/room/${roomId}`, onMessageReceived);
+                        const joinMessage = {
+                            senderId: myUserId,
+                            senderNickname: myNickname,
+                            type: 'ENTER',
+                        };
+                        client.publish({
+                            destination: `/app/chat.online/${roomId}`,
+                            body: JSON.stringify(joinMessage),
+                        });
+                    },
+                    onStompError: (frame) => console.error('❌ STOMP 오류:', frame),
+                });
+                client.activate();
+                stompClientRef.current = client;
+            }
+        };
 
+        const disconnect = () => {
+            if (stompClientRef.current && stompClientRef.current.connected) {
+                stompClientRef.current.deactivate();
+                console.log('STOMP 연결 해제');
+            }
+        };
+
+        if (myUserId && myNickname && roomId) {
+            connect();
+        }
+
+        return () => disconnect();
+    }, [roomId, myUserId, myNickname]);
+
+    // ✅ 2. 초기 채팅 기록 로딩
     useEffect(() => {
         const loadChatHistory = async () => {
+            setIsLoadingHistory(true);
             try {
                 const response = await fetchChatHistory(roomId, 20);
-                let messagesFromServer = response.data?.content || [];
-                messagesFromServer = messagesFromServer.reverse();
+                const messagesFromServer = response.data?.content || [];
+                
+                if (messagesFromServer.length > 0) {
+                    setOldestMessageId(messagesFromServer[messagesFromServer.length - 1].id || undefined);
+                }
+                
                 const updatedHistory = messagesFromServer.map(msg => ({
                     ...msg,
                     isMe: (msg.messageType === 'MEMBER_JOIN' || msg.messageType === 'MEMBER_LEAVE') ? false : msg.userId === myUserId,
                 }));
-                setMessages(updatedHistory);
+                
+                setMessages(updatedHistory.reverse());
             } catch (error) {
                 console.error("채팅 기록 로딩 실패:", error);
                 setMessages([]);
+            } finally {
+                setIsLoadingHistory(false);
             }
         };
 
-        loadChatHistory();
+        if (myUserId && roomId) {
+            loadChatHistory();
+        }
+    }, [roomId, myUserId]);
 
-        const socket = new SockJS(WS_CONNECTION_URL);
-        const stompClient = new Client({
-            webSocketFactory: () => socket,
-            connectHeaders: {
-                Authorization: 'Bearer ' + localStorage.getItem('accessToken'),
-            },
-            debug: (str) => console.log(str),
-            reconnectDelay: 5000,
-            onConnect: () => {
-                console.log('✅ STOMP 연결 성공');
-                stompClient.subscribe(`/topic/room/${roomId}`, (message) => {
-                    const body = JSON.parse(message.body);
-                    const newMsg: Message = {
-                        id: body.id,
-                        roomId: body.roomId,
-                        userId: body.userId,
-                        senderNickname: body.senderNickname,
-                        message: body.message,
-                        imageUrl: body.imageUrl,
-                        messageType: body.messageType,
-                        sentAt: body.sentAt,
-                        isMe: body.userId === myUserId,
-                        reactions: {},
-                    };
-                    setMessages((prev) => [...prev, newMsg]);
-                });
-                stompClient.publish({
-                    destination: `/app/chat.online/${roomId}`,
-                    body: JSON.stringify({ userId: myUserId, nickname: myNickname }),
-                });
-            },
-            onStompError: (frame) => {
-                console.error('❌ STOMP 오류:', frame);
-            },
-        });
+    // ✅ 3. 메시지 상태 변경에 따른 스크롤 동작 관리
+    useEffect(() => {
+        const chatContainer = messagesEndRef.current;
+        if (!chatContainer) return;
 
-        stompClient.activate();
-        stompClientRef.current = stompClient;
+        // 과거 메시지가 로드된 경우 (스크롤 위치 보정)
+        if (messages.length > prevMessagesLengthRef.current) {
+            const isAddingOlder = messages.length > 0 && messages[0]?.id && messages[1]?.id && messages[0].id < messages[1].id;
+            if (isAddingOlder) {
+                const newScrollTop = chatContainer.scrollHeight - prevScrollHeightRef.current;
+                chatContainer.scrollTop = newScrollTop;
+            }
+        }
+        
+        // 새로운 메시지가 추가된 경우 (자동 스크롤)
+        if (isAtBottomRef.current) {
+            chatContainer.scrollTop = chatContainer.scrollHeight;
+        }
 
-        return () => {
-            stompClient.deactivate();
-        };
-    }, [roomId, myUserId, myNickname]);
+        prevMessagesLengthRef.current = messages.length;
+    }, [messages]);
+
+    useEffect(() => {
+    const fetchMemberProfiles = async () => {
+      const profiles: Record<number, string> = {};
+      for (const member of groupmembers) {
+        if (member.userId === userInfo.id) {
+          profiles[member.userId] = userInfo.profileImageUrl;
+          continue;
+        }
+        try {
+          const profileData = await getUserProfile(member.userId);
+          profiles[member.userId] = profileData.profileImageUrl;
+        } catch (error) {
+          console.error(`멤버 프로필 가져오기 실패: userId ${member.userId}`, error);
+          profiles[member.userId] = ''; 
+        }
+      }
+      setMemberProfiles(profiles);
+    };
+
+    if (groupmembers && groupmembers.length > 0) {
+      fetchMemberProfiles();
+    }
+  }, [groupmembers, userInfo.id, userInfo.profileImageUrl]);
+
+    const loadMoreChatHistory = async () => {
+        if (isLoadingHistory || !oldestMessageId) return;
+
+        setIsLoadingHistory(true);
+        try {
+            const response = await fetchChatHistory(roomId, 20, oldestMessageId);
+            const olderMessages = response.data?.content || [];
+            
+            if (olderMessages.length > 0) {
+                setOldestMessageId(olderMessages[olderMessages.length - 1].id || undefined);
+            }
+            
+            // ✅ 과거 메시지 로드 직전, 현재 스크롤 높이를 저장
+            if (messagesEndRef.current) {
+                prevScrollHeightRef.current = messagesEndRef.current.scrollHeight;
+            }
+            
+            setMessages(prevMessages => {
+                const updatedMessages = olderMessages.map(msg => ({
+                    ...msg,
+                    isMe: (msg.messageType === 'MEMBER_JOIN' || msg.messageType === 'MEMBER_LEAVE') ? false : msg.userId === myUserId,
+                }));
+                const newMessages = updatedMessages.filter(newMsg => !prevMessages.some(oldMsg => oldMsg.id === newMsg.id));
+                
+                return [...newMessages.reverse(), ...prevMessages];
+            });
+        } catch (error) {
+            console.error("과거 채팅 기록 로딩 실패:", error);
+        } finally {
+            setIsLoadingHistory(false);
+        }
+    };
 
     const handleSendMessage = (text: string) => {
         if (!text.trim()) return;
@@ -233,93 +326,62 @@ export function GroupChatScreen({ group, groupmembers, onBack, onLeaveGroup, use
         };
     };
 
+
     const handleAuthSubmit = async (data: { description: string; image: File | null; isPublic: boolean }) => {
-        if (!stompClientRef.current) {
+        if (!stompClientRef.current?.connected) { // .connected로 연결 상태를 확인
             alert("채팅 연결이 불안정하여 인증을 보낼 수 없습니다. 잠시 후 다시 시도해주세요.");
             return;
         }
 
         try {
-            if (group.groupType === 'FREE') {
-                const activityData = {
-                    description: data.description,
-                    photo: data.image,
-                    isPublic: data.isPublic,
-                    groupId: group.groupId,
-                };
-                
-                await createGroupActivity(activityData);
-
+            const activityData = {
+                groupId: group.groupId,
+                description: data.description,
+                imageUrl: null, // TODO: 사진 업로드 기능 구현 시 수정
+                isPublic: data.isPublic,
+            };
             
-                try {
-                    await updateRankingScore(myUserId, group.groupId, 1);
-                    console.log("✅ 랭킹 점수 업데이트 성공: 자유그룹 인증");
-                    onDataRefresh();
-                  } catch (rankingError) {
-                    console.error("🚨 랭킹 점수 업데이트 실패:", rankingError);
-                }
-                
-                const msgBody = {
-                    userId: myUserId,
-                    senderNickname: myNickname,
-                    message: data.description,
-                    imageUrl: data.image ? URL.createObjectURL(data.image) : null,
-                    messageType: 'NOTICE', 
-                };
+            // 1. 활동 기록 API를 먼저 호출하고 끝날 때까지 기다립니다.
+            await createGroupActivity(activityData);
 
-                stompClientRef.current.publish({
-                    destination: `/app/chat.send/${roomId}`,
-                    body: JSON.stringify(msgBody),
-                });
+            // 2. 랭킹 점수 업데이트를 호출하고 끝날 때까지 기다립니다.
+            await updateRankingScore(myUserId, group.groupId, 1);
+            console.log("✅ 랭킹 점수 업데이트 성공: 그룹 인증");
 
-                onDataRefresh();
-                //onBack();
-                
-                alert('자유그룹 인증이 성공적으로 제출되었습니다.');
-                    
-            } else {
-                // REQUIRED 그룹 인증 요청 (기존 로직)
-                const authMessage = data.description;
-                const msgBody = {
-                    userId: myUserId,
-                    senderNickname: myNickname,
-                    message: authMessage,
-                    imageUrl: data.image ? URL.createObjectURL(data.image) : null,
-                    messageType: 'NOTICE', 
-                };
+            // 3. 모든 서버 작업이 끝난 후, 채팅방에 메시지를 보냅니다.
+            const msgBody = {
+                userId: myUserId,
+                senderNickname: myNickname,
+                message: `${myNickname}님이 루틴을 인증했습니다: ${data.description}`,
+                imageUrl: data.image ? URL.createObjectURL(data.image) : null,
+                messageType: 'NOTICE',
+            };
+            stompClientRef.current.publish({
+                destination: `/app/chat.send/${roomId}`,
+                body: JSON.stringify(msgBody),
+            });
 
-                stompClientRef.current.publish({
-                    destination: `/app/chat.send/${roomId}`,
-                    body: JSON.stringify(msgBody),
-                });
-
-                onDataRefresh(); 
-               // onBack();
-                
-                alert('인증이 성공적으로 제출되었습니다.');
+            alert('인증이 성공적으로 제출되었습니다.');
+            
+            // 4. 모든 작업이 완료된 후에 보상 로직 및 데이터 새로고침을 실행합니다.
+            if (onGroupRoutineComplete) {
+                onGroupRoutineComplete();
             }
+
         } catch (error) {
-            // 오류 응답 확인
-            if (error.name === 'AuthError' || (error.response && error.response.status === 401)) {
-                alert('인증이 만료되었습니다. 다시 로그인해주세요.');
-                // 여기에서 로그인 페이지로 리디렉션하는 로직을 추가
-                // 예: window.location.href = '/login';
-            } else {
-                alert('인증 제출에 실패했습니다.');
-            }
+            alert('인증 제출에 실패했습니다.');
             console.error("🚨 최종 에러 핸들링:", error);
         }
     };
 
     return (
-        <div className="flex flex-col h-screen bg-background">
+        <div className="flex flex-col h-full bg-background">
             <div className="sticky top-0 z-10 bg-background/95 backdrop-blur border-b border-b-[var(--color-border-bottom-custom)] p-4">
                 <div className="mx-auto flex items-center justify-between">
                     <div className="flex-1 flex items-center space-x-3">
                         <Button variant="ghost" size="sm" onClick={onBack} className="p-1">
                             <ArrowLeft className="h-5 w-5 text-icon-secondary dark:text-white" />
                         </Button>
-                        <div className="flex-1" />
                     </div>
                     <div className="flex flex-col items-center">
                         <h1 className="font-bold text-base">{group.groupName}</h1>
@@ -344,7 +406,7 @@ export function GroupChatScreen({ group, groupmembers, onBack, onLeaveGroup, use
                                         return (
                                             <div key={member.groupMemberId} className="flex items-center space-x-3 p-2 rounded-lg hover:bg-accent/50">
                                                 <Avatar className="h-10 w-10">
-                                                    <AvatarImage src={profileImage || member.profileImageUrl || ''} alt={`${member.nickname} 프로필`} />
+                                                     <AvatarImage src={profileImage} alt={`${member.memberName} 프로필`} /> 
                                                     <AvatarFallback>{member.memberName}</AvatarFallback>
                                                 </Avatar>
                                                 <div className="flex-1">
@@ -378,6 +440,9 @@ export function GroupChatScreen({ group, groupmembers, onBack, onLeaveGroup, use
                 userInfo={userInfo}
                 group={group}
                 memberProfiles={memberProfiles}
+                ref={messagesEndRef}
+                onScrollTop={loadMoreChatHistory}
+                onScroll={handleScroll}
             />
             <GroupChatInput handleSendMessage={handleSendMessage} handleSendImage={handleSendImage} handleSendAlbum={handleSendAlbum} />
             <GroupRoutineDialog

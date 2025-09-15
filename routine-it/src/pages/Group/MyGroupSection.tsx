@@ -58,14 +58,14 @@ export function MyGroupsSection({ myGroups, onNavigate, onNewGroup }: MyGroupsSe
                     <div className="flex items-center justify-between mb-1">
                       <div className="flex items-center space-x-2 flex-1">
                          {group.groupImageUrl && (
-                            <img 
-                              src={group.groupImageUrl} 
-                              alt={group.groupName} 
-                              className="w-8 h-8 rounded-full object-cover mr-2" 
-                            />
-                          )}
-                        
-                        
+                            <div className="w-8 h-8 rounded-full overflow-hidden mr-2 border border-[var(--color-border-bottom-custom)] dark:border-white">
+                              <img
+                                src={group.groupImageUrl}
+                                alt={group.groupName}
+                                className="w-full h-full object-contain p-1"
+                              />
+                            </div>
+                          )}  
                         <span className="text-sm font-medium text-card-foreground">{group.groupName}</span>
                         {group.isOwner && <Crown className="h-3 w-3 text-yellow-400 icon-accent" />}
                         <Badge variant={group.groupType === 'REQUIRED' ? 'destructive' : 'secondary'} className="text-xs">

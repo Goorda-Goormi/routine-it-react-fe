@@ -1,3 +1,5 @@
+// src/api/activity.ts
+
 import { apiFetch } from './client';
 
 /**
@@ -26,14 +28,20 @@ export const createPersonalActivity = async (personalRoutineId: number) => {
 
 /**
  * 특정 날짜의 모든 사용자 활동 목록을 조회합니다.
+ * @param date 조회할 날짜 (YYYY-MM-DD)
+ * @param userId (선택) 특정 사용자의 활동을 조회할 경우
  */
 export const getUserActivitiesByDay = async (date: string, userId?: number) => {
-  const endpoint = userId ? `/user-activities/day?date=${date}&userId=${userId}` : `/user-activities/day?date=${date}`;
-  return await apiFetch(endpoint);
+  const params = new URLSearchParams({ date });
+  if (userId) {
+    params.append('userId', String(userId));
+  }
+  
+  return await apiFetch(`/user-activities/day?${params.toString()}`);
 };
 
 /**
- * 그룹 활동을 생성합니다. (자유/의무 그룹 공통)
+ * 그룹 활동을 생성합니다.
  */
 export const createGroupActivity = async (data: {
   groupId: number;
@@ -65,16 +73,14 @@ export const createGroupActivity = async (data: {
 
 /**
  * 사용자 활동을 수정합니다. (예: 완료 -> 미완료로 변경)
- * @param activityId 수정할 활동의 고유 ID
+ * @param userActivityId 수정할 활동의 고유 ID
  * @param activityType 변경할 활동 타입
  */
-export const updateActivity = async (activityId: number, activityType: 'NOT_COMPLETED') => {
+export const updateActivity = async (userActivityId: number, activityType: 'NOT_COMPLETED') => {
   const requestBody = {
-    activityId,
+    activityId: userActivityId, 
     activityType,
   };
-
-  console.log('🔵 취소 요청으로 서버에 보낼 데이터:', requestBody); 
 
   return await apiFetch('/user-activities/update', {
     method: 'PUT',
@@ -91,16 +97,12 @@ export const getUserAuthPhotos = async (targetUserId?: number) => {
   if (targetUserId) {
     params.append('targetUserId', String(targetUserId));
   }
-  const response = await apiFetch(`/user-activities/info?${params.toString()}`);
-  return response.data;
+  // API가 감싸여있지 않은 배열을 반환한다고 가정
+  return await apiFetch(`/user-activities/info?${params.toString()}`);
 };
 
 /**
  * 기간 동안의 누적 출석 일수를 조회합니다.
- * @param params.targetUserId 조회할 사용자의 ID (없으면 내 정보)
- * @param params.startDate 조회 시작일 (YYYY-MM-DD)
- * @param params.endDate 조회 종료일 (YYYY-MM-DD)
- * @returns 출석 일수 (숫자)
  */
 export const getTotalAttendanceDays = async (params: { 
   targetUserId?: number; 
@@ -120,22 +122,31 @@ export const getTotalAttendanceDays = async (params: {
   }
 
   try {
-    const response = await apiFetch(`/user-activities/attendance/total?${queryParams.toString()}`);
-    // API가 숫자 값을 직접 반환하므로, 데이터가 없으면 0을 반환하도록 처리합니다.
-    return typeof response === 'number' ? response : 0;
+    const responseData = await apiFetch(`/user-activities/attendance/total?${queryParams.toString()}`);
+   
+    if (typeof responseData === 'number') {
+      return responseData;
+    }
+    
+    if (responseData && typeof responseData.data === 'number') {
+      return responseData.data;
+    }
+    
+    return 0; 
+
   } catch (error) {
     console.error("누적 출석일 조회 실패:", error);
-    return 0; // 에러 발생 시 0을 반환
+    return 0;
   }
 };
-
-
 
 /**
  * 특정 날짜의 출석 여부를 확인합니다.
  * @param date 확인할 날짜 (YYYY-MM-DD)
  */
-export const checkAttendance = async (date: string) => {
+export const checkAttendance = async (date: string): Promise<boolean> => {
   const params = new URLSearchParams({ date });
-  return await apiFetch(`/user-activities/attendance/check?${params.toString()}`);
+  const responseData = await apiFetch(`/user-activities/attendance/check?${params.toString()}`);
+
+  return responseData.data ?? false;
 };

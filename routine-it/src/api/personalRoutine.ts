@@ -22,6 +22,7 @@ export interface PersonalRoutineCreatePayload {
   userId: number;
   routineName: string;
   description?: string;
+  category: string;
   startTime: string; 
   repeatDays: string; 
   startDate: string; 

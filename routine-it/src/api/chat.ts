@@ -38,28 +38,22 @@ export const fetchChatHistory = async (
   }
 };
 
-/*
-
-// 자유 그룹 활동을 생성하는 API 함수
-export const createGroupActivity = async (data) => {
-    const accessToken = localStorage.getItem('accessToken');
-    if (!accessToken) {
-        throw new Error('인증 토큰이 없습니다.');
-    }
-
-    try {
-        const response = await apiFetch(`/user-activities/create`, {
-            method: 'POST',
-        });
-
-        if (!response.ok) {
-            const errorText = await response.text();
-            throw new Error(`API 호출 실패: ${response.status} - ${errorText}`);
-        }
-
-        return await response.json();
-    } catch (error) {
-        console.error("자유 그룹 활동 생성 오류:", error);
-        throw error;
-    }
-};*/
+// page를 쿼리 파라미터로 받는 새로운 함수
+export const fetchChatHistoryByPage = async (
+    roomId: number,
+    page: number = 0, // 페이지 번호 (보통 0부터 시작)
+    size: number = 20, // 한 페이지에 불러올 메시지 수
+): Promise<object> => {
+  try {
+    const params = new URLSearchParams({ 
+      page: String(page),
+      size: String(size),
+    });
+    
+    const response = await apiFetch(`/api/chat/rooms/${roomId}/messages?${params.toString()}`);
+    return response;
+  } catch (error) {
+    console.error("채팅 기록 조회 오류:", error);
+    throw error;
+  }
+};

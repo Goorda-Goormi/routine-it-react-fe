@@ -9,15 +9,15 @@ import { Label } from '../../components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../components/ui/select';
 import { Switch } from '../../components/ui/switch';
 import type { Routine } from '../../interfaces';
-
+import { CustomTimePicker } from '../../components/modules/TimePicker';
 
 interface RoutineDetailScreenProps {
   routine: Routine;
   onBack: () => void;
   onUpdateRoutine: (updatedRoutine: Routine) => void;
   onDeleteRoutine: (routineId: number, isGroupRoutine?: boolean) => void;
-  onTogglePublic: (routineId: number) => void; 
-  onToggleAlarm: (routineId: number) => void; 
+  onTogglePublic: (routine: Routine) => void; 
+  onToggleAlarm: (routine: Routine) => void; 
 }
 
 export function RoutineDetailScreen({ routine, onBack, onUpdateRoutine, onDeleteRoutine, onTogglePublic, onToggleAlarm }: RoutineDetailScreenProps) {
@@ -27,8 +27,26 @@ export function RoutineDetailScreen({ routine, onBack, onUpdateRoutine, onDelete
   const [isTimeEnabled, setIsTimeEnabled] = useState(!!routine.time); 
   
   // 선택된 요일들을 상태로 관리합니다.
-  const daysOfWeek = ['월', '화', '수', '목', '금', '토', '일'];
+  const daysOfWeek = ['일', '월', '화', '수', '목', '금', '토'];
   const [selectedDays, setSelectedDays] = useState<string[]>(routine.frequency || []);
+
+  const handleTimeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const timeValue = e.target.value;
+  if (timeValue) {
+    const [hour, minute] = timeValue.split(':').map(Number);
+    const snappedMinute = Math.round(minute / 5) * 5;
+    
+    const formattedHour = String(hour).padStart(2, '0');
+    const formattedMinute = String(snappedMinute % 60).padStart(2, '0');
+    
+    const newTime = `${formattedHour}:${formattedMinute}`;
+    
+    // 🔽 formData -> editedRoutine, setFormData -> setEditedRoutine 으로 수정
+    setEditedRoutine({ ...editedRoutine, time: newTime });
+  } else {
+    setEditedRoutine({ ...editedRoutine, time: '' });
+  }
+};
 
   const getFrequencyText = (frequencyArr: string[]) => {
     if (!Array.isArray(frequencyArr)) {
@@ -106,9 +124,7 @@ export function RoutineDetailScreen({ routine, onBack, onUpdateRoutine, onDelete
     if (!editedRoutine.category) {
         newErrors.category = '카테고리를 선택해주세요.';
     }
-    if (!editedRoutine.difficulty) {
-        newErrors.difficulty = '난이도를 선택해주세요.';
-    }
+    
 
     setErrors(newErrors);
 
@@ -183,12 +199,6 @@ export function RoutineDetailScreen({ routine, onBack, onUpdateRoutine, onDelete
             <CardContent className="space-y-4">
               <div className="text-sm space-y-2">
                 <div className="flex items-center space-x-2 text-foreground">
-                  <Badge 
-                    variant="outline" 
-                    className={`text-sm ${getDifficultyColor(routine.difficulty ?? '')}`}
-                  >
-                    {editedRoutine.difficulty}
-                  </Badge>
                   <p>{routine.description}</p>
                 </div>
               </div>
@@ -212,25 +222,37 @@ export function RoutineDetailScreen({ routine, onBack, onUpdateRoutine, onDelete
                 <div className="flex items-center justify-between text-sm text-foreground">
                   <div className="flex items-center space-x-2">
                     <Bell className="h-4 w-4 text-icon-secondary" />
-                    <span>톡캘린더 연동</span>
+                    <span>알림</span>
                   </div>
                   <Switch
                     checked={!!routine.reminder}
-                    onCheckedChange={() => onToggleAlarm(routine.id)}
-                    disabled={routine.isGroupRoutine}
+                    onCheckedChange={() => onToggleAlarm(routine)}
+                    
                   />
                 </div>
-                <div className="flex items-center justify-between text-sm text-foreground">
+                {!routine.isGroupRoutine && (
+                  <div className="flex items-center justify-between text-sm text-foreground">
+                    <div className="flex items-center space-x-2">
+                      <Globe className="h-4 w-4 text-icon-secondary" />
+                      <span>루틴 공개</span>
+                    </div>
+                    <Switch
+                      checked={!!routine.isPublic}
+                      onCheckedChange={() => onTogglePublic(routine)}
+                    />
+                  </div>
+                )}
+                {/* <div className="flex items-center justify-between text-sm text-foreground">
                   <div className="flex items-center space-x-2">
                     <Globe className="h-4 w-4 text-icon-secondary" />
                     <span>루틴 공개</span>
                   </div>
                   <Switch
                     checked={!!routine.isPublic}
-                    onCheckedChange={() => onTogglePublic(routine.id)}
-                    disabled={routine.isGroupRoutine}
+                    onCheckedChange={() => onTogglePublic(routine)}
+                   
                   />
-                </div>
+                </div> */}
               </div>
             </CardContent>
           </Card>
@@ -263,34 +285,16 @@ export function RoutineDetailScreen({ routine, onBack, onUpdateRoutine, onDelete
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="운동">💪 운동</SelectItem>
-                    <SelectItem value="건강">🏥 건강</SelectItem>
-                    <SelectItem value="학습">📚 학습</SelectItem>
-                    <SelectItem value="생활">🏠 생활</SelectItem>
-                    <SelectItem value="기타">📋 기타</SelectItem>
+                    <SelectItem value="exercise">💪 운동</SelectItem>
+                    <SelectItem value="health">🏥 건강</SelectItem>
+                    <SelectItem value="study">📚 학습</SelectItem>
+                    <SelectItem value="lifestyle">🏠 생활</SelectItem>
+                    <SelectItem value="hobby">🎨 취미</SelectItem>
                   </SelectContent>
                 </Select>
                 {errors.category && <p className="text-destructive text-sm mt-1">{errors.category}</p>}
               </div>
 
-              <div>
-                <Label htmlFor="edit-difficulty">난이도</Label>
-                <Select 
-                  value={editedRoutine.difficulty} 
-                  onValueChange={(value) => setEditedRoutine({...editedRoutine, difficulty: value})}
-                  disabled={editedRoutine.isGroupRoutine}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="쉬움">쉬움</SelectItem>
-                    <SelectItem value="보통">보통</SelectItem>
-                    <SelectItem value="어려움">어려움</SelectItem>
-                  </SelectContent>
-                </Select>
-                {errors.difficulty && <p className="text-destructive text-sm mt-1">{errors.difficulty}</p>}
-              </div>
 
               <div>
                 <Label htmlFor="edit-description">설명</Label>
@@ -304,12 +308,10 @@ export function RoutineDetailScreen({ routine, onBack, onUpdateRoutine, onDelete
               </div>
 
               <div>
-                <Label htmlFor="edit-time">시간</Label>
-                <Input
-                  id="edit-time"
-                  type="time"
+                <Label className="pb-3 pl-3" htmlFor="time">시간</Label>
+                <CustomTimePicker
                   value={editedRoutine.time}
-                  onChange={(e) => setEditedRoutine({...editedRoutine, time: e.target.value})}
+                  onChange={(newTime) => setEditedRoutine({ ...editedRoutine, time: newTime })}
                 />
                 {errors.time && <p className="text-destructive text-sm mt-1">{errors.time}</p>}
               </div>

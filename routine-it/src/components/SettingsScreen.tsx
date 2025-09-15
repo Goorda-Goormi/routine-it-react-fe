@@ -8,11 +8,13 @@ import { ArrowLeft, Moon, Sun, Bell, Shield, Download, Trash2 } from 'lucide-rea
 interface SettingsScreenProps {
   onBack: () => void;
   isDarkMode: boolean;
+  isAlarmOn: boolean;
+  onToggleAlarm: () => void;
   onToggleDarkMode: () => void;
   onDeleteAccount: () => void;
 }
 
-export function SettingsScreen({ onBack, isDarkMode, onToggleDarkMode, onDeleteAccount }: SettingsScreenProps) {
+export function SettingsScreen({ onBack, isDarkMode, onToggleDarkMode, onDeleteAccount, isAlarmOn, onToggleAlarm }: SettingsScreenProps) {
   return (
     <div className="min-h-screen bg-background">
       {/* 헤더 */}
@@ -63,24 +65,14 @@ export function SettingsScreen({ onBack, isDarkMode, onToggleDarkMode, onDeleteA
               <div className="flex items-center space-x-3">
                 <Bell className="h-5 w-5 text-muted-foreground" />
                 <div className="flex flex-col items-start">
-                  <div className="font-medium">루틴 리마인더</div>
-                  <div className="text-sm text-muted-foreground">설정한 시간에 알림을 받습니다</div>
+                  {/* 텍스트 수정 */}
+                  <div className="font-medium">전체 알림</div>
+                  {/* 설명 수정 */}
+                  <div className="text-sm text-muted-foreground">앱의 모든 푸시 알림을 받습니다</div>
                 </div>
               </div>
-              <Switch defaultChecked />
-            </div>
-            
-            <Separator />
-            
-            <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-3">
-                <Bell className="h-5 w-5 text-muted-foreground" />
-                <div className="flex flex-col items-start">
-                  <div className="font-medium">그룹 활동 알림</div>
-                  <div className="text-sm text-muted-foreground">그룹 채팅 및 인증 알림</div>
-                </div>
-              </div>
-              <Switch defaultChecked />
+              {/* onToggleAlarm prop이 이 스위치를 제어합니다. */}
+              <Switch checked={isAlarmOn} onCheckedChange={onToggleAlarm} />
             </div>
           </CardContent>
         </Card>
