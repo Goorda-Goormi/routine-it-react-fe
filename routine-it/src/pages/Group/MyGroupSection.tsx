@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/ca
 import { Button } from '../../components/ui/button';
 import { Badge } from '../../components/ui/badge';
 import { Plus, Users, Crown, MessageCircle, ChevronDown, ChevronUp } from 'lucide-react';
-import type { Group,AlarmTime } from '../../interfaces';
+import type { Group, AlarmTime } from '../../interfaces';
 
 interface MyGroupsSectionProps {
   myGroups: Group[];
@@ -33,11 +33,11 @@ const getCategoryEmoji = (categoryId: string) => {
 
 export function MyGroupsSection({ myGroups, onNavigate, onNewGroup }: MyGroupsSectionProps) {
   const [showAll, setShowAll] = useState(false);
-  
- // const hasMore = myGroups.length > 2 && !showAll;
-   const sortedGroups = [...myGroups].sort((a, b) => b.groupId - a.groupId);
-  const groupsToShow = showAll ? sortedGroups : sortedGroups.slice(0, 2); // 2개씩 표시
-   return (
+
+  const sortedGroups = [...myGroups].sort((a, b) => b.groupId - a.groupId);
+  const groupsToShow = showAll ? sortedGroups : sortedGroups.slice(0, 2);
+
+  return (
     <Card>
       <CardHeader className="pb-3">
         <div className="flex items-center justify-between">
@@ -57,15 +57,19 @@ export function MyGroupsSection({ myGroups, onNavigate, onNewGroup }: MyGroupsSe
                   <div className="p-5 rounded-lg cursor-pointer hover:bg-accent/50 transition-colors" onClick={() => onNavigate('group-detail', group)}>
                     <div className="flex items-center justify-between mb-1">
                       <div className="flex items-center space-x-2 flex-1">
-                         {group.groupImageUrl && (
-                            <div className="w-8 h-8 rounded-full overflow-hidden mr-2 border border-[var(--color-border-bottom-custom)] dark:border-white">
-                              <img
-                                src={group.groupImageUrl}
-                                alt={group.groupName}
-                                className="w-full h-full object-contain p-1"
-                              />
-                            </div>
-                          )}  
+                        {group.groupImageUrl ? (
+                          <div className="w-8 h-8 rounded-full overflow-hidden mr-2 border border-[var(--color-border-bottom-custom)] dark:border-white">
+                            <img
+                              src={group.groupImageUrl}
+                              alt={group.groupName}
+                              className="w-full h-full object-cover"
+                            />
+                          </div>
+                        ) : (
+                          <div className="w-8 h-8 rounded-full mr-2 flex items-center justify-center bg-gray-200 text-gray-700 font-bold dark:bg-gray-700 dark:text-gray-300">
+                            {group.groupName.charAt(0)}
+                          </div>
+                        )}
                         <span className="text-sm font-medium text-card-foreground">{group.groupName}</span>
                         {group.isOwner && <Crown className="h-3 w-3 text-yellow-400 icon-accent" />}
                         <Badge variant={group.groupType === 'REQUIRED' ? 'destructive' : 'secondary'} className="text-xs">

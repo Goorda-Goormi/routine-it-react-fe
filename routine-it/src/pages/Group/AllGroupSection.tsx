@@ -10,7 +10,7 @@ import { getPendingMembersByGroupId } from '../../api/group';
 
 interface AllGroupsSectionProps {
   groups: Group[];
-  myGroups: Group[]; 
+  myGroups: Group[];
   onNavigate: (screen: string, params?: any) => void;
   onJoinGroup: (groupId: number) => void;
   userInfo: UserProfile | null;
@@ -41,32 +41,36 @@ const GroupCard = ({ group, onNavigate, onJoinGroup, isJoined, isPending }: { gr
   <div className="p-5 rounded-lg hover:bg-accent/50 transition-colors cursor-pointer" onClick={() => onNavigate('group-detail', group)}>
     <div className="flex items-center justify-between mb-1">
       <div className="flex items-center space-x-2 flex-1">
-        {group.groupImageUrl && (
+        {group.groupImageUrl ? (
           <div className="w-8 h-8 rounded-full overflow-hidden mr-2 border border-[var(--color-border-bottom-custom)] dark:border-white">
             <img
               src={group.groupImageUrl}
               alt={group.groupName}
-              className="w-full h-full object-contain p-1"
+              className="w-full h-full object-cover"
             />
           </div>
+        ) : (
+          <div className="w-8 h-8 rounded-full mr-2 flex items-center justify-center bg-gray-200 text-gray-700 font-bold dark:bg-gray-700 dark:text-gray-300">
+            {group.groupName.charAt(0)}
+          </div>
         )}
-        
+
         <span className="text-sm font-medium text-card-foreground">{group.groupName}</span>
         <Badge variant={group.groupType === 'REQUIRED' ? 'destructive' : 'secondary'} className="text-xs">
           {group.groupType === 'REQUIRED' ? '의무참여' : '자유참여'}
         </Badge>
       </div>
-      
+
       {isJoined ? (
         <Button size="sm" variant="outline" className="text-xs pointer-events-none">
           참여 중
         </Button>
       ) : (
-        <Button 
-          size="sm" 
-          onClick={(e) => { 
-            e.stopPropagation(); 
-            onJoinGroup(group.groupId); 
+        <Button
+          size="sm"
+          onClick={(e) => {
+            e.stopPropagation();
+            onJoinGroup(group.groupId);
           }}
           disabled={isPending}
         >
@@ -116,16 +120,16 @@ export function AllGroupsSection({ groups, myGroups, onNavigate, onJoinGroup, us
 
   const filteredGroups = sortedGroups.filter(group => {
     const matchesCategory = selectedCategory === 'all' || group.category === selectedCategory;
-    const matchesType = 
-      selectedType === 'all' || 
-      (selectedType === 'mandatory' && group.groupType === 'REQUIRED') || 
+    const matchesType =
+      selectedType === 'all' ||
+      (selectedType === 'mandatory' && group.groupType === 'REQUIRED') ||
       (selectedType === 'optional' && group.groupType === 'FREE');
     return matchesCategory && matchesType;
   });
 
   const groupsToShow = showAll ? filteredGroups : filteredGroups.slice(0, 2);
   const shouldShowToggleButton = filteredGroups.length > 2;
-  
+
   const myGroupIds = new Set(myGroups.map(group => group.groupId));
 
   return (
@@ -164,9 +168,9 @@ export function AllGroupsSection({ groups, myGroups, onNavigate, onJoinGroup, us
                   const isPending = !isJoined && pendingGroupIds.has(group.groupId);
                   return (
                     <div key={group.groupId} className={`${index < groupsToShow.length - 1 ? 'border-b border-border/30' : ''}`}>
-                      <GroupCard 
-                        group={group} 
-                        onNavigate={onNavigate} 
+                      <GroupCard
+                        group={group}
+                        onNavigate={onNavigate}
                         onJoinGroup={onJoinGroup}
                         isJoined={isJoined}
                         isPending={isPending}
