@@ -269,19 +269,17 @@ export const GroupChatMessages = forwardRef<HTMLDivElement, GroupChatMessagesPro
                                                         </div>
                                                     ) : (
                                                         <>
-                                                            {/* ✅ 수정된 이미지 로딩 로직 적용 */}
-                                                            {msg.messageType === 'IMAGE' && displayImageUrl && (
+                                                           {msg.imageUrl && displayImageUrl ? (
                                                                 <img src={displayImageUrl} alt="전송 이미지" className="max-w-[200px] h-auto rounded-md" />
-                                                            )}
-                                                            {/* ✅ 수정된 앨범 이미지 로딩 로직 적용 */}
-                                                            {msg.messageType === 'ALBUM' && displayAlbumUrls && (
+                                                            ) : msg.albumImages && msg.albumImages.length > 0 ? (
                                                                 <div className="grid grid-cols-2 gap-2 max-w-[200px]">
                                                                     {displayAlbumUrls.map((image, i) => (
                                                                         <img key={i} src={image} alt={`앨범 이미지 ${i + 1}`} className="w-full h-auto rounded-md" />
                                                                     ))}
                                                                 </div>
+                                                            ) : (
+                                                                msg.message && <div>{msg.message}</div>
                                                             )}
-                                                            {msg.message && <div>{msg.message}</div>}
                                                         </>
                                                     )}
                                                 </div>
