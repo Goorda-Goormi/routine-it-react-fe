@@ -1670,12 +1670,18 @@ const navigateTo = (screen: string, params?: any, options?: { replace?: boolean 
     }
   };
 
-   const handleLeaveGroup = () => {
+   const handleLeaveGroup = (groupId: number) => {
     
     // 그룹을 떠난 후 그룹 목록 화면으로 바로 이동하도록 합니다.
+    //setNavigationStack([]);
+    //setActiveTab("group");
+     setMyGroups(prevGroups => prevGroups.filter(group => group.groupId !== groupId));
+
+    // 2. 채팅방을 네비게이션 스택에서 완전히 제거하고 그룹 화면으로 돌아가기
+    // 네비게이션 스택을 빈 배열로 초기화하고, 'group' 탭을 활성화
     setNavigationStack([]);
     setActiveTab("group");
-  };
+};
 
 
 // 9. 화면 렌더링 및 모달 =============================================================
@@ -1771,7 +1777,8 @@ const navigateTo = (screen: string, params?: any, options?: { replace?: boolean 
               group={currentScreen.params}
               groupmembers={members}
               onBack={navigateBack}
-              onLeaveGroup={handleLeaveGroup}
+              //onLeaveGroup={handleLeaveGroup}
+               onLeaveGroup={() => handleLeaveGroup(groupId)}
               userInfo={UserInfo}
               onDataRefresh={handleDataRefresh}
               onGroupRoutineComplete={handleGroupRoutineCompletion}

@@ -40,7 +40,7 @@ export function GroupChatScreen({ group, groupmembers, onBack, onLeaveGroup, use
   group: Group;
   groupmembers: Array<{ userId: number; groupMemberId: number; memberName: string; profileImageUrl: string }>;
   onBack: () => void;
-  onLeaveGroup: () => void;
+  onLeaveGroup: (groupId:number) => void;
   userInfo: UserProfile;
   onDataRefresh?: () => void;
   onGroupRoutineComplete?: () => void;
@@ -383,7 +383,7 @@ const handleSendImage = async (file: File) => {
     try {
       await leaveGroup(group.groupId);
       alert("성공적으로 탈퇴했습니다.");
-      onLeaveGroup();
+      onLeaveGroup(group.groupId);
     } catch (error) {
       console.error("그룹 탈퇴 오류:", error);
       alert("채팅방 나가기에 실패했습니다.");
