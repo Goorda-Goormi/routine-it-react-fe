@@ -1818,7 +1818,7 @@ const navigateTo = (screen: string, params?: any, options?: { replace?: boolean 
         console.log('개인 랭킹 데이터 (랭킹):', personalRankingData);
         return <RankingScreen 
                   groups={groups}
-                  personalRankingData={personalRankingData}
+                  //personalRankingData={personalRankingData}
                   groupRankingData={groupRankingData} 
                   userTotalScore={userTotalScore} 
                   loadingGroupRanking={loadingGroupRanking} 

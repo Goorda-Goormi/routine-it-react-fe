@@ -43,15 +43,25 @@ export const updateRankingScore = async (
 
 // 개인랭킹
 export const getPersonalRankings = async (
-  userId: number, 
-  monthYear?: string
+  // 💡 userId를 필수 파라미터에서 선택적 파라미터로 변경
+  userId?: number, 
+  monthYear?: string,
+  // 💡 페이지네이션 파라미터 추가
+  page: number = 0,
+  size: number = 20 
 ): Promise<IPersonalRankingResponse> => {
   try {
     const path = '/api/rankings/personal';
     const params = new URLSearchParams();
+    
+    // 💡 userId가 있을 경우에만 URL 파라미터로 추가
+    if (userId) {
+      params.append('userId', userId.toString()); 
+    }
 
-    params.append('userId', userId.toString());
-
+    params.append('page', page.toString()); // 페이지 번호 추가
+    params.append('size', size.toString()); // 페이지 크기 추가
+    
     if (monthYear) {
       params.append('monthYear', monthYear);
     }
