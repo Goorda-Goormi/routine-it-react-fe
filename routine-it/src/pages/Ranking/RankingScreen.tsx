@@ -60,6 +60,7 @@ export function RankingScreen({
   loadingUserTotalScore,
   myid,
 }: RankingScreenProps) {
+  console.log('내가 속한 그룹 ID들:', groups.map(group => group.groupId));
   // 💡 personalRankingData 상태를 컴포넌트 내부에서 관리하도록 변경합니다.
   const [personalRankingData, setPersonalRankingData] = useState<IPersonalRankingResponse | null>(null);
   const [loadingPersonalRanking, setLoadingPersonalRanking] = useState(true);
@@ -242,7 +243,7 @@ export function RankingScreen({
                     <div
                       key={user.userId}
                       className={`flex items-center justify-between p-3 rounded-lg border ${
-                        myid === user.userId && ' bg-orange-50'
+                        myid === user.userId && ' bg-my-highlight-bg'
                       }`}
                     >
                       <div className="flex items-center space-x-3">
@@ -319,7 +320,7 @@ export function RankingScreen({
                     <div
                       key={group.groupId}
                       className={`flex items-center justify-between p-3 rounded-lg border ${
-                        myGroupIds.includes(group.groupId) && ' bg-orange-50'
+                        myGroupIds.includes(group.groupId) && 'bg-my-highlight-bg'
                       }`}
                     >
                       <div className="flex items-center space-x-3">
@@ -351,7 +352,7 @@ export function RankingScreen({
                       </div>
                       <div className="text-right">
                         <div className={`text-lg font-bold ${getScoreColor(group.rank)} ${
-                          myGroupIds.includes(group.groupId) && 'text-white dark:text-white'
+                          myGroupIds.includes(group.groupId) && ''
                         }`}>
                           {group.totalScore.toLocaleString()}
                         </div>
