@@ -206,7 +206,7 @@ export const GroupChatMessages = forwardRef<HTMLDivElement, GroupChatMessagesPro
                             
                             {['MEMBER_JOIN', 'MEMBER_LEAVE'].includes(msg.messageType) ? (
                                 <div key={`system-${msg.id || index}`} className="flex justify-center my-2">
-                                    <span className="text-xs text-muted-foreground bg-gray-100 dark:bg-zinc-700/50 rounded-lg px-3 py-1.5 font-light">
+                                    <span className="text-xs text-muted-foreground bg-gray-100 dark: bg-zinc-100/50 rounded-lg px-3 py-1.5 font-light">
                                         {msg.message}
                                     </span>
                                 </div>
