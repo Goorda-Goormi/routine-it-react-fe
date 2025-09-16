@@ -196,7 +196,7 @@ export function CreateGroupScreen({ onBack, onCreateGroup, myid }: CreateGroupSc
 // ...
 
   function convertDaysToBinary(days: string[]) {
-    const order = ['월', '화', '수', '목', '금', '토', '일'];
+    const order = ['일', '월', '화', '수', '목', '금', '토'];
     return order.map((d) => (days.includes(d) ? '1' : '0')).join('');
   }
 
