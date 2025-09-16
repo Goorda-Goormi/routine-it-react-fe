@@ -88,7 +88,7 @@ export function HomeScreen({
     fetchMyPhotos();
   }, []);
 
-  const publicVerificationPhotos = myVerificationPhotos.filter(photo => photo.isPublic);
+  const publicVerificationPhotos = myVerificationPhotos.filter(photo => !photo.isPublic);
 
   const [selectedPhotoIndex, setSelectedPhotoIndex] = useState<number | null>(null);
 
