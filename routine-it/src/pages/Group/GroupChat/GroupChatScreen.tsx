@@ -431,10 +431,21 @@ const handleAuthSubmit = async (data: { description: string; image: File | null;
       return;
     }
     try {
+
+      let imageKey: string | null = null;
+
+    // 1) S3 업로드 먼저
+    if (data.image) {
+      const { uploadUrl, key } = await presignProofShotPut(group.groupId, myUserId, data.image);
+      const contentType = getContentType(data.image.name, data.image.type);
+      await uploadFileToS3(uploadUrl, data.image, contentType);
+      imageKey = key; // ✅ presigned key만 저장
+    }
+
       const activityData = {
         groupId: group.groupId,
         description: data.description,
-        imageUrl: null,
+        imageUrl: imageKey,
         isPublic: data.isPublic,
       };
       await createGroupActivity(activityData);
@@ -444,7 +455,7 @@ const handleAuthSubmit = async (data: { description: string; image: File | null;
         userId: myUserId,
         senderNickname: myNickname,
         message: `${myNickname}님이 루틴을 인증했습니다: ${data.description}`,
-        imageUrl: data.image ? URL.createObjectURL(data.image) : null,
+        imageUrl: imageKey,
         messageType: 'NOTICE' as const,
       };
       stompClientRef.current!.publish({
