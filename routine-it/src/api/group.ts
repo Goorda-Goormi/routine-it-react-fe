@@ -284,10 +284,10 @@ export const updateGroupMemberAlarm = async (groupId: number, isAlarmOn: boolean
 
 
 
-interface AuthApprovalPayload {
+export interface AuthApprovalPayload {
     groupId: number;
     leaderId?: number;
-    targetMemberId?: number;
+    targetMemberId: number;
     status?: 'PENDING' | 'JOINED' | 'BLOCKED' | 'LEFT';
     role?: 'LEADER' | 'MEMBER';
     activityDate?: string;

@@ -12,8 +12,7 @@ import {
     getUserActivitiesByDay,
     updateGroupMemberStatus,
     getPendingMembersByGroupId,
-    approveRoutineAuth, // 가상의 루틴 인증 승인 API 함수
-    rejectRoutineAuth, // 가상의 루틴 인증 거절 API 함수
+    approveAuthRequest, // 새로운 API 함수 import
 } from '../../../api/group';
 import { getGroupTop3Ranking } from '../../../api/ranking';
 import type { GlobalGroupRankingData } from '../../Ranking/RankingScreen';
@@ -63,29 +62,43 @@ export function GroupDetailScreen({
     const group = groups.find((g) => g.groupId === groupId);
     const isLeader = group?.leaderName === currentUser.nickname;
 
-    const fetchAuthNotifications = async () => {
-        try {
-            const notifications = await getNotificationsByType('GROUP_TODAY_AUTH_REQUEST' as NotificationType);
-            
-            const currentGroupAuthRequests = notifications.filter(
-                (notification) => notification.groupName === group?.groupName && notification.receiverName === currentUser.nickname
-            );
+  const fetchAuthNotifications = async () => {
+    try {
+        const notifications = await getNotificationsByType('GROUP_TODAY_AUTH_REQUEST' as NotificationType);
+        
+        const currentGroupAuthRequests = notifications.filter(
+            (notification) => notification.groupName === group?.groupName && notification.receiverName === currentUser.nickname
+        );
 
-            const authRequestList = currentGroupAuthRequests.map(notification => ({
+        const authRequestList = currentGroupAuthRequests.map(notification => {
+            let targetUserId = null;
+            let targetGroupMemberId = null; // 그룹 멤버 ID를 추가합니다.
+
+            // notification.senderName을 이용해 그룹 멤버 목록에서 필요한 ID를 찾습니다.
+            const memberInfo = groupMembers.find(member => member.memberName === notification.senderName);
+            if (memberInfo) {
+                targetUserId = memberInfo.userId;
+                targetGroupMemberId = memberInfo.groupMemberId; // 여기서 groupMemberId를 가져옵니다.
+            }
+            
+            return {
                 id: notification.id,
                 nickname: notification.senderName,
+                imageUrl: null, // 요청하신 대로 null 유지
                 message: notification.content,
-                imageUrl: notification.imageUrl,
-            }));
+                targetUserId: targetUserId,
+                targetGroupMemberId: targetGroupMemberId, // payload에 사용될 그룹 멤버 ID
+            };
+        });
 
-            setAuthRequests(authRequestList);
-            setPendingAuthCount(authRequestList.length);
-        } catch (error) {
-            console.error("루틴 인증 요청 알림 로딩 실패:", error);
-            setAuthRequests([]);
-            setPendingAuthCount(0);
-        }
-    };
+        setAuthRequests(authRequestList);
+        setPendingAuthCount(authRequestList.length);
+    } catch (error) {
+        console.error("루틴 인증 요청 알림 로딩 실패:", error);
+        setAuthRequests([]);
+        setPendingAuthCount(0);
+    }
+};
 
     useEffect(() => {
         const fetchData = async () => {
@@ -170,27 +183,54 @@ export function GroupDetailScreen({
         onNavigate('user-home', { id: member.userId, nickname: member.memberName });
     };
 
-    // --- 새로운 루틴 인증 승인/거절 로직 ---
-    const handleApproveAuth = async (notificationId: number) => {
-        try {
-            // 루틴 인증 승인 API 호출 (가정)
-            // await approveRoutineAuth(notificationId);
-            console.log(`알림 ID ${notificationId}에 대한 루틴 인증을 승인했습니다.`);
-
-            // 승인된 항목을 목록에서 제거
-            setAuthRequests(prev => prev.filter(auth => auth.id !== notificationId));
-            setPendingAuthCount(prev => prev - 1);
-            alert("루틴 인증을 승인했습니다.");
-        } catch (error) {
-            console.error("루틴 인증 승인 처리에 실패했습니다:", error);
-            alert("루틴 인증 승인 처리에 실패했습니다.");
+    // --- 루틴 인증 승인/거절 로직 수정 ---
+   const handleApproveAuth = async (notificationId: number) => {
+    try {
+        const authRequest = authRequests.find(req => req.id === notificationId);
+        if (!authRequest || authRequest.targetGroupMemberId === null) {
+            console.error("승인할 인증 요청을 찾을 수 없거나 멤버 ID가 누락되었습니다.");
+            return;
         }
-    };
+
+        const payload = {
+            groupId: groupId,
+            leaderId: myid,
+            targetMemberId: authRequest.targetGroupMemberId, // <--- **이 부분을 수정했습니다.**
+            approved: true,
+            imageUrl: authRequest.imageUrl,
+            activityDate: new Date().toISOString().split('T')[0],
+        };
+
+        await approveAuthRequest(groupId, payload);
+        console.log(`알림 ID ${notificationId}에 대한 루틴 인증을 승인했습니다.`);
+        
+        setAuthRequests(prev => prev.filter(auth => auth.id !== notificationId));
+        setPendingAuthCount(prev => prev - 1);
+        alert("루틴 인증을 승인했습니다.");
+    } catch (error) {
+        console.error("루틴 인증 승인 처리에 실패했습니다:", error);
+        alert("루틴 인증 승인 처리에 실패했습니다.");
+    }
+};
 
     const handleRejectAuth = async (notificationId: number) => {
         try {
-            // 루틴 인증 거절 API 호출 (가정)
-            // await rejectRoutineAuth(notificationId);
+            const authRequest = authRequests.find(req => req.id === notificationId);
+            if (!authRequest) {
+                console.error("거절할 인증 요청을 찾을 수 없습니다.");
+                return;
+            }
+    
+            const payload = {
+                groupId: groupId,
+                leaderId: myid, // 현재 로그인한 사용자 ID
+                targetMemberId: authRequest.targetUserId, // 인증 요청을 보낸 사용자 ID
+                approved: false, // 거절 시 false
+                imageUrl: authRequest.imageUrl,
+                activityDate: new Date().toISOString().split('T')[0], // 오늘 날짜
+            };
+
+            await approveAuthRequest(groupId, payload); // approveAuthRequest 함수를 거절에도 사용
             console.log(`알림 ID ${notificationId}에 대한 루틴 인증을 거절했습니다.`);
             
             // 거절된 항목을 목록에서 제거
@@ -281,6 +321,8 @@ export function GroupDetailScreen({
                 onGroupDeleted={onDeleteGroupSuccess}
                 myid={myid}
                 onGroupJoined={onGroupJoined}
+                //isJoined={isJoined}
+                onRefreshMembers={onRefreshMembers}
             />
             <div className="p-4 space-y-4">
                 <GroupDetailTabs
@@ -317,10 +359,10 @@ export function GroupDetailScreen({
                             id: member.groupMemberId,
                             user: member.memberName,
                         }))}
-                        onApproveInvite={handleApproveInvite} // 함수명 변경
-                        onRejectInvite={handleRejectInvite} // 함수명 변경
-                        onApproveAuth={handleApproveAuth} // 루틴 인증 승인
-                        onRejectAuth={handleRejectAuth} // 루틴 인증 거절
+                        onApproveInvite={handleApproveInvite}
+                        onRejectInvite={handleRejectInvite}
+                        onApproveAuth={handleApproveAuth}
+                        onRejectAuth={handleRejectAuth}
                         onClose={() => setShowApprovalModal(false)}
                     />
                 </DialogContent>
