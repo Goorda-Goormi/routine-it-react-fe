@@ -138,7 +138,7 @@ export function HomeScreen({
             variant="outline"
             size="sm"
             onClick={() => onNavigate('create-routine')}
-            className="text-foreground border-2 border-border/60 hover:bg-accent hover:text-foreground"
+            className="text-foreground border-1 border-border/60 hover:bg-accent hover:text-foreground"
           >
             <Plus className="h-4 w-4 mr-1 icon-secondary bg" />
             루틴 추가

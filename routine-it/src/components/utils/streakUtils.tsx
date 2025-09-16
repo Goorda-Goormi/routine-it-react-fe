@@ -75,7 +75,7 @@ export function getStreakInfo(streakDays: number): StreakInfo {
     return {
       icon: '🌱',
       color: 'text-yellow-700 dark:text-white',
-      bgColor: 'bg-yellow-600/40 dark: !bg-yellow-400/70 dark:border-none',
+      bgColor: '!bg-yellow-600/40 !dark:bg-yellow-400/70 dark:border-none',
       containBgColor: 'bg-[#f1f0e5] dark:bg-[#97693d]',
       borderColor: 'border-yellow-800/40',
       textColor: 'text-yellow-900 dark:text-white font-medium',
