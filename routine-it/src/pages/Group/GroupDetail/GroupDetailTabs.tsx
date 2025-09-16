@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '../../../components/ui
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../../components/ui/tabs';
 import { Badge } from '../../../components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '../../../components/ui/avatar';
-import { Trophy, Calendar, Crown, Users,Medal } from 'lucide-react';
+import { Trophy, Calendar, Crown, Users, Medal } from 'lucide-react';
 import type { GroupMemberResponse } from '../../../interfaces';
 
 interface GroupDetailTabsProps {
@@ -13,6 +13,8 @@ interface GroupDetailTabsProps {
     groupMembers: GroupMemberResponse[];
     memberProfiles: Record<number, string>;
     myid: number;
+    // 새 props: 오늘 인증된 멤버 목록 (Set)
+    certifiedMembers: Set<string>;
 }
 
 export const GroupDetailTabs = ({
@@ -22,10 +24,12 @@ export const GroupDetailTabs = ({
     groupMembers,
     memberProfiles,
     myid,
+    certifiedMembers,
 }: GroupDetailTabsProps) => {
     console.log("GroupDetailTabs로 전달된 멤버 데이터:", groupMembers);
     console.log("최근 활동 데이터:", recentActivities);
     console.log("멤버 프로필 맵:", memberProfiles);
+    console.log("오늘 인증된 멤버:", certifiedMembers);
 
     const renderMembers = () => {
         return groupMembers.map((member, index) => {
@@ -33,13 +37,11 @@ export const GroupDetailTabs = ({
                 return null;
             }
 
-            const isCertified = recentActivities.some(
-                (activity) => activity.nickname === member.memberName && activity.action === '루틴 인증 완료'
-            );
+            // 채팅 내역과 리더의 승인 여부 모두 확인
+            const isCertified = certifiedMembers.has(member.memberName);
 
             const isLeader = member.role === 'LEADER';
             
-            // 변경: isUncertified 대신 isCertified 상태를 사용합니다.
             const statusText = isCertified ? '인증' : '미인증';
             const badgeVariant = isCertified ? 'default' : 'destructive';
 
@@ -72,7 +74,6 @@ export const GroupDetailTabs = ({
                             </div>
                         </div>
                         <div className="flex items-center space-x-2">
-                            {/* 변경: 배지 상태를 isCertified에 따라 동적으로 변경 */}
                             <Badge variant={badgeVariant} className="text-xs">
                                 {statusText}
                             </Badge>
@@ -121,7 +122,6 @@ export const GroupDetailTabs = ({
                                     const member = groupMembers.find(m => m.memberName === item.nickname);
                                     const profileImageUrl = member && member.userId ? memberProfiles[member.userId] : '';
                                     
-                                    // 현재 사용자의 랭킹 항목인지 확인
                                     const isMe = member && member.userId === myid;
 
                                     const rankIcon = (rank: number) => {

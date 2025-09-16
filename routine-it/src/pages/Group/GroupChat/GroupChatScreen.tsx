@@ -40,7 +40,7 @@ export function GroupChatScreen({ group, groupmembers, onBack, onLeaveGroup, use
   group: Group;
   groupmembers: Array<{ userId: number; groupMemberId: number; memberName: string; profileImageUrl: string }>;
   onBack: () => void;
-  onLeaveGroup: () => void;
+  onLeaveGroup: (groupId:number) => void;
   userInfo: UserProfile;
   onDataRefresh?: () => void;
   onGroupRoutineComplete?: () => void;
@@ -383,7 +383,7 @@ const handleSendImage = async (file: File) => {
     try {
       await leaveGroup(group.groupId);
       alert("성공적으로 탈퇴했습니다.");
-      onLeaveGroup();
+      onLeaveGroup(group.groupId);
     } catch (error) {
       console.error("그룹 탈퇴 오류:", error);
       alert("채팅방 나가기에 실패했습니다.");
@@ -431,21 +431,45 @@ const handleAuthSubmit = async (data: { description: string; image: File | null;
       return;
     }
     try {
+
+      let imageKey: string | null = null;
+
+    // 1) S3 업로드 먼저
+    if (data.image) {
+      const { uploadUrl, key } = await presignProofShotPut(group.groupId, myUserId, data.image);
+      const contentType = getContentType(data.image.name, data.image.type);
+      await uploadFileToS3(uploadUrl, data.image, contentType);
+      imageKey = key; // ✅ presigned key만 저장
+    }
+
       const activityData = {
         groupId: group.groupId,
         description: data.description,
-        imageUrl: null,
+        imageUrl: imageKey,
         isPublic: data.isPublic,
       };
       await createGroupActivity(activityData);
       await updateRankingScore(myUserId, group.groupId, 1);
 
+      let messageText: string;
+      let messageType: 'NOTICE';
+
+if (group.groupType === 'REQUIRED') {
+    // 의무 그룹일 경우
+    messageText = `${myNickname}님이 루틴 인증을 요청했습니다.`;
+    messageType = 'NOTICE';
+} else {
+    // 자유 그룹일 경우 (기존 로직)
+    messageText = `${myNickname}님이 루틴을 인증했습니다: ${data.description}`;
+    messageType = 'NOTICE';
+}
+
       const msgBody = {
         userId: myUserId,
         senderNickname: myNickname,
-        message: `${myNickname}님이 루틴을 인증했습니다: ${data.description}`,
-        imageUrl: data.image ? URL.createObjectURL(data.image) : null,
-        messageType: 'NOTICE' as const,
+        message: messageText,
+        imageUrl: imageKey,
+        messageType: messageType,
       };
       stompClientRef.current!.publish({
         destination: `/app/chat.send/${roomId}`,
