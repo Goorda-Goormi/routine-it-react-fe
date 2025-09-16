@@ -70,6 +70,8 @@
   --card-mint-bg: #f1ffe8;
   --card-mint-border: #a0d377;
   --card-mint-text: #065f1f;
+
+   --my-highlight-bg: #fef3e2;
 }
 
 .dark {
@@ -135,6 +137,8 @@
   --card-mint-bg: #059669;
   --card-mint-border: transparent;
   --card-mint-text: #ffffff;
+
+  --my-highlight-bg: #1a4a2e;
 }
 
 @theme inline {
@@ -201,6 +205,8 @@
   --color-card-mint-bg: var(--card-mint-bg);
   --color-card-mint-border: var(--card-mint-border);
   --color-card-mint-text: var(--card-mint-text);
+
+  --color-my-highlight-bg: var(--my-highlight-bg);
 }
 
 /* 모든 @layer들을 최상위 레벨로 분리하고 정리했습니다. */
