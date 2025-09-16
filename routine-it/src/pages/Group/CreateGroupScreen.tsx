@@ -8,12 +8,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 import { RadioGroup, RadioGroupItem } from '../../components/ui/radio-group';
 import { Switch } from '../../components/ui/switch';
 import { Badge } from '../../components/ui/badge';
-import { ArrowLeft, Clock, Users, Target, AlertCircle, CheckSquare, Image as ImageIcon } from 'lucide-react';
+import { ArrowLeft, Clock, Users, Target, AlertCircle, CheckSquare } from 'lucide-react';
 import { Alert, AlertDescription } from '../../components/ui/alert';
 import { createGroup, type GroupRequest } from '../../api/group';
-import type { Group } from '../../interfaces';
 import { CustomTimePicker } from '../../components/modules/TimePicker';
-import { presignGroupRoomPut, uploadFileToS3, presignGet } from '../../api/storage';
 
 interface CreateGroupScreenProps {
   onBack: () => void;
@@ -72,11 +70,7 @@ export function CreateGroupScreen({ onBack, onCreateGroup, myid }: CreateGroupSc
   });
 
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
-  const [selectedImage, setSelectedImage] = useState<File | null>(null);
-  //const [imageUrl, setImageUrl] = useState<string>('');
-  const [imageUrl, setImageUrl] = useState<string>('./default.png');
-  const [isUploading, setIsUploading] = useState<boolean>(false);
-  const [uploadError, setUploadError] = useState<string>('');
+  const [isCreating, setIsCreating] = useState<boolean>(false);
 
   const handleDayToggle = (day: string) => {
     setFormData((prevData) => {
@@ -137,63 +131,36 @@ export function CreateGroupScreen({ onBack, onCreateGroup, myid }: CreateGroupSc
 
     const token = localStorage.getItem('accessToken');
     if (!token) {
-        alert('그룹 생성을 위해서는 로그인이 필요합니다.');
-        return;
+      alert('그룹 생성을 위해서는 로그인이 필요합니다.');
+      return;
     }
 
-    setIsUploading(true);
-    setUploadError('');
+    setIsCreating(true);
 
     try {
-        const authDays = convertDaysToBinary(formData.authDays);
-        
-        // 1. 이미지가 선택된 경우에만 S3에 업로드
-        let finalImageUrl = '';
-        if (selectedImage) {
-            try {
-                // S3 업로드 로직 (기존과 동일)
-                const presignResp = await presignGroupRoomPut(myid, selectedImage);
-                await uploadFileToS3(presignResp.uploadUrl, selectedImage, selectedImage.type);
-                const getUrlResp = await presignGet(presignResp.key);
-                finalImageUrl = getUrlResp.url;
-                console.log('➡️ 조회용 URL 발급:', finalImageUrl);
-            } catch (imageUploadError) {
-                console.error('이미지 업로드 실패 오류:', imageUploadError);
-                setUploadError('이미지 업로드에 실패했습니다. (그룹은 생성되지 않음)');
-                alert('이미지 업로드에 실패했습니다. 다시 시도해주세요.');
-                setIsUploading(false);
-                return; // 이미지 업로드 실패 시 그룹 생성 중단
-            }
-        } else {
-            // 이미지가 선택되지 않은 경우 기본 이미지 URL 사용
-            finalImageUrl = './default.png'; 
-        }
+      const authDays = convertDaysToBinary(formData.authDays);
 
-        // 2. 최종 이미지 URL을 포함하여 그룹 생성 API 호출
-        const payload: GroupRequest = {
-            groupName: formData.groupName,
-            groupDescription: formData.groupDescription,
-            groupType: formData.groupType,
-            alarmTime: formData.alarmTime,
-            authDays,
-            category: formData.category,
-            imageUrl: finalImageUrl, // 최종 이미지 URL 포함
-            maxMembers: parseInt(formData.maxMembers.toString(), 10),
-        };
+      const payload: GroupRequest = {
+        groupName: formData.groupName,
+        groupDescription: formData.groupDescription,
+        groupType: formData.groupType,
+        alarmTime: formData.alarmTime,
+        authDays,
+        category: formData.category,
+        maxMembers: parseInt(formData.maxMembers.toString(), 10),
+      };
 
-        const createdGroup = await createGroup(payload);
-        console.log('✅ 그룹 생성 성공:', createdGroup);
-        
-        // 3. 부모 컴포넌트 상태 업데이트
-        onCreateGroup({ ...createdGroup, imageUrl: finalImageUrl });
+      const createdGroup = await createGroup(payload);
+      console.log('✅ 그룹 생성 성공:', createdGroup);
+
+      onCreateGroup(createdGroup);
     } catch (e) {
-        console.error('그룹 생성 실패 오류:', e);
-        alert('그룹 생성에 실패했습니다. 오류: ' + (e as Error).message);
+      console.error('그룹 생성 실패 오류:', e);
+      alert('그룹 생성에 실패했습니다. 오류: ' + (e as Error).message);
     } finally {
-        setIsUploading(false);
+      setIsCreating(false);
     }
-};
-// ...
+  };
 
   function convertDaysToBinary(days: string[]) {
     const order = ['일', '월', '화', '수', '목', '금', '토'];
@@ -208,10 +175,6 @@ export function CreateGroupScreen({ onBack, onCreateGroup, myid }: CreateGroupSc
   const getCategoryEmoji = (categoryId: string) => {
     const category = categories.find((c) => c.id === categoryId);
     return category ? category.emoji : '📋';
-  };
-
-  const handleImageClick = () => {
-    document.getElementById('groupImageInput')?.click();
   };
 
   return (
@@ -243,50 +206,6 @@ export function CreateGroupScreen({ onBack, onCreateGroup, myid }: CreateGroupSc
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            {/*그룹 이미지 */}
-            <div className="space-y-2 flex flex-col items-center">
-              <Label htmlFor="groupImageInput" className="text-card-foreground">
-                그룹 이미지 (선택)
-              </Label>
-              <div
-                className="relative w-32 h-32 rounded-full border-2 border-border overflow-hidden group hover:border-primary transition-all duration-200 cursor-pointer"
-                onClick={handleImageClick}
-              >
-                {imageUrl ? (
-                  <img
-                    src={imageUrl}
-                    alt="그룹 이미지 미리보기"
-                    className="w-full h-full object-cover"
-                  />
-                ) : (
-                  <div className="w-full h-full flex items-center justify-center bg-gray-100 dark:bg-zinc-800 text-muted-foreground">
-                    <ImageIcon className="w-10 h-10" />
-                  </div>
-                )}
-                <div className="absolute inset-0 bg-black/50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-                  <span className="text-white text-xs">이미지 변경</span>
-                </div>
-              </div>
-              {uploadError && <p className="text-xs text-destructive mt-2">{uploadError}</p>}
-              {/* 실제 파일 input은 숨기기 */}
-              <Input
-                id="groupImageInput" // id 변경
-                type="file"
-                accept="image/*"
-                onChange={(e) => {
-                  const file = e.target.files?.[0];
-                  if (file) {
-                    setSelectedImage(file);
-                    setImageUrl(URL.createObjectURL(file));
-                    setUploadError('');
-                  } else {
-                    setSelectedImage(null);
-                    setImageUrl('');
-                  }
-                }}
-                className="hidden" // 클래스 추가하여 숨김
-              />
-            </div>
             {/* 그룹 이름 */}
             <div className="space-y-2">
               <Label htmlFor="groupName" className="text-card-foreground">
@@ -549,9 +468,9 @@ export function CreateGroupScreen({ onBack, onCreateGroup, myid }: CreateGroupSc
           <Button
             onClick={handleSubmit}
             className="flex-1 bg-primary text-primary-foreground hover:bg-primary/90"
-            disabled={isUploading}
+            disabled={isCreating}
           >
-            {isUploading ? '생성 중...' : '그룹 만들기'}
+            {isCreating ? '생성 중...' : '그룹 만들기'}
           </Button>
         </div>
       </div>

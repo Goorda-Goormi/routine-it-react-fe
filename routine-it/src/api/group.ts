@@ -10,7 +10,7 @@ export interface GroupRequest {
   alarmTime: string;
   authDays: string; // ^[01]{7}$ 패턴
   category: string;
-  imageUrl: string;
+  imageUrl?: string;
   maxMembers: number;
   alarm?:boolean;
 }
