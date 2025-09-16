@@ -12,6 +12,8 @@ import {
     getUserActivitiesByDay,
     updateGroupMemberStatus,
     getPendingMembersByGroupId,
+    approveRoutineAuth, // 가상의 루틴 인증 승인 API 함수
+    rejectRoutineAuth, // 가상의 루틴 인증 거절 API 함수
 } from '../../../api/group';
 import { getGroupTop3Ranking } from '../../../api/ranking';
 import type { GlobalGroupRankingData } from '../../Ranking/RankingScreen';
@@ -61,18 +63,14 @@ export function GroupDetailScreen({
     const group = groups.find((g) => g.groupId === groupId);
     const isLeader = group?.leaderName === currentUser.nickname;
 
-    // 루틴 인증 요청 알림을 가져오는 함수
     const fetchAuthNotifications = async () => {
         try {
-            // 1. 모든 루틴 인증 요청 알림을 조회
             const notifications = await getNotificationsByType('GROUP_TODAY_AUTH_REQUEST' as NotificationType);
             
-            // 2. 현재 그룹 이름과 현재 사용자의 닉네임(리더)에 일치하는 알림만 필터링
             const currentGroupAuthRequests = notifications.filter(
                 (notification) => notification.groupName === group?.groupName && notification.receiverName === currentUser.nickname
             );
 
-            // 3. 필터링된 알림을 원하는 형식으로 가공
             const authRequestList = currentGroupAuthRequests.map(notification => ({
                 id: notification.id,
                 nickname: notification.senderName,
@@ -172,9 +170,42 @@ export function GroupDetailScreen({
         onNavigate('user-home', { id: member.userId, nickname: member.memberName });
     };
 
-    const handleApprove = async (targetId: number) => {
+    // --- 새로운 루틴 인증 승인/거절 로직 ---
+    const handleApproveAuth = async (notificationId: number) => {
         try {
-            alert("인증 승인 로직이 아직 구현되지 않았습니다. 초대만 승인합니다.");
+            // 루틴 인증 승인 API 호출 (가정)
+            // await approveRoutineAuth(notificationId);
+            console.log(`알림 ID ${notificationId}에 대한 루틴 인증을 승인했습니다.`);
+
+            // 승인된 항목을 목록에서 제거
+            setAuthRequests(prev => prev.filter(auth => auth.id !== notificationId));
+            setPendingAuthCount(prev => prev - 1);
+            alert("루틴 인증을 승인했습니다.");
+        } catch (error) {
+            console.error("루틴 인증 승인 처리에 실패했습니다:", error);
+            alert("루틴 인증 승인 처리에 실패했습니다.");
+        }
+    };
+
+    const handleRejectAuth = async (notificationId: number) => {
+        try {
+            // 루틴 인증 거절 API 호출 (가정)
+            // await rejectRoutineAuth(notificationId);
+            console.log(`알림 ID ${notificationId}에 대한 루틴 인증을 거절했습니다.`);
+            
+            // 거절된 항목을 목록에서 제거
+            setAuthRequests(prev => prev.filter(auth => auth.id !== notificationId));
+            setPendingAuthCount(prev => prev - 1);
+            alert("루틴 인증을 거절했습니다.");
+        } catch (error) {
+            console.error("루틴 인증 거절 처리에 실패했습니다:", error);
+            alert("루틴 인증 거절 처리에 실패했습니다.");
+        }
+    };
+    
+    // --- 기존 가입 신청 승인/거절 로직 ---
+    const handleApproveInvite = async (targetId: number) => {
+        try {
             const currentLeader = groupMembers.find(m => m.memberName === group.leaderName);
             if (!currentLeader?.groupMemberId) {
                 alert("리더의 정보를 찾을 수 없어 승인에 실패했습니다.");
@@ -199,14 +230,13 @@ export function GroupDetailScreen({
                 alert("승인 처리에 실패했습니다.");
             }
         } catch (error) {
-            console.error("승인 처리에 실패했습니다:", error);
-            alert("승인 처리에 실패했습니다.");
+            console.error("가입 승인 처리에 실패했습니다:", error);
+            alert("가입 승인 처리에 실패했습니다.");
         }
     };
 
-    const handleReject = async (targetId: number) => {
+    const handleRejectInvite = async (targetId: number) => {
         try {
-            alert("인증 거절 로직이 아직 구현되지 않았습니다. 초대만 거절합니다.");
             const currentLeader = groupMembers.find(m => m.memberName === group.leaderName);
             if (!currentLeader?.groupMemberId) {
                 alert("리더의 정보를 찾을 수 없어 거절에 실패했습니다.");
@@ -226,8 +256,8 @@ export function GroupDetailScreen({
             setPendingInvites(prev => prev.filter(p => p.groupMemberId !== targetId));
             onRefreshMembers();
         } catch (error) {
-            console.error("거절 처리에 실패했습니다:", error);
-            alert("거절 처리에 실패했습니다.");
+            console.error("가입 거절 처리에 실패했습니다:", error);
+            alert("가입 거절 처리에 실패했습니다.");
         }
     };
 
@@ -287,8 +317,10 @@ export function GroupDetailScreen({
                             id: member.groupMemberId,
                             user: member.memberName,
                         }))}
-                        onApprove={handleApprove}
-                        onReject={handleReject}
+                        onApproveInvite={handleApproveInvite} // 함수명 변경
+                        onRejectInvite={handleRejectInvite} // 함수명 변경
+                        onApproveAuth={handleApproveAuth} // 루틴 인증 승인
+                        onRejectAuth={handleRejectAuth} // 루틴 인증 거절
                         onClose={() => setShowApprovalModal(false)}
                     />
                 </DialogContent>

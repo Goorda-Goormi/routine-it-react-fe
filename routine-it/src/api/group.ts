@@ -281,3 +281,35 @@ export const updateGroupMemberAlarm = async (groupId: number, isAlarmOn: boolean
     method: 'PUT',
   });
 };
+
+
+
+interface AuthApprovalPayload {
+    groupId: number;
+    leaderId?: number;
+    targetMemberId?: number;
+    status?: 'PENDING' | 'JOINED' | 'BLOCKED' | 'LEFT';
+    role?: 'LEADER' | 'MEMBER';
+    activityDate?: string;
+    imageUrl?: string;
+    approved: boolean;
+}
+
+/**
+ * 리더가 멤버의 루틴 인증 요청을 승인 또는 거절합니다.
+ * @param groupId - 그룹 ID
+ * @param payload - 승인/거절 처리에 필요한 데이터
+ */
+export async function approveAuthRequest(groupId: number, payload: AuthApprovalPayload) {
+    try {
+        const response = await apiFetch(`/group/${groupId}/approve-auth`, {
+            method: 'POST',
+            body: JSON.stringify(payload),
+        });
+        console.log(`그룹 ${groupId} 루틴 인증 처리 성공:`, response);
+        return response;
+    } catch (error) {
+        console.error("루틴 인증 처리 실패:", error);
+        throw error;
+    }
+}
