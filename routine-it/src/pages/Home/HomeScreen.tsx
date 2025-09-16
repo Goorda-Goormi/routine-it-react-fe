@@ -149,7 +149,7 @@ export function HomeScreen({
           <Card className="bg-card-yellow-bg border border-card-yellow-border dark:border-none dark:card-shadow">
             <CardContent className="p-4">
               <div className="flex flex-col items-center space-y-2">
-                <div className="flex items-center justify-center w-8 h-8 rounded-full bg-orange-500 dark:bg-orange-700">
+                <div className="flex items-center justify-center w-8 h-8 rounded-full bg-orange-500 dark:bg-orange-500">
                   <CheckCircle className="h-4 w-4 text-white" />
                 </div>
                 <div className="text-center">

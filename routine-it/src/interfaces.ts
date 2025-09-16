@@ -128,7 +128,6 @@ export interface UserProfile {
   isAlarmOn?: boolean;
   isDarkMode?: boolean;
   joinDate?: string;
-  level?: number;
   exp?: number;
   maxExp?: number;
   maxStreakDays?: number;

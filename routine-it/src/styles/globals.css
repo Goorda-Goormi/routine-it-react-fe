@@ -123,7 +123,7 @@
   --card-ivory-bg: #dc2626;
   --card-ivory-border: transparent;
   --card-ivory-text: #ffffff;
-  --card-cream-bg: #ca8a04;
+  --card-cream-bg: #fae7bf;
   --card-cream-border: transparent;
   --card-cream-text: #ffffff;
   --card-peach-bg: #ea580c;
@@ -821,7 +821,7 @@
   }
 
   /* MyPageScreen 활동통계와 성취배지의 투명도 배경 처리 */
-  .dark .bg-purple-500\/70,
+  /* .dark .bg-purple-500\/70,
   .dark .bg-emerald-500\/70,
   .dark .bg-blue-500\/70,
   .dark .bg-orange-500\/70,
@@ -830,7 +830,7 @@
   .dark .bg-gray-300\/70 {
     background-color: var(--color-muted);
     opacity: 1;
-  }
+  } */
 
   /* MyPageScreen 보더 투명도 처리 */
   .dark .border-purple-200\/50,
@@ -886,7 +886,7 @@
   .dark .bg-green-200\/50,
   .dark .bg-green-900\/20,
   .dark .bg-green-900\/30 {
-    background-color: rgba(5, 150, 105, 1);
+    background-color: rgba(23, 150, 110, 0.3);
     opacity: 1;
   }
 
@@ -903,13 +903,13 @@
     background-color: #dc2626;
     opacity: 1;
   }
-
+/* 
   .dark .bg-yellow-50\/50,
   .dark .bg-yellow-100\/50,
   .dark .bg-yellow-200\/50 {
     background-color: #ca8a04;
     opacity: 1;
-  }
+  } */
 
   .dark .bg-purple-50\/50,
   .dark .bg-purple-100\/50,

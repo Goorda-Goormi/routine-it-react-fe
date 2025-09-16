@@ -437,6 +437,7 @@ const handleAuthSubmit = async (data: { description: string; image: File | null;
       const { url } = await presignGet(key, "inline");
       imageUrl = url;
     }
+    imageUrl = "test";
 
     if (group.groupType === 'REQUIRED') {
       const myMemberInfo = groupmembers.find(m => m.userId === myUserId);

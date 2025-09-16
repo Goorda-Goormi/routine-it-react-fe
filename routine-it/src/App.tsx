@@ -744,9 +744,8 @@ useEffect(() => {
           isAlarmOn: true,
           isDarkMode: false,
           joinDate: '',
-          level: 0,
           exp: 0,
-          maxExp: 3000,
+          maxExp: 1000,
           maxStreakDays: 0,
           streakDays: 0
         });

@@ -48,9 +48,8 @@ export const startKakaoLogin = () => {
       isAlarmOn: settingsData.isAlarmOn,
       isDarkMode: settingsData.isDarkMode,
        joinDate: '',
-       level: 0,
        exp: 0,
-       maxExp: 3000,
+       maxExp: 1000,
        streakDays: 0,
        maxStreakDays: Number(localStorage.getItem('maxStreakDays')) || 0
      };

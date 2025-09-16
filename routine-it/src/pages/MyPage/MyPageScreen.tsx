@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card';
 import { Button } from '../../components/ui/button';
 import { Badge } from '../../components/ui/badge';
@@ -42,7 +42,6 @@ interface MyPageScreenProps {
     email?: string;
     profileImageUrl: string;
     joinDate?: string;
-    level?: number;
     exp?: number;
     maxExp?: number;
     streakDays: number;
@@ -107,6 +106,18 @@ export function MyPageScreen({ onNavigate, isDarkMode, onToggleDarkMode, onToggl
   
   const [currentDate, setCurrentDate] = useState(new Date());
 
+  const [animatedProgress, setAnimatedProgress] = useState(0);
+
+  const targetProgress = user.maxExp ? Math.round(((userTotalScore ?? 0) / user.maxExp) * 100) : 0;
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setAnimatedProgress(targetProgress);
+    }, 100);
+
+    return () => clearTimeout(timer); 
+  }, [targetProgress]);
+
   const getCalendarData = (date: Date) => {
     const year = date.getFullYear();
     const month = date.getMonth();
@@ -162,8 +173,8 @@ export function MyPageScreen({ onNavigate, isDarkMode, onToggleDarkMode, onToggl
       value: (user.streakDays ?? 0).toLocaleString(), 
       unit: '일',
       icon: Calendar,
-      bgColor: 'bg-purple-500/40',
-      borderColor: 'border-purple-200/50',
+      bgColor: 'bg-purple-500/40 dark: bg-purple-500/20',
+      borderColor: 'border-purple-200/50 dark: border-purple-300/60',
       iconBgColor: 'bg-purple-500/70',
       textColor: 'text-purple-800',
       subTextColor: 'text-purple-700'
@@ -184,8 +195,8 @@ export function MyPageScreen({ onNavigate, isDarkMode, onToggleDarkMode, onToggl
       value: userTotalScore ? userTotalScore.toLocaleString() : '0', 
       unit: '점',
       icon: TrendingUp,
-      bgColor: 'bg-orange-500/40',
-      borderColor: 'border-orange-200/50',
+      bgColor: 'bg-orange-500/40 dark: bg-orange-400/20',
+      borderColor: 'border-orange-200/50 dark: border-orange-200/40',
       iconBgColor: 'bg-orange-500/70',
       textColor: 'text-orange-800',
       subTextColor: 'text-orange-700'
@@ -195,16 +206,13 @@ export function MyPageScreen({ onNavigate, isDarkMode, onToggleDarkMode, onToggl
       value: (user.maxStreakDays ?? 0).toLocaleString(), 
       unit: '일',
       icon: Flame,
-      bgColor: 'bg-yellow-500/40',
-      borderColor: 'border-yellow-200/50',
+      bgColor: 'bg-yellow-500/40 dark: bg-yellow-500/20',
+      borderColor: 'border-yellow-200/50 dark: border-yellow-400/50',
       iconBgColor: 'bg-yellow-500',
       textColor: 'text-yellow-800',
       subTextColor: 'text-yellow-700'
     }
   ];
-
-
-  const expProgress = user.maxExp ? Math.round(((user.exp ?? 0) / user.maxExp) * 100) : 0;;
 
   const formatJoinDate = (joinDateStr?: string): string => {
     if (!joinDateStr) return '가입일 정보 없음';
@@ -246,7 +254,6 @@ export function MyPageScreen({ onNavigate, isDarkMode, onToggleDarkMode, onToggl
             <div className="flex-1">
               <div className="flex items-center space-x-2 mb-1">
                 <h2 className="text-lg font-semibold text-card-foreground">{user.nickname}</h2>
-                <Badge variant="secondary" className="text-xs">Lv.{user.level}</Badge>
               </div>
               <p className="text-sm text-left text-muted-foreground mb-2">{user.email}</p>
               <div className="space-y-1">
@@ -254,7 +261,7 @@ export function MyPageScreen({ onNavigate, isDarkMode, onToggleDarkMode, onToggl
                   <span className="text-muted-foreground">경험치</span>
                   <span className="text-card-foreground">{userTotalScore}/{user.maxExp}</span>
                 </div>
-                <Progress value={expProgress} className="h-2" />
+                <Progress value={animatedProgress} className="h-2" />
               </div>
             </div>
             
@@ -393,7 +400,7 @@ export function MyPageScreen({ onNavigate, isDarkMode, onToggleDarkMode, onToggl
       </Card>
 
       {/* 성취 배지 */}
-      <Card>
+      {/* <Card>
         <CardHeader className="pb-4">
           <CardTitle className="text-base text-card-foreground flex items-center space-x-2">
             <Award className="h-4 w-4 icon-accent" />
@@ -447,7 +454,7 @@ export function MyPageScreen({ onNavigate, isDarkMode, onToggleDarkMode, onToggl
         </CardContent>
       </Card>
 
-      
+       */}
 
       {/* 가입 정보 및 로그아웃 */}
       <div className="space-y-3">
@@ -459,7 +466,7 @@ export function MyPageScreen({ onNavigate, isDarkMode, onToggleDarkMode, onToggl
         
         <Button
           variant="outline"
-          className="w-full mb-5 bg-red-500/80 hover:bg-red-600/80 text-white border-red-400/50 hover:border-red-500/50 transition-colors"
+          className="w-full mb-5 bg-red-500/80 dark:bg-red-500 hover:bg-red-600/80 dark:hover:bg-red-700 text-white border-red-400/50 hover:border-red-500/50 transition-colors"
           onClick={onLogout}
         >
           <LogOut className="h-4 w-4 mr-2 " />

@@ -72,14 +72,7 @@ export function RoutineDetailScreen({ routine, onBack, onUpdateRoutine, onDelete
     );
   };
 
-  const getDifficultyColor = (difficulty: string) => {
-    switch (difficulty) {
-      case '쉬움': return 'text-green-600 bg-green-50 border-green-200 dark:text-white dark:bg-green-900/30 dark:border-green-700/30';
-      case '보통': return 'text-yellow-600 bg-yellow-50 border-yellow-200 dark:text-white dark:bg-yellow-900/30 dark:border-yellow-700/30';
-      case '어려움': return 'text-red-600 bg-red-50 border-red-200 dark:text-white dark:bg-red-900/30 dark:border-red-700/30';
-      default: return 'text-gray-600 bg-gray-50 border-gray-200 dark:text-white dark:bg-gray-900/30 dark:border-gray-700/30';
-    }
-  };
+  
 
   const getCategoryEmoji = (category: string) => {
     switch (category) {
@@ -166,11 +159,11 @@ export function RoutineDetailScreen({ routine, onBack, onUpdateRoutine, onDelete
           {isEditing ? (
             <div className="flex items-center space-x-2">
               <Button size="sm" onClick={handleSave} className="bg-primary text-primary-foreground">
-                <Save className="h-4 w-4 mr-1" />
+                <Save className="h-4 w-4 mr-1 " />
                 저장
               </Button>
-              <Button variant="outline" size="sm" onClick={handleCancel}>
-                <X className="h-4 w-4 mr-1" />
+              <Button variant="ghost" size="sm" onClick={handleCancel} className='border-0'>
+                <X className="h-4 w-4 mr-1 text-icon-secondary dark:text-white" />
               </Button>
             </div>
           ) : (
@@ -327,7 +320,9 @@ export function RoutineDetailScreen({ routine, onBack, onUpdateRoutine, onDelete
                       variant={selectedDays.includes(day) ? 'default' : 'outline'}
                       onClick={() => handleDayToggle(day)}
                       className={`w-10 h-10 rounded-full ${
-                        selectedDays.includes(day) ? 'bg-primary text-white' : ''
+                        selectedDays.includes(day) 
+                        ? 'bg-primary text-primary-foreground' 
+                          : 'bg-background border border-border'
                       }`}
                     >
                       {day}
