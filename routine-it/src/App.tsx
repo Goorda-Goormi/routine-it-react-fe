@@ -269,7 +269,26 @@ export default function App() {
   const [error, setError] = useState<string | null>(null);
 
   const [remindersSentToday, setRemindersSentToday] = useState<Record<number, boolean>>({});
+  const [remindersSent0minToday, setRemindersSent0minToday] = useState<Record<number, boolean>>({});
 
+  const [currentDate, setCurrentDate] = useState(new Date().toDateString());
+
+  useEffect(() => {
+    // 10분마다 현재 날짜를 확인합니다.
+    const checkDateTimer = setInterval(() => {
+      const today = new Date().toDateString();
+      if (today !== currentDate) {
+        // 날짜가 변경되었으면 (자정이 지났으면)
+        console.log("자정이 지났습니다. 알림 전송 상태를 초기화합니다.");
+        setCurrentDate(today); // 현재 날짜를 갱신
+        setRemindersSentToday({}); // 5분 전 알림 상태 초기화
+        setRemindersSent0minToday({}); // 0분 전 알림 상태 초기화
+      }
+    }, 1000 * 60 * 10); // 10분(600000ms)에 한 번씩 날짜 체크
+
+    return () => clearInterval(checkDateTimer);
+  }, [currentDate]);
+  
   const [isReviewModalOpen, setReviewModalOpen] = useState(false);
   const [reviewModalContent, setReviewModalContent] = useState({ content: '', monthYear: '' });
   const addNotification = (notification: Omit<Notification, 'id' | 'date' | 'read'>) => {
@@ -1337,51 +1356,60 @@ const handleGroupRoutineCompletion = () => {
   // 루틴 시작 5분 전 알림을 위한 useEffect
   // ------------------------------------------------------------------
   useEffect(() => {
-    // 1분마다 실행되는 타이머를 설정합니다.
     const timer = setInterval(() => {
       const now = new Date();
       const allRoutines = [...personalRoutines, ...getGroupRoutinesWithOverrides()];
 
       allRoutines.forEach(routine => {
-        // 조건: 1. 알림이 켜져 있고, 2. 시간이 설정되어 있으며, 3. 오늘 아직 알림을 보내지 않았어야 함
-        if (routine.reminder && routine.time && !remindersSentToday[routine.id]) {
+        // 조건: 1. 알림 켜짐, 2. 시간 설정됨
+        if (routine.reminder && routine.time) {
           
-          // '08:30'과 같은 시간 문자열을 파싱합니다.
           const [hours, minutes] = routine.time.split(':').map(Number);
-          
-          // 오늘 날짜를 기준으로 루틴 실행 시간을 Date 객체로 만듭니다.
           const routineTime = new Date();
           routineTime.setHours(hours, minutes, 0, 0);
 
-          // 현재 시간과 루틴 시간의 차이를 분(minute)으로 계산합니다.
           const diffInMinutes = (routineTime.getTime() - now.getTime()) / 1000 / 60;
 
-          // 차이가 정확히 5분일 때 알림을 보냅니다.
-          if (Math.round(diffInMinutes) === 5) {
+          // --- 5분 전 알림 체크 ---
+          // 2. [수정] 시간을 범위(-5분~-4분 사이)로 체크
+          if (diffInMinutes <= 5 && diffInMinutes > 4 && !remindersSentToday[routine.id]) {
             console.log(`'${routine.name}' 5분 전 알림 생성!`);
             
-            // 기존 알림 추가 함수를 사용하여 새 알림을 생성합니다.
             addNotification({
               message: `'${routine.name}' 시작 5분 전입니다.`,
-              category: '홈', // '홈' 또는 '그룹' 카테고리로 설정 가능
+              category: '홈',
               icon: <Clock className="h-4 w-4 text-primary" />,
             });
 
-            // 알림을 보냈다고 기록하여 중복을 방지합니다.
             setRemindersSentToday(prev => ({
+              ...prev,
+              [routine.id]: true,
+            }));
+          }
+
+          // --- 0분 (정시) 알림 체크 ---
+          // 2. [수정] 시간을 범위(-1분~0분 사이)로 체크
+          if (diffInMinutes <= 0 && diffInMinutes > -1 && !remindersSent0minToday[routine.id]) {
+            console.log(`'${routine.name}' 0분 전 (정시) 알림 생성!`);
+            
+            addNotification({
+              message: `'${routine.name}'을(를) 시작할 시간입니다!`,
+              category: '홈',
+              icon: <Clock className="h-4 w-4 text-primary" />,
+            });
+
+            setRemindersSent0minToday(prev => ({
               ...prev,
               [routine.id]: true,
             }));
           }
         }
       });
-    }, 60000); // 60000ms = 1분
+    }, 60000); // 1분마다 실행
 
-    // 컴포넌트가 사라질 때 타이머를 정리하여 메모리 누수를 방지합니다.
     return () => clearInterval(timer);
 
-  }, [personalRoutines, remindersSentToday]); // 의존성 배열
-
+  }, [personalRoutines, myGroups, groupRoutineOverrides]); 
   
    //7.그룹 관련 =============================================================
   

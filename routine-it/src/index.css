@@ -121,7 +121,7 @@ button:focus-visible {
 
 @media (min-width: 768px) {
   #root {
-    max-width: 1280px; 
+    max-width: 530px; 
     padding: 0;
   }
 }
