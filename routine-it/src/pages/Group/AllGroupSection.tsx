@@ -1,17 +1,19 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card';
 import { Button } from '../../components/ui/button';
 import { Badge } from '../../components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../components/ui/tabs';
 import { Search as SearchIcon, ChevronDown, ChevronUp } from 'lucide-react';
-import type { Group } from '../../interfaces';
+import type { Group, UserProfile, GroupMemberResponse } from '../../interfaces';
+import { getPendingMembersByGroupId } from '../../api/group';
 
 interface AllGroupsSectionProps {
   groups: Group[];
   myGroups: Group[]; 
   onNavigate: (screen: string, params?: any) => void;
   onJoinGroup: (groupId: number) => void;
+  userInfo: UserProfile | null;
 }
 
 const categories = [
@@ -35,7 +37,7 @@ const getCategoryEmoji = (categoryId: string) => {
   }
 };
 
-const GroupCard = ({ group, onNavigate, onJoinGroup, isJoined }: { group: Group, onNavigate: any, onJoinGroup: any, isJoined: boolean }) => (
+const GroupCard = ({ group, onNavigate, onJoinGroup, isJoined, isPending }: { group: Group, onNavigate: any, onJoinGroup: any, isJoined: boolean, isPending: boolean }) => (
   <div className="p-5 rounded-lg hover:bg-accent/50 transition-colors cursor-pointer" onClick={() => onNavigate('group-detail', group)}>
     <div className="flex items-center justify-between mb-1">
       <div className="flex items-center space-x-2 flex-1">
@@ -54,15 +56,23 @@ const GroupCard = ({ group, onNavigate, onJoinGroup, isJoined }: { group: Group,
           {group.groupType === 'REQUIRED' ? '의무참여' : '자유참여'}
         </Badge>
       </div>
-      <Button 
-        size="sm" 
-        variant="outline"
-        disabled={isJoined}
-        onClick={(e) => {e.stopPropagation(); onJoinGroup(group.groupId);}} 
-        className="text-card-foreground border-border hover:bg-accent hover:text-card-foreground text-xs px-2 py-1"
-      >
-        {isJoined ? '참여 중' : '참여하기'}
-      </Button>
+      
+      {isJoined ? (
+        <Button size="sm" variant="outline" className="text-xs pointer-events-none">
+          참여 중
+        </Button>
+      ) : (
+        <Button 
+          size="sm" 
+          onClick={(e) => { 
+            e.stopPropagation(); 
+            onJoinGroup(group.groupId); 
+          }}
+          disabled={isPending}
+        >
+          {isPending ? '참여 대기 중' : '참여하기'}
+        </Button>
+      )}
     </div>
     <p className="text-xs text-left text-muted-foreground mb-2">{group.description}</p>
     <div className="flex items-center justify-between text-xs text-muted-foreground">
@@ -73,29 +83,49 @@ const GroupCard = ({ group, onNavigate, onJoinGroup, isJoined }: { group: Group,
   </div>
 );
 
-export function AllGroupsSection({ groups, myGroups, onNavigate, onJoinGroup }: AllGroupsSectionProps) {
+export function AllGroupsSection({ groups, myGroups, onNavigate, onJoinGroup, userInfo }: AllGroupsSectionProps) {
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [selectedType, setSelectedType] = useState('all');
   const [showAll, setShowAll] = useState(false);
   const sortedGroups = [...groups].sort((a, b) => b.groupId - a.groupId);
+  const [pendingGroupIds, setPendingGroupIds] = useState<Set<number>>(new Set());
+
+  useEffect(() => {
+    if (!userInfo || !groups || groups.length === 0) return;
+
+    const fetchPendingMembers = async () => {
+      const newPendingIds = new Set<number>();
+      for (const group of groups) {
+        if (group.groupType === 'REQUIRED') {
+          try {
+            const pendingMembers = await getPendingMembersByGroupId(group.groupId);
+            const isUserPending = pendingMembers.some(member => member.userId === userInfo.id);
+            if (isUserPending) {
+              newPendingIds.add(group.groupId);
+            }
+          } catch (error) {
+            console.error(`그룹 ${group.groupId}의 PENDING 멤버 조회 실패:`, error);
+          }
+        }
+      }
+      setPendingGroupIds(newPendingIds);
+    };
+
+    fetchPendingMembers();
+  }, [groups, userInfo]);
 
   const filteredGroups = sortedGroups.filter(group => {
-    // 카테고리 필터링
     const matchesCategory = selectedCategory === 'all' || group.category === selectedCategory;
-
-    // 타입 필터링
     const matchesType = 
       selectedType === 'all' || 
       (selectedType === 'mandatory' && group.groupType === 'REQUIRED') || 
       (selectedType === 'optional' && group.groupType === 'FREE');
-
     return matchesCategory && matchesType;
   });
 
   const groupsToShow = showAll ? filteredGroups : filteredGroups.slice(0, 2);
   const shouldShowToggleButton = filteredGroups.length > 2;
   
-  // 참여 중인 그룹 ID를 빠르게 찾기 위한 Set 생성
   const myGroupIds = new Set(myGroups.map(group => group.groupId));
 
   return (
@@ -129,16 +159,21 @@ export function AllGroupsSection({ groups, myGroups, onNavigate, onJoinGroup }: 
           {filteredGroups.length > 0 ? (
             <>
               <div className="px-4 pb-4 mt-4 space-y-0 max-h-64 overflow-y-auto scrollbar-hide">
-                {groupsToShow.map((group, index) => (
-                  <div key={group.groupId} className={`${index < groupsToShow.length - 1 ? 'border-b border-border/30' : ''}`}>
-                    <GroupCard 
-                      group={group} 
-                      onNavigate={onNavigate} 
-                      onJoinGroup={onJoinGroup}
-                      isJoined={myGroupIds.has(group.groupId)} // isJoined prop 전달
-                    />
-                  </div>
-                ))}
+                {groupsToShow.map((group, index) => {
+                  const isJoined = myGroupIds.has(group.groupId);
+                  const isPending = !isJoined && pendingGroupIds.has(group.groupId);
+                  return (
+                    <div key={group.groupId} className={`${index < groupsToShow.length - 1 ? 'border-b border-border/30' : ''}`}>
+                      <GroupCard 
+                        group={group} 
+                        onNavigate={onNavigate} 
+                        onJoinGroup={onJoinGroup}
+                        isJoined={isJoined}
+                        isPending={isPending}
+                      />
+                    </div>
+                  );
+                })}
               </div>
               {shouldShowToggleButton && (
                 <div className="flex justify-center mt-4">

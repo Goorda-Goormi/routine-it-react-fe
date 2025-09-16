@@ -186,7 +186,7 @@ export const GroupDetailTabs = ({
                     <CardContent className="pt-0">
                         <div className="space-y-0">
                             {recentActivities.length > 0 ? (
-                                recentActivities.map((activity, index) => {
+                                recentActivities.slice(0, 5).map((activity, index) => {
                                     const member = groupMembers.find(m => m.memberName === activity.nickname);
                                     const profileImageUrl = member && member.userId ? memberProfiles[member.userId] : '';
                                     
@@ -207,7 +207,7 @@ export const GroupDetailTabs = ({
                                                     <div className="text-xs text-muted-foreground">{activity.time}</div>
                                                 </div>
                                             </div>
-                                            {index < recentActivities.length - 1 && <div className="h-2"></div>}
+                                            {index < recentActivities.slice(0, 5).length - 1 && <div className="h-2"></div>}
                                         </div>
                                     );
                                 })

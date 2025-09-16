@@ -4,16 +4,18 @@ import { Search } from 'lucide-react';
 import { MyGroupsSection } from './MyGroupSection';
 import { AllGroupsSection } from './AllGroupSection';
 import type { Group } from '../../interfaces';
-
+import { getPendingMembersByGroupId } from '../../api/group';
+import type { UserProfile } from '../../interfaces';
 interface GroupScreenProps {
   onNavigate: (screen: string, params?: any) => void;
   groups: Group[];
   myGroups: Group[];
   onNewGroup: () => void;
   onJoinGroup: (groupId: number) => void;
+  userInfo: UserProfile | null; 
 }
 
-export function GroupScreen({ onNavigate, groups, myGroups, onNewGroup, onJoinGroup }: GroupScreenProps) {
+export function GroupScreen({ onNavigate, groups, myGroups, onNewGroup, onJoinGroup,userInfo }: GroupScreenProps) {
   const [searchTerm, setSearchTerm] = useState('');
 
   // group.name이 유효한 값인지 확인
@@ -47,6 +49,7 @@ export function GroupScreen({ onNavigate, groups, myGroups, onNewGroup, onJoinGr
         onNavigate={onNavigate}
         onJoinGroup={onJoinGroup}
         myGroups={myGroups}
+         userInfo={userInfo}
       />
     </div>
   );

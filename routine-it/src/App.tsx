@@ -1811,6 +1811,7 @@ const navigateTo = (screen: string, params?: any, options?: { replace?: boolean 
                   myGroups={myGroups}   
                   onNewGroup={() => navigateTo("create-group")}
                   onJoinGroup={handleJoinGroupRequest}
+                  userInfo={UserInfo}
                 />
       case "ranking":{
         console.log('그룹 목록 (랭킹):', groups);
