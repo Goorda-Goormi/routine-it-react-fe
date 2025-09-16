@@ -369,7 +369,7 @@ export default function App() {
       frequency: ['월', '화', '수', '목', '금', '토', '일'],
       reminder: true,
       goal: '30',
-      category: '',
+      category: 'lifestyle',
       completed: false,
       streak: 0,
       isGroupRoutine: false,
