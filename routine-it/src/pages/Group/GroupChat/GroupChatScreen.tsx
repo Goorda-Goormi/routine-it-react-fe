@@ -451,12 +451,25 @@ const handleAuthSubmit = async (data: { description: string; image: File | null;
       await createGroupActivity(activityData);
       await updateRankingScore(myUserId, group.groupId, 1);
 
+      let messageText: string;
+      let messageType: 'NOTICE';
+
+if (group.groupType === 'REQUIRED') {
+    // 의무 그룹일 경우
+    messageText = `${myNickname}님이 루틴 인증을 요청했습니다.`;
+    messageType = 'NOTICE';
+} else {
+    // 자유 그룹일 경우 (기존 로직)
+    messageText = `${myNickname}님이 루틴을 인증했습니다: ${data.description}`;
+    messageType = 'NOTICE';
+}
+
       const msgBody = {
         userId: myUserId,
         senderNickname: myNickname,
-        message: `${myNickname}님이 루틴을 인증했습니다: ${data.description}`,
+        message: messageText,
         imageUrl: imageKey,
-        messageType: 'NOTICE' as const,
+        messageType: messageType,
       };
       stompClientRef.current!.publish({
         destination: `/app/chat.send/${roomId}`,
