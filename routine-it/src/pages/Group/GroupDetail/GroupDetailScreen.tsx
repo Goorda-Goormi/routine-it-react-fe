@@ -12,7 +12,7 @@ import {
     getUserActivitiesByDay,
     updateGroupMemberStatus,
     getPendingMembersByGroupId,
-    approveAuthRequest, // 새로운 API 함수 import
+    approveAuthRequest,
 } from '../../../api/group';
 import { getGroupTop3Ranking } from '../../../api/ranking';
 import type { GlobalGroupRankingData } from '../../Ranking/RankingScreen';
@@ -58,102 +58,185 @@ export function GroupDetailScreen({
     const [weeklyRanking, setWeeklyRanking] = useState<GlobalGroupRankingData[]>([]);
     const [recentActivities, setRecentActivities] = useState<any[]>([]);
     const [memberProfiles, setMemberProfiles] = useState<Record<number, string>>({});
+    // 새 상태: 오늘 루틴을 인증한 멤버를 추적합니다. (채팅 + 리더 승인)
+    const [todayCertifiedMembers, setTodayCertifiedMembers] = useState<Set<string>>(new Set());
 
     const group = groups.find((g) => g.groupId === groupId);
     const isLeader = group?.leaderName === currentUser.nickname;
 
-  const fetchAuthNotifications = async () => {
-    try {
-        const notifications = await getNotificationsByType('GROUP_TODAY_AUTH_REQUEST' as NotificationType);
-        
-        const currentGroupAuthRequests = notifications.filter(
-            (notification) => notification.groupName === group?.groupName && notification.receiverName === currentUser.nickname
-        );
-
-        const authRequestList = currentGroupAuthRequests.map(notification => {
-            let targetUserId = null;
-            let targetGroupMemberId = null; // 그룹 멤버 ID를 추가합니다.
-
-            // notification.senderName을 이용해 그룹 멤버 목록에서 필요한 ID를 찾습니다.
-            const memberInfo = groupMembers.find(member => member.memberName === notification.senderName);
-            if (memberInfo) {
-                targetUserId = memberInfo.userId;
-                targetGroupMemberId = memberInfo.groupMemberId; // 여기서 groupMemberId를 가져옵니다.
-            }
+    const fetchAuthNotifications = async () => {
+        try {
+            const notifications = await getNotificationsByType('GROUP_TODAY_AUTH_REQUEST' as NotificationType);
             
-            return {
-                id: notification.id,
-                nickname: notification.senderName,
-                imageUrl: null, // 요청하신 대로 null 유지
-                message: notification.content,
-                targetUserId: targetUserId,
-                targetGroupMemberId: targetGroupMemberId, // payload에 사용될 그룹 멤버 ID
-            };
-        });
+            const currentGroupAuthRequests = notifications.filter(
+                (notification) => notification.groupName === group?.groupName && notification.receiverName === currentUser.nickname
+            );
 
-        setAuthRequests(authRequestList);
-        setPendingAuthCount(authRequestList.length);
-    } catch (error) {
-        console.error("루틴 인증 요청 알림 로딩 실패:", error);
-        setAuthRequests([]);
-        setPendingAuthCount(0);
-    }
-};
+            const authRequestList = currentGroupAuthRequests.map(notification => {
+                let targetUserId = null;
+                let targetGroupMemberId = null;
+
+                const memberInfo = groupMembers.find(member => member.memberName === notification.senderName);
+                if (memberInfo) {
+                    targetUserId = memberInfo.userId;
+                    targetGroupMemberId = memberInfo.groupMemberId;
+                }
+                
+                return {
+                    id: notification.id,
+                    nickname: notification.senderName,
+                    imageUrl: null,
+                    message: notification.content,
+                    targetUserId: targetUserId,
+                    targetGroupMemberId: targetGroupMemberId,
+                };
+            });
+
+            setAuthRequests(authRequestList);
+            setPendingAuthCount(authRequestList.length);
+        } catch (error) {
+            console.error("루틴 인증 요청 알림 로딩 실패:", error);
+            setAuthRequests([]);
+            setPendingAuthCount(0);
+        }
+    };
+    
+    // fetchData 함수를 useEffect 밖으로 분리하여 재사용 가능하게 함
+    const fetchData = async () => {
+        if (currentUser?.id) {
+            try {
+                const rankingResponse = await getGroupTop3Ranking(groupId, Number(currentUser.id));
+                setWeeklyRanking(rankingResponse?.data?.top3Users || []);
+            } catch (error) {
+                console.error("랭킹 데이터 가져오기 실패:", error);
+                setWeeklyRanking([]);
+            }
+        }
+        
+        try {
+            const chatResponse = await fetchChatHistory(groupId, 50);
+            const chatHistory = chatResponse.data?.content || [];
+            
+            // 채팅 내역에서 인증 메시지를 필터링하고, 인증한 멤버를 Set에 저장
+            const certifiedByChat = new Set<string>();
+            const authMessages = chatHistory
+                .filter(msg => msg.messageType === 'NOTICE' && msg.content?.includes('루틴을 인증했어요'))
+                .map(msg => {
+                    const date = new Date(msg.sentAt);
+                    date.setHours(date.getHours() + 9);
+                    const kstTime = date.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' });
+
+                    certifiedByChat.add(msg.senderNickname); // 채팅으로 인증한 멤버 추가
+
+                    return {
+                        id: msg.messageId,
+                        nickname: msg.senderNickname,
+                        action: '루틴 인증 완료',
+                        time: kstTime,
+                        imageUrl: msg.imageUrl,
+                    };
+                });
+            setRecentActivities(authMessages);
+            setTodayCertifiedMembers(certifiedByChat); // 오늘 인증된 멤버 상태 업데이트
+        } catch (error) {
+            console.error("채팅 인증 내역 로딩 실패:", error);
+            setRecentActivities([]);
+        }
+    };
+
+       const handleKickMember = async (targetMemberId: number) => {
+        try {
+            const currentLeader = groupMembers.find(m => m.memberName === group.leaderName);
+            if (!currentLeader || !currentLeader.groupMemberId) {
+                alert("리더의 정보를 찾을 수 없습니다.");
+                return;
+            }
+
+            console.log("전송 데이터:", {
+                groupId: groupId,
+                leaderId: currentLeader.groupMemberId,
+                targetMemberId: targetMemberId,
+                status: "BLOCKED",
+                role: "MEMBER",
+                approved: false
+            });
+
+            const response = await updateGroupMemberStatus(groupId, {
+                groupId: groupId,
+                leaderId: currentLeader.groupMemberId,
+                targetMemberId: targetMemberId,
+                status: "BLOCKED",
+                role: "MEMBER",
+                approved: false
+            });
+
+
+            if (response && response.status === "BLOCKED") {
+                alert('멤버가 성공적으로 그룹에서 내보내졌습니다.');
+                setShowExMembersModal(false);
+                onUpdateGroup({ ...group, members: groupMembers.filter(m => m.groupMemberId !== targetMemberId) });
+                onRefreshMembers();
+            } else {
+                alert('멤버 내보내기에 실패했습니다.');
+            }
+        } catch (error) {
+            console.error("멤버 내보내기 실패:", error);
+            alert('멤버 내보내기에 실패했습니다.');
+        }
+    };
+
+    const handleGroupDeleted = async () => {
+        if (group?.groupId) {
+            try {
+                await deleteGroup(group.groupId);
+                alert("그룹이 성공적으로 삭제되었습니다.");
+                onDeleteGroupSuccess();
+            } catch (error) {
+                console.error("그룹 삭제 실패:", error);
+                alert("그룹 삭제에 실패했습니다.");
+            }
+        }
+    };
+
+    const handleDelegateLeader = async (targetMemberId: number, targetMemberName: string) => {
+        try {
+            const currentLeader = groupMembers.find(m => m.memberName === group.leaderName);
+            if (!currentLeader) {
+                alert("현재 리더 정보를 찾을 수 없습니다.");
+                return;
+            }
+            const currentLeaderId = currentLeader.groupMemberId;
+            const response = await delegateLeader(group.groupId, Number(currentLeaderId), targetMemberId);
+            if (response && response.role === "LEADER") {
+                alert("리더 위임이 완료되었습니다.");
+                setShowExMembersModal(false);
+                onUpdateGroup({ ...group, leaderName: targetMemberName, leaderId: targetMemberId });
+                onRefreshMembers();
+            }
+        } catch (error) {
+            console.error("리더 위임 실패:", error);
+        }
+    };
+
+
+    const fetchMemberProfiles = async () => {
+        const profiles: Record<number, string> = {};
+        await Promise.all(groupMembers.map(async (member) => {
+            if (member.userId) {
+                try {
+                    const profileData = await getUserProfile(member.userId);
+                    profiles[member.userId] = profileData.profileImageUrl;
+                } catch (error) {
+                    console.error(`Failed to fetch profile for user ${member.userId}:`, error);
+                    profiles[member.userId] = '';
+                }
+            }
+        }));
+        setMemberProfiles(profiles);
+    };
 
     useEffect(() => {
-        const fetchData = async () => {
-            if (currentUser?.id) {
-                try {
-                    const rankingResponse = await getGroupTop3Ranking(groupId, Number(currentUser.id));
-                    setWeeklyRanking(rankingResponse?.data?.top3Users || []);
-                } catch (error) {
-                    console.error("랭킹 데이터 가져오기 실패:", error);
-                    setWeeklyRanking([]);
-                }
-            }
-            
-            try {
-                const chatResponse = await fetchChatHistory(groupId, 50);
-                const chatHistory = chatResponse.data?.content || [];
-                const authMessages = chatHistory
-                    .filter(msg => msg.messageType === 'NOTICE' && msg.content?.includes('루틴을 인증했어요'))
-                    .map(msg => {
-                        const date = new Date(msg.sentAt);
-                        date.setHours(date.getHours() + 9);
-                        const kstTime = date.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' });
-                        return {
-                            id: msg.messageId,
-                            nickname: msg.senderNickname,
-                            action: '루틴 인증 완료',
-                            time: kstTime,
-                            imageUrl: msg.imageUrl,
-                        };
-                    });
-                setRecentActivities(authMessages);
-            } catch (error) {
-                console.error("채팅 인증 내역 로딩 실패:", error);
-                setRecentActivities([]);
-            }
-        };
-
-        const fetchMemberProfiles = async () => {
-            const profiles: Record<number, string> = {};
-            await Promise.all(groupMembers.map(async (member) => {
-                if (member.userId) {
-                    try {
-                        const profileData = await getUserProfile(member.userId);
-                        profiles[member.userId] = profileData.profileImageUrl;
-                    } catch (error) {
-                        console.error(`Failed to fetch profile for user ${member.userId}:`, error);
-                        profiles[member.userId] = '';
-                    }
-                }
-            }));
-            setMemberProfiles(profiles);
-        };
-
         fetchData();
-
         if (groupMembers.length > 0) {
             fetchMemberProfiles();
         }
@@ -163,9 +246,7 @@ export function GroupDetailScreen({
         try {
             const pendingMembers = await getPendingMembersByGroupId(groupId);
             setPendingInvites(pendingMembers);
-
             await fetchAuthNotifications();
-
             setShowApprovalModal(true);
         } catch (error) {
             alert("승인 목록을 불러오는데 실패했습니다.");
@@ -183,57 +264,63 @@ export function GroupDetailScreen({
         onNavigate('user-home', { id: member.userId, nickname: member.memberName });
     };
 
-    // --- 루틴 인증 승인/거절 로직 수정 ---
-   const handleApproveAuth = async (notificationId: number) => {
-    try {
-        const authRequest = authRequests.find(req => req.id === notificationId);
-        if (!authRequest || authRequest.targetGroupMemberId === null) {
-            console.error("승인할 인증 요청을 찾을 수 없거나 멤버 ID가 누락되었습니다.");
-            return;
+    // 루틴 인증 승인/거절 로직 수정
+    const handleApproveAuth = async (notificationId: number) => {
+        try {
+            const authRequest = authRequests.find(req => req.id === notificationId);
+            if (!authRequest || authRequest.targetGroupMemberId === null) {
+                console.error("승인할 인증 요청을 찾을 수 없거나 멤버 ID가 누락되었습니다.");
+                return;
+            }
+
+            const payload = {
+                groupId: groupId,
+                leaderId: myid,
+                targetMemberId: authRequest.targetGroupMemberId,
+                approved: true,
+                imageUrl: authRequest.imageUrl,
+                activityDate: new Date().toISOString().split('T')[0],
+            };
+
+            await approveAuthRequest(groupId, payload);
+            console.log(`알림 ID ${notificationId}에 대한 루틴 인증을 승인했습니다.`);
+            
+            // 리더가 승인한 멤버를 todayCertifiedMembers Set에 추가
+            setTodayCertifiedMembers(prev => {
+                const newSet = new Set(prev);
+                newSet.add(authRequest.nickname);
+                return newSet;
+            });
+            
+            setAuthRequests(prev => prev.filter(auth => auth.id !== notificationId));
+            setPendingAuthCount(prev => prev - 1);
+            alert("루틴 인증을 승인했습니다.");
+        } catch (error) {
+            console.error("루틴 인증 승인 처리에 실패했습니다:", error);
+            alert("루틴 인증 승인 처리에 실패했습니다.");
         }
-
-        const payload = {
-            groupId: groupId,
-            leaderId: myid,
-            targetMemberId: authRequest.targetGroupMemberId, // <--- **이 부분을 수정했습니다.**
-            approved: true,
-            imageUrl: authRequest.imageUrl,
-            activityDate: new Date().toISOString().split('T')[0],
-        };
-
-        await approveAuthRequest(groupId, payload);
-        console.log(`알림 ID ${notificationId}에 대한 루틴 인증을 승인했습니다.`);
-        
-        setAuthRequests(prev => prev.filter(auth => auth.id !== notificationId));
-        setPendingAuthCount(prev => prev - 1);
-        alert("루틴 인증을 승인했습니다.");
-    } catch (error) {
-        console.error("루틴 인증 승인 처리에 실패했습니다:", error);
-        alert("루틴 인증 승인 처리에 실패했습니다.");
-    }
-};
+    };
 
     const handleRejectAuth = async (notificationId: number) => {
         try {
             const authRequest = authRequests.find(req => req.id === notificationId);
-            if (!authRequest) {
-                console.error("거절할 인증 요청을 찾을 수 없습니다.");
+            if (!authRequest || authRequest.targetGroupMemberId === null) {
+                console.error("거절할 인증 요청을 찾을 수 없거나 멤버 ID가 누락되었습니다.");
                 return;
             }
     
             const payload = {
                 groupId: groupId,
-                leaderId: myid, // 현재 로그인한 사용자 ID
-                targetMemberId: authRequest.targetUserId, // 인증 요청을 보낸 사용자 ID
-                approved: false, // 거절 시 false
+                leaderId: myid,
+                targetMemberId: authRequest.targetGroupMemberId,
+                approved: false,
                 imageUrl: authRequest.imageUrl,
-                activityDate: new Date().toISOString().split('T')[0], // 오늘 날짜
+                activityDate: new Date().toISOString().split('T')[0],
             };
 
-            await approveAuthRequest(groupId, payload); // approveAuthRequest 함수를 거절에도 사용
+            await approveAuthRequest(groupId, payload);
             console.log(`알림 ID ${notificationId}에 대한 루틴 인증을 거절했습니다.`);
             
-            // 거절된 항목을 목록에서 제거
             setAuthRequests(prev => prev.filter(auth => auth.id !== notificationId));
             setPendingAuthCount(prev => prev - 1);
             alert("루틴 인증을 거절했습니다.");
@@ -243,7 +330,7 @@ export function GroupDetailScreen({
         }
     };
     
-    // --- 기존 가입 신청 승인/거절 로직 ---
+    // 기존 가입 신청 승인/거절 로직은 변경 없음
     const handleApproveInvite = async (targetId: number) => {
         try {
             const currentLeader = groupMembers.find(m => m.memberName === group.leaderName);
@@ -318,10 +405,9 @@ export function GroupDetailScreen({
                 onOpenExMembers={() => setShowExMembersModal(true)}
                 pendingAuthCount={pendingAuthCount}
                 groupMembers={groupMembers}
-                onGroupDeleted={onDeleteGroupSuccess}
+                onGroupDeleted={handleGroupDeleted}
                 myid={myid}
                 onGroupJoined={onGroupJoined}
-                //isJoined={isJoined}
                 onRefreshMembers={onRefreshMembers}
             />
             <div className="p-4 space-y-4">
@@ -332,6 +418,7 @@ export function GroupDetailScreen({
                     groupMembers={groupMembers}
                     memberProfiles={memberProfiles}
                     myid={myid}
+                    certifiedMembers={todayCertifiedMembers}
                 />
             </div>
             <GroupEdit
