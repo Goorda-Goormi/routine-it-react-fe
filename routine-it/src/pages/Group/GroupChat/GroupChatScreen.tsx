@@ -281,49 +281,48 @@ export function GroupChatScreen({ group, groupmembers, onBack, onLeaveGroup, use
   };
 
   // 7) 이미지 전송 (1장)
-  const handleSendImage = async (file: File) => {
-    if (!stompClientRef.current?.connected) {
-      alert("채팅 연결이 불안정하여 이미지를 보낼 수 없습니다. 잠시 후 다시 시도해주세요.");
-      return;
-    }
+ const handleSendImage = async (file: File) => {
     try {
-      // 1) presign 발급
-      const { uploadUrl, key } = await presignGroupRoomPut(roomId, myUserId, file);
-      // 2) 업로드
-      const contentType = getContentType(file.name, file.type);
-      await uploadFileToS3(uploadUrl, file, contentType);
-      // 3) 조회 URL 발급
-      const { url } = await presignGet(key, "inline");
-      // 4) publish
-      const msgBody = {
-        userId: myUserId,
-        senderNickname: myNickname,
-        message: null,
-        imageUrl: url, // 최종 표시 가능한 URL
-        messageType: 'IMAGE',
-      };
-      stompClientRef.current!.publish({
-        destination: `/app/chat.send/${roomId}`,
-        body: JSON.stringify(msgBody),
-      });
-      // 5) 낙관적 UI
-      const optimistic: Message = {
-        id: null,
-        roomId,
-        userId: myUserId,
-        senderNickname: myNickname,
-        message: null,
-        imageUrl: url,
-        messageType: 'IMAGE',
-        sentAt: new Date().toISOString(),
-        isMe: true,
-      };
-      setMessages(prev => [...prev, optimistic]);
+        // 1) presign 발급: S3 업로드 URL과 고유 key를 받음
+        const { uploadUrl, key } = await presignGroupRoomPut(roomId, myUserId, file);
+        
+        // 2) S3 업로드
+        const contentType = getContentType(file.name, file.type);
+        await uploadFileToS3(uploadUrl, file, contentType);
+        
+        // 3) 서버에 최종 저장된 key를 포함하여 STOMP 메시지 전송
+        const msgBody = {
+            userId: myUserId,
+            senderNickname: myNickname,
+            message: null,
+            imageUrl: key, // ✅ S3의 고유 key를 전송
+            messageType: 'IMAGE',
+        };
+        stompClientRef.current!.publish({
+            destination: `/app/chat.send/${roomId}`,
+            body: JSON.stringify(msgBody),
+        });
+
+        // 4) 낙관적 UI 업데이트를 위해 임시 URL 생성 및 추가
+        const optimisticUrl = URL.createObjectURL(file);
+        const optimistic: Message = {
+            id: null,
+            roomId,
+            userId: myUserId,
+            senderNickname: myNickname,
+            message: null,
+            imageUrl: optimisticUrl, // ✅ 임시 URL 사용
+            messageType: 'IMAGE',
+            sentAt: new Date().toISOString(),
+            isMe: true,
+        };
+        setMessages(prev => [...prev, optimistic]);
+
     } catch (error) {
-      console.error("이미지 업로드 및 전송 실패:", error);
-      alert("이미지 전송에 실패했습니다. 다시 시도해주세요.");
+        console.error("이미지 업로드 및 전송 실패:", error);
+        alert("이미지 전송에 실패했습니다. 다시 시도해주세요.");
     }
-  };
+};
 
   // 8) 앨범 전송 (여러 장)
   const handleSendAlbum = async (files: FileList) => {

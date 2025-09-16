@@ -1,10 +1,11 @@
-import React, { useState, useEffect, useRef, forwardRef, useImperativeHandle } from 'react';
+import React, { useState, useEffect, useRef, forwardRef } from 'react';
 import { Avatar, AvatarFallback, AvatarImage } from '../../../components/ui/avatar';
 import { Popover, PopoverContent, PopoverTrigger } from '../../../components/ui/popover';
 import { Button } from '../../../components/ui/button';
 import { Smile, CheckCircle, Clock } from 'lucide-react';
 import type { Message, Group } from './GroupChatScreen';
 import type { UserProfile } from '../../../interfaces';
+import { presignGet } from '../../../api/storage'; // S3 URL을 가져오는 API import
 
 interface GroupChatMessagesProps {
     messages: Message[];
@@ -17,31 +18,74 @@ interface GroupChatMessagesProps {
     onScroll:() => void;
 }
 
-// React.forwardRef를 사용하여 ref를 받을 수 있게 컴포넌트를 감쌈
 export const GroupChatMessages = forwardRef<HTMLDivElement, GroupChatMessagesProps>(
     ({ messages, myUserId, getUserInfo, group, memberProfiles, onScrollTop, onScroll }, ref) => {
         const [localReactions, setLocalReactions] = useState<{ [key: string]: { [emoji: string]: number } }>({});
         const [hoveredMessageKey, setHoveredMessageKey] = useState<string | null>(null);
         
+        // 이미지 URL을 관리하기 위한 로컬 상태 추가
+        const [imageUrls, setImageUrls] = useState<Record<string, string>>({});
+
         const emojis = ['😀', '😂', '👍', '❤️', '👏', '💪', '🎉', '🔥', '🤔', '😊', '😭', '😎', '👌', '🙏', '🤯'];
 
-        // ✅ 스크롤 이벤트 핸들러 추가
         useEffect(() => {
             if (ref && typeof ref !== 'function' && ref.current) {
                 const currentRef = ref.current;
                 
                 const handleScrollEvent = () => {
-                    // 스크롤이 맨 위에 도달했을 때 (scrollTop === 0)
                     if (currentRef.scrollTop === 0) {
                         onScrollTop();
                     }
-                    onScroll(); // 부모 컴포넌트의 스크롤 추적 함수 호출
+                    onScroll();
                 };
 
                 currentRef.addEventListener('scroll', handleScrollEvent);
                 return () => currentRef.removeEventListener('scroll', handleScrollEvent);
             }
         }, [ref, onScrollTop, onScroll]);
+
+        // ✅ 이미지 로딩 로직 추가
+        useEffect(() => {
+            messages.forEach(async (msg) => {
+                const messageKey = `${msg.senderNickname}-${msg.sentAt}-${msg.message || ''}-${msg.imageUrl || ''}-${msg.albumImages ? msg.albumImages.join(',') : ''}`;
+                
+                // 이미지가 있고, blob이 아니며, 아직 URL을 가져오지 않은 경우
+                if (msg.imageUrl && !msg.imageUrl.startsWith('blob:') && !imageUrls[messageKey]) {
+                    try {
+                        const { url } = await presignGet(msg.imageUrl);
+                        setImageUrls(prev => ({ ...prev, [messageKey]: url }));
+                    } catch (error) {
+                        console.error(`S3 이미지 로드 실패: ${msg.imageUrl}`, error);
+                    }
+                }
+                
+                // 앨범 이미지가 있고, blob이 아니며, 아직 URL을 가져오지 않은 경우
+                if (msg.albumImages && msg.albumImages.length > 0) {
+                     const albumUrls: string[] = [];
+                     for (const albumKey of msg.albumImages) {
+                         if (!albumKey.startsWith('blob:') && !imageUrls[albumKey]) {
+                             try {
+                                 const { url } = await presignGet(albumKey);
+                                 albumUrls.push(url);
+                             } catch (error) {
+                                 console.error(`S3 앨범 이미지 로드 실패: ${albumKey}`, error);
+                             }
+                         } else {
+                            albumUrls.push(albumKey);
+                         }
+                     }
+                     setImageUrls(prev => {
+                         const newUrls = { ...prev };
+                         msg.albumImages?.forEach((key, index) => {
+                             if (albumUrls[index]) {
+                                 newUrls[key] = albumUrls[index];
+                             }
+                         });
+                         return newUrls;
+                     });
+                }
+            });
+        }, [messages, imageUrls]);
 
         const formatTime = (isoString: string | null) => {
             if (!isoString) return '';
@@ -114,18 +158,17 @@ export const GroupChatMessages = forwardRef<HTMLDivElement, GroupChatMessagesPro
                 }
                 const currentCount = newReactions[messageKey][emoji] || 0;
 
-                    if (currentCount > 0) {
-                         newReactions[messageKey][emoji] = currentCount - 1;
-                        if (newReactions[messageKey][emoji] === 0) {
-                             delete newReactions[messageKey][emoji];
-                                if (Object.keys(newReactions[messageKey]).length === 0) {
-                                     delete newReactions[messageKey];
-                                }
-                        }
-                     } else {
-                    // ✅ 개수가 0이면 +1 (처음 누른 경우)
-                    newReactions[messageKey][emoji] = 1;
-                }
+                if (currentCount > 0) {
+                     newReactions[messageKey][emoji] = currentCount - 1;
+                     if (newReactions[messageKey][emoji] === 0) {
+                         delete newReactions[messageKey][emoji];
+                         if (Object.keys(newReactions[messageKey]).length === 0) {
+                             delete newReactions[messageKey];
+                         }
+                     }
+                 } else {
+                     newReactions[messageKey][emoji] = 1;
+                 }
 
                 return newReactions;
             });
@@ -134,156 +177,157 @@ export const GroupChatMessages = forwardRef<HTMLDivElement, GroupChatMessagesPro
         return (
             <div className="flex-1 overflow-y-auto  p-4 space-y-4" ref={ref} >
                 
-                    {messages.map((msg, index) => {
-                        const messageKey = `${msg.senderNickname}-${msg.sentAt}-${msg.message || ''}-${msg.imageUrl || ''}-${msg.albumImages ? msg.albumImages.join(',') : ''}`;
+                {messages.map((msg, index) => {
+                    const messageKey = `${msg.senderNickname}-${msg.sentAt}-${msg.message || ''}-${msg.imageUrl || ''}-${msg.albumImages ? msg.albumImages.join(',') : ''}`;
 
-                        if (['ONLINE', 'OFFLINE'].includes(msg.messageType)) {
-                            return null;
-                        }
+                    if (['ONLINE', 'OFFLINE'].includes(msg.messageType)) {
+                        return null;
+                    }
 
-                        const showDateSeparator = isDifferentDay(msg, messages, index, renderedDates);
-                        const reactionsToDisplay = localReactions[messageKey] || {};
-                        const profileImageUrl = memberProfiles[msg.userId] || null;
+                    const showDateSeparator = isDifferentDay(msg, messages, index, renderedDates);
+                    const reactionsToDisplay = localReactions[messageKey] || {};
+                    const profileImageUrl = memberProfiles[msg.userId] || null;
 
-                        return (
-                            <React.Fragment key={`message-${msg.id || index}`}>
-                                {showDateSeparator && (
-                                    <div key={`date-separator-${msg.sentAt}`} className="flex items-center my-4">
-                                        <div className="flex-grow border-t border-muted-foreground/30" />
-                                        <span className="mx-3 text-xs text-muted-foreground">
-                                            {formatDateWithDay(msg.sentAt)}
-                                        </span>
-                                        <div className="flex-grow border-t border-muted-foreground/30" />
-                                    </div>
-                                )}
-                                
-                                {/* MEMBER_JOIN, MEMBER_LEAVE 메시지 렌더링 로직 */}
-                                {['MEMBER_JOIN', 'MEMBER_LEAVE'].includes(msg.messageType) ? (
-                                    <div key={`system-${msg.id || index}`} className="flex justify-center my-2">
-                                        <span className="text-xs text-muted-foreground bg-gray-100 dark:bg-zinc-700/50 rounded-lg px-3 py-1.5 font-light">
-                                            {msg.message}
-                                        </span>
-                                    </div>
-                                ) : (
-                                    <div
-                                        key={messageKey}
-                                        className={`flex ${msg.isMe ? 'justify-end' : 'justify-start'}`}
-                                        onMouseEnter={() => setHoveredMessageKey(messageKey)}
-                                        onMouseLeave={() => setHoveredMessageKey(null)}
-                                    >
-                                        <div className={`relative flex items-end space-x-2 max-w-[80%] ${msg.isMe ? 'flex-row-reverse space-x-reverse' : ''}`}>
-                                            {!msg.isMe && (
-                                                <Avatar className="h-6 w-6 ">
-                                                    <AvatarImage className='object-cover' src={profileImageUrl || ''} alt={`${msg.senderNickname} 프로필`} />
-                                                    <AvatarFallback className="text-xs">{msg.senderNickname?.[0] || '?'}</AvatarFallback>
-                                                </Avatar>
+                    // ✅ 표시할 이미지 URL 결정: 낙관적 업데이트 URL이 있으면 그걸 사용하고, 없으면 S3에서 로드한 URL을 사용
+                    const displayImageUrl = msg.imageUrl?.startsWith('blob:') ? msg.imageUrl : imageUrls[messageKey] || msg.imageUrl;
+                    const displayAlbumUrls = msg.albumImages?.map(albumKey => imageUrls[albumKey] || albumKey) || [];
+
+                    return (
+                        <React.Fragment key={`message-${msg.id || index}`}>
+                            {showDateSeparator && (
+                                <div key={`date-separator-${msg.sentAt}`} className="flex items-center my-4">
+                                    <div className="flex-grow border-t border-muted-foreground/30" />
+                                    <span className="mx-3 text-xs text-muted-foreground">
+                                        {formatDateWithDay(msg.sentAt)}
+                                    </span>
+                                    <div className="flex-grow border-t border-muted-foreground/30" />
+                                </div>
+                            )}
+                            
+                            {['MEMBER_JOIN', 'MEMBER_LEAVE'].includes(msg.messageType) ? (
+                                <div key={`system-${msg.id || index}`} className="flex justify-center my-2">
+                                    <span className="text-xs text-muted-foreground bg-gray-100 dark:bg-zinc-700/50 rounded-lg px-3 py-1.5 font-light">
+                                        {msg.message}
+                                    </span>
+                                </div>
+                            ) : (
+                                <div
+                                    key={messageKey}
+                                    className={`flex ${msg.isMe ? 'justify-end' : 'justify-start'}`}
+                                    onMouseEnter={() => setHoveredMessageKey(messageKey)}
+                                    onMouseLeave={() => setHoveredMessageKey(null)}
+                                >
+                                    <div className={`relative flex items-end space-x-2 max-w-[80%] ${msg.isMe ? 'flex-row-reverse space-x-reverse' : ''}`}>
+                                        {!msg.isMe && (
+                                            <Avatar className="h-6 w-6 ">
+                                                <AvatarImage className='object-cover' src={profileImageUrl || ''} alt={`${msg.senderNickname} 프로필`} />
+                                                <AvatarFallback className="text-xs">{msg.senderNickname?.[0] || '?'}</AvatarFallback>
+                                            </Avatar>
+                                        )}
+                                        <div className="flex items-end">
+                                            {msg.isMe && (
+                                                <span className="text-xs text-muted-foreground mr-2">
+                                                    {formatTime(msg.sentAt)}
+                                                </span>
                                             )}
-                                            <div className="flex items-end">
-                                                {msg.isMe && (
-                                                    <span className="text-xs text-muted-foreground mr-2">
-                                                        {formatTime(msg.sentAt)}
-                                                    </span>
-                                                )}
-                                                <div className={`flex flex-col ${msg.isMe ? 'items-end' : 'items-start'}`}>
-                                                    {!msg.isMe && (
-                                                        <div className="flex items-center space-x-1 mb-1">
-                                                            <span className="text-xs text-muted-foreground">{getUserInfo(msg)?.nickname}</span>
-                                                            <span className="text-xs text-muted-foreground opacity-70">{getUserInfo(msg)?.streakDays}일</span>
-                                                        </div>
-                                                    )}
-                                                    <div
-                                                        className={`rounded-lg px-3 py-2 max-w-full break-words ${
-                                                            msg.messageType === 'NOTICE'
-                                                                ? (group.groupType === 'REQUIRED'
-                                                                    ? 'bg-orange-50/80 border border-orange-200/50 dark:bg-orange-900/20 dark:border-orange-700/50'
-                                                                    : 'bg-green-50/80 border border-green-200/50 dark:bg-green-900/20 dark:border-green-700/50')
-                                                                : msg.isMe
-                                                                    ? 'bg-chart-5 text-primary'
-                                                                    : 'bg-muted text-foreground'
-                                                        }`}
-                                                    >
-                                                        {msg.messageType === 'NOTICE' ? (
-                                                            <div className="flex flex-col items-start space-y-2">
-                                                                <div className="flex items-center space-x-1">
-                                                                    {group.groupType === 'REQUIRED' ? (
-                                                                        <>
-                                                                            <Clock className="h-3 w-3 text-orange-600 dark:text-orange-400" />
-                                                                            <span className="text-xs font-medium text-orange-600 dark:text-orange-400">인증 승인 대기</span>
-                                                                        </>
-                                                                    ) : (
-                                                                        <>
-                                                                            <CheckCircle className="h-3 w-3 text-green-600 dark:text-green-400" />
-                                                                            <span className="text-xs font-medium text-green-600 dark:text-green-400">자유 인증 완료</span>
-                                                                        </>
-                                                                    )}
-                                                                </div>
-                                                                {msg.message && <span className="text-sm">{msg.message}</span>}
-                                                                {msg.imageUrl && <img src={msg.imageUrl} alt="전송 이미지" className="max-w-[200px] h-auto rounded-md" />}
-                                                            </div>
-                                                        ) : (
-                                                            <>
-                                                                {msg.messageType === 'IMAGE' && msg.imageUrl && (
-                                                                    <img src={msg.imageUrl} alt="전송 이미지" className="max-w-[200px] h-auto rounded-md" />
-                                                                )}
-                                                                {msg.messageType === 'ALBUM' && msg.albumImages && (
-                                                                    <div className="grid grid-cols-2 gap-2 max-w-[200px]">
-                                                                        {msg.albumImages.map((image, i) => (
-                                                                            <img key={i} src={image} alt={`앨범 이미지 ${i + 1}`} className="w-full h-auto rounded-md" />
-                                                                        ))}
-                                                                    </div>
-                                                                )}
-                                                                {msg.message && <div>{msg.message}</div>}
-                                                            </>
-                                                        )}
-                                                    </div>
-                                                </div>
+                                            <div className={`flex flex-col ${msg.isMe ? 'items-end' : 'items-start'}`}>
                                                 {!msg.isMe && (
-                                                    <span className="text-xs text-muted-foreground ml-2">
-                                                        {formatTime(msg.sentAt)}
-                                                    </span>
+                                                    <div className="flex items-center space-x-1 mb-1">
+                                                        <span className="text-xs text-muted-foreground">{getUserInfo(msg)?.nickname}</span>
+                                                        <span className="text-xs text-muted-foreground opacity-70">{getUserInfo(msg)?.streakDays}일</span>
+                                                    </div>
                                                 )}
-                                                {hoveredMessageKey === messageKey && (
-                                                    <Popover>
-                                                        <PopoverTrigger asChild>
-                                                            <Button
-                                                                variant="ghost"
-                                                                size="icon"
-                                                                className={`p-0 w-6 h-6 rounded-full absolute -top-3 ${msg.isMe ? '-left-3' : '-right-3'} z-10`}
-                                                            >
-                                                                <Smile className="w-4 h-4 text-muted-foreground" />
-                                                            </Button>
-                                                        </PopoverTrigger>
-                                                        <PopoverContent className="w-80 p-2 grid grid-cols-5 gap-1 shadow-lg bg-popover rounded-xl">
-                                                            {emojis.map((emoji) => (
-                                                                <Button
-                                                                    key={emoji}
-                                                                    variant="ghost"
-                                                                    size="sm"
-                                                                    className="text-lg p-1 h-8 w-8 hover:bg-muted"
-                                                                    onClick={() => handleLocalReactionClick(messageKey, emoji)}
-                                                                >
-                                                                    {emoji}
-                                                                </Button>
-                                                            ))}
-                                                        </PopoverContent>
-                                                    </Popover>
-                                                )}
-                                            </div>
-                                            {Object.keys(reactionsToDisplay).length > 0 && (
-                                                <div className="absolute -bottom-2.5 flex space-x-0.5 rounded-full bg-background border px-1 py-0.5">
-                                                    {Object.entries(reactionsToDisplay).map(([emoji, count]) => (
-                                                        <span key={emoji} className="text-xs">
-                                                            {emoji} {count}
-                                                        </span>
-                                                    ))}
+                                                <div
+                                                    className={`rounded-lg px-3 py-2 max-w-full break-words ${
+                                                        msg.messageType === 'NOTICE'
+                                                            ? (group.groupType === 'REQUIRED'
+                                                                ? 'bg-orange-50/80 border border-orange-200/50 dark:bg-orange-900/20 dark:border-orange-700/50'
+                                                                : 'bg-green-50/80 border border-green-200/50 dark:bg-green-900/20 dark:border-green-700/50')
+                                                            : msg.isMe
+                                                                ? 'bg-chart-5 text-primary'
+                                                                : 'bg-muted text-foreground'
+                                                    }`}
+                                                >
+                                                    {msg.messageType === 'NOTICE' ? (
+                                                        <div className="flex flex-col items-start space-y-2">
+                                                            <div className="flex items-center space-x-1">
+                                                                {group.groupType === 'REQUIRED' ? (
+                                                                    <>
+                                                                        <Clock className="h-3 w-3 text-orange-600 dark:text-orange-400" />
+                                                                        <span className="text-xs font-medium text-orange-600 dark:text-orange-400">인증 승인 대기</span>
+                                                                    </>
+                                                                ) : (
+                                                                    <>
+                                                                        <CheckCircle className="h-3 w-3 text-green-600 dark:text-green-400" />
+                                                                        <span className="text-xs font-medium text-green-600 dark:text-green-400">자유 인증 완료</span>
+                                                                    </>
+                                                                )}
+                                                            </div>
+                                                            {msg.message && <span className="text-sm">{msg.message}</span>}
+                                                            {/* ✅ 수정된 이미지 로딩 로직 적용 */}
+                                                            {displayImageUrl && <img src={displayImageUrl} alt="전송 이미지" className="max-w-[200px] h-auto rounded-md" />}
+                                                        </div>
+                                                    ) : (
+                                                        <>
+                                                            {/* ✅ 수정된 이미지 로딩 로직 적용 */}
+                                                            {msg.messageType === 'IMAGE' && displayImageUrl && (
+                                                                <img src={displayImageUrl} alt="전송 이미지" className="max-w-[200px] h-auto rounded-md" />
+                                                            )}
+                                                            {/* ✅ 수정된 앨범 이미지 로딩 로직 적용 */}
+                                                            {msg.messageType === 'ALBUM' && displayAlbumUrls && (
+                                                                <div className="grid grid-cols-2 gap-2 max-w-[200px]">
+                                                                    {displayAlbumUrls.map((image, i) => (
+                                                                        <img key={i} src={image} alt={`앨범 이미지 ${i + 1}`} className="w-full h-auto rounded-md" />
+                                                                    ))}
+                                                                </div>
+                                                            )}
+                                                            {msg.message && <div>{msg.message}</div>}
+                                                        </>
+                                                    )}
                                                 </div>
-                                            )}
+                                            </div>
                                         </div>
+                                        {hoveredMessageKey === messageKey && (
+                                            <Popover>
+                                                <PopoverTrigger asChild>
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="icon"
+                                                        className={`p-0 w-6 h-6 rounded-full absolute -top-3 ${msg.isMe ? '-left-3' : '-right-3'} z-10`}
+                                                    >
+                                                        <Smile className="w-4 h-4 text-muted-foreground" />
+                                                    </Button>
+                                                </PopoverTrigger>
+                                                <PopoverContent className="w-80 p-2 grid grid-cols-5 gap-1 shadow-lg bg-popover rounded-xl">
+                                                    {emojis.map((emoji) => (
+                                                        <Button
+                                                            key={emoji}
+                                                            variant="ghost"
+                                                            size="sm"
+                                                            className="text-lg p-1 h-8 w-8 hover:bg-muted"
+                                                            onClick={() => handleLocalReactionClick(messageKey, emoji)}
+                                                        >
+                                                            {emoji}
+                                                        </Button>
+                                                    ))}
+                                                </PopoverContent>
+                                            </Popover>
+                                        )}
                                     </div>
-                                )}
-                            </React.Fragment>
-                        );
-                    })}
+                                    {Object.keys(reactionsToDisplay).length > 0 && (
+                                        <div className="absolute -bottom-2.5 flex space-x-0.5 rounded-full bg-background border px-1 py-0.5">
+                                            {Object.entries(reactionsToDisplay).map(([emoji, count]) => (
+                                                <span key={emoji} className="text-xs">
+                                                    {emoji} {count}
+                                                </span>
+                                            ))}
+                                        </div>
+                                    )}
+                                </div>
+                            )}
+                        </React.Fragment>
+                    );
+                })}
             </div>
         );
     }
