@@ -75,7 +75,6 @@ export async function presignProofShotPut(groupId: number, userId: number, file:
 }
 
 export async function presignGroupRoomPut(roomId: number, userId: number, file: File): Promise<PresignPutResp> {
-    // ✅ file.type 대신 더 안전한 함수를 사용합니다.
     const contentType = getContentType(file.name, file.type);
     
     const resp = await fetchWithAuth(
