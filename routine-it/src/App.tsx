@@ -157,6 +157,8 @@ const transformGroupToRoutine = (group: Group): Routine => {
 const transformNotification = (apiNotif: NotificationApiResponse): Notification => {
   let category: Notification['category'] = '홈';
   let icon: React.ReactNode = <Bell className="h-4 w-4 icon-secondary" />;
+  let relatedId: number | undefined = undefined; 
+  let monthYear: string | undefined = undefined; 
 
   // API의 notificationType에 따라 카테고리와 아이콘을 매핑
   switch (apiNotif.notificationType) {
@@ -193,6 +195,8 @@ const transformNotification = (apiNotif: NotificationApiResponse): Notification 
     read: apiNotif.read,
     icon: icon,
     isLocal: false,
+    relatedId: relatedId, 
+    monthYear: monthYear,
   };
 };
 
@@ -1264,42 +1268,62 @@ const handleGroupRoutineCompletion = () => {
 
     if (notification.isLocal) {
       console.log(`로컬 알림(${notification.id})을 읽음 처리했습니다. (API 호출 없음)`);
-      return; 
-    }
-
-    // 2. 서버에 '읽음' 상태 전송
-    try {
-      await markNotificationAsRead(notification.id, true);
-    } catch (error) {
-      // 실패 시 UI 롤백 (선택적)
-      console.error("알림 읽음 처리 실패:", error);
-      setNotifications(currentNotifications =>
-        currentNotifications.map(n =>
-          n.id === notification.id ? { ...n, read: false } : n
-        )
-      );
+      // (로컬 알림도 네비게이션이 필요하다면 여기에 로직 추가)
+    } else {
+      // 2. 서버에 '읽음' 상태 전송 (isLocal이 아닌 경우)
+      try {
+        await markNotificationAsRead(notification.id, true);
+      } catch (error) {
+        // 실패 시 UI 롤백 (선택적)
+        console.error("알림 읽음 처리 실패:", error);
+        setNotifications(currentNotifications =>
+          currentNotifications.map(n =>
+            n.id === notification.id ? { ...n, read: false } : n
+          )
+        );
+      }
     }
     
     if (notification.category === '회고' && UserInfo?.id) {
       try {
-        // 1. 회고 API를 호출합니다. (monthYear는 알림 객체에 저장된 값을 사용)
+        // --- '회고' API 호출 TRY 블록 ---
         const response = await getMonthlyReview(UserInfo.id as number, notification.monthYear);
 
         if (response.success && response.data) {
-          // 2. 성공 시, 모달에 표시할 내용과 월 정보를 상태에 저장합니다.
+          // 성공 시 모달 상태 설정
           setReviewModalContent({
             content: response.data.messageContent, // API 응답의 실제 회고 내용
             monthYear: response.data.monthYear,
           });
-          // 3. 회고 모달을 엽니다.
+          // 모달 열기
           setReviewModalOpen(true);
         } else {
+          // API 호출은 성공했으나, 응답 데이터가 실패일 경우
           alert("회고 내용을 불러오는 데 실패했습니다: " + response.message);
         }
-      } catch (error) {
+      } catch (error) { 
+        // --- '회고' API 호출 CATCH 블록 ---
         console.error("월간 회고 조회 API 호출 실패:", error);
         alert("회고 내용을 불러오는 중 오류가 발생했습니다.");
       }
+    } 
+    else if (notification.category === '그룹' && notification.relatedId) {
+      // '그룹' 알림 클릭 시
+      const groupToNav = groups.find(g => g.groupId === notification.relatedId);
+      
+      if (groupToNav) {
+        // 그룹 상세 화면으로 이동
+        navigateTo('group-detail', groupToNav);
+      } else {
+        // 일치하는 그룹을 못찾으면 그냥 그룹 탭으로 이동
+        console.warn(`알림 관련 그룹(ID: ${notification.relatedId})을 찾을 수 없습니다.`);
+        navigateTo('group');
+      }
+    } 
+    else if (notification.category === '홈') {
+      // '홈' (개인 루틴) 알림 클릭 시
+      // 루틴 탭으로 이동
+      navigateTo('routine');
     }
   };
   

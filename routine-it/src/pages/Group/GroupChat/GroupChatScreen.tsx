@@ -423,74 +423,39 @@ export function GroupChatScreen({ group, groupmembers, onBack, onLeaveGroup, use
   };
 
 const handleAuthSubmit = async (data: { description: string; image: File | null; isPublic: boolean }) => {
-  if (!stompClientRef.current?.connected) {
-    alert("채팅 연결이 불안정하여 인증을 보낼 수 없습니다. 잠시 후 다시 시도해주세요.");
-    return;
-  }
-
-  try {
-    let imageUrl = null;
-    if (data.image) {
-      const { uploadUrl, key } = await presignProofShotPut(group.groupId, myUserId, data.image);
-      const contentType = getContentType(data.image.name, data.image.type);
-      await uploadFileToS3(uploadUrl, data.image, contentType);
-      const { url } = await presignGet(key, "inline");
-      imageUrl = url;
+    if (!stompClientRef.current?.connected) {
+      alert("채팅 연결이 불안정하여 인증을 보낼 수 없습니다. 잠시 후 다시 시도해주세요.");
+      return;
     }
-    imageUrl = "test";
-
-    if (group.groupType === 'REQUIRED') {
-      const myMemberInfo = groupmembers.find(m => m.userId === myUserId);
-      
-      // ✅ 추가: groupmembers 배열에서 리더의 userId를 찾습니다.
-      const leader = groupmembers.find(member => member.memberName === group.leaderName);
-      if (!leader) {
-        throw new Error('그룹 리더 정보를 찾을 수 없습니다.');
-      }
-
-      if (myMemberInfo) {
-        await requestAuthApproval(group.groupId, {
-          leaderId: leader.userId, 
-          targetMemberId: myMemberInfo.groupMemberId,
-          activityDate: new Date().toISOString().split('T')[0],
-          imageUrl: imageUrl,
-        });
-      }
-      alert('인증이 제출되었으며, 그룹 리더의 승인을 기다리고 있습니다.');
-    } else {
-      // (기존 자유 그룹 로직은 그대로 유지)
-      await createGroupActivity({
+    try {
+      const activityData = {
         groupId: group.groupId,
         description: data.description,
-        imageUrl: imageUrl,
+        imageUrl: null,
         isPublic: data.isPublic,
-      });
+      };
+      await createGroupActivity(activityData);
       await updateRankingScore(myUserId, group.groupId, 1);
-      onGroupRoutineComplete();
+
+      const msgBody = {
+        userId: myUserId,
+        senderNickname: myNickname,
+        message: `${myNickname}님이 루틴을 인증했습니다: ${data.description}`,
+        imageUrl: data.image ? URL.createObjectURL(data.image) : null,
+        messageType: 'NOTICE' as const,
+      };
+      stompClientRef.current!.publish({
+        destination: `/app/chat.send/${roomId}`,
+        body: JSON.stringify(msgBody),
+      });
+
       alert('인증이 성공적으로 제출되었습니다.');
+      onGroupRoutineComplete?.();
+    } catch (error) {
+      alert('인증 제출에 실패했습니다.');
+      console.error("🚨 최종 에러 핸들링:", error);
     }
-    
-    // 공통 로직
-    const msgBody = {
-      userId: myUserId,
-      senderNickname: myNickname,
-      message: data.description,
-      imageUrl: imageUrl,
-      messageType: 'NOTICE' as const,
-    };
-    stompClientRef.current!.publish({
-      destination: `/app/chat.send/${roomId}`,
-      body: JSON.stringify(msgBody),
-    });
-
-    setIsAuthDialogOpen(false);
-    onDataRefresh?.();
-
-  } catch (error) {
-    alert('인증 제출에 실패했습니다. 다시 시도해주세요.');
-    console.error("🚨 최종 에러 핸들링:", error);
-  }
-};
+  };
 
 
   return (

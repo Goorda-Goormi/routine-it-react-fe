@@ -56,7 +56,8 @@ import React, { useState } from 'react';
        return routine.frequency.includes(todayDay);
      }
      return false;
-   });
+   })
+   .sort((a, b) => (a.time || '99:99').localeCompare(b.time || '99:99'));
 
    const getCompletedCount = (routines: Routine[]) => {
      return routines.filter(routine => routine.completed).length;

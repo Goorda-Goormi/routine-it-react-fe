@@ -68,7 +68,8 @@ export function HomeScreen({
 
   const allTodayRoutines = (routines || []).filter((routine: Routine) => {
     return routine.frequency && routine.frequency.includes(todayDay);
-  });
+  })
+  .sort((a, b) => (a.time || '99:99').localeCompare(b.time || '99:99'));
 
   const [myVerificationPhotos, setMyVerificationPhotos] = useState<VerificationPhoto[]>([]);
 
