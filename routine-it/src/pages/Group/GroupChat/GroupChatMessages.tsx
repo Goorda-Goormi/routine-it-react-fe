@@ -213,7 +213,7 @@ export const GroupChatMessages = forwardRef<HTMLDivElement, GroupChatMessagesPro
                             ) : (
                                 <div
                                     key={messageKey}
-                                    className={`flex ${msg.isMe ? 'justify-end' : 'justify-start'}`}
+                                    className={`relative flex ${msg.isMe ? 'justify-end' : 'justify-start'}`}
                                     onMouseEnter={() => setHoveredMessageKey(messageKey)}
                                     onMouseLeave={() => setHoveredMessageKey(null)}
                                 >
