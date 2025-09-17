@@ -313,7 +313,7 @@ export const GroupChatMessages = forwardRef<HTMLDivElement, GroupChatMessagesPro
                                         )}
                                     </div>
                                     {Object.keys(reactionsToDisplay).length > 0 && (
-                                        <div className="absolute -bottom-2.5 flex space-x-0.5 rounded-full bg-background border px-1 py-0.5">
+                                        <div className={`absolute -bottom-2.5 ${msg.isMe ? 'right-2' : 'left-10'} flex space-x-0.5 rounded-full bg-background border px-1 py-0.5`}>
                                             {Object.entries(reactionsToDisplay).map(([emoji, count]) => (
                                                 <span key={emoji} className="text-xs">
                                                     {emoji} {count}
