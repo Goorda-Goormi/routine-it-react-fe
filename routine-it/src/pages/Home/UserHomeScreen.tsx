@@ -14,8 +14,9 @@ import { getUserAuthPhotos, getUserActivitiesByDay, getTotalAttendanceDays } fro
 import { getJoinedGroups } from '../../api/group'; 
 
 interface AuthPhoto {
-  id: number;
-  routine: string; 
+  userActivityId: number; 
+  personalRoutineName: string | null; 
+  groupName: string | null; 
   imageUrl: string;
   activityDate: string;
   isPublic: boolean;
@@ -422,19 +423,19 @@ export function UserHomeScreen({ user, onBack }: UserHomeScreenProps) {
             {publicVerificationPhotos.length > 0 ? (
               <div className="grid grid-cols-3 gap-3">
                 {publicVerificationPhotos.map((photo, index) => (
-                  <div key={photo.id} className="space-y-2 cursor-pointer" onClick={() => openGallery(index)}>
+                  <div key={photo.userActivityId} className="space-y-2 cursor-pointer" onClick={() => openGallery(index)}>
                     {/* 인증 이미지 */}
                     <div className="relative rounded-lg overflow-hidden aspect-square">
                       <ImageWithFallback
                         src={photo.imageUrl}
-                        alt={photo.routine}
+                        alt={photo.groupName || photo.personalRoutineName || '인증샷'}
                         className="w-full h-full object-cover"
                       />
                       {/* 오버레이 정보 */}
                       <div className="absolute inset-0 bg-black/20 opacity-0 hover:opacity-100 transition-opacity flex items-end">
                         <div className="p-2 w-full">
                           <div className="text-white text-xs font-medium truncate">
-                            {photo.routine}
+                            {photo.groupName || photo.personalRoutineName}
                           </div>
                         </div>
                       </div>
@@ -476,13 +477,13 @@ export function UserHomeScreen({ user, onBack }: UserHomeScreenProps) {
             <div className="flex-1 w-full flex items-center justify-center p-4">
               <img 
                 src={publicVerificationPhotos[selectedPhotoIndex].imageUrl} 
-                alt={publicVerificationPhotos[selectedPhotoIndex].routine} 
+                alt={publicVerificationPhotos[selectedPhotoIndex].groupName || publicVerificationPhotos[selectedPhotoIndex].personalRoutineName || '인증샷'} 
                 className="max-w-full max-h-full object-contain"
               />
             </div>
             {/* 사진 설명 */}
             <div className="absolute bottom-16 w-full text-center text-white text-lg font-semibold">
-              {publicVerificationPhotos[selectedPhotoIndex].routine}
+              {publicVerificationPhotos[selectedPhotoIndex].groupName || publicVerificationPhotos[selectedPhotoIndex].personalRoutineName}
             </div>
             <div className="absolute inset-y-0 flex items-center justify-between w-full px-6">
               {/* 이전 사진 버튼 */}

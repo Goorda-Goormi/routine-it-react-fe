@@ -39,9 +39,10 @@ interface HomeScreenProps {
 }
 
 interface VerificationPhoto {
-  id: number;
-  routine: string;
-  imageUrl: string; 
+  userActivityId: number; 
+  personalRoutineName: string | null; 
+  groupName: string | null; 
+  imageUrl: string;
   activityDate: string;
   isPublic: boolean;
 }
@@ -364,14 +365,14 @@ export function HomeScreen({
             <div className="grid grid-cols-3 gap-3">
               {publicVerificationPhotos.map((photo, index) => (
                 <div
-                  key={photo.id}
+                  key={photo.userActivityId}
                   className="space-y-2 cursor-pointer"
                   onClick={() => handlePhotoClick(index)}
                 >
                   <div className="relative rounded-lg overflow-hidden aspect-square">
                     <ImageWithFallback
                       src={photo.imageUrl} // imageUrl로 수정
-                      alt={photo.routine}
+                      alt={photo.groupName || photo.personalRoutineName || '인증샷'}
                       className="w-full h-full object-cover"
                     />
                     <div className="absolute inset-0 bg-black/20 opacity-0 hover:opacity-100 transition-opacity flex items-end">
@@ -383,7 +384,7 @@ export function HomeScreen({
                     </div>
                   </div>
                 <div className="text-xs text-foreground font-medium text-center">
-                  {photo.routine}
+                  {photo.groupName || photo.personalRoutineName}
                 </div>
               </div>
             ))}
@@ -417,13 +418,13 @@ export function HomeScreen({
                   <div className="flex-1 w-full flex items-center justify-center p-4">
                     <img 
                       src={publicVerificationPhotos[selectedPhotoIndex].imageUrl} 
-                      alt={publicVerificationPhotos[selectedPhotoIndex].routine} 
+                      alt={publicVerificationPhotos[selectedPhotoIndex].groupName} 
                       className="max-w-full max-h-full object-contain"
                     />
                   </div>
                   {/* 사진 설명 */}
                   <div className="absolute bottom-16 w-full text-center text-white text-lg font-semibold">
-                    {publicVerificationPhotos[selectedPhotoIndex].routine}
+                    {publicVerificationPhotos[selectedPhotoIndex].groupName}
                   </div>
                   <div className="absolute inset-y-0 flex items-center justify-between w-full px-6">
                     {/* 이전 사진 버튼 */}
