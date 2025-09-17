@@ -66,6 +66,56 @@ const getLocalDateString = (date: Date): string => {
   return `${year}-${month}-${day}`;
 };
 
+// 로컬 스토리지 백업 유틸리티 함수들
+const saveCompletedRoutinesToLocal = (personalMap: Map<number, number>, groupMap: Map<number, number>) => {
+  try {
+    const today = getLocalDateString(new Date());
+    const data = {
+      date: today,
+      personal: Array.from(personalMap.entries()),
+      group: Array.from(groupMap.entries()),
+      timestamp: Date.now()
+    };
+    localStorage.setItem('completedRoutines', JSON.stringify(data));
+    console.log('완료된 루틴을 로컬 스토리지에 백업했습니다:', data);
+  } catch (error) {
+    console.error('로컬 스토리지 백업 실패:', error);
+  }
+};
+
+const loadCompletedRoutinesFromLocal = (): { personal: Map<number, number>, group: Map<number, number> } | null => {
+  try {
+    const today = getLocalDateString(new Date());
+    const stored = localStorage.getItem('completedRoutines');
+    
+    if (!stored) return null;
+    
+    const data = JSON.parse(stored);
+    
+    // 날짜가 오늘이 아니면 무시 (어제 데이터를 사용하지 않음)
+    if (data.date !== today) {
+      localStorage.removeItem('completedRoutines');
+      return null;
+    }
+    
+    // 데이터가 너무 오래되었으면 무시 (24시간 이상)
+    if (Date.now() - data.timestamp > 24 * 60 * 60 * 1000) {
+      localStorage.removeItem('completedRoutines');
+      return null;
+    }
+    
+    const personalMap = new Map<number, number>(data.personal || []);
+    const groupMap = new Map<number, number>(data.group || []);
+    
+    console.log('로컬 스토리지에서 완료 루틴을 복원했습니다:', { personalMap, groupMap });
+    return { personal: personalMap, group: groupMap };
+  } catch (error) {
+    console.error('로컬 스토리지에서 완료 루틴 로드 실패:', error);
+    localStorage.removeItem('completedRoutines');
+    return null;
+  }
+};
+
 const transformPersonalRoutine = (pr: PersonalRoutineResponse): Routine => {
   return {
     id: pr.routineId,
@@ -585,6 +635,14 @@ useEffect(() => {
     syncTodaysAttendance();
 
     const fetchRemainingData = async () => {
+      // 먼저 로컬 스토리지에서 완료 상태를 복원 시도
+      const localData = loadCompletedRoutinesFromLocal();
+      if (localData) {
+        console.log('앱 초기화: 로컬 스토리지에서 완료 상태를 먼저 복원했습니다.');
+        setCompletedActivityIds(localData);
+      }
+      
+      // 그 다음 서버에서 최신 데이터를 가져와 동기화
       await Promise.all([
         fetchUserActivities(),
         fetchPersonalRoutines(),
@@ -799,27 +857,58 @@ useEffect(() => {
 
   //6.루틴 관리 =============================================================
   
-  const fetchUserActivities = async () => {
+  const fetchUserActivities = async (retryCount = 0) => {
     if (!isLoggedIn) return;
+    
     const today = getLocalDateString(new Date());
+    
     try {
+      console.log('사용자 활동 정보를 가져오는 중...', { today, retryCount });
       const activities = await getUserActivitiesByDay(today);
       const personalMap = new Map<number, number>();
       const groupMap = new Map<number, number>();
 
       if (Array.isArray(activities)) {
-      activities.forEach((activity: any) => {
-        if (activity.activityType === 'PERSONAL_ROUTINE_COMPLETE' && activity.personalRoutineId) {
-          personalMap.set(activity.personalRoutineId, activity.userActivityId);
-        } else if (activity.activityType === 'GROUP_AUTH_COMPLETE' && activity.groupId) {
-          groupMap.set(activity.groupId, activity.activityId);
-        }
-      });
-    }
+        activities.forEach((activity: any) => {
+          if (activity.activityType === 'PERSONAL_ROUTINE_COMPLETE' && activity.personalRoutineId) {
+            personalMap.set(activity.personalRoutineId, activity.userActivityId);
+          } else if (activity.activityType === 'GROUP_AUTH_COMPLETE' && activity.groupId) {
+            groupMap.set(activity.groupId, activity.activityId);
+          }
+        });
+      }
 
       setCompletedActivityIds({ personal: personalMap, group: groupMap });
+      
+      // 로컬 스토리지에 백업
+      saveCompletedRoutinesToLocal(personalMap, groupMap);
+      
+      console.log('✅ 사용자 활동 정보를 성공적으로 가져왔습니다:', { personalMap, groupMap });
     } catch (error) {
-      console.error("오늘의 활동 내역 조회 실패:", error);
+      console.error("사용자 활동 정보 조회 실패:", error, { retryCount });
+      
+      // 재시도 로직 (최대 2번)
+      if (retryCount < 2) {
+        console.log(`${retryCount + 1}번째 재시도 중...`);
+        setTimeout(() => fetchUserActivities(retryCount + 1), 1000 * (retryCount + 1));
+        return;
+      }
+      
+      // 재시도 실패 시 로컬 스토리지에서 복원 시도
+      console.log('재시도 실패. 로컬 스토리지에서 복원을 시도합니다.');
+      const localData = loadCompletedRoutinesFromLocal();
+      
+      if (localData) {
+        setCompletedActivityIds(localData);
+        console.log('✅ 로컬 스토리지에서 완료 상태를 복원했습니다.');
+      } else {
+        console.log('⚠️ 로컬 스토리지에서도 복원할 데이터가 없습니다.');
+        // 빈 Map으로 초기화
+        setCompletedActivityIds({
+          personal: new Map<number, number>(),
+          group: new Map<number, number>(),
+        });
+      }
     }
   };
 
@@ -1072,7 +1161,12 @@ const handleToggleRoutinePublic = async (routine: Routine) => {
         setCompletedActivityIds(prev => {
           const newPersonalMap = new Map(prev.personal);
           newPersonalMap.delete(routineId); // 맵에서 해당 루틴 ID 제거
-          return { ...prev, personal: newPersonalMap };
+          const newState = { ...prev, personal: newPersonalMap };
+          
+          // 로컬 스토리지에 백업
+          saveCompletedRoutinesToLocal(newPersonalMap, prev.group);
+          
+          return newState;
         });
 
         // 완료 횟수 1 감소
@@ -1092,7 +1186,12 @@ const handleToggleRoutinePublic = async (routine: Routine) => {
         setCompletedActivityIds(prev => {
           const newPersonalMap = new Map(prev.personal);
           newPersonalMap.set(routineId, newActivityId); // 맵에 (루틴 ID, 새 활동 ID) 추가
-          return { ...prev, personal: newPersonalMap };
+          const newState = { ...prev, personal: newPersonalMap };
+          
+          // 로컬 스토리지에 백업
+          saveCompletedRoutinesToLocal(newPersonalMap, prev.group);
+          
+          return newState;
         });
       } else {
          console.error("활동 생성 응답에서 ID를 받지 못했습니다:", response);
