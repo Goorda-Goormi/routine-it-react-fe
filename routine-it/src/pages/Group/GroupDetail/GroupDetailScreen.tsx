@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect,useCallback } from 'react';
 import { Dialog, DialogContent } from '../../../components/ui/dialog';
 import { GroupDetailHeader } from './GroupDetailHeader';
 import { GroupDetailTabs } from './GroupDetailTabs';
@@ -64,71 +64,92 @@ export function GroupDetailScreen({
     const group = groups.find((g) => g.groupId === groupId);
     const isLeader = group?.leaderName === currentUser.nickname;
     
-    const fetchGroupData = async () => {
-    if (!group) return;
+const toKst = useCallback((dateString: string) => {
+        const utcDate = new Date(dateString);
+        const kstOffset = 9 * 60 * 60 * 1000;
+        return new Date(utcDate.getTime() + kstOffset);
+    }, []);
 
-    try {
-        // 랭킹 데이터 가져오기
-        const rankingResponse = await getGroupTop3Ranking(groupId, Number(currentUser.id));
-        setWeeklyRanking(rankingResponse?.data?.top3Users || []);
+    const fetchGroupData = useCallback(async () => {
+        if (!group) return;
 
-    
-        const chatResponse = await fetchChatHistory(groupId, 500);
-        console.log("API 응답:", chatResponse.data);
-        const chatHistory = chatResponse.data?.content || [];
-        console.log("필터링 전 채팅 내역:", chatHistory);
+        try {
+            const rankingResponse = await getGroupTop3Ranking(groupId, Number(currentUser.id));
+            setWeeklyRanking(rankingResponse?.data?.top3Users || []);
 
-        // 오늘 날짜를 YYYY-MM-DD 형식으로 가져옵니다.
-        const today = new Date().toISOString().split('T')[0];
+            const chatResponse = await fetchChatHistory(groupId, 500);
+            const chatHistory = chatResponse.data?.content || [];
+            console.log("필터링 전 채팅 내역:", chatHistory);
 
-        const certifiedByChat = new Set<string>();
-        const authMessages = chatHistory
-            .filter(msg => {
-                // 메시지가 'NOTICE' 타입이고, 특정 문구를 포함하며, 오늘 날짜에 작성된 메시지만 필터링
-                const messageDate = new Date(msg.sentAt).toISOString().split('T')[0];
-                return msg.messageType === 'NOTICE' && 
-                       msg.message?.includes('님이 루틴을 인증했습니다') &&
-                       messageDate === today;
-            })
-            .map(msg => {
-                const date = new Date(msg.sentAt);
-                date.setHours(date.getHours() + 9); // KST 변환
-                const kstTime = date.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' });
-                certifiedByChat.add(msg.senderNickname);
-
-                return {
-                    id: msg.messageId,
-                    nickname: msg.senderNickname,
-                    action: '루틴 인증 완료',
-                    time: kstTime,
-                    imageUrl: msg.imageUrl,
-                };
-            });
+            // 현재 날짜를 KST 기준으로 가져옵니다.
+            const todayKst = toKst(new Date().toISOString());
+            const todayString = todayKst.toISOString().split("T")[0];
             
-        console.log("필터링된 루틴 인증 메시지:", authMessages);
-        setRecentActivities(authMessages);
-        setTodayCertifiedMembers(certifiedByChat);
+            const certifiedMembersFromChat = new Set<string>();
+            
+            const authMessages = chatHistory
+                .filter(msg => {
+                    const msgKstDate = toKst(msg.sentAt);
+                    const isRoutineAuth =
+                        msg.message?.includes("루틴 인증을 요청했습니다") ||
+                        msg.message?.includes("루틴을 인증했습니다");
+                    
+                    return msg.messageType === "NOTICE" && isRoutineAuth && msgKstDate.toISOString().split("T")[0] === todayString;
+                })
+                .map(msg => {
+                    const kstDate = toKst(msg.sentAt);
+                    const kstTime = kstDate.toLocaleTimeString("ko-KR", {
+                        hour: "2-digit",
+                        minute: "2-digit",
+                        hour12: true,
+                    });
 
-        // 멤버 프로필 가져오기
-        const profiles: Record<number, string> = {};
-        await Promise.all(groupMembers.map(async (member) => {
-            if (member.userId) {
-                try {
-                    const profileData = await getUserProfile(member.userId);
-                    profiles[member.userId] = profileData.profileImageUrl;
-                } catch (error) {
-                    console.error(`Failed to fetch profile for user ${member.userId}:`, error);
-                    profiles[member.userId] = '';
+                    const actionText = msg.message.includes("루틴을 인증했습니다")
+                        ? "루틴 인증 완료"
+                        : "루틴 인증 요청";
+                    
+                    if (group.groupType === 'FREE' && actionText === '루틴 인증 완료') {
+                        certifiedMembersFromChat.add(msg.senderNickname);
+                    }
+
+                    return {
+                        id: msg.messageId,
+                        nickname: msg.senderNickname,
+                        action: actionText,
+                        time: kstTime,
+                        imageUrl: msg.imageUrl,
+                    };
+                });
+
+            setTodayCertifiedMembers(prev => {
+                const mergedSet = new Set(prev);
+                certifiedMembersFromChat.forEach(member => mergedSet.add(member));
+                return mergedSet;
+            });
+
+            setRecentActivities(authMessages);
+            console.log("필터링된 루틴 인증 메시지:", authMessages);
+
+            const profiles: Record<number, string> = {};
+            await Promise.all(groupMembers.map(async (member) => {
+                if (member.userId) {
+                    try {
+                        const profileData = await getUserProfile(member.userId);
+                        profiles[member.userId] = profileData.profileImageUrl;
+                    } catch (error) {
+                        console.error(`Failed to fetch profile for user ${member.userId}:`, error);
+                        profiles[member.userId] = '';
+                    }
                 }
-            }
-        }));
-        setMemberProfiles(profiles);
-    } catch (error) {
-        console.error("그룹 데이터 로딩 실패:", error);
-        setWeeklyRanking([]);
-        setRecentActivities([]);
-    }
-};
+            }));
+            setMemberProfiles(profiles);
+
+        } catch (error) {
+            console.error("그룹 데이터 로딩 실패:", error);
+            setWeeklyRanking([]);
+            setRecentActivities([]);
+        }
+    }, [group, groupId, currentUser.id, groupMembers, toKst]);
 
     const fetchAuthNotifications = async () => {
         if (!group) return;
@@ -384,10 +405,10 @@ export function GroupDetailScreen({
             
             // 리더가 승인한 멤버를 todayCertifiedMembers Set에 추가
             setTodayCertifiedMembers(prev => {
-                const newSet = new Set(prev);
-                newSet.add(authRequest.nickname);
-                return newSet;
-            });
+        const newSet = new Set(prev);
+        newSet.add(authRequest.nickname);
+        return newSet;
+      });
             
             setAuthRequests(prev => prev.filter(auth => auth.id !== notificationId));
             setPendingAuthCount(prev => prev - 1);

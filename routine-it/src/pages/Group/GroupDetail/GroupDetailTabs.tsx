@@ -38,6 +38,7 @@ export const GroupDetailTabs = ({
             }
 
             // 채팅 내역과 리더의 승인 여부 모두 확인
+            //const isCertified = certifiedMembers.has(member.memberName);
             const isCertified = certifiedMembers.has(member.memberName);
 
             const isLeader = member.role === 'LEADER';
