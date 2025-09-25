@@ -13,7 +13,6 @@ interface GroupDetailTabsProps {
     groupMembers: GroupMemberResponse[];
     memberProfiles: Record<number, string>;
     myid: number;
-    // 새 props: 오늘 인증된 멤버 목록 (Set)
     certifiedMembers: Set<string>;
 }
 
@@ -38,7 +37,6 @@ export const GroupDetailTabs = ({
             }
 
             // 채팅 내역과 리더의 승인 여부 모두 확인
-            //const isCertified = certifiedMembers.has(member.memberName);
             const isCertified = certifiedMembers.has(member.memberName);
 
             const isLeader = member.role === 'LEADER';
@@ -138,7 +136,7 @@ export const GroupDetailTabs = ({
                                         <div key={item.rank}>
                                             <div 
                                                 className={`flex items-center justify-between p-3 border rounded-lg hover:bg-accent/30 transition-colors
-                                                ${isMe ? 'bg-orange-50' : 'border-border/50'}`}
+                                                ${isMe ? 'bg-orange-50 dark:bg-my-highlight-bg' : 'border-border/50'}`}
                                             >
                                                 <div className="flex items-center space-x-3">
                                                     <div className="w-6 h-6 flex items-center justify-center">
