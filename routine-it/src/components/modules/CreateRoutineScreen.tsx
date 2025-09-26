@@ -200,7 +200,7 @@ const handleDayToggle = (day: string) => {
             </div>
             
             <div>
-              <Label className='pl-3' htmlFor="frequency">
+              <Label className="text-card-foreground font-medium" htmlFor="frequency">
                 반복 주기 <span className="text-sm text-gray-500">{getFrequencyText()}</span>
               </Label>
               <div className="flex justify-center gap-5 pt-2">
@@ -209,9 +209,7 @@ const handleDayToggle = (day: string) => {
                     key={day}
                     variant={selectedDays.includes(day) ? 'default' : 'outline'}
                     onClick={() => handleDayToggle(day)}
-                    className={`w-10 h-10 rounded-full ${
-                      selectedDays.includes(day) ? 'bg-primary text-white' : ''
-                    }`}
+                    className="w-10 h-10 rounded-full font-bold"
                   >
                     {day}
                   </Button>
