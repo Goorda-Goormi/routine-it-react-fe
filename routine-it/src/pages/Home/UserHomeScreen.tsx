@@ -462,8 +462,14 @@ export function UserHomeScreen({ user, onBack }: UserHomeScreenProps) {
       </div>
     {/* 갤러리 모달 */}
       {selectedPhotoIndex !== null && publicVerificationPhotos[selectedPhotoIndex] && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80">
-          <div className="relative h-full w-full max-w-lg flex flex-col items-center justify-center">
+        <div 
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/80"
+          onClick={closeGallery}
+        >
+          <div 
+            className="relative max-w-lg flex flex-col items-center justify-center"
+            onClick={(e) => e.stopPropagation()}
+          >
             {/* 닫기 버튼 */}
             <Button
               variant="ghost"

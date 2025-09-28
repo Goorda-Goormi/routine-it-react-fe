@@ -99,7 +99,8 @@ export const getUserAuthPhotos = async (targetUserId?: number) => {
     params.append('targetUserId', String(targetUserId));
   }
    const response = await apiFetch(`/user-activities/info?${params.toString()}`);
-    let activities = Array.isArray(response) ? response : response.data;
+   console.log("1. 서버 원본 응답:", response); 
+   let activities = Array.isArray(response) ? response : response.data;
 
    if (Array.isArray(activities)) {
         // map을 사용하여 각 활동의 imageUrl을 변환합니다. Promise.all로 모든 변환을 병렬 처리합니다.
@@ -119,7 +120,7 @@ export const getUserAuthPhotos = async (targetUserId?: number) => {
             })
         );
     }
-    
+    console.log("2. 최종 반환 직전 데이터:", activities);
     return activities; 
 };
 

@@ -4,7 +4,7 @@ import { Button } from '../../components/ui/button';
 import { Progress } from '../../components/ui/progress';
 import { Badge } from '../../components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '../../components/ui/avatar';
-import { Target, Users, Camera, CheckCircle, Plus, TrendingUp, ChevronLeft, ChevronRight, X } from 'lucide-react';
+import { Target, Users, Camera, CheckCircle, Plus, TrendingUp, ChevronLeft, ChevronRight, X, Eye, EyeOff, Trash2 } from 'lucide-react';
 import { ImageWithFallback } from '../../components/figma/ImageWithFallback';
 import { getStreakInfo, getStreakMessage } from '../../components/utils/streakUtils';
 import type { Routine, Group, Member, GroupMemberResponse } from '../../interfaces';
@@ -79,6 +79,7 @@ export function HomeScreen({
       try {
         // userId 없이 호출하여 내 사진을 가져옵니다.
         const photosData = await getUserAuthPhotos();
+        console.log("서버에서 받은 사진 데이터:", photosData);
         // API 응답 구조에 맞게 activityInfos에서 데이터를 추출합니다.
         setMyVerificationPhotos(photosData || []);
       } catch (error) {
@@ -89,6 +90,7 @@ export function HomeScreen({
     fetchMyPhotos();
   }, []);
 
+  const publicPhotosCount = myVerificationPhotos.filter(photo => !photo.isPublic).length;
   const publicVerificationPhotos = myVerificationPhotos.filter(photo => !photo.isPublic);
 
   const [selectedPhotoIndex, setSelectedPhotoIndex] = useState<number | null>(null);
@@ -116,8 +118,22 @@ export function HomeScreen({
   };
 
   const handleNextPhoto = () => {
-    if (selectedPhotoIndex !== null && selectedPhotoIndex < publicVerificationPhotos.length - 1) {
+    if (selectedPhotoIndex !== null && selectedPhotoIndex < myVerificationPhotos.length - 1) {
       setSelectedPhotoIndex(selectedPhotoIndex + 1);
+    }
+  };
+
+  const handleDeletePhoto = async (photoId: number) => {
+    if (window.confirm("정말로 이 인증 사진을 삭제하시겠습니까?\n(API 준비 전으로, 현재는 화면에서만 사라집니다)")) {
+      try {
+        alert("삭제 API가 준비되면 실제 데이터가 삭제됩니다.");
+        console.log(`[임시] 삭제 API 호출 시뮬레이션: ${photoId}번 사진`);
+        setMyVerificationPhotos(prevPhotos =>
+          prevPhotos.filter(p => p.userActivityId !== photoId)
+        );
+      } catch (error) {
+        console.error("사진 삭제 처리 중 에러:", error);
+      }
     }
   };
 
@@ -224,71 +240,71 @@ export function HomeScreen({
           <div className="space-y-0">
             {allTodayRoutines.length > 0 ? (
               allTodayRoutines.map((routine: Routine, index: number) => {
-                // const currentState = routineStates[routine.id] || 'initial';
-                // const isPending = currentState === 'pending';
-                // const isCompleted = currentState === 'completed';
-
                 return (
-                  <div key={routine.isGroupRoutine ? `group-${routine.id}` : `personal-${routine.id}`}>
-                    <div
-                      className={`flex items-center justify-between rounded-lg p-3 transition-colors ${
-                        routine.completed ? 'bg-green-50/50 dark:bg-green-900/20' : 'hover:bg-accent/50'
-                      } ${index < routines.length - 1 ? 'mb-1' : ''}`}
-                    >
-                      <div className="flex items-center space-x-3 flex-1 cursor-pointer " onClick={() => handleRoutineClick(routine)}>
-                        <div className="flex items-center space-x-3">
-                          <div className='flex flex-col items-start ml-2'>
-                            <div className={`text-left text-sm font-medium ${routine.completed ? 'text-green-700 dark:text-green-400 line-through' : 'text-foreground'}`}>
-                              {routine.name}
-                            </div>
-                            <div className="text-left text-xs text-foreground dark:opacity-75">
-                              {routine.time} • {routine.streak}일 연속
-                            </div>
+                  // ▼▼▼ [핵심 수정 1] 이 최상위 div에 새로운 onClick 핸들러를 추가하고, 스타일을 변경합니다. ▼▼▼
+                  <div 
+                    key={routine.isGroupRoutine ? `group-${routine.id}` : `personal-${routine.id}`}
+                    className={`flex items-center justify-between rounded-lg p-3 transition-colors cursor-pointer ${
+                      routine.completed ? 'bg-green-50/50 dark:bg-green-900/20' : 'hover:bg-accent/50'
+                    }`}
+                    onClick={() => {
+                      if (routine.isGroupRoutine) {
+                        // 그룹 루틴 클릭 시: 인증을 위해 채팅방으로 이동
+                        const group = participatingGroups.find(g => g.groupId === routine.id);
+                        if (group) {
+                          onNavigate('group-chat', group);
+                        }
+                      } else {
+                        // 개인 루틴 클릭 시: 완료 상태 토글
+                        onTogglePersonalRoutine(routine.id);
+                      }
+                    }}
+                  >
+                    {/* ▼▼▼ [핵심 수정 2] 기존 onClick 핸들러를 제거합니다. ▼▼▼ */}
+                    <div className="flex items-center space-x-3 flex-1">
+                      <div className="flex items-center space-x-3">
+                        <div className='flex flex-col items-start ml-2'>
+                          <div className={`text-left text-sm font-medium ${routine.completed ? 'text-green-700 dark:text-green-400 line-through' : 'text-foreground'}`}>
+                            {routine.name}
+                          </div>
+                          <div className="text-left text-xs text-foreground dark:opacity-75">
+                            {routine.time} • {routine.streak}일 연속
                           </div>
                         </div>
                       </div>
+                    </div>
 
-                      <div className="flex items-center space-x-2 h-[30px]">
-                        {routine.isGroupRoutine ? (
-                          routine.completed ? (
-                            <div className="w-8 h-8 rounded-full flex items-center justify-center transition-colors p-0 m-0 bg-green-500">
-                              <CheckCircle className="h-5 w-5 text-white" />
-                            </div>
-                          ) : (
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                const group = participatingGroups.find(g => g.groupId === routine.id);
-                                if (group) {
-                                  // 그룹 채팅 화면으로 이동시킵니다.
-                                  onNavigate('group-chat', group);
-                                }
-                              }}
-                              className="w-auto h-8 rounded-full flex items-center justify-center transition-colors px-3 py-1 text-xs text-foreground border-2 border-border/60 hover:bg-accent"
-                            >
-                              <span className="flex items-center">
-                                {routine.type === '의무참여' && <Camera className="h-4 w-4 mr-1 text-foreground/70" />}
-                                인증
-                              </span>
-                            </button>
-                          )
+                    <div className="flex items-center space-x-2 h-[30px]">
+                      {routine.isGroupRoutine ? (
+                        routine.completed ? (
+                          <div className="w-8 h-8 rounded-full flex items-center justify-center p-0 m-0 bg-green-500">
+                            <CheckCircle className="h-5 w-5 text-white" />
+                          </div>
                         ) : (
-                          <button
-                            onClick={(e) => {
-                              onTogglePersonalRoutine(routine.id);
-                            }}
-                            className={`w-8 h-8 rounded-full flex items-center justify-center transition-colors m-0 border-0 ${
-                              routine.completed ? 'bg-green-500 hover:bg-green-600' : 'border-2 border-border/60 hover:border-green-500'
-                            } !p-0`}
+                          // ▼▼▼ [핵심 수정 3] 버튼의 onClick을 제거하여 부모 div의 onClick만 작동하도록 합니다. ▼▼▼
+                          <div
+                            className="w-auto h-8 rounded-full flex items-center justify-center transition-colors px-3 py-1 text-xs text-foreground border-2 border-border/60"
                           >
-                            <CheckCircle
-                              className={`h-5 w-5 ${
-                                routine.completed ? 'text-white' : 'text-transparent'
-                              }`}
-                            />
-                          </button>
-                        )}
-                      </div>
+                            <span className="flex items-center">
+                              {routine.type === '의무참여' && <Camera className="h-4 w-4 mr-1 text-foreground/70" />}
+                              인증
+                            </span>
+                          </div>
+                        )
+                      ) : (
+                        // ▼▼▼ [핵심 수정 4] 버튼의 onClick을 제거하여 부모 div의 onClick만 작동하도록 합니다. ▼▼▼
+                        <div
+                          className={`w-8 h-8 rounded-full flex items-center justify-center m-0 border-0 ${
+                            routine.completed ? 'bg-green-500' : 'border-2 border-border/60'
+                          } !p-0`}
+                        >
+                          <CheckCircle
+                            className={`h-5 w-5 ${
+                              routine.completed ? 'text-white' : 'text-transparent'
+                            }`}
+                          />
+                        </div>
+                      )}
                     </div>
                   </div>
                 );
@@ -357,7 +373,7 @@ export function HomeScreen({
           <CardTitle className="text-base text-foreground flex items-center space-x-2">
             <Camera className="h-4 w-4 icon-accent" />
             <span>나의 인증 사진</span>
-            <Badge variant="secondary" className="text-xs">공개된 사진만</Badge>
+            <Badge variant="secondary" className="text-xs">공개 {publicPhotosCount} / {myVerificationPhotos.length}</Badge>
           </CardTitle>
         </CardHeader>
         <CardContent className="pt-0">
@@ -367,15 +383,29 @@ export function HomeScreen({
                 <div
                   key={photo.userActivityId}
                   className="space-y-2 cursor-pointer"
-                  onClick={() => handlePhotoClick(index)}
                 >
-                  <div className="relative rounded-lg overflow-hidden aspect-square">
+                  <div className="relative rounded-lg overflow-hidden aspect-square group">
                     <ImageWithFallback
-                      src={photo.imageUrl} // imageUrl로 수정
+                      src={photo.imageUrl}
                       alt={photo.groupName || photo.personalRoutineName || '인증샷'}
-                      className="w-full h-full object-cover"
+                      className="w-full h-full object-cover cursor-pointer"
+                      onClick={() => handlePhotoClick(index)}
                     />
-                    <div className="absolute inset-0 bg-black/20 opacity-0 hover:opacity-100 transition-opacity flex items-end">
+                  <Button
+                      variant="destructive"
+                      size="icon"
+                      className="absolute top-1 right-1 h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity"
+                      onClick={(e) => {
+                        e.stopPropagation(); 
+                        handleDeletePhoto(photo.userActivityId);
+                      }}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                    <div 
+                      className="absolute inset-0 bg-black/20 opacity-0 hover:opacity-100 transition-opacity flex items-end cursor-pointer"
+                      onClick={() => handlePhotoClick(index)}
+                    >
                       <div className="p-2">
                         <span className="text-xs text-white bg-black/50 px-2 py-1 rounded">
                           {photo.activityDate}
@@ -383,12 +413,12 @@ export function HomeScreen({
                       </div>
                     </div>
                   </div>
-                <div className="text-xs text-foreground font-medium text-center">
-                  {photo.groupName || photo.personalRoutineName}
+                  <div className="text-xs text-foreground font-medium text-center truncate">
+                    {photo.groupName || photo.personalRoutineName}
+                  </div>
                 </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
           ) : (
             <div className="text-center py-8">
               <Camera className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
@@ -403,8 +433,14 @@ export function HomeScreen({
 
       {/* 갤러리 모달 */}
             {selectedPhotoIndex !== null && (
-              <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80">
-                <div className="relative h-full w-full max-w-lg flex flex-col items-center justify-center">
+              <div 
+                className="fixed inset-0 z-50 flex items-center justify-center bg-black/80"
+                onClick={handleCloseGallery}
+              >
+                <div 
+                  className="relative max-w-lg flex flex-col items-center justify-center"
+                  onClick={(e) => e.stopPropagation()}
+                >
                   {/* 닫기 버튼 */}
                   <Button
                     variant="ghost"
@@ -414,18 +450,42 @@ export function HomeScreen({
                   >
                     <X className="h-6 w-6" />
                   </Button>
+
                   {/* 사진 */}
-                  <div className="flex-1 w-full flex items-center justify-center p-4">
+                  <div className="relative p-4">
                     <img 
-                      src={publicVerificationPhotos[selectedPhotoIndex].imageUrl} 
-                      alt={publicVerificationPhotos[selectedPhotoIndex].groupName} 
-                      className="max-w-full max-h-full object-contain"
+                      src={myVerificationPhotos[selectedPhotoIndex].imageUrl} 
+                      alt={myVerificationPhotos[selectedPhotoIndex].groupName || myVerificationPhotos[selectedPhotoIndex].personalRoutineName || '인증샷'} 
+                      className="max-w-full max-h-[70vh] object-contain rounded-lg"
                     />
+
+                    {/* 공개/비공개 버튼 (사진 우측 하단) */}
+                    <div className="absolute bottom-6 right-6">
+                      <Button
+                        variant="ghost"
+                        className="h-auto p-1 rounded-full text-white hover:bg-white/20 hover:text-white"
+                        //onClick={() => handleTogglePublicStatus(myVerificationPhotos[selectedPhotoIndex].userActivityId, selectedPhotoIndex)}
+                      >
+                        {!myVerificationPhotos[selectedPhotoIndex].isPublic ? (
+                          <div className="flex items-center gap-1.5 bg-black/40 px-2 py-1 rounded-full">
+                            <Eye className="h-4 w-4" />
+                            <span className="text-xs">공개</span>
+                          </div>
+                        ) : (
+                          <div className="flex items-center gap-1.5 bg-black/40 px-2 py-1 rounded-full">
+                            <EyeOff className="h-4 w-4" />
+                            <span className="text-xs">비공개</span>
+                          </div>
+                        )}
+                      </Button>
+                    </div>
                   </div>
-                  {/* 사진 설명 */}
-                  <div className="absolute bottom-16 w-full text-center text-white text-lg font-semibold">
-                    {publicVerificationPhotos[selectedPhotoIndex].groupName}
+
+                  {/* 사진 설명 (사진 하단 중앙) */}
+                  <div className="w-full text-center pb-4 text-white text-lg font-semibold">
+                    <span>{myVerificationPhotos[selectedPhotoIndex].groupName || myVerificationPhotos[selectedPhotoIndex].personalRoutineName}</span>
                   </div>
+
                   <div className="absolute inset-y-0 flex items-center justify-between w-full px-6">
                     {/* 이전 사진 버튼 */}
                     <Button 
@@ -444,7 +504,7 @@ export function HomeScreen({
                       size="icon"
                       className="text-white opacity-80 rounded-full hover:bg-black/50  hover:text-white hover:border-none"
                       onClick={handleNextPhoto} 
-                      disabled={selectedPhotoIndex === publicVerificationPhotos.length - 1}
+                      disabled={selectedPhotoIndex === myVerificationPhotos.length - 1}
                     >
                       <ChevronRight className="h-6 w-6" />
                     </Button>

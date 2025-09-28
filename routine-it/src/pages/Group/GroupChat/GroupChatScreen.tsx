@@ -43,7 +43,7 @@ export function GroupChatScreen({ group, groupmembers, onBack, onLeaveGroup, use
   onLeaveGroup: (groupId:number) => void;
   userInfo: UserProfile;
   onDataRefresh?: () => void;
-  onGroupRoutineComplete?: () => void;
+  onGroupRoutineComplete?: (groupId: number, activityId: number) => void;
   onUpdateMessages: (roomId: number, newMessages: Message[]) => void;
 }) {
   const [isAuthDialogOpen, setIsAuthDialogOpen] = useState(false);

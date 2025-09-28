@@ -656,6 +656,13 @@ useEffect(() => {
   }
 }, [isLoggedIn, UserInfo]);
 
+  useEffect(() => {
+    if (isLoggedIn && (activeTab === 'home' || activeTab === 'routine')) {
+      console.log(`탭이 '${activeTab}'(으)로 변경되어 데이터를 새로고침합니다.`);
+      handleDataRefresh(); 
+    }
+  }, [activeTab]);
+
   // UserInfo(서버) 상태와 isDarkMode(UI) 상태를 동기화
   useEffect(() => {
     if (UserInfo) {
@@ -1230,8 +1237,19 @@ const handleToggleRoutinePublic = async (routine: Routine) => {
   }
 };
 
-const handleGroupRoutineCompletion = () => {
+const handleGroupRoutineCompletion = (groupId: number, activityId: number) => {
     console.log("🏆 그룹 루틴 완료! 출석 및 통계 처리를 시작합니다.");
+
+    setCompletedActivityIds(prev => {
+      const newGroupMap = new Map(prev.group);
+      newGroupMap.set(groupId, activityId); // (그룹 ID, 활동 ID)를 맵에 추가
+      const newState = { ...prev, group: newGroupMap };
+      
+      // 로컬 스토리지에도 백업
+      saveCompletedRoutinesToLocal(prev.personal, newGroupMap);
+      
+      return newState;
+    });
 
     // 1. 전체 루틴 완료 횟수 증가
     const newRoutineCount = routineCompletionCount + 1;
