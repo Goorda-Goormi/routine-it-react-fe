@@ -4,6 +4,8 @@ import {
   Users,
   MessageCircle,
   Settings,
+  Bell,
+  BellOff,
 } from 'lucide-react';
 import { Card, CardContent } from '../../../components/ui/card';
 import { Button } from '../../../components/ui/button';
@@ -17,7 +19,7 @@ import {
 } from '../../../components/ui/dropdown-menu';
 
 import type { Group, GroupMemberResponse } from '../../../interfaces';
-import {  requestJoinGroup } from '../../../api/group';
+import {  requestJoinGroup, updateGroupMemberAlarm } from '../../../api/group';
 
 interface GroupDetailHeaderProps {
   group: Group;
@@ -51,15 +53,26 @@ export const GroupDetailHeader = ({
   onGroupJoined,
 }: GroupDetailHeaderProps) => {
   const myIdAsNumber = typeof myid === 'string' ? parseInt(myid, 10) : myid;
-  
-
-console.log('--- GroupDetailHeader Variables ---');
+  const myGroupMemberInfo = groupMembers.find(
+    (member) => member.userId === myIdAsNumber
+  );
+  const initialAlarmState = myGroupMemberInfo?.alarm ?? true; 
+  const [isAlarmOn, setIsAlarmOn] = React.useState(initialAlarmState);
+  const [showAlarmStatusBadge, setShowAlarmStatusBadge] = React.useState(false);
+  const [alarmStatusMessage, setAlarmStatusMessage] = React.useState('');
+  console.log('--- GroupDetailHeader Variables ---');
   console.log('GroupDetailHeader: isJoined:', isJoined);
   console.log('GroupDetailHeader: isLeader:', isLeader);
   console.log('GroupDetailHeader: myid:', myid, `(${typeof myid})`);
   console.log('GroupDetailHeader: group:', group);
   console.log('GroupDetailHeader: groupMembers:', groupMembers);
   console.log('-----------------------------------');
+
+   React.useEffect(() => {
+   if (myGroupMemberInfo) {
+      setIsAlarmOn(myGroupMemberInfo.alarm);
+    }
+  }, [myGroupMemberInfo]);
   const handleMenuClick = async (action: string) => {
     switch (action) {
       case 'edit':
@@ -101,6 +114,32 @@ console.log('--- GroupDetailHeader Variables ---');
     }
   };
 
+  const handleToggleAlarm = async () => {
+   if (!isJoined) return; 
+    const newAlarmState = !isAlarmOn;
+
+     try {
+      await updateGroupMemberAlarm(group.groupId, newAlarmState); 
+       setIsAlarmOn(newAlarmState); 
+      setAlarmStatusMessage(`알림 ${newAlarmState ? '꺼짐' : '켜짐'} ✅`);
+      setShowAlarmStatusBadge(true);
+
+      // 3초 후에 배지를 숨깁니다.
+       setTimeout(() => {
+        setShowAlarmStatusBadge(false);
+      }, 3000);
+
+    } catch (error) {
+      // 오류 시에도 눈에 띄게 표시
+      setAlarmStatusMessage('알림 설정 변경 실패 ❌');
+      setShowAlarmStatusBadge(true);
+      setTimeout(() => {
+         setShowAlarmStatusBadge(false);
+      }, 3000);
+       console.error("알림 설정 변경 실패:", error);
+    }
+  };
+
   
   return (
     <div className="sticky top-0 z-10 bg-background/95 backdrop-blur ">
@@ -112,6 +151,21 @@ console.log('--- GroupDetailHeader Variables ---');
           <h1 className="font-bold text-card-foreground">그룹 상세</h1>
         </div>
         <div className="flex items-center space-x-2">
+           {isJoined && (
+            <Button 
+              variant="ghost" 
+              size="sm" 
+               onClick={handleToggleAlarm}
+               className="hover:bg-accent p-1"
+              title={isAlarmOn ? "알림 켜기" : "알림 끄기"}
+            >
+              {isAlarmOn ? (
+                <Bell className="h-5 w-5 text-card-foreground" />
+              ) : (
+                <BellOff className="h-5 w-5 text-muted-foreground" />
+              )}
+             </Button>
+          )}
          
           <DropdownMenu>
             <DropdownMenuTrigger asChild disabled={!isLeader}>

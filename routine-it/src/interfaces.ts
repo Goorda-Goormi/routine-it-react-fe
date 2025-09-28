@@ -85,6 +85,7 @@ export interface GroupMemberResponse {
   createdAt: string;
   updatedAt: string;
   approved?: boolean;
+  alarm?:boolean;
 }
 
 export interface AuthMessage {
