@@ -230,86 +230,6 @@ const toKst = useCallback((dateString: string) => {
         fetchGroupData();
     }, [groupId, currentUser.id, groupMembers]);
 
-   /* const fetchAuthNotifications = async () => {
-        try {
-            const notifications = await getNotificationsByType('GROUP_TODAY_AUTH_REQUEST' as NotificationType);
-            
-            const currentGroupAuthRequests = notifications.filter(
-                (notification) => notification.groupName === group?.groupName && notification.receiverName === currentUser.nickname
-            );
-
-            const authRequestList = currentGroupAuthRequests.map(notification => {
-                let targetUserId = null;
-                let targetGroupMemberId = null;
-
-                const memberInfo = groupMembers.find(member => member.memberName === notification.senderName);
-                if (memberInfo) {
-                    targetUserId = memberInfo.userId;
-                    targetGroupMemberId = memberInfo.groupMemberId;
-                }
-                
-                return {
-                    id: notification.id,
-                    nickname: notification.senderName,
-                    imageUrl: null,
-                    message: notification.content,
-                    targetUserId: targetUserId,
-                    targetGroupMemberId: targetGroupMemberId,
-                };
-            });
-
-            setAuthRequests(authRequestList);
-            setPendingAuthCount(authRequestList.length);
-        } catch (error) {
-            console.error("루틴 인증 요청 알림 로딩 실패:", error);
-            setAuthRequests([]);
-            setPendingAuthCount(0);
-        }
-    };
-    */
-    // fetchData 함수를 useEffect 밖으로 분리하여 재사용 가능하게 함
-    /*
-    const fetchData = async () => {
-        if (currentUser?.id) {
-            try {
-                const rankingResponse = await getGroupTop3Ranking(groupId, Number(currentUser.id));
-                setWeeklyRanking(rankingResponse?.data?.top3Users || []);
-            } catch (error) {
-                console.error("랭킹 데이터 가져오기 실패:", error);
-                setWeeklyRanking([]);
-            }
-        }
-        
-        try {
-            const chatResponse = await fetchChatHistory(groupId, 50);
-            const chatHistory = chatResponse.data?.content || [];
-            
-            // 채팅 내역에서 인증 메시지를 필터링하고, 인증한 멤버를 Set에 저장
-            const certifiedByChat = new Set<string>();
-            const authMessages = chatHistory
-                .filter(msg => msg.messageType === 'NOTICE' && msg.content?.includes('루틴을 인증했어요'))
-                .map(msg => {
-                    const date = new Date(msg.sentAt);
-                    date.setHours(date.getHours() + 9);
-                    const kstTime = date.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' });
-
-                    certifiedByChat.add(msg.senderNickname); // 채팅으로 인증한 멤버 추가
-
-                    return {
-                        id: msg.messageId,
-                        nickname: msg.senderNickname,
-                        action: '인증 완료',
-                        time: kstTime,
-                        imageUrl: msg.imageUrl,
-                    };
-                });
-            setRecentActivities(authMessages);
-            setTodayCertifiedMembers(certifiedByChat); // 오늘 인증된 멤버 상태 업데이트
-        } catch (error) {
-            console.error("채팅 인증 내역 로딩 실패:", error);
-            setRecentActivities([]);
-        }
-    };*/
 
        const handleKickMember = async (targetMemberId: number) => {
         try {
@@ -401,13 +321,6 @@ const toKst = useCallback((dateString: string) => {
         }));
         setMemberProfiles(profiles);
     };
-
-   /* useEffect(() => {
-        fetchData();
-        if (groupMembers.length > 0) {
-            fetchMemberProfiles();
-        }
-    }, [groupId, currentUser.id, groupMembers]);*/
 
     const handleOpenApprovalModal = async () => {
         try {
