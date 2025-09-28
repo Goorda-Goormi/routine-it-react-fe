@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { TopNavBar } from "./components/TopNavBar";
 import { BottomTabNav } from "./components/BottomTabNav";
 import { LoginScreen } from "./pages/Login/LoginScreen";
@@ -341,6 +341,7 @@ export default function App() {
   
   const [isReviewModalOpen, setReviewModalOpen] = useState(false);
   const [reviewModalContent, setReviewModalContent] = useState({ content: '', monthYear: '' });
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
   const addNotification = (notification: Omit<Notification, 'id' | 'date' | 'read'>) => {
     const newNotification: Notification = {
       ...notification,
@@ -678,6 +679,12 @@ useEffect(() => {
       document.documentElement.classList.remove("dark");
     }
   }, [isDarkMode]);
+
+  useEffect(() => {
+    if (scrollContainerRef.current) {
+      scrollContainerRef.current.scrollTop = 0;
+    }
+  }, [navigationStack, activeTab]); 
 
 
 const fetchMembers = async (groupId: number) => {
@@ -2209,7 +2216,7 @@ const navigateTo = (screen: string, params?: any, options?: { replace?: boolean 
             )}
 
             <main className="flex-1 bg-background flex flex-col overflow-hidden">
-              <div className="flex-1 overflow-auto ">
+              <div className="flex-1 overflow-auto " ref={scrollContainerRef}> 
                 {renderScreen()}
               </div>
 

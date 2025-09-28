@@ -91,7 +91,7 @@ export function HomeScreen({
   }, []);
 
   const publicPhotosCount = myVerificationPhotos.filter(photo => !photo.isPublic).length;
-  const publicVerificationPhotos = myVerificationPhotos.filter(photo => !photo.isPublic);
+  const publicVerificationPhotos = myVerificationPhotos.filter(photo => !photo.isPublic && photo.imageUrl);
 
   const [selectedPhotoIndex, setSelectedPhotoIndex] = useState<number | null>(null);
 

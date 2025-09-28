@@ -99,7 +99,6 @@ export const getUserAuthPhotos = async (targetUserId?: number) => {
     params.append('targetUserId', String(targetUserId));
   }
    const response = await apiFetch(`/user-activities/info?${params.toString()}`);
-   console.log("1. 서버 원본 응답:", response); 
    let activities = Array.isArray(response) ? response : response.data;
 
    if (Array.isArray(activities)) {
@@ -120,7 +119,6 @@ export const getUserAuthPhotos = async (targetUserId?: number) => {
             })
         );
     }
-    console.log("2. 최종 반환 직전 데이터:", activities);
     return activities; 
 };
 
