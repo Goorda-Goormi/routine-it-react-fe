@@ -158,12 +158,12 @@ import React, { useState } from 'react';
                    </div>
                    <div>
                        <div className="flex items-center space-x-2">
-                           <span className="text-sm font-medium text-card-foreground">{routine.name}</span>
+                           <span className="flex-1 text-sm text-left font-medium text-card-foreground break-words">{routine.name}</span>
                            {(routine as Routine).isGroupRoutine && (
                                <Users className="h-3 w-3 text-primary icon-accent" />
                            )}
                        </div>
-                       <div className="text-xs text-muted-foreground mt-1">
+                       <div className="text-left text-xs text-muted-foreground mt-1">
                            {routine.time} • {routine.streak}일 연속
                        </div>
                    </div>
@@ -191,7 +191,7 @@ import React, { useState } from 'react';
                    </div>
                    <div>
                        <div className="flex items-center space-x-2">
-                           <span className="text-sm font-medium text-card-foreground">{routine.name}</span>
+                           <span className="flex-1 text-sm text-left font-medium text-card-foreground break-words">{routine.name}</span>
                        </div>
                        <p className="text-xs text-muted-foreground mt-1">
                            {routine.description}
