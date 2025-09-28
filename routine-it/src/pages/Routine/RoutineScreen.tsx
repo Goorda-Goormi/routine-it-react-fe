@@ -48,9 +48,8 @@ import React, { useState } from 'react';
  }
 
  export function RoutineScreen({ onNavigate, allRoutines, recommendedRoutines, onTogglePersonalRoutine, onAddRecommendedRoutine, onOpenAttendanceModal, onOpenStreakModal, onOpenBadgeModal, initialUserInfo, participatingGroups, allGroups }: RoutineScreenProps) {
-   const [activeFilter, setActiveFilter] = useState('today');
+   const [activeTab, setActiveTab] = useState('personal');
    const todayDay = getTodayDayOfWeek();
-  
    const todayRoutines = allRoutines.filter(routine => {
      if (routine.frequency && Array.isArray(routine.frequency)) {
        return routine.frequency.includes(todayDay);
@@ -68,7 +67,17 @@ import React, { useState } from 'react';
      return Math.round((getCompletedCount(routines) / routines.length) * 100);
    };
 
-   
+   const personalRoutines = allRoutines
+    .filter(routine => !routine.isGroupRoutine)
+    .sort((a, b) => a.name.localeCompare(b.name));
+
+   const groupRoutines = allRoutines
+    .filter(routine => routine.isGroupRoutine)
+    .sort((a, b) => a.name.localeCompare(b.name));
+
+    const existingRoutineNames = new Set(allRoutines.map(r => r.name));
+    const filteredRecommendedRoutines = recommendedRoutines.filter(r => !existingRoutineNames.has(r.name));
+
    const getCategoryEmoji = (category: string) => {
      switch (category) {
       case 'health': return '💪';
@@ -171,9 +180,9 @@ import React, { useState } from 'react';
        <div key={routine.id}>
            <div
                className="flex items-center justify-between rounded-lg p-3 cursor-pointer hover:bg-accent/50 transition-colors"
-               onClick={() => {
-                   onAddRecommendedRoutine(routine);
-                   setActiveFilter('all');
+               onClick={() => 
+                {onAddRecommendedRoutine(routine);
+                setActiveTab('personal');
                }}
            >
                <div className="flex items-center space-x-3">
@@ -196,8 +205,8 @@ import React, { useState } from 'react';
                    onClick={(e) => {
                        e.stopPropagation();
                        onAddRecommendedRoutine(routine);
-                       setActiveFilter('all');
-                   }}
+                       setActiveTab('personal');
+                      }}
                >
                    <Plus className="h-4 w-4 mr-1 icon-secondary" />
                    추가
@@ -247,52 +256,52 @@ import React, { useState } from 'react';
            </CardContent>
          </Card>
        </div>
-       <Tabs value={activeFilter} onValueChange={setActiveFilter} className="space-y-4 flex flex-col items-center">
+       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4 flex flex-col items-center">
          <TabsList className="grid w-full h-auto grid-cols-3">
-           <TabsTrigger className="flex-1" value="today" >
-             오늘
+           <TabsTrigger className="flex-1" value="personal" >
+             개인
            </TabsTrigger>
-           <TabsTrigger className="flex-1" value="all">
-             전체
+           <TabsTrigger className="flex-1" value="group">
+             그룹
            </TabsTrigger>
            <TabsTrigger className="flex-1" value="recommended">
              추천
            </TabsTrigger>
          </TabsList>
-         <TabsContent value="today" className="mt-4 w-full">
+         <TabsContent value="personal" className="mt-4 w-full">
            <Card className="dark:card-shadow">
              <CardHeader className="pb-3">
                <CardTitle className="flex items-center space-x-2 text-base text-card-foreground">
                  <Calendar className="h-4 w-4 icon-accent" />
-                 <span>오늘의 루틴</span>
+                 <span>개인 루틴</span>
                </CardTitle>
              </CardHeader>
              <CardContent className="pt-0">
                <div className="space-y-0">
-                 {todayRoutines.length > 0 ? (
-                   todayRoutines.map((routine, index) => renderRoutineCard(routine, index, index === todayRoutines.length - 1))
-                 ) : (
-                   <div className="py-8 text-center text-sm text-muted-foreground">오늘의 루틴이 없습니다.</div>
-                 )}
+                  {personalRoutines.length > 0 ? (
+                    personalRoutines.map((routine, index) => renderRoutineCard(routine, index, index === personalRoutines.length - 1))
+                  ) : (
+                    <div className="py-8 text-center text-sm text-muted-foreground">등록된 개인 루틴이 없습니다.</div>
+                  )}
                </div>
              </CardContent>
            </Card>
          </TabsContent>
-         <TabsContent value="all" className="mt-4 w-full">
+         <TabsContent value="group" className="mt-4 w-full">
            <Card className="dark:card-shadow">
              <CardHeader className="pb-3">
                <CardTitle className="flex items-center space-x-2 text-base text-card-foreground">
                  <Target className="h-4 w-4 icon-accent" />
-                 <span>전체 루틴</span>
+                 <span>그룹 루틴</span>
                </CardTitle>
              </CardHeader>
              <CardContent className="pt-0">
                <div className="space-y-0">
-                 {allRoutines.length > 0 ? (
-                   allRoutines.map((routine, index) => renderRoutineCard(routine, index, index === allRoutines.length - 1))
-                 ) : (
-                   <div className="py-8 text-center text-sm text-muted-foreground">등록된 루틴이 없습니다.</div>
-                 )}
+                 {groupRoutines.length > 0 ? (
+                  groupRoutines.map((routine, index) => renderRoutineCard(routine, index, index === groupRoutines.length - 1))
+                ) : (
+                  <div className="py-8 text-center text-sm text-muted-foreground">참여중인 그룹 루틴이 없습니다.</div>
+                )}
                </div>
              </CardContent>
            </Card>
@@ -307,9 +316,9 @@ import React, { useState } from 'react';
              </CardHeader>
              <CardContent className="pt-0">
                <div className="space-y-0">
-                 {recommendedRoutines.length > 0 ? (
-                   recommendedRoutines.map((routine, index) => renderRecommendedCard(routine, index, index === recommendedRoutines.length - 1))
-                 ) : (
+                  {filteredRecommendedRoutines.length > 0 ? (
+                    filteredRecommendedRoutines.map((routine, index) => renderRecommendedCard(routine, index, index === filteredRecommendedRoutines.length - 1))
+                  ) : (
                    <div className="py-8 text-center text-sm text-muted-foreground">추천 루틴이 없습니다.</div>
                  )}
                </div>
