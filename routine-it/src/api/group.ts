@@ -114,6 +114,23 @@ export async function deleteGroup(groupId: number) {
 }
 
 /**
+ * 일반 멤버 그룹 탈퇴 (DELETE /group/{groupId}/members/me 호출)
+ * @param groupId - 그룹 ID
+ */
+export async function leaveGroupSelf(groupId: number) {
+  try {
+    await apiFetch(`/group/${groupId}/members/me`, {
+      method: "DELETE",
+    });
+     console.log(`그룹 ${groupId} 탈퇴 성공`);
+     return true;
+  } catch (error) {
+    console.error(`그룹 ${groupId} 탈퇴 실패:`, error);
+    throw new Error("그룹 탈퇴 실패");
+  }
+}
+
+/**
  * 특정 그룹의 인증 대기중인 멤버 목록을 가져옵니다.
  * @param groupId - 그룹 ID
  */
@@ -205,7 +222,7 @@ export async function delegateLeader(groupId: number, leaderId: number, targetMe
 }
 
 /**
- * 그룹 멤버의 상태, 역할, 인증 여부 등을 변경합니다.
+ * 그룹 멤버의 상태 변경
  * @param groupId - 그룹 ID
  * @param data - 업데이트할 데이터를 담은 객체
  */

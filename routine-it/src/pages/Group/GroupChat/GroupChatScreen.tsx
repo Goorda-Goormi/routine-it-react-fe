@@ -15,7 +15,7 @@ import { updateRankingScore } from '../../../api/ranking';
 import { createGroupActivity } from '../../../api/activity';
 import type { Group, UserProfile, GroupMemberResponse } from '../../../interfaces';
 import { fetchChatHistory } from '../../../api/chat';
-import { requestAuthApproval, getGroupMembers, deleteGroup } from '../../../api/group';
+import { requestAuthApproval, getGroupMembers, deleteGroup,leaveGroupSelf } from '../../../api/group';
 import { getUserProfile } from '../../../api/user';
 import { presignGet, presignGroupRoomPut, uploadFileToS3, getContentTyp,presignProofShotPut,getContentType } from '../../../api/storage';
 
@@ -373,6 +373,11 @@ const handleSendImage = async (file: File) => {
     const myMemberInfo = groupmembers.find(m => m.userId === myUserId);
     const isGroupLeader = myMemberInfo?.role === 'LEADER';
 
+     const groupId = group.groupId;
+    const myMemberId = myMemberInfo?.groupMemberId;
+    const groupLeaderInfo = groupmembers.find(m => m.role === 'LEADER');
+    const leaderMemberId = groupLeaderInfo?.groupMemberId;
+
     if (memberCount === 1) {
        // 케이스 1: 멤버가 1명 (나 혼자) -> 그룹 삭제
       if (!window.confirm("정말로 이 채팅방을 삭제하고 나가시겠습니까? (방에는 회원님만 있습니다)")) return;
@@ -391,14 +396,17 @@ const handleSendImage = async (file: File) => {
     } else if (memberCount > 1 && !isGroupLeader) {
        // 케이스 3: 멤버가 2명 이상 & 내가 멤버 (리더 아님) -> 그룹 탈퇴
       if (!window.confirm("정말로 이 채팅에서 나가시겠습니까? (그룹 탈퇴)")) return;
-      try {
-        await leaveGroup(group.groupId);
-        alert("성공적으로 탈퇴했습니다.");
-        onLeaveGroup(group.groupId);
-      } catch (error) {
-        console.error("그룹 탈퇴 오류:", error);
-        alert("그룹 탈퇴에 실패했습니다.");
-      }
+       try {
+            // ⚠️ 수정된 로직: 리더 권한이 필요 없는 자발적 탈퇴 API 호출
+            await leaveGroupSelf(groupId); 
+            
+            alert("성공적으로 탈퇴했습니다.");
+            onLeaveGroup(groupId); // 그룹 탈퇴 성공 콜백
+            
+        } catch (error) {
+            console.error("그룹 탈퇴 오류:", error);
+            alert("그룹 탈퇴에 실패했습니다.");
+        }
     } else {
       console.error("그룹 나가기/삭제 로직 오류: 멤버 수:", memberCount, "리더 여부:", isGroupLeader);
       alert("처리 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요.");
@@ -469,15 +477,15 @@ const handleAuthSubmit = async (data: { description: string; image: File | null;
       let messageText: string;
       let messageType: 'NOTICE';
 
-if (group.groupType === 'REQUIRED') {
-    // 의무 그룹일 경우
-    messageText = `${myNickname}님이 루틴 인증을 요청했습니다.`;
-    messageType = 'NOTICE';
-} else {
-    // 자유 그룹일 경우 (기존 로직)
-    messageText = `${myNickname}님이 루틴을 인증했습니다: ${data.description}`;
-    messageType = 'NOTICE';
-}
+      if (group.groupType === 'REQUIRED') {
+          // 의무 그룹일 경우
+          messageText = `${myNickname}님이 루틴 인증을 요청했습니다.`;
+          messageType = 'NOTICE';
+      } else {
+          // 자유 그룹일 경우 (기존 로직)
+          messageText = `${myNickname}님이 루틴을 인증했습니다: ${data.description}`;
+          messageType = 'NOTICE';
+      }
 
       const msgBody = {
         userId: myUserId,
