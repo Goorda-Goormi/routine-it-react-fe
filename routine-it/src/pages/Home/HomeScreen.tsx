@@ -238,10 +238,10 @@ export function HomeScreen({
                       <div className="flex items-center space-x-3 flex-1 cursor-pointer " onClick={() => handleRoutineClick(routine)}>
                         <div className="flex items-center space-x-3">
                           <div className='flex flex-col items-start ml-2'>
-                            <div className={`text-sm font-medium ${routine.completed ? 'text-green-700 dark:text-green-400 line-through' : 'text-foreground'}`}>
+                            <div className={`text-left text-sm font-medium ${routine.completed ? 'text-green-700 dark:text-green-400 line-through' : 'text-foreground'}`}>
                               {routine.name}
                             </div>
-                            <div className="text-xs text-foreground dark:opacity-75">
+                            <div className="text-left text-xs text-foreground dark:opacity-75">
                               {routine.time} • {routine.streak}일 연속
                             </div>
                           </div>
