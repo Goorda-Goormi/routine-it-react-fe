@@ -493,6 +493,7 @@ if (group.groupType === 'REQUIRED') {
 
       alert('인증이 성공적으로 제출되었습니다.');
       onGroupRoutineComplete?.();
+      console.log("인증 제출 완료:", activityData);
     } catch (error) {
       alert('인증 제출에 실패했습니다.');
       console.error("🚨 최종 에러 핸들링:", error);
