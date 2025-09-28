@@ -1608,7 +1608,9 @@ const handleUpdateMessages = (roomId: number, newMessages: Message[]) => {
 const handleDeleteGroupSuccess = () => {
  
   fetchGroupData();
-  navigateBack();
+  setNavigationStack([]);
+  //navigateBack();
+  setActiveTab("group");
 };
  // 8. 랭킹 관련 =============================================================
 
@@ -1774,8 +1776,8 @@ const navigateTo = (screen: string, params?: any, options?: { replace?: boolean 
     // 그룹을 떠난 후 그룹 목록 화면으로 바로 이동하도록 합니다.
     //setNavigationStack([]);
     //setActiveTab("group");
-     setMyGroups(prevGroups => prevGroups.filter(group => group.groupId !== groupId));
-
+    // setMyGroups(prevGroups => prevGroups.filter(group => group.groupId !== groupId));
+    fetchGroupData();
     // 2. 채팅방을 네비게이션 스택에서 완전히 제거하고 그룹 화면으로 돌아가기
     // 네비게이션 스택을 빈 배열로 초기화하고, 'group' 탭을 활성화
     setNavigationStack([]);
@@ -1882,6 +1884,7 @@ const navigateTo = (screen: string, params?: any, options?: { replace?: boolean 
               onDataRefresh={handleDataRefresh}
               onGroupRoutineComplete={handleGroupRoutineCompletion}
               onUpdateMessages={handleUpdateMessages}
+              onDeleteGroupSuccess={handleDeleteGroupSuccess}
             />
           );
         }

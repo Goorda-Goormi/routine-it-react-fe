@@ -15,7 +15,7 @@ import { updateRankingScore } from '../../../api/ranking';
 import { createGroupActivity } from '../../../api/activity';
 import type { Group, UserProfile, GroupMemberResponse } from '../../../interfaces';
 import { fetchChatHistory } from '../../../api/chat';
-import { requestAuthApproval, getGroupMembers } from '../../../api/group';
+import { requestAuthApproval, getGroupMembers, deleteGroup } from '../../../api/group';
 import { getUserProfile } from '../../../api/user';
 import { presignGet, presignGroupRoomPut, uploadFileToS3, getContentTyp,presignProofShotPut,getContentType } from '../../../api/storage';
 
@@ -36,15 +36,16 @@ export interface Message {
   albumImages?: string[];
 }
 
-export function GroupChatScreen({ group, groupmembers, onBack, onLeaveGroup, userInfo, onDataRefresh, onGroupRoutineComplete, onUpdateMessages }: {
+export function GroupChatScreen({ group, groupmembers, onBack, onLeaveGroup, userInfo, onDataRefresh, onGroupRoutineComplete, onUpdateMessages,onDeleteGroupSuccess }: {
   group: Group;
-  groupmembers: Array<{ userId: number; groupMemberId: number; memberName: string; profileImageUrl: string }>;
+  groupmembers: Array<{ userId: number; groupMemberId: number; memberName: string; profileImageUrl: string; role?: string;}>;
   onBack: () => void;
   onLeaveGroup: (groupId:number) => void;
   userInfo: UserProfile;
   onDataRefresh?: () => void;
   onGroupRoutineComplete?: () => void;
   onUpdateMessages: (roomId: number, newMessages: Message[]) => void;
+  onDeleteGroupSuccess: () => void;
 }) {
   const [isAuthDialogOpen, setIsAuthDialogOpen] = useState(false);
   const [isMembersDialogOpen, setIsMembersDialogOpen] = useState(false);
@@ -295,33 +296,19 @@ const handleSendImage = async (file: File) => {
         // 2) S3 업로드
         await uploadFileToS3(uploadUrl, file, contentType);
 
-        // 3) 메시지 전송 (messageType을 TALK로 변경)
         const msgBody = {
             userId: myUserId,
             senderNickname: myNickname,
-            message: "[image]",   // ✅ DB not null 제약 충족
-            imageUrl: key,        // ✅ key 저장
-            messageType: "TALK",  // ✅ 서버가 아는 타입으로 저장
+            message: "[image]",   
+            imageUrl: key,        
+            messageType: "TALK", 
         };
         stompClientRef.current.publish({
             destination: `/app/chat.send/${roomId}`,
             body: JSON.stringify(msgBody),
         });
 
-        // 4) 낙관적 UI 업데이트
-       /* const optimistic: Message = {
-            id: null,
-            roomId,
-            userId: myUserId,
-            senderNickname: myNickname,
-            message: "[image]",
-            imageUrl: key,
-            messageType: "TALK", // ✅ DB랑 동일하게
-            sentAt: new Date().toISOString(),
-            isMe: true,
-        };
-        setMessages((prev) => [...prev, optimistic]);
-*/
+
     } catch (error) {
         console.error("이미지 업로드 및 전송 실패:", error);
         alert("이미지 전송에 실패했습니다. 다시 시도해주세요.");
@@ -379,14 +366,42 @@ const handleSendImage = async (file: File) => {
   };
 
   const handleDeleteGroup = async () => {
-    if (!window.confirm("정말로 이 채팅에서 나가시겠습니까?")) return;
-    try {
-      await leaveGroup(group.groupId);
-      alert("성공적으로 탈퇴했습니다.");
-      onLeaveGroup(group.groupId);
-    } catch (error) {
-      console.error("그룹 탈퇴 오류:", error);
-      alert("채팅방 나가기에 실패했습니다.");
+     // 1. 그룹 멤버 수 확인
+    const memberCount = groupmembers.length;
+
+     // 2. 내 role 확인 (내가 리더인지)
+    const myMemberInfo = groupmembers.find(m => m.userId === myUserId);
+    const isGroupLeader = myMemberInfo?.role === 'LEADER';
+
+    if (memberCount === 1) {
+       // 케이스 1: 멤버가 1명 (나 혼자) -> 그룹 삭제
+      if (!window.confirm("정말로 이 채팅방을 삭제하고 나가시겠습니까? (방에는 회원님만 있습니다)")) return;
+      try {
+        await deleteGroup(group.groupId); // 그룹 삭제 API 호출
+        alert("그룹이 성공적으로 삭제되었습니다.");
+        onDeleteGroupSuccess(); // 그룹 삭제 성공 콜백
+      } catch (error) {
+        console.error("그룹 삭제 오류:", error);
+        alert("그룹 삭제에 실패했습니다.");
+      }
+    } else if (memberCount > 1 && isGroupLeader) {
+      // 케이스 2: 멤버가 2명 이상 & 내가 리더
+      alert("⚠️ 그룹 리더는 다른 멤버에게 리더를 위임한 후에만 탈퇴할 수 있습니다.\n멤버 창에서 리더 위임 후 다시 시도해 주세요.");
+       setIsMembersDialogOpen(true); // 멤버 다이얼로그 열기
+    } else if (memberCount > 1 && !isGroupLeader) {
+       // 케이스 3: 멤버가 2명 이상 & 내가 멤버 (리더 아님) -> 그룹 탈퇴
+      if (!window.confirm("정말로 이 채팅에서 나가시겠습니까? (그룹 탈퇴)")) return;
+      try {
+        await leaveGroup(group.groupId);
+        alert("성공적으로 탈퇴했습니다.");
+        onLeaveGroup(group.groupId);
+      } catch (error) {
+        console.error("그룹 탈퇴 오류:", error);
+        alert("그룹 탈퇴에 실패했습니다.");
+      }
+    } else {
+      console.error("그룹 나가기/삭제 로직 오류: 멤버 수:", memberCount, "리더 여부:", isGroupLeader);
+      alert("처리 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요.");
     }
   };
 
