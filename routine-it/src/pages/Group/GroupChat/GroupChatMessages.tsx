@@ -234,7 +234,7 @@ export const GroupChatMessages = forwardRef<HTMLDivElement, GroupChatMessagesPro
                                                 {!msg.isMe && (
                                                     <div className="flex items-center space-x-1 mb-1">
                                                         <span className="text-xs text-muted-foreground">{getUserInfo(msg)?.nickname}</span>
-                                                        <span className="text-xs text-muted-foreground opacity-70">{getUserInfo(msg)?.streakDays}일</span>
+                                                        
                                                     </div>
                                                 )}
                                                 <div
@@ -284,6 +284,11 @@ export const GroupChatMessages = forwardRef<HTMLDivElement, GroupChatMessagesPro
                                                     )}
                                                 </div>
                                             </div>
+                                            {!msg.isMe && (
+                                                <span className="text-xs text-muted-foreground ml-2">
+                                                    {formatTime(msg.sentAt)}
+                                                </span>
+                                            )}
                                         </div>
                                         {hoveredMessageKey === messageKey && (
                                             <Popover>
