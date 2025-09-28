@@ -48,7 +48,13 @@ export function TopNavBar({ onSearch, onNotificationClick, notifications, onProf
   const [activeCategory, setActiveCategory] = useState<NotificationCategory>('홈');
   const [justReadId, setJustReadId] = useState<number | null>(null);
   const filteredNotifications = notifications.filter(
-    (n) => n.category === activeCategory && (!n.read || n.id === justReadId)
+    (n) => {
+      if (n.category !== activeCategory) return false;
+
+      if (n.category === '회고') return true;
+      
+      return !n.read || n.id === justReadId;
+    }
   );
 
   // 아바타의 첫 글자를 가져오는 함수

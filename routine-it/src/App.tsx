@@ -77,7 +77,7 @@ const saveCompletedRoutinesToLocal = (personalMap: Map<number, number>, groupMap
       timestamp: Date.now()
     };
     localStorage.setItem('completedRoutines', JSON.stringify(data));
-    console.log('완료된 루틴을 로컬 스토리지에 백업했습니다:', data);
+    //console.log('완료된 루틴을 로컬 스토리지에 백업했습니다:', data);
   } catch (error) {
     console.error('로컬 스토리지 백업 실패:', error);
   }
@@ -107,7 +107,7 @@ const loadCompletedRoutinesFromLocal = (): { personal: Map<number, number>, grou
     const personalMap = new Map<number, number>(data.personal || []);
     const groupMap = new Map<number, number>(data.group || []);
     
-    console.log('로컬 스토리지에서 완료 루틴을 복원했습니다:', { personalMap, groupMap });
+    //console.log('로컬 스토리지에서 완료 루틴을 복원했습니다:', { personalMap, groupMap });
     return { personal: personalMap, group: groupMap };
   } catch (error) {
     console.error('로컬 스토리지에서 완료 루틴 로드 실패:', error);
@@ -489,7 +489,7 @@ export default function App() {
     try {
       // targetUserId 없이 호출하여 '내' 누적 출석일을 가져옵니다.
       const totalDays = await getTotalAttendanceDays();
-      console.log('✅ [App.tsx] fetchTotalAttendance API 응답:', totalDays);
+      //console.log('✅ [App.tsx] fetchTotalAttendance API 응답:', totalDays);
       setStreakDays(totalDays);
     } catch (error) {
       console.error("누적 출석일 조회 실패:", error);
@@ -532,7 +532,6 @@ export default function App() {
 
   const fetchUserInfo = async () => {
     setIsLoading(true);
-    console.log('A. fetchUserInfo 함수 시작.');
     const token = localStorage.getItem('accessToken');
     if (!token) {
       console.error("인증 토큰이 없습니다.");
@@ -541,18 +540,12 @@ export default function App() {
     }
       
     try {
-      console.log('B. getUserInfo API 호출 직전...');
       const userInfoData = await getUserInfo();
-      console.log('C. getUserInfo API 호출 성공! 받은 데이터:', userInfoData);
       setUserInfo(prevUserInfo => ({
         ...prevUserInfo,
         ...userInfoData,
       }));
-      console.log('D. setUserInfo 호출 완료.'); // <-- 로그 D
     } catch (error) {
-      // ▼▼▼ 이 로그를 추가해서 에러를 확인하세요! ▼▼▼
-      console.log('E. fetchUserInfo의 catch 블록 실행됨!', error);
-      
       console.error("사용자 정보 조회 에러:", error);
       localStorage.removeItem('accessToken');
       setIsLoggedIn(false);
@@ -571,19 +564,16 @@ export default function App() {
       const joinedGroupsFromServer: any[] = await getJoinedGroups();
 
       const transformedJoinedGroups: Group[] = joinedGroupsFromServer.map((group: any) => {
-        // group.recentMembers 배열을 순회하며 각 멤버(apiMember)를 UI용 Member 타입으로 변환합니다.
         const transformedMembers: Member[] = (group.recentMembers || []).map(
           (apiMember: GroupMemberResponse) => ({
-            id: apiMember.userId, // 👈 'userId'를 'id'로 변환하는 가장 중요한 부분입니다.
+            id: apiMember.userId, 
             nickname: apiMember.nickname,
             profileImageUrl: apiMember.profileImageUrl,
           })
         );
-        // 변환된 멤버 배열(transformedMembers)을 기존 그룹 객체에 다시 할당합니다.
         return { ...group, recentMembers: transformedMembers };
       });
 
-      // 중복 제거는 변환이 완료된 데이터를 기준으로 수행합니다.
       const uniqueJoinedGroups = Array.from(
         new Map(transformedJoinedGroups.map((group) => [group.groupId, group])).values()
       );
@@ -639,7 +629,7 @@ useEffect(() => {
       // 먼저 로컬 스토리지에서 완료 상태를 복원 시도
       const localData = loadCompletedRoutinesFromLocal();
       if (localData) {
-        console.log('앱 초기화: 로컬 스토리지에서 완료 상태를 먼저 복원했습니다.');
+        //console.log('앱 초기화: 로컬 스토리지에서 완료 상태를 먼저 복원했습니다.');
         setCompletedActivityIds(localData);
       }
       
@@ -654,6 +644,7 @@ useEffect(() => {
       ]);
     };
     fetchRemainingData();
+    fetchMonthlyReview(); 
   }
 }, [isLoggedIn, UserInfo]);
 
@@ -758,32 +749,6 @@ useEffect(() => {
   }
 };
 
-// const fetchInitialDataAfterLogin = async () => {
-//     // 1. API 호출 시작을 콘솔에 기록합니다.
-//     console.log('➡️ getSettings API 호출을 시도합니다.');
-    
-//     setIsLoading(true);
-//     try {
-//       const settingsData = await getSettings();
-      
-//       // 2. API 호출 성공 시 반환된 데이터를 콘솔에 기록합니다.
-//       console.log('✅ getSettings API 호출 성공!');
-//       console.log('받은 데이터:', settingsData);
-      
-//       // TODO: 필요한 다른 API 호출 추가
-//     } catch (error) {
-//       // 3. API 호출 실패 시 에러 상세 정보를 콘솔에 기록합니다.
-//       console.error('❌ getSettings API 호출 실패!');
-//       console.error('에러 상세:', error);
-//       // apiFetch에서 토큰 갱신 실패 시 리디렉션 처리하므로 추가 로직이 필요 없을 수 있음.
-//     } finally {
-//       setIsLoading(false);
-//       // API 호출이 완료되었음을 알려줍니다. (성공/실패 무관)
-//       console.log('➡️ getSettings API 호출이 완료되었습니다.');
-//     }
-//   };
-
-  // 수정: LoginModal의 onComplete 핸들러
   const handleLoginComplete = async (nickname: string) => {
     await handleNicknameSetupComplete(nickname);
   };
@@ -792,10 +757,9 @@ useEffect(() => {
     try {
         console.log('🚪 Logging out...');
         
-        // 서버에 로그아웃을 요청하여 서버 세션 및 쿠키를 무효화합니다.
         await fetch(`${BASE_URL}/api/auth/logout`, {
             method: 'POST',
-            credentials: 'include', // 쿠키(refreshToken)를 함께 보내기 위해 필수
+            credentials: 'include', 
             headers: {
                 'Content-Type': 'application/json',
                 Authorization: `Bearer ${localStorage.getItem('accessToken')}`,
@@ -807,13 +771,11 @@ useEffect(() => {
     } catch (error) {
         console.error('⚠️ Logout request failed:', error);
     } finally {
-        // 요청 성공 여부와 관계없이 로컬 데이터를 모두 정리합니다.
         localStorage.removeItem('accessToken');
-        localStorage.removeItem('refreshToken'); // 혹시 남아있을 경우를 대비
+        localStorage.removeItem('refreshToken'); 
         
         console.log('✅ Local tokens cleared');
         
-        // 상태를 초기화하고 로그인 페이지로 이동합니다.
         setIsLoggedIn(false);
         setUserInfo(null);
         window.location.href = '/login';
@@ -877,7 +839,7 @@ useEffect(() => {
     const today = getLocalDateString(new Date());
     
     try {
-      console.log('사용자 활동 정보를 가져오는 중...', { today, retryCount });
+      //console.log('사용자 활동 정보를 가져오는 중...', { today, retryCount });
       const activities = await getUserActivitiesByDay(today);
       const personalMap = new Map<number, number>();
       const groupMap = new Map<number, number>();
@@ -897,7 +859,7 @@ useEffect(() => {
       // 로컬 스토리지에 백업
       saveCompletedRoutinesToLocal(personalMap, groupMap);
       
-      console.log('✅ 사용자 활동 정보를 성공적으로 가져왔습니다:', { personalMap, groupMap });
+      //console.log('✅ 사용자 활동 정보를 성공적으로 가져왔습니다:', { personalMap, groupMap });
     } catch (error) {
       console.error("사용자 활동 정보 조회 실패:", error, { retryCount });
       
@@ -914,7 +876,7 @@ useEffect(() => {
       
       if (localData) {
         setCompletedActivityIds(localData);
-        console.log('✅ 로컬 스토리지에서 완료 상태를 복원했습니다.');
+        //console.log('✅ 로컬 스토리지에서 완료 상태를 복원했습니다.');
       } else {
         console.log('⚠️ 로컬 스토리지에서도 복원할 데이터가 없습니다.');
         // 빈 Map으로 초기화
@@ -1024,8 +986,6 @@ useEffect(() => {
     if (!UserInfo) return;
     try {
       const routinesFromServer = await getPersonalRoutinesByUser(UserInfo.id as number);
-      
-      console.log('2. [컴포넌트] API 함수로부터 전달받은 데이터:', routinesFromServer); // 이 줄은 여전히 실행되지 않을 겁니다.
 
       const transformedRoutines = (routinesFromServer || []).map(apiRoutine => {
         const isCompleted = completedActivityIds.personal.has(apiRoutine.routineId);
@@ -1352,7 +1312,7 @@ const handleGroupRoutineCompletion = (groupId: number, activityId: number) => {
 
     try {
       const date = new Date();
-      date.setMonth(date.getMonth() - 1); // 지난달 기준
+      //date.setMonth(date.getMonth() - 1);
       const lastMonth = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
 
       // POST 요청으로 수정하고, userId를 쿼리 파라미터로 전달
@@ -1360,12 +1320,14 @@ const handleGroupRoutineCompletion = (groupId: number, activityId: number) => {
         method: 'POST',
       });
 
+      console.log("서버의 월간 회고 응답:", response);
+
       if (response.success) {
         // 서버에서 메시지를 성공적으로 보냈다면, 프론트에서는 알림을 생성합니다.
         addNotification({
           message: `지난 달의 활동을 정리한 ${lastMonth} 월간 회고가 도착했어요.`,
           category: '회고',
-          monthYear: lastMonth, // ★★★ 모달을 열 때 사용할 수 있도록 monthYear 정보 추가 ★★★
+          monthYear: lastMonth, 
         });
       }
     } catch (error) {

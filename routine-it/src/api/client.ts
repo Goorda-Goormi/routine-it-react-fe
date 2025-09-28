@@ -6,7 +6,7 @@ const BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
 // 모든 fetch 요청을 이 함수로 대체합니다.
 export const apiFetch = async (path: string, options: RequestInit = {}) => {
-  console.log(`📤 API Request: ${options.method || 'GET'} ${path}`);
+  //console.log(`📤 API Request: ${options.method || 'GET'} ${path}`);
     
     // credentials: 'include' 옵션을 모든 요청에 기본으로 포함시킵니다.
     const config: RequestInit = {
@@ -26,7 +26,7 @@ export const apiFetch = async (path: string, options: RequestInit = {}) => {
     
     try {
         let response = await fetch(`${BASE_URL}${path}`, config);
-        console.log(`📥 API Response: ${response.status} ${response.statusText}`);
+        //console.log(`📥 API Response: ${response.status} ${response.statusText}`);
         
         // 401 오류 발생 시 토큰 갱신을 시도합니다.
         if (response.status === 401 && path !== '/api/auth/refresh') {
