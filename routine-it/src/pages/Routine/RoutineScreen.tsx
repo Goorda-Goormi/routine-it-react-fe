@@ -164,7 +164,7 @@ import React, { useState } from 'react';
                            )}
                        </div>
                        <div className="text-left text-xs text-muted-foreground mt-1">
-                           {routine.time} • {routine.streak}일 연속
+                           {routine.time}
                        </div>
                    </div>
                </div>

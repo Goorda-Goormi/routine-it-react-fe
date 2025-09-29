@@ -268,7 +268,7 @@ export function HomeScreen({
                             {routine.name}
                           </div>
                           <div className="text-left text-xs text-foreground dark:opacity-75">
-                            {routine.time} • {routine.streak}일 연속
+                            {routine.time}
                           </div>
                         </div>
                       </div>

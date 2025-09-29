@@ -139,14 +139,13 @@ type RoutineOverride = Partial<Pick<Routine, 'time' | 'frequency' | 'reminder' |
 /**
  * { hour: 8, minute: 0 } 형태의 alarmTime 객체를 '08:00' 형태의 문자열로 변환합니다.
  */
-const convertAlarmTimeToTimeString = (alarmTime: { hour?: number; minute?: number }): string => {
-  if (!alarmTime || typeof alarmTime.hour !== 'number' || typeof alarmTime.minute !== 'number') {
-    // [수정] '시간 미정' 대신 기본 시간을 반환합니다.
-    return '09:00';
+const convertAlarmTimeToTimeString = (alarmTime: string | null | undefined): string => {
+  
+  if (typeof alarmTime === 'string' && alarmTime.includes(':')) {
+    
+    return alarmTime.slice(0, 5);
   }
-  const hour = String(alarmTime.hour).padStart(2, '0');
-  const minute = String(alarmTime.minute).padStart(2, '0');
-  return `${hour}:${minute}`;
+  return '09:00';
 };
 
   // 날짜 포맷 옵션 (연, 월, 일, 시, 분)
@@ -562,6 +561,7 @@ export default function App() {
     try {
       const allGroups = await getAllGroups();
       const joinedGroupsFromServer: any[] = await getJoinedGroups();
+      console.log("서버에서 받은 그룹 목록:", joinedGroupsFromServer);
 
       const transformedJoinedGroups: Group[] = joinedGroupsFromServer.map((group: any) => {
         const transformedMembers: Member[] = (group.recentMembers || []).map(
