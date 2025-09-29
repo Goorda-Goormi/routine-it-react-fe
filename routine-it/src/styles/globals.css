@@ -72,6 +72,18 @@
   --card-mint-text: #065f1f;
 
    --my-highlight-bg: #fef3e2;
+   color-scheme: light dark; 
+   forced-color-adjust: none; 
+
+  --notice-required-bg: #FFF7ED; /* bg-orange-50/80과 유사 */
+  --notice-required-border: #FDBA74; /* border-orange-200/50과 유사 */
+  --notice-required-text: #C2410C; /* text-orange-600과 유사 */
+  
+  /* 알림 메시지 변수 추가 - OPTIONAL (초록색 계열) */
+  --notice-optional-bg: #F0FDF4; /* bg-green-50/80과 유사 */
+  --notice-optional-border: #BBF7D0; /* border-green-200/50과 유사 */
+  --notice-optional-text: #059669; /* text-green-600과 유사 */
+
 }
 
 .dark {
@@ -139,6 +151,17 @@
   --card-mint-text: #ffffff;
 
   --my-highlight-bg: #1a4a2e;
+  color-scheme: dark;
+
+  --notice-required-bg: #431407; /* dark:bg-orange-900/20과 유사한 진한 배경 */
+  --notice-required-border: #9A3412; /* dark:border-orange-700/50과 유사 */
+  --notice-required-text: #FDBA74; /* 주황색 텍스트 (밝게) */
+
+  /* 알림 메시지 변수 추가 - OPTIONAL (초록색 계열) */
+  --notice-optional-bg: #064E3B; /* dark:bg-green-900/20과 유사한 진한 배경 */
+  --notice-optional-border: #10B981; /* dark:border-green-700/50과 유사 */
+  --notice-optional-text: #BBF7D0; /* 연두색 텍스트 (밝게) */
+  
 }
 
 @theme inline {
@@ -207,12 +230,25 @@
   --color-card-mint-text: var(--card-mint-text);
 
   --color-my-highlight-bg: var(--my-highlight-bg);
+
+  --color-notice-required-bg: var(--notice-required-bg);
+  --color-notice-required-border: var(--notice-required-border);
+  --color-notice-required-text: var(--notice-required-text);
+  --color-notice-optional-bg: var(--notice-optional-bg);
+  --color-notice-optional-border: var(--notice-optional-border);
+  --color-notice-optional-text: var(--notice-optional-text);
 }
+
 
 /* 모든 @layer들을 최상위 레벨로 분리하고 정리했습니다. */
 @layer base {
   * {
     @apply border-border outline-ring/50;
+    
+  }
+  
+  html {
+    font-size: var(--font-size);
     
   }
 
@@ -221,14 +257,15 @@
     @apply text-foreground;
     min-height: 100vh;
     display: block;
-    
   }
 
   #root {
     margin: 0 auto;
     width: 100%;
     max-width: 525px; 
+    
   }
+
 
 
   /* 아이콘 색상 클래스 */
@@ -333,9 +370,6 @@
     }
   }
 
-  html {
-    font-size: var(--font-size);
-  }
 }
 
 @layer utilities {

@@ -13,6 +13,7 @@ import {
     updateGroupMemberStatus,
     getPendingMembersByGroupId,
     approveAuthRequest,
+    type AuthApprovalPayload,
 } from '../../../api/group';
 import { getGroupTop3Ranking } from '../../../api/ranking';
 import type { GlobalGroupRankingData } from '../../Ranking/RankingScreen';
@@ -360,11 +361,16 @@ const toKst = useCallback((dateString: string) => {
             leaderId: myid,
             targetMemberId: authRequest.targetGroupMemberId,
             approved: true,
+            isApproved:true,
             imageUrl: authRequest.imageUrl,
             activityDate: new Date().toISOString().split('T')[0],
             // 찾은 chatMsgId를 페이로드에 포함시킵니다.
             chatMsgId: authRequest.chatMsgId, 
+            status: authRequest?.status,
+            role: (authRequest?.role==='LEADER' ? 'LEADER' : 'MEMBER') as AuthApprovalPayload['role'],
         };
+         console.log("approveAuthRequest payload:", JSON.stringify(payload));
+
 
         await approveAuthRequest(groupId, payload);
         console.log(`알림 ID ${notificationId}에 대한 루틴 인증을 승인했습니다.`);
@@ -399,11 +405,15 @@ const toKst = useCallback((dateString: string) => {
             leaderId: myid,
             targetMemberId: authRequest.targetGroupMemberId,
             approved: false, // 거절이므로 false
+            isApproved:false,
             imageUrl: authRequest.imageUrl,
             activityDate: new Date().toISOString().split('T')[0],
             // 찾은 chatMsgId를 페이로드에 포함시킵니다.
             chatMsgId: authRequest.chatMsgId,
+             status: authRequest?.status,
+            role: (authRequest?.role==='LEADER' ? 'LEADER' : 'MEMBER') as AuthApprovalPayload['role'],
         };
+        console.log("approveAuthRequest payload:", JSON.stringify(payload));
 
         await approveAuthRequest(groupId, payload);
         console.log(`알림 ID ${notificationId}에 대한 루틴 인증을 거절했습니다.`);

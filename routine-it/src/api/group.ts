@@ -309,7 +309,9 @@ export interface AuthApprovalPayload {
     role?: 'LEADER' | 'MEMBER';
     activityDate?: string;
     imageUrl?: string;
-    approved: boolean;
+    approved?: boolean;
+    isApproved:boolean;
+    chatMsgId?: number;
 }
 
 /**

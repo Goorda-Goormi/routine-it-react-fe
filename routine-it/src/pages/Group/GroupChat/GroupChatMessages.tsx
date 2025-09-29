@@ -241,8 +241,8 @@ export const GroupChatMessages = forwardRef<HTMLDivElement, GroupChatMessagesPro
                                                     className={`rounded-lg px-3 py-2 max-w-full break-words ${
                                                         msg.messageType === 'NOTICE'
                                                             ? (group.groupType === 'REQUIRED'
-                                                                ? 'bg-orange-50/80 border border-orange-200/50 dark:bg-orange-900/20 dark:border-orange-700/50'
-                                                                : 'bg-green-50/80 border border-green-200/50 dark:bg-green-900/20 dark:border-green-700/50')
+                                                                ? 'bg-[var(--notice-required-bg)] border border-[var(--notice-required-border)] text-[var(--notice-required-text)]'
+                                                                : 'bg-[var(--notice-optional-bg)] border border-[var(--notice-optional-border)] text-[var(--notice-optional-text)]')
                                                             : msg.isMe
                                                                 ? 'bg-chart-5 text-primary'
                                                                 : 'bg-muted text-foreground'
@@ -253,13 +253,13 @@ export const GroupChatMessages = forwardRef<HTMLDivElement, GroupChatMessagesPro
                                                             <div className="flex items-center space-x-1">
                                                                 {group.groupType === 'REQUIRED' ? (
                                                                     <>
-                                                                        <Clock className="h-3 w-3 text-orange-600 dark:text-orange-400" />
-                                                                        <span className="text-xs font-medium text-orange-600 dark:text-orange-400">인증 승인 대기</span>
+                                                                        <Clock className="h-3 w-3 text-[var(--notice-required-text)]" />
+                                                                        <span className="text-xs font-medium text-[var(--notice-required-text)]">인증 승인 대기</span>
                                                                     </>
                                                                 ) : (
                                                                     <>
-                                                                        <CheckCircle className="h-3 w-3 text-green-600 dark:text-green-400" />
-                                                                        <span className="text-xs font-medium text-green-600 dark:text-green-400">자유 인증 완료</span>
+                                                                        <CheckCircle className="h-3 w-3 text-[var(--notice-optional-text)]" />
+                                                                        <span className="text-xs font-medium text-[var(--notice-optional-text)]">자유 인증 완료</span>
                                                                     </>
                                                                 )}
                                                             </div>
