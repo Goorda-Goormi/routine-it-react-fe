@@ -76,8 +76,8 @@ export function RoutineDetailScreen({ routine, onBack, onUpdateRoutine, onDelete
 
   const getCategoryEmoji = (category: string) => {
     switch (category) {
-      case 'health': return '💪';
-      case 'exercise': return '🏥';
+      case 'health': return '🏥';
+      case 'exercise': return '💪';
       case 'study': return '📚';
       case 'lifestyle': return '🏠';
       case 'hobby': return '🎨';
