@@ -52,6 +52,14 @@ interface RankingScreenProps {
   myid: number;
 }
 
+const CATEGORY_MAP: Record<string, string> = {
+  LIFESTYLE: '생활', 
+  HEALTH: '건강',   
+  STUDY: '학습',   
+  HOBBY: '취미',    
+  EXERCISE: '운동',   
+};
+
 export function RankingScreen({
   groups,
   groupRankingData,
@@ -177,21 +185,26 @@ export function RankingScreen({
   const getRankIcon = (rank: number) => {
     switch (rank) {
       case 1:
-        return <Crown className="h-5 w-5 text-yellow-500" />;
+        return <Crown className="h-5 w-5 text-rank-1-color" />;
       case 2:
-        return <Medal className="h-5 w-5 text-gray-400" />;
+        return <Medal className="h-5 w-5 text-rank-2-color" />;
       case 3:
-        return <Medal className="h-5 w-5 text-amber-600" />;
+        return <Medal className="h-5 w-5 text-rank-3-color" />;
       default:
         return <span className="text-sm font-bold text-foreground w-5 text-center">{rank}</span>;
     }
   };
 
   const getScoreColor = (rank: number) => {
-    if (rank <= 3) return 'text-yellow-600 dark:text-white';
-    if (rank <= 5) return 'text-green-600 dark:text-white';
+    if (rank <= 3) return 'text-top-3-score-color';
+    if (rank <= 5) return 'text-top-5-score-color';
     return 'text-foreground';
   };
+
+  const translateCategory = (category: string): string => {
+  const upperCaseCategory = category.toUpperCase();
+  return CATEGORY_MAP[upperCaseCategory] || category;
+};
   
   const groupRankings = groupRankingData?.data?.content || [];
   const myGroupIds = groups.map(group => group.groupId);
@@ -209,14 +222,14 @@ export function RankingScreen({
           <Card className="dark:card-shadow">
             <CardContent className="p-4">
               <div className="flex items-center space-x-3 p-3 rounded-lg bg-gradient-to-br bg-card-yellow-bg dark:bg-card-yellow-bg dark:border-none">
-                <div className="flex items-center justify-center w-10 h-10 rounded-full bg-amber-500 dark:bg-orange-700">
+                <div className="flex items-center justify-center w-10 h-10 rounded-full bg-ranking-accent-bg">
                   <Star className="h-5 w-5 text-white" />
                 </div>
                 <div className="flex-1">
-                  <div className="text-sm font-medium text-amber-800 dark:text-white">
+                  <div className="text-sm font-medium text-card-yellow-text">
                     {currentMonth}월 월간 랭킹
                   </div>
-                  <div className="text-xs text-amber-700 dark:text-white dark:opacity-90">
+                  <div className="text-xs text-card-yellow-text/90">
                     {currentMonth + 1}월 1일 자정에 랭킹이 리셋됩니다
                   </div>
                 </div>
@@ -287,14 +300,14 @@ export function RankingScreen({
           <Card className="dark:card-shadow">
             <CardContent className="p-4">
               <div className="flex items-center space-x-3 p-3 rounded-lg bg-gradient-to-br bg-card-yellow-bg dark:bg-card-yellow-bg dark:border-none">
-                <div className="flex items-center justify-center w-10 h-10 rounded-full bg-amber-500 dark:bg-orange-700">
+                <div className="flex items-center justify-center w-10 h-10 rounded-full bg-ranking-accent-bg">
                   <Star className="h-5 w-5 text-white" />
                 </div>
                 <div className="flex-1">
-                  <div className="text-sm font-medium text-amber-800 dark:text-white">
+                  <div className="text-sm font-medium text-card-yellow-text">
                     {currentMonth}월 월간 랭킹
                   </div>
-                  <div className="text-xs text-amber-700 dark:text-white dark:opacity-90">
+                  <div className="text-xs text-card-yellow-text/90">
                     {currentMonth + 1}월 1일 자정에 랭킹이 리셋됩니다
                   </div>
                 </div>
@@ -338,13 +351,18 @@ export function RankingScreen({
                           <div className="flex items-center space-x-2 mt-1">
                             <Badge
                               variant='outline'
-                              className="text-xs"
+                              className={`text-xs ${
+                                group.groupType === 'REQUIRED' 
+                                    ? 'bg-notice-required-bg border-notice-required-border text-notice-required-text'
+                                    : 'bg-notice-optional-bg border-notice-optional-border text-notice-optional-text'
+                            }`}
+                              
                             >
                               {group.groupType === 'REQUIRED' ? '의무참여' : '자율참여'}
                             </Badge>
                           </div>
                           <div className="flex items-center space-x-2 text-xs text-foreground dark:opacity-75 mt-1">
-                            <span>{group.category}</span>
+                            <span>{translateCategory(group.category)}</span>
                             <span>•</span>
                             <span>{group.memberCount}명</span>
                           </div>

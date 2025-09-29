@@ -5,9 +5,9 @@
   line-height: 1.5;
   font-weight: 400;
 
-  color-scheme: light dark;
+  /*color-scheme: light dark;
   color: rgba(255, 255, 255, 0.87);
-  background-color: #242424;
+  background-color: #242424;*/
 
   font-synthesis: none;
   text-rendering: optimizeLegibility;
@@ -109,7 +109,7 @@ button:focus-visible {
   color: #888;
 }
 
-/* 라이트 모드 전환 */
+/* 라이트 모드 전환 
 @media (prefers-color-scheme: light) {
   :root {
     color: #213547;
@@ -117,7 +117,7 @@ button:focus-visible {
   a:hover {
     color: #747bff;
   }
-}
+}*/
 
 @media (min-width: 768px) {
   #root {

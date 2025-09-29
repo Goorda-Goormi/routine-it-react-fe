@@ -13,7 +13,7 @@ interface GroupDetailTabsProps {
     groupMembers: GroupMemberResponse[];
     memberProfiles: Record<number, string>;
     myid: number;
-    certifiedMembers: Set<string>;
+    certifiedMembers: Set<string>; // 이 prop은 이제 사용되지 않지만, 인터페이스 유지를 위해 남겨둡니다.
 }
 
 export const GroupDetailTabs = ({
@@ -28,7 +28,7 @@ export const GroupDetailTabs = ({
     console.log("GroupDetailTabs로 전달된 멤버 데이터:", groupMembers);
     console.log("최근 활동 데이터:", recentActivities);
     console.log("멤버 프로필 맵:", memberProfiles);
-    console.log("오늘 인증된 멤버:", certifiedMembers);
+    console.log("오늘 인증된 멤버 (기존 prop - 미사용):", certifiedMembers);
 
     const renderMembers = () => {
         return groupMembers.map((member, index) => {
@@ -36,12 +36,15 @@ export const GroupDetailTabs = ({
                 return null;
             }
 
-            // 채팅 내역과 리더의 승인 여부 모두 확인
-            const isCertified = certifiedMembers.has(member.memberName);
+            // 💡 수정된 로직: member.message 값을 직접 확인하여 인증 상태 결정
+            // message 속성이 '인증'인지 확인하고, 값이 없거나 다르면 '미인증'으로 처리합니다.
+            const memberStatusMessage = member.message === '인증' ? '인증' : '미인증';
+            const isCertified = memberStatusMessage === '인증';
 
             const isLeader = member.role === 'LEADER';
             
-            const statusText = isCertified ? '인증' : '미인증';
+            const statusText = memberStatusMessage; // '인증' 또는 '미인증'
+            // '인증'이면 초록/기본값('default'), '미인증'이면 빨강('destructive') 뱃지를 사용합니다.
             const badgeVariant = isCertified ? 'default' : 'destructive';
 
             const profileImageUrl = member.userId ? memberProfiles[member.userId] : '';
