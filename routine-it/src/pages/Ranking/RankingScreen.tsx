@@ -52,6 +52,14 @@ interface RankingScreenProps {
   myid: number;
 }
 
+const CATEGORY_MAP: Record<string, string> = {
+  LIFESTYLE: '생활', 
+  HEALTH: '건강',   
+  STUDY: '학습',   
+  HOBBY: '취미',    
+  EXERCISE: '운동',   
+};
+
 export function RankingScreen({
   groups,
   groupRankingData,
@@ -192,6 +200,11 @@ export function RankingScreen({
     if (rank <= 5) return 'text-top-5-score-color';
     return 'text-foreground';
   };
+
+  const translateCategory = (category: string): string => {
+  const upperCaseCategory = category.toUpperCase();
+  return CATEGORY_MAP[upperCaseCategory] || category;
+};
   
   const groupRankings = groupRankingData?.data?.content || [];
   const myGroupIds = groups.map(group => group.groupId);
@@ -349,7 +362,7 @@ export function RankingScreen({
                             </Badge>
                           </div>
                           <div className="flex items-center space-x-2 text-xs text-foreground dark:opacity-75 mt-1">
-                            <span>{group.category}</span>
+                            <span>{translateCategory(group.category)}</span>
                             <span>•</span>
                             <span>{group.memberCount}명</span>
                           </div>
