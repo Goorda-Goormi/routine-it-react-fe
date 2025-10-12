@@ -171,7 +171,7 @@ export function UserHomeScreen({ user, onBack }: UserHomeScreenProps) {
     fetchAllUserData();
   }, [user.id]);
  
-  const publicVerificationPhotos = verificationPhotos.filter(photo => !photo.isPublic);
+  const publicVerificationPhotos = verificationPhotos.filter(photo => photo.isPublic);
 
   const openGallery = (index: number) => {
     setSelectedPhotoIndex(index);

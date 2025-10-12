@@ -171,3 +171,20 @@ export const checkAttendance = async (date: string): Promise<boolean> => {
 
   return responseData.data ?? false;
 };
+
+/**
+ * 특정 월의 모든 출석 일자 목록을 조회합니다.
+ * @param monthYear 조회할 연월 (YYYY-MM 형식)
+ * @returns 날짜 문자열 배열 (e.g., ["2025-10-01", "2025-10-03", ...])
+ */
+export const getAttendanceDatesByMonth = async (monthYear: string): Promise<string[]> => {
+  // 이 API는 백엔드에 새로 추가되어야 할 수 있습니다. (GET /user-activities/attendance/month)
+  try {
+    const response = await apiFetch(`/user-activities/attendance/month?monthYear=${monthYear}`);
+    // API 응답이 { success: true, data: [...] } 형태일 경우를 대비
+    return response.data || response || [];
+  } catch (error) {
+    console.error(`${monthYear} 월별 출석일 조회 실패:`, error);
+    return []; // 에러 발생 시 빈 배열 반환
+  }
+};

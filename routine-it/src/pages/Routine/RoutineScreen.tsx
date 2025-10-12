@@ -89,9 +89,20 @@ import React, { useState } from 'react';
      }
    };
 
-   const handleRoutineClick = (routine: any) => {
-     onNavigate('routine-detail', routine);
+   const handleRoutineClick = (routine: Routine) => {
+     if (routine.isGroupRoutine) {
+       const group = allGroups.find(g => g.groupId === routine.id);
+       if (group) {
+         onNavigate('group-detail', group);
+       } else {
+         console.error(`Group with ID ${routine.id} not found.`);
+         alert("그룹 정보를 찾을 수 없습니다.");
+       }
+     } else {
+       onNavigate('routine-detail', routine);
+     }
    };
+
 
    const handleAddRoutine = () => {
      onNavigate('create-routine');
