@@ -191,7 +191,7 @@ export function MyPageScreen({ onNavigate, isDarkMode, onToggleDarkMode, onToggl
       subTextColor: 'text-pink-700'
     },
     { 
-      label: '누적 점수', 
+      label: '개인 점수', 
       value: userTotalScore ? userTotalScore.toLocaleString() : '0', 
       unit: '점',
       icon: TrendingUp,

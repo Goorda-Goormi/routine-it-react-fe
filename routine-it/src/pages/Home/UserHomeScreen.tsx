@@ -278,7 +278,7 @@ export function UserHomeScreen({ user, onBack }: UserHomeScreenProps) {
                   </div>
                   <div className="text-center">
                     <div className="text-xl font-bold text-card-lavender-text">{(userProfile.totalScore ?? 0).toLocaleString()}</div>
-                    <div className="text-xs text-card-lavender-text/80">누적점수</div>
+                    <div className="text-xs text-card-lavender-text/80">개인점수</div>
                   </div>
                 </div>
               </CardContent>

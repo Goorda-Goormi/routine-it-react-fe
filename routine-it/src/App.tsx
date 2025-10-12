@@ -1643,25 +1643,26 @@ const fetchRankingData = async () => {
 // 사용자 총 점수를 가져오는 별도의 함수 (필요한 곳에서 재사용 가능)
 const fetchUserTotalScore = async () => {
   if (!isLoggedIn) return;
-  
   setLoadingUserTotalScore(true);
   try {
-    const response = await getUserTotalScore();
+    const response = await getPersonalRankings(UserInfo.id as number);
   
-     if (response.success) {
-      setUserTotalScore(response.data);
-       console.log("사용자 총 점수 조회 성공:", response.data);
-    } else {
-      console.error("사용자 총 점수 조회 실패:", response.message);
+    if (response.success && Array.isArray(response.data) && response.data.length > 0) {
+        // 랭킹 데이터의 첫 번째 항목(내 랭킹)에서 totalScore를 가져옵니다.
+        const myMonthlyScore = response.data[0].totalScore;
+        setUserTotalScore(myMonthlyScore);
+        console.log("이번 달 개인 점수 (개인 랭킹 기반):", myMonthlyScore);
+      } else {
+        // 랭킹 데이터가 아직 없으면 0점으로 처리합니다.
+        setUserTotalScore(0);
+      }
+    } catch (error) {
+      console.error("월별 사용자 점수 데이터를 불러오는데 실패했습니다.", error);
       setUserTotalScore(null);
+    } finally {
+      setLoadingUserTotalScore(false);
     }
-  } catch (error) {
-    console.error("사용자 총 점수 데이터를 불러오는데 실패했습니다.", error);
-    setUserTotalScore(null);
-  } finally {
-     setLoadingUserTotalScore(false);
-  }
-};
+  };
 
 const handleRankingTabClick = () => {
   // 탭 클릭 시 랭킹 데이터만 새로고침
