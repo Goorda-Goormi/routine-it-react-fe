@@ -171,7 +171,7 @@ export function UserHomeScreen({ user, onBack }: UserHomeScreenProps) {
     fetchAllUserData();
   }, [user.id]);
  
-  const publicVerificationPhotos = verificationPhotos.filter(photo => photo.isPublic);
+  const publicVerificationPhotos = verificationPhotos.filter(photo => !photo.isPublic);
 
   const openGallery = (index: number) => {
     setSelectedPhotoIndex(index);
@@ -258,12 +258,12 @@ export function UserHomeScreen({ user, onBack }: UserHomeScreenProps) {
             <Card className="bg-card-yellow-bg border border-card-yellow-border dark:border-none dark:card-shadow">
               <CardContent className="p-4">
                 <div className="flex flex-col items-center space-y-2">
-                  <div className="flex items-center justify-center w-8 h-8 rounded-full bg-orange-500 dark:bg-orange-700">
+                  <div className="flex items-center justify-center w-8 h-8 rounded-full  bg-orange-500 dark:bg-orange-500">
                     <CheckCircle className="h-4 w-4 text-white" />
                   </div>
                   <div className="text-center">
-                    <div className="text-xl font-bold">{completedRoutines}</div>
-                    <div className="text-xs">완료</div>
+                    <div className="text-xl font-bold text-card-yellow-text">{completedRoutines}</div>
+                    <div className="text-xs text-card-yellow-text/80">완료</div>
                   </div>
                 </div>
               </CardContent>
@@ -273,12 +273,12 @@ export function UserHomeScreen({ user, onBack }: UserHomeScreenProps) {
             <Card className="bg-card-lavender-bg border border-card-lavender-border dark:border-none dark:card-shadow">
               <CardContent className="p-4">
                 <div className="flex flex-col items-center space-y-2">
-                  <div className="flex items-center justify-center w-8 h-8 rounded-full bg-purple-500 dark:bg-purple-800">
+                  <div className="flex items-center justify-center w-8 h-8 rounded-full bg-purple-400">
                     <TrendingUp className="h-4 w-4 text-white" />
                   </div>
                   <div className="text-center">
-                    <div className="text-xl font-bold">{(userProfile.totalScore ?? 0).toLocaleString()}</div>
-                    <div className="text-xs">누적점수</div>
+                    <div className="text-xl font-bold text-card-lavender-text">{(userProfile.totalScore ?? 0).toLocaleString()}</div>
+                    <div className="text-xs text-card-lavender-text/80">누적점수</div>
                   </div>
                 </div>
               </CardContent>

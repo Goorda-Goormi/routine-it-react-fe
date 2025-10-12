@@ -42,7 +42,7 @@ interface VerificationPhoto {
   userActivityId: number; 
   personalRoutineName: string | null; 
   groupName: string | null; 
-  imageUrl: string;
+  imageUrl: string | null;
   activityDate: string;
   isPublic: boolean;
 }
@@ -90,8 +90,10 @@ export function HomeScreen({
     fetchMyPhotos();
   }, []);
 
-  const publicPhotosCount = myVerificationPhotos.filter(photo => !photo.isPublic).length;
-  const publicVerificationPhotos = myVerificationPhotos.filter(photo => !photo.isPublic && photo.imageUrl);
+  const photosWithImages = myVerificationPhotos.filter(photo => photo.imageUrl);
+  const publicVerificationPhotos = photosWithImages.filter(photo => !photo.isPublic);
+  const publicPhotosCount = publicVerificationPhotos.length;
+  const totalPhotosCount = photosWithImages.length;
 
   const [selectedPhotoIndex, setSelectedPhotoIndex] = useState<number | null>(null);
 
@@ -118,7 +120,7 @@ export function HomeScreen({
   };
 
   const handleNextPhoto = () => {
-    if (selectedPhotoIndex !== null && selectedPhotoIndex < myVerificationPhotos.length - 1) {
+    if (selectedPhotoIndex !== null && selectedPhotoIndex < publicVerificationPhotos.length - 1) {
       setSelectedPhotoIndex(selectedPhotoIndex + 1);
     }
   };
@@ -165,7 +167,7 @@ export function HomeScreen({
 
         <div className="grid grid-cols-3 gap-3">
           <Card className="bg-card-yellow-bg border border-card-yellow-border dark:border-none dark:card-shadow">
-            <CardContent className="p-4">
+            <CardContent className="p-4 ">
               <div className="flex flex-col items-center space-y-2">
                 <div className="flex items-center justify-center w-8 h-8 rounded-full bg-orange-500 dark:bg-orange-500">
                   <CheckCircle className="h-4 w-4 text-white" />
@@ -241,26 +243,20 @@ export function HomeScreen({
             {allTodayRoutines.length > 0 ? (
               allTodayRoutines.map((routine: Routine, index: number) => {
                 return (
-                  // ▼▼▼ [핵심 수정 1] 이 최상위 div에 새로운 onClick 핸들러를 추가하고, 스타일을 변경합니다. ▼▼▼
                   <div 
                     key={routine.isGroupRoutine ? `group-${routine.id}` : `personal-${routine.id}`}
-                    className={`flex items-center justify-between rounded-lg p-3 transition-colors cursor-pointer ${
-                      routine.completed ? 'bg-green-50/50 dark:bg-green-900/20' : 'hover:bg-accent/50'
-                    }`}
+                    className={`flex items-center justify-between rounded-lg p-3 transition-colors cursor-pointer hover:bg-accent/50`}
                     onClick={() => {
                       if (routine.isGroupRoutine) {
-                        // 그룹 루틴 클릭 시: 인증을 위해 채팅방으로 이동
                         const group = participatingGroups.find(g => g.groupId === routine.id);
                         if (group) {
                           onNavigate('group-chat', group);
                         }
                       } else {
-                        // 개인 루틴 클릭 시: 완료 상태 토글
                         onTogglePersonalRoutine(routine.id);
                       }
                     }}
                   >
-                    {/* ▼▼▼ [핵심 수정 2] 기존 onClick 핸들러를 제거합니다. ▼▼▼ */}
                     <div className="flex items-center space-x-3 flex-1">
                       <div className="flex items-center space-x-3">
                         <div className='flex flex-col items-start ml-2'>
@@ -281,7 +277,6 @@ export function HomeScreen({
                             <CheckCircle className="h-5 w-5 text-white" />
                           </div>
                         ) : (
-                          // ▼▼▼ [핵심 수정 3] 버튼의 onClick을 제거하여 부모 div의 onClick만 작동하도록 합니다. ▼▼▼
                           <div
                             className="w-auto h-8 rounded-full flex items-center justify-center transition-colors px-3 py-1 text-xs text-foreground border-2 border-border/60"
                           >
@@ -292,7 +287,6 @@ export function HomeScreen({
                           </div>
                         )
                       ) : (
-                        // ▼▼▼ [핵심 수정 4] 버튼의 onClick을 제거하여 부모 div의 onClick만 작동하도록 합니다. ▼▼▼
                         <div
                           className={`w-8 h-8 rounded-full flex items-center justify-center m-0 border-0 ${
                             routine.completed ? 'bg-green-500' : 'border-2 border-border/60'
@@ -373,7 +367,7 @@ export function HomeScreen({
           <CardTitle className="text-base text-foreground flex items-center space-x-2">
             <Camera className="h-4 w-4 icon-accent" />
             <span>나의 인증 사진</span>
-            <Badge variant="secondary" className="text-xs">공개 {publicPhotosCount} / {myVerificationPhotos.length}</Badge>
+            <Badge variant="secondary" className="text-xs">공개 {publicPhotosCount} / {totalPhotosCount}</Badge>
           </CardTitle>
         </CardHeader>
         <CardContent className="pt-0">
@@ -432,7 +426,7 @@ export function HomeScreen({
       </Card>
 
       {/* 갤러리 모달 */}
-            {selectedPhotoIndex !== null && (
+            {selectedPhotoIndex !== null && publicVerificationPhotos[selectedPhotoIndex] &&(
               <div 
                 className="fixed inset-0 z-50 flex items-center justify-center bg-black/80"
                 onClick={handleCloseGallery}
@@ -454,8 +448,8 @@ export function HomeScreen({
                   {/* 사진 */}
                   <div className="relative p-4">
                     <img 
-                      src={myVerificationPhotos[selectedPhotoIndex].imageUrl} 
-                      alt={myVerificationPhotos[selectedPhotoIndex].groupName || myVerificationPhotos[selectedPhotoIndex].personalRoutineName || '인증샷'} 
+                      src={publicVerificationPhotos[selectedPhotoIndex].imageUrl} 
+                      alt={publicVerificationPhotos[selectedPhotoIndex].groupName || publicVerificationPhotos[selectedPhotoIndex].personalRoutineName || '인증샷'} 
                       className="max-w-full max-h-[70vh] object-contain rounded-lg"
                     />
 
@@ -464,9 +458,9 @@ export function HomeScreen({
                       <Button
                         variant="ghost"
                         className="h-auto p-1 rounded-full text-white hover:bg-white/20 hover:text-white"
-                        //onClick={() => handleTogglePublicStatus(myVerificationPhotos[selectedPhotoIndex].userActivityId, selectedPhotoIndex)}
+                        //onClick={() => handleTogglePublicStatus(publicVerificationPhotos[selectedPhotoIndex].userActivityId, selectedPhotoIndex)}
                       >
-                        {!myVerificationPhotos[selectedPhotoIndex].isPublic ? (
+                        {!publicVerificationPhotos[selectedPhotoIndex].isPublic ? (
                           <div className="flex items-center gap-1.5 bg-black/40 px-2 py-1 rounded-full">
                             <Eye className="h-4 w-4" />
                             <span className="text-xs">공개</span>
@@ -483,7 +477,7 @@ export function HomeScreen({
 
                   {/* 사진 설명 (사진 하단 중앙) */}
                   <div className="w-full text-center pb-4 text-white text-lg font-semibold">
-                    <span>{myVerificationPhotos[selectedPhotoIndex].groupName || myVerificationPhotos[selectedPhotoIndex].personalRoutineName}</span>
+                    <span>{publicVerificationPhotos[selectedPhotoIndex].groupName || publicVerificationPhotos[selectedPhotoIndex].personalRoutineName}</span>
                   </div>
 
                   <div className="absolute inset-y-0 flex items-center justify-between w-full px-6">
@@ -504,7 +498,7 @@ export function HomeScreen({
                       size="icon"
                       className="text-white opacity-80 rounded-full hover:bg-black/50  hover:text-white hover:border-none"
                       onClick={handleNextPhoto} 
-                      disabled={selectedPhotoIndex === myVerificationPhotos.length - 1}
+                      disabled={selectedPhotoIndex === publicVerificationPhotos.length - 1}
                     >
                       <ChevronRight className="h-6 w-6" />
                     </Button>

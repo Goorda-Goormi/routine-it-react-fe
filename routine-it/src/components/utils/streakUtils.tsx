@@ -18,8 +18,8 @@ export function getStreakInfo(streakDays: number): StreakInfo {
       bgColor: 'bg-gradient-to-br from-yellow-300 to-red-400',
       containBgColor: 'bg-gradient-to-br from-yellow-500/40 to-red-200/50 border-red-200/70',
       borderColor: 'border-red-400/50',
-      textColor: 'text-orange-600 dark:text-white font-bold',
-      subTextColor: 'text-orange-700 dark:text-white dark:opacity-90 font-normal',
+      textColor: 'text-streak-legend-text font-bold',
+      subTextColor: 'text-streak-legend-subtext font-normal',
       stage: '전설'
     };
   } else if (streakDays >= 180) {
@@ -30,8 +30,8 @@ export function getStreakInfo(streakDays: number): StreakInfo {
       bgColor: 'bg-gradient-to-br from-orange-300 to-red-200 border-orange-200/70 dark:bg-card-peach-bg dark:border-none',
       containBgColor: 'bg-orange-100',
       borderColor: 'border-orange-400/60',
-      textColor: 'text-orange-800 dark:text-white font-bold',
-      subTextColor: 'text-orange-600 dark:text-white dark:opacity-90 font-normal',
+      textColor: 'text-streak-fruit-text font-bold',
+      subTextColor: 'text-streak-fruit-subtext font-normal',
       stage: '열매'
     };
   } else if (streakDays >= 90) {
@@ -42,8 +42,8 @@ export function getStreakInfo(streakDays: number): StreakInfo {
       bgColor: 'bg-sky-200/80 dark:bg-card-mint-bg dark:border-none',
       containBgColor: 'bg-sky-200/20',
       borderColor: 'border-sky-600/40',
-      textColor: 'text-sky-700 dark:text-white font-bold',
-      subTextColor: 'text-sky-600 dark:text-white dark:opacity-90 font-normal',
+      textColor: 'text-streak-tree-text font-bold',
+      subTextColor: 'text-streak-tree-subtext font-normal',
       stage: '거목'
     };
   } else if (streakDays >= 30) {
@@ -54,8 +54,8 @@ export function getStreakInfo(streakDays: number): StreakInfo {
       bgColor: 'bg-gradient-to-br from-pink-100 to-rose-100 border-pink-200/70 dark:bg-card-lavender-bg dark:border-none',
       containBgColor: 'bg-pink-100/30',
       borderColor: 'border-pink-300',
-      textColor: 'text-pink-800 dark:text-white font-bold',
-      subTextColor: 'text-pink-600 dark:text-white dark:opacity-90 font-normal',
+      textColor: 'text-streak-flower-text font-bold',
+      subTextColor: 'text-streak-flower-subtext font-normal',
       stage: '개화'
     };
   } else if (streakDays >= 7) {
@@ -66,8 +66,8 @@ export function getStreakInfo(streakDays: number): StreakInfo {
       bgColor: 'bg-yellow-200/90 dark:bg-card-yellow-bg dark:border-none',
       containBgColor: 'bg-yellow-100/30',
       borderColor: 'border-yellow-400/70',
-      textColor: 'text-yellow-800 dark:text-white font-bold',
-      subTextColor: 'text-yellow-600 dark:text-white dark:opacity-90 font-normal',
+      textColor: 'text-streak-growth-text font-bold',
+      subTextColor: 'text-streak-growth-subtext font-normal',
       stage: '성장'
     };
   } else {
@@ -78,8 +78,8 @@ export function getStreakInfo(streakDays: number): StreakInfo {
       bgColor: '!bg-yellow-600/40 !dark:bg-yellow-400/70 dark:border-none',
       containBgColor: 'bg-[#f1f0e5] dark:bg-[#97693d]',
       borderColor: 'border-yellow-800/40',
-      textColor: 'text-yellow-900 dark:text-white font-medium',
-      subTextColor: 'text-yellow-800/60 dark:text-white dark:opacity-90 font-normal',
+      textColor: 'text-streak-sprout-text font-medium',
+      subTextColor: 'text-streak-sprout-subtext font-normal',
       stage: '새싹'
     };
   }

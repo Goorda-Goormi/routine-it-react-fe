@@ -245,23 +245,23 @@ import React, { useState } from 'react';
              루틴 추가
            </Button>
          </div>
-         <Card className="m-5 bg-gradient-to-br bg-card-yellow-bg dark:bg-card-yellow-bg dark:border-none dark:card-shadow">
+         <Card className="m-5 bg-card-yellow-bg dark:border-none dark:card-shadow">
            <CardContent className="p-4">
              <div className="flex items-center space-x-3 mb-3">
-               <div className="flex items-center justify-center w-10 h-10 rounded-full bg-amber-500 dark:bg-orange-700">
+               <div className="flex items-center justify-center w-10 h-10 rounded-full bg-progress-card-icon-bg">
                  <Target className="h-5 w-5 text-white" />
                </div>
                <div className="flex-1">
                  <div className="flex items-center justify-between">
-                   <span className="text-sm font-medium text-amber-800 dark:text-white">오늘의 진행률</span>
-                   <span className="text-sm text-amber-700 dark:text-white dark:opacity-90">
+                   <span className="text-sm font-medium text-progress-card-text">오늘의 진행률</span>
+                   <span className="text-sm text-progress-card-subtext dark:opacity-90">
                      {getCompletedCount(todayRoutines)}/{todayRoutines.length} 완료
                    </span>
                  </div>
                  <Progress value={getCompletionRate(todayRoutines)} className="h-2 mt-2" />
                </div>
              </div>
-             <div className="text-xs text-amber-700 dark:text-white dark:opacity-90">
+             <div className="text-xs text-progress-card-subtext dark:opacity-90">
                {getCompletionRate(todayRoutines)}% 달성 • 조금만 더 힘내세요!
              </div>
            </CardContent>
@@ -292,7 +292,10 @@ import React, { useState } from 'react';
                   {personalRoutines.length > 0 ? (
                     personalRoutines.map((routine, index) => renderRoutineCard(routine, index, index === personalRoutines.length - 1))
                   ) : (
-                    <div className="py-8 text-center text-sm text-muted-foreground">등록된 개인 루틴이 없습니다.</div>
+                    <div className="py-8 text-center text-sm text-muted-foreground">
+                      <p>등록된 개인 루틴이 없어요.</p>
+                      <p>새로운 개인 루틴을 만들어보세요!</p>
+                    </div>
                   )}
                </div>
              </CardContent>
@@ -311,7 +314,10 @@ import React, { useState } from 'react';
                  {groupRoutines.length > 0 ? (
                   groupRoutines.map((routine, index) => renderRoutineCard(routine, index, index === groupRoutines.length - 1))
                 ) : (
-                  <div className="py-8 text-center text-sm text-muted-foreground">참여중인 그룹 루틴이 없습니다.</div>
+                  <div className="py-8 text-center text-sm text-muted-foreground">
+                    <p>참여중인 그룹 루틴이 없어요.</p>
+                    <p>새로운 그룹 루틴에 만들거나 참여해보세요!</p>
+                  </div>
                 )}
                </div>
              </CardContent>
@@ -330,7 +336,10 @@ import React, { useState } from 'react';
                   {filteredRecommendedRoutines.length > 0 ? (
                     filteredRecommendedRoutines.map((routine, index) => renderRecommendedCard(routine, index, index === filteredRecommendedRoutines.length - 1))
                   ) : (
-                   <div className="py-8 text-center text-sm text-muted-foreground">추천 루틴이 없습니다.</div>
+                    <div className="py-8 text-center text-sm text-muted-foreground">
+                      <p>더 이상의 추천 루틴이 없어요.</p>
+                      <p>새로운 루틴을 만들어보세요!</p>
+                    </div>
                  )}
                </div>
              </CardContent>

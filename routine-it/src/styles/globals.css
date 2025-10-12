@@ -99,6 +99,23 @@
   
   --card-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
 
+  /* 연속출석일 텍스트 색상 */
+  --streak-legend-text: #9A3412;
+  --streak-legend-subtext: #C2410C;
+  --streak-fruit-text: #C2410C;
+  --streak-fruit-subtext: #9A3412;
+  --streak-tree-text: #1D4ED8;
+  --streak-tree-subtext: #1E40AF;
+  --streak-flower-text: #BE185D;
+  --streak-flower-subtext: #9D174D;
+  --streak-growth-text: #A16207;
+  --streak-growth-subtext: #854D0E;
+  --streak-sprout-text: #A16207;
+  --streak-sprout-subtext: #B45309;
+  
+  --progress-card-icon-bg: #f59e0b; 
+  --progress-card-text: #92400e; 
+  --progress-card-subtext: #b45309;
 }
 
 .dark {
@@ -193,7 +210,24 @@
   --my-highlight-text: #ffffff; 
   
   --card-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1);  
-  
+
+  /* 연속 출석일 단계별 텍스트 색상 */
+  --streak-legend-text: #FDBA74;
+  --streak-legend-subtext: #FED7AA;
+  --streak-fruit-text: #FDBA74;
+  --streak-fruit-subtext: #FED7AA;
+  --streak-tree-text: #93C5FD;
+  --streak-tree-subtext: #BFDBFE;
+  --streak-flower-text: #F9A8D4;
+  --streak-flower-subtext: #FBCFE8;
+  --streak-growth-text: #FDE047;
+  --streak-growth-subtext: #FEF08A;
+  --streak-sprout-text: #FDE047;
+  --streak-sprout-subtext: #FEF08A;
+
+  --progress-card-icon-bg: #c2410c; 
+  --progress-card-text: #ffffff;
+  --progress-card-subtext: #ffffff;
 }
 
 @theme inline {
@@ -262,7 +296,7 @@
   --color-card-mint-text: var(--card-mint-text);
 
   --color-my-highlight-bg: var(--my-highlight-bg);
-
+  
   --color-notice-required-bg: var(--notice-required-bg);
   --color-notice-required-border: var(--notice-required-border);
   --color-notice-required-text: var(--notice-required-text);
@@ -280,10 +314,25 @@
   --color-my-highlight-text: var(--my-highlight-text);
   --color-my-ranking-highlight-bg: var(--my-ranking-highlight-bg);
   --color-card-shadow: var(--card-shadow);
-  
 
+  /* 연속 출석일 */
+  --color-streak-legend-text: var(--streak-legend-text);
+  --color-streak-legend-subtext: var(--streak-legend-subtext);
+  --color-streak-fruit-text: var(--streak-fruit-text);
+  --color-streak-fruit-subtext: var(--streak-fruit-subtext);
+  --color-streak-tree-text: var(--streak-tree-text);
+  --color-streak-tree-subtext: var(--streak-tree-subtext);
+  --color-streak-flower-text: var(--streak-flower-text);
+  --color-streak-flower-subtext: var(--streak-flower-subtext);
+  --color-streak-growth-text: var(--streak-growth-text);
+  --color-streak-growth-subtext: var(--streak-growth-subtext);
+  --color-streak-sprout-text: var(--streak-sprout-text);
+  --color-streak-sprout-subtext: var(--streak-sprout-subtext);
+
+  --color-progress-card-icon-bg: var(--progress-card-icon-bg);
+  --color-progress-card-text: var(--progress-card-text);
+  --color-progress-card-subtext: var(--progress-card-subtext);
 }
-
 
 /* 모든 @layer들을 최상위 레벨로 분리하고 정리했습니다. */
 @layer base {
@@ -291,7 +340,6 @@
     @apply border-border outline-ring/50;
     
   }
-  
   html {
     font-size: var(--font-size);
     
@@ -302,15 +350,14 @@
     @apply text-foreground;
     min-height: 100vh;
     display: block;
+    
   }
 
   #root {
     margin: 0 auto;
     width: 100%;
-    max-width: 525px; 
-    
+    max-width: 1280px; 
   }
-
 
 
   /* 아이콘 색상 클래스 */
@@ -423,6 +470,11 @@
   /* ================================================= */
 
   /* Progress 컴포넌트 다크모드 배경 - 매우 진한 배경으로 설정 */
+  *[data-slot="progress"] {
+        background-color: var(--card); /* 카드의 배경색(흰색)을 사용 */
+        border: 1px solid #FEF08A80;
+      }
+
   .dark *[data-slot="progress"] {
     background: #0a1f0f;
     background-image: none;
