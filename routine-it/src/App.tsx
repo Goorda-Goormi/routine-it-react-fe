@@ -987,6 +987,9 @@ useEffect(() => {
     try {
       const routinesFromServer = await getPersonalRoutinesByUser(UserInfo.id as number);
 
+      // ▼▼▼ [진단용 로그 1] 서버에서 막 받아온 원본 데이터를 확인합니다. ▼▼▼
+      console.log("1. [fetchPersonalRoutines] 서버에서 받은 개인 루틴:", routinesFromServer);
+
       const transformedRoutines = (routinesFromServer || []).map(apiRoutine => {
         const isCompleted = completedActivityIds.personal.has(apiRoutine.routineId);
         const transformed = transformPersonalRoutine(apiRoutine);
@@ -995,6 +998,9 @@ useEffect(() => {
           completed: isCompleted,
         };
       });
+
+      // ▼▼▼ [진단용 로그 2] 최종적으로 상태를 업데이트할 데이터를 확인합니다. ▼▼▼
+      console.log("2. [fetchPersonalRoutines] 상태를 업데이트할 최종 루틴 목록:", transformedRoutines);
 
       setPersonalRoutines(transformedRoutines);
     } catch (error) {
@@ -1343,8 +1349,12 @@ const handleGroupRoutineCompletion = (groupId: number, activityId: number) => {
     try {
       const apiNotifications = await getNotifications();
       const transformedNotifications = apiNotifications.map(transformNotification);
-      setNotifications(transformedNotifications);
-    } catch (error) {
+      setNotifications(prevNotifications => {
+        const localNotifications = prevNotifications.filter(n => n.isLocal);
+        return [...transformedNotifications, ...localNotifications];
+      });
+
+      } catch (error) {
       console.error("알림을 불러오는데 실패했습니다.", error);
     }
   };
@@ -1441,62 +1451,82 @@ const handleGroupRoutineCompletion = (groupId: number, activityId: number) => {
 
   // 루틴 시작 5분 전 알림을 위한 useEffect
   // ------------------------------------------------------------------
+  const routineDataRef = useRef({
+    personalRoutines,
+    myGroups,
+    groupRoutineOverrides,
+    getGroupRoutinesWithOverrides,
+    addNotification,
+    remindersSentToday,
+    remindersSent0minToday,
+  });
+
+  useEffect(() => {
+    routineDataRef.current = {
+      personalRoutines,
+      myGroups,
+      groupRoutineOverrides,
+      getGroupRoutinesWithOverrides,
+      addNotification,
+      remindersSentToday,
+      remindersSent0minToday,
+    };
+  }, [
+    personalRoutines,
+    myGroups,
+    groupRoutineOverrides,
+    addNotification,
+    remindersSentToday,
+    remindersSent0minToday,
+  ]);
+
+  // 루틴 알림 타이머 (컴포넌트가 마운트될 때 딱 한 번만 실행됩니다)
   useEffect(() => {
     const timer = setInterval(() => {
+      const {
+        personalRoutines,
+        getGroupRoutinesWithOverrides,
+        addNotification,
+        remindersSentToday,
+        remindersSent0minToday,
+      } = routineDataRef.current;
+      
       const now = new Date();
       const allRoutines = [...personalRoutines, ...getGroupRoutinesWithOverrides()];
 
       allRoutines.forEach(routine => {
-        // 조건: 1. 알림 켜짐, 2. 시간 설정됨
         if (routine.reminder && routine.time) {
-          
           const [hours, minutes] = routine.time.split(':').map(Number);
           const routineTime = new Date();
           routineTime.setHours(hours, minutes, 0, 0);
-
           const diffInMinutes = (routineTime.getTime() - now.getTime()) / 1000 / 60;
-
-          // --- 5분 전 알림 체크 ---
-          // 2. [수정] 시간을 범위(-5분~-4분 사이)로 체크
+          
           if (diffInMinutes <= 5 && diffInMinutes > 4 && !remindersSentToday[routine.id]) {
-            console.log(`'${routine.name}' 5분 전 알림 생성!`);
-            
             addNotification({
               message: `'${routine.name}' 시작 5분 전입니다.`,
               category: '홈',
               icon: <Clock className="h-4 w-4 text-primary" />,
             });
-
-            setRemindersSentToday(prev => ({
-              ...prev,
-              [routine.id]: true,
-            }));
+            setRemindersSentToday(prev => ({ ...prev, [routine.id]: true }));
           }
 
-          // --- 0분 (정시) 알림 체크 ---
-          // 2. [수정] 시간을 범위(-1분~0분 사이)로 체크
           if (diffInMinutes <= 0 && diffInMinutes > -1 && !remindersSent0minToday[routine.id]) {
-            console.log(`'${routine.name}' 0분 전 (정시) 알림 생성!`);
-            
             addNotification({
               message: `'${routine.name}'을(를) 시작할 시간입니다!`,
               category: '홈',
               icon: <Clock className="h-4 w-4 text-primary" />,
             });
-
-            setRemindersSent0minToday(prev => ({
-              ...prev,
-              [routine.id]: true,
-            }));
+            setRemindersSent0minToday(prev => ({ ...prev, [routine.id]: true }));
           }
         }
       });
-    }, 60000); // 1분마다 실행
+    }, 60000);
 
-    return () => clearInterval(timer);
+    return () => {
+      clearInterval(timer);
+    };
+  }, []); 
 
-  }, [personalRoutines, myGroups, groupRoutineOverrides]); 
-  
    //7.그룹 관련 =============================================================
   
   /**
