@@ -13,6 +13,7 @@ export interface GroupRequest {
   imageUrl?: string;
   maxMembers: number;
   alarm?:boolean;
+  isAlarm?: boolean; 
 }
 
 //그룹 생성
@@ -312,6 +313,8 @@ export interface AuthApprovalPayload {
     approved?: boolean;
     isApproved:boolean;
     chatMsgId?: number;
+    isAlarm?: boolean;
+    alarm?: boolean;
 }
 
 /**
