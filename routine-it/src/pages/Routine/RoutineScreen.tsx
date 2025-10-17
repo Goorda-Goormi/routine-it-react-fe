@@ -69,11 +69,11 @@ import React, { useState } from 'react';
 
    const personalRoutines = allRoutines
     .filter(routine => !routine.isGroupRoutine)
-    .sort((a, b) => a.name.localeCompare(b.name));
+    .sort((a, b) => (a.time || '99:99').localeCompare(b.time || '99:99'));
 
    const groupRoutines = allRoutines
     .filter(routine => routine.isGroupRoutine)
-    .sort((a, b) => a.name.localeCompare(b.name));
+    .sort((a, b) => (a.time || '99:99').localeCompare(b.time || '99:99'));
 
     const existingRoutineNames = new Set(allRoutines.map(r => r.name));
     const filteredRecommendedRoutines = recommendedRoutines.filter(r => !existingRoutineNames.has(r.name));
