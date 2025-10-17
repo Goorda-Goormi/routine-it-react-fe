@@ -182,16 +182,14 @@ export function UserHomeScreen({ user, onBack }: UserHomeScreenProps) {
   };
 
   const showNextPhoto = () => {
-  if (selectedPhotoIndex !== null) {
-    const newIndex = (selectedPhotoIndex + 1) % verificationPhotos.length;
-    setSelectedPhotoIndex(newIndex);
+  if (selectedPhotoIndex !== null && selectedPhotoIndex < publicPhotos.length - 1) {
+    setSelectedPhotoIndex(selectedPhotoIndex + 1);
   }
 };
 
-  const showPrevPhoto = () => {
-  if (selectedPhotoIndex !== null) {
-    const newIndex = (selectedPhotoIndex - 1 + verificationPhotos.length) % verificationPhotos.length;
-    setSelectedPhotoIndex(newIndex);
+const showPrevPhoto = () => {
+  if (selectedPhotoIndex !== null && selectedPhotoIndex > 0) {
+    setSelectedPhotoIndex(selectedPhotoIndex - 1);
   }
 };
 
@@ -211,8 +209,9 @@ export function UserHomeScreen({ user, onBack }: UserHomeScreenProps) {
   const todaysRoutines = userRoutines.filter(routine => 
     routine.frequency && routine.frequency.includes(todayDay)
   );
+  const publicPhotos = verificationPhotos.filter(photo => photo.isPublic);
   const totalPhotos = verificationPhotos.length;
-  const publicPhotosCount = verificationPhotos.length;
+  const publicPhotosCount = publicPhotos.length;
   const totalRoutines = todaysRoutines.length;
   const completedRoutines = todaysRoutines.filter(routine => routine.completed).length;
   const completionRate = totalRoutines > 0 ? Math.round((completedRoutines / totalRoutines) * 100) : 0;
@@ -420,9 +419,9 @@ export function UserHomeScreen({ user, onBack }: UserHomeScreenProps) {
             </div>
           </CardHeader>
           <CardContent className="pt-0">
-            {verificationPhotos.length > 0 ? (
+            {publicPhotos.length > 0 ? (
               <div className="grid grid-cols-3 gap-3">
-                {verificationPhotos.map((photo, index) => (
+                {publicPhotos.map((photo, index) => (
                   <div key={photo.userActivityId} className="space-y-2 cursor-pointer" onClick={() => openGallery(index)}>
                     {/* 인증 이미지 */}
                     <div className="relative rounded-lg overflow-hidden aspect-square">
@@ -461,7 +460,7 @@ export function UserHomeScreen({ user, onBack }: UserHomeScreenProps) {
         </Card>
       </div>
     {/* 갤러리 모달 */}
-      {selectedPhotoIndex !== null && verificationPhotos[selectedPhotoIndex] && (
+      {selectedPhotoIndex !== null && publicPhotos[selectedPhotoIndex] && (
         <div 
           className="fixed inset-0 z-50 flex items-center justify-center bg-black/80"
           onClick={closeGallery}
@@ -482,14 +481,14 @@ export function UserHomeScreen({ user, onBack }: UserHomeScreenProps) {
             {/* 사진 */}
             <div className="flex-1 w-full flex items-center justify-center p-4">
               <img 
-                src={verificationPhotos[selectedPhotoIndex].imageUrl} 
-                alt={verificationPhotos[selectedPhotoIndex].groupName || verificationPhotos[selectedPhotoIndex].personalRoutineName || '인증샷'} 
+                src={publicPhotos[selectedPhotoIndex].imageUrl} 
+                alt={publicPhotos[selectedPhotoIndex].groupName || publicPhotos[selectedPhotoIndex].personalRoutineName || '인증샷'} 
                 className="max-w-full max-h-full object-contain"
               />
             </div>
             {/* 사진 설명 */}
             <div className="absolute bottom-16 w-full text-center text-white text-lg font-semibold">
-              {verificationPhotos[selectedPhotoIndex].groupName || verificationPhotos[selectedPhotoIndex].personalRoutineName}
+              {publicPhotos[selectedPhotoIndex].groupName || publicPhotos[selectedPhotoIndex].personalRoutineName}
             </div>
             <div className="absolute inset-y-0 flex items-center justify-between w-full px-6">
               {/* 이전 사진 버튼 */}
@@ -509,7 +508,7 @@ export function UserHomeScreen({ user, onBack }: UserHomeScreenProps) {
                 size="icon"
                 className="text-white opacity-80 rounded-full hover:bg-black/50  hover:text-white hover:border-none"
                 onClick={showNextPhoto} 
-                disabled={selectedPhotoIndex === verificationPhotos.length - 1}
+                disabled={selectedPhotoIndex === publicPhotos.length - 1}
               >
                 <ChevronRight className="h-6 w-6" />
               </Button>
