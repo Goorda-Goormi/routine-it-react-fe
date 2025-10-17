@@ -67,7 +67,7 @@ export function CreateGroupScreen({ onBack, onCreateGroup, myid }: CreateGroupSc
     alarmTime: '09:00',
     maxMembers: 30,
     authDays: [] as string[],
-    //isAlarm:true,
+    isAlarm:true,
     alarm:true,
   });
 
@@ -150,7 +150,7 @@ export function CreateGroupScreen({ onBack, onCreateGroup, myid }: CreateGroupSc
         authDays,
         category: formData.category,
         maxMembers: parseInt(formData.maxMembers.toString(), 10),
-        //isAlarm: true,
+        isAlarm: true,
         alarm:true, 
       };
 
