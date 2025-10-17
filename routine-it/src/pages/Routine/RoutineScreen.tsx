@@ -4,7 +4,8 @@ import React, { useState, useEffect } from 'react';
  import { Badge } from '../../components/ui/badge';
  import { Progress } from '../../components/ui/progress';
  import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../components/ui/tabs';
- import { Plus, Target, CheckCircle, Clock, Calendar, TrendingUp, Filter, Camera, Users, Sparkles } from 'lucide-react';
+ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../components/ui/select';
+ import { Plus, Target, CheckCircle, Clock, Calendar, TrendingUp, Filter, Camera, Users, Sparkles, User, Group as GroupIcon } from 'lucide-react';
  import type { Routine, Group } from '../../interfaces';
  import type { AuthMessage } from '../../interfaces';
  import { GroupRoutineDialog } from '../../pages/Group/GroupChat/GroupRoutineDialog';
@@ -51,6 +52,8 @@ import React, { useState, useEffect } from 'react';
    const [activeTab, setActiveTab] = useState('personal');
    const [displayedRecommendations, setDisplayedRecommendations] = useState<RecommendedRoutine[]>([]);
    const [randomizedRecommendations, setRandomizedRecommendations] = useState<RecommendedRoutine[]>([]);
+   const [personalFilter, setPersonalFilter] = useState('all');
+   const [groupFilter, setGroupFilter] = useState('all');
    const todayDay = getTodayDayOfWeek();
    const todayRoutines = allRoutines.filter(routine => {
      if (routine.frequency && Array.isArray(routine.frequency)) {
@@ -71,14 +74,13 @@ import React, { useState, useEffect } from 'react';
 
    const personalRoutines = allRoutines
     .filter(routine => !routine.isGroupRoutine)
+    .filter(routine => personalFilter === 'all' || routine.category === personalFilter)
     .sort((a, b) => (a.time || '99:99').localeCompare(b.time || '99:99'));
 
    const groupRoutines = allRoutines
     .filter(routine => routine.isGroupRoutine)
+    .filter(routine => groupFilter === 'all' || routine.type === groupFilter)
     .sort((a, b) => (a.time || '99:99').localeCompare(b.time || '99:99'));
-
-    const existingRoutineNames = new Set(allRoutines.map(r => r.name));
-    const filteredRecommendedRoutines = recommendedRoutines.filter(r => !existingRoutineNames.has(r.name));
 
     useEffect(() => {
      const existingRoutineNames = new Set(allRoutines.map(r => r.name));
@@ -261,7 +263,7 @@ import React, { useState, useEffect } from 'react';
                </div>
                <div className="flex-1">
                  <div className="flex items-center justify-between">
-                   <span className="text-sm font-medium text-progress-card-text">이런 루틴은 어떠세요?</span>
+                   <span className="text-m font-semibold text-progress-card-text">이런 루틴은 어떠세요?</span>
                  </div>
                </div>
              </div>
@@ -272,7 +274,7 @@ import React, { useState, useEffect } from 'react';
                 <div>
                   <div className="grid grid-cols-3 gap-2">
                     {displayedRecommendations.map((routine) => (
-                      <Card key={routine.id} className="bg-card ">
+                      <Card key={routine.id} className="bg-card-recommend-bg border-amber-300/50">
                         <CardContent className="p-3 pb-4! text-center flex flex-col items-center justify-between h-full">
                           <div className='flex flex-col items-center'>
                             <span className="text-2xl mt-1 mb-1.5">{getCategoryEmoji(routine.category)}</span>
@@ -283,7 +285,7 @@ import React, { useState, useEffect } from 'react';
                           <Button
                             size="sm"
                             variant="outline"
-                            className="mt-1 text-foreground border-border hover:bg-accent hover:text-foreground "
+                            className="mt-1 text-foreground border-card-recommend-border! hover:bg-accent hover:text-foreground "
                             onClick={(e) => {
                                 e.stopPropagation();
                                 onAddRecommendedRoutine(routine);
@@ -314,33 +316,64 @@ import React, { useState, useEffect } from 'react';
          </TabsList>
          <TabsContent value="personal" className="mt-4 w-full">
            <Card className="dark:card-shadow">
-             <CardHeader className="pb-3">
-               <CardTitle className="flex items-center space-x-2 text-base text-card-foreground">
-                 <Calendar className="h-4 w-4 icon-accent" />
+             <CardHeader className="pb-3 flex flex-row items-center justify-between">
+               <CardTitle className="flex items-center space-x-2 text-base">
+                 <User className="h-4 w-4 icon-accent" />
                  <span>개인 루틴</span>
                </CardTitle>
+               <Select value={personalFilter} onValueChange={setPersonalFilter}>
+                <SelectTrigger className="w-[100px] h-8 text-xs">
+                  <SelectValue placeholder="필터" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">전체</SelectItem>
+                  <SelectItem value="health">🏥 건강</SelectItem>
+                  <SelectItem value="exercise">💪 운동</SelectItem>
+                  <SelectItem value="study">📚 학습</SelectItem>
+                  <SelectItem value="lifestyle">🏠 생활</SelectItem>
+                  <SelectItem value="hobby">🎨 취미</SelectItem>
+                </SelectContent>
+               </Select>
              </CardHeader>
              <CardContent className="pt-0">
                <div className="space-y-0">
-                  {personalRoutines.length > 0 ? (
-                    personalRoutines.map((routine, index) => renderRoutineCard(routine, index, index === personalRoutines.length - 1))
-                  ) : (
-                    <div className="py-8 text-center text-sm text-muted-foreground">
-                      <p>등록된 개인 루틴이 없어요.</p>
-                      <p>새로운 개인 루틴을 만들어보세요!</p>
-                    </div>
-                  )}
+                 {personalRoutines.length > 0 ? (
+                   personalRoutines.map((routine, index) => renderRoutineCard(routine, index, index === personalRoutines.length - 1))
+                 ) : (
+                   // ▼▼▼ [수정] 개인 루틴이 없을 때 표시할 문구를 조건부로 변경합니다. ▼▼▼
+                   <div className="py-8 text-center text-sm text-muted-foreground">
+                     {personalFilter === 'all' ? (
+                       <>
+                         <p>등록된 개인 루틴이 없어요.</p>
+                         <p>새로운 개인 루틴을 만들어보세요!</p>
+                       </>
+                     ) : (
+                       <p>해당 카테고리에 맞는 루틴이 없습니다.</p>
+                     )}
+                   </div>
+
+                 )}
                </div>
              </CardContent>
            </Card>
          </TabsContent>
          <TabsContent value="group" className="mt-4 w-full">
            <Card className="dark:card-shadow">
-             <CardHeader className="pb-3">
-               <CardTitle className="flex items-center space-x-2 text-base text-card-foreground">
-                 <Target className="h-4 w-4 icon-accent" />
+             <CardHeader className="pb-3 flex flex-row items-center justify-between">
+               <CardTitle className="flex items-center space-x-2 text-base">
+                 <GroupIcon className="h-4 w-4 icon-accent" />
                  <span>그룹 루틴</span>
                </CardTitle>
+               <Select value={groupFilter} onValueChange={setGroupFilter}>
+                <SelectTrigger className="w-[100px] h-8 text-xs">
+                  <SelectValue placeholder="필터" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">전체</SelectItem>
+                  <SelectItem value="자유참여">자유참여</SelectItem>
+                  <SelectItem value="의무참여">의무참여</SelectItem>
+                </SelectContent>
+               </Select>
              </CardHeader>
              <CardContent className="pt-0">
                <div className="space-y-0">
@@ -348,9 +381,15 @@ import React, { useState, useEffect } from 'react';
                   groupRoutines.map((routine, index) => renderRoutineCard(routine, index, index === groupRoutines.length - 1))
                 ) : (
                   <div className="py-8 text-center text-sm text-muted-foreground">
-                    <p>참여중인 그룹 루틴이 없어요.</p>
-                    <p>새로운 그룹 루틴에 만들거나 참여해보세요!</p>
-                  </div>
+                     {groupFilter === 'all' ? (
+                       <>
+                         <p>참여중인 그룹 루틴이 없어요.</p>
+                         <p>새로운 그룹에 참여해보세요!</p>
+                       </>
+                     ) : (
+                       <p>해당 유형에 맞는 그룹 루틴이 없습니다.</p>
+                     )}
+                   </div>
                 )}
                </div>
              </CardContent>

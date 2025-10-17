@@ -10,6 +10,8 @@
   --background: #f8fffe;
   --foreground: #374151; /* 일반 텍스트 - 진한 회색 */
   --card: #ffffff;
+  --card-recommend-bg: var(--card);
+  --card-recommend-border: #9CA3AF;
   --card-foreground: #374151;
   --popover: #ffffff;
   --popover-foreground: #374151;
@@ -125,6 +127,8 @@
   --foreground: #ffffff;
   --card: #0f3a20;
   --card-foreground: #ffffff;
+  --card-recommend-bg: #dc7719;
+  --card-recommend-border: #f59e0b;
   --popover: #0f3a20;
   --popover-foreground: #ffffff;
   --primary: #ffffff;
@@ -329,6 +333,8 @@
   --color-streak-sprout-text: var(--streak-sprout-text);
   --color-streak-sprout-subtext: var(--streak-sprout-subtext);
 
+  --color-card-recommend-bg: var(--card-recommend-bg);
+  --color-card-recommend-border: var(--card-recommend-border);
   --color-progress-card-icon-bg: var(--progress-card-icon-bg);
   --color-progress-card-text: var(--progress-card-text);
   --color-progress-card-subtext: var(--progress-card-subtext);
