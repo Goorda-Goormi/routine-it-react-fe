@@ -237,6 +237,9 @@ export function HomeScreen({
             </Badge>
           </div>
           <Progress value={completionRate} className="h-2" />
+          <div className="text-xs text-muted-foreground mt-2">
+            {completionRate}% 달성 • 조금만 더 힘내세요!
+          </div>
         </CardHeader>
         <CardContent className="pt-0">
           <div className="space-y-0">
