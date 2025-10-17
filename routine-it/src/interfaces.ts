@@ -50,13 +50,12 @@ export interface Group {
     isAlarmOn?: boolean;
   }
  
-  // API 응답에는 없지만, 앱 로직에서 필요한 변수
   progress?: number;
   isOwner?: boolean;
   isJoined?: boolean;
   recentMembers?: Member[];
   routines?: Routine[];
-
+  alarm?: boolean;
 }
 
 

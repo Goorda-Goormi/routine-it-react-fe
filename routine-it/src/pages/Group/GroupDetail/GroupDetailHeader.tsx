@@ -121,7 +121,7 @@ export const GroupDetailHeader = ({
      try {
       await updateGroupMemberAlarm(group.groupId, newAlarmState); 
        setIsAlarmOn(newAlarmState); 
-      setAlarmStatusMessage(`알림 ${newAlarmState ? '꺼짐' : '켜짐'} ✅`);
+      setAlarmStatusMessage(`알림 ${newAlarmState ? '켜짐' : '꺼짐'} ✅`);
       setShowAlarmStatusBadge(true);
 
       // 3초 후에 배지를 숨깁니다.
@@ -157,12 +157,13 @@ export const GroupDetailHeader = ({
               size="sm" 
                onClick={handleToggleAlarm}
                className="hover:bg-accent p-1"
-              title={isAlarmOn ? "알림 켜기" : "알림 끄기"}
+              title={isAlarmOn ? "알림 끄기" : "알림 켜기"}
             >
-              {isAlarmOn ? (
-                <Bell className="h-5 w-5 text-card-foreground" />
-              ) : (
+              {isAlarmOn ?
+              (
                 <BellOff className="h-5 w-5 text-muted-foreground" />
+              ) :  (
+                <Bell className="h-5 w-5 text-card-foreground" />
               )}
              </Button>
           )}

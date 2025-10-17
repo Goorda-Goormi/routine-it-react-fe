@@ -291,11 +291,11 @@ export async function getPendingMembersByGroupId(groupId: number): Promise<Group
 /**
  * 특정 그룹에 대한 나의 알림 설정을 변경합니다.
  * @param groupId - 설정을 변경할 그룹의 ID
- * @param isAlarmOn - 새로운 알림 상태 (true/false)
+ * @param isAlarm - 새로운 알림 상태 (true/false)
  */
-export const updateGroupMemberAlarm = async (groupId: number, isAlarmOn: boolean): Promise<void> => {
+export const updateGroupMemberAlarm = async (groupId: number, isAlarm: boolean): Promise<void> => {
   // 쿼리 파라미터로 isAlarm 값을 전달합니다.
-  await apiFetch(`/group/${groupId}/members/me?isAlarm=${isAlarmOn}`, {
+  await apiFetch(`/group/${groupId}/members/me?isAlarm=${isAlarm}`, {
     method: 'PUT',
   });
 };
