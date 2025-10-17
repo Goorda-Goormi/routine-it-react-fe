@@ -3,6 +3,25 @@
 import { apiFetch } from './client';
 import { presignGet } from './storage'; 
 
+interface CalendarDay {
+  date: string;
+  attended: boolean;
+  activityTypes: string[];
+}
+
+interface AttendanceSummary {
+  totalDays: number;
+  attendedDays: number;
+  attendanceRate: number;
+  longestStreak: number;
+  currentStreak: number;
+}
+
+export interface MonthlyAttendanceDashboardResponse {
+  summary: AttendanceSummary;
+  calendar: CalendarDay[];
+}
+
 /**
  * 개인 루틴 완료 활동을 생성합니다.
  */
@@ -173,18 +192,38 @@ export const checkAttendance = async (date: string): Promise<boolean> => {
 };
 
 /**
- * 특정 월의 모든 출석 일자 목록을 조회합니다.
- * @param monthYear 조회할 연월 (YYYY-MM 형식)
- * @returns 날짜 문자열 배열 (e.g., ["2025-10-01", "2025-10-03", ...])
+ * 연/월별 출석 대시보드 데이터를 조회합니다. (달력 + 통계)
+ * @param year 조회할 연도
+ * @param month 조회할 월
+ * @param targetUserId (선택) 특정 사용자를 조회할 경우
  */
-export const getAttendanceDatesByMonth = async (monthYear: string): Promise<string[]> => {
-  // 이 API는 백엔드에 새로 추가되어야 할 수 있습니다. (GET /user-activities/attendance/month)
+export const getMonthlyAttendanceDashboard = async (
+  year: number, 
+  month: number, 
+  targetUserId?: number
+): Promise<MonthlyAttendanceDashboardResponse> => {
+  const params = new URLSearchParams({
+    year: String(year),
+    month: String(month),
+  });
+  if (targetUserId) {
+    params.append('targetUserId', String(targetUserId));
+  }
+
   try {
-    const response = await apiFetch(`/user-activities/attendance/month?monthYear=${monthYear}`);
-    // API 응답이 { success: true, data: [...] } 형태일 경우를 대비
-    return response.data || response || [];
+    const response = await apiFetch(`/user-activities/attendance/monthly-dashboard?${params.toString()}`);
+    const dashboardData = response.data || response;
+    
+    // 데이터가 없거나 형식이 맞지 않을 경우를 대비한 기본값 처리
+    return dashboardData || { summary: {}, calendar: [] };
   } catch (error) {
-    console.error(`${monthYear} 월별 출석일 조회 실패:`, error);
-    return []; // 에러 발생 시 빈 배열 반환
+    console.error(`${year}-${month} 월별 대시보드 조회 실패:`, error);
+    return { summary: {
+      totalDays: 0,
+      attendedDays: 0,
+      attendanceRate: 0,
+      longestStreak: 0,
+      currentStreak: 0
+    }, calendar: [] }; 
   }
 };

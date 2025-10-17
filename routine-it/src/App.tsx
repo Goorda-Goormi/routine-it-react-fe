@@ -1314,14 +1314,21 @@ const handleGroupRoutineCompletion = (groupId: number, activityId: number) => {
   };
 
   const fetchMonthlyReview = async () => {
-    if (!UserInfo) return; 
+    if (!UserInfo) return;
+
+    const date = new Date();
+    const currentMonthYear = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+    const notificationSentKey = `reviewNotificationSent_${currentMonthYear}`;
+
+    if (localStorage.getItem(notificationSentKey)) {
+      console.log(`월간 회고 알림(${currentMonthYear})은 이미 생성되었습니다. 건너뜁니다.`);
+      return; 
+    }
 
     try {
-      const date = new Date();
-      //date.setMonth(date.getMonth() - 1);
+      date.setMonth(date.getMonth() - 1);
       const lastMonth = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
 
-      // POST 요청으로 수정하고, userId를 쿼리 파라미터로 전달
       const response = await apiFetch(`/api/reviews/monthly?userId=${UserInfo.id}&monthYear=${lastMonth}`, {
         method: 'POST',
       });
@@ -1329,12 +1336,14 @@ const handleGroupRoutineCompletion = (groupId: number, activityId: number) => {
       console.log("서버의 월간 회고 응답:", response);
 
       if (response.success) {
-        // 서버에서 메시지를 성공적으로 보냈다면, 프론트에서는 알림을 생성합니다.
         addNotification({
           message: `지난 달의 활동을 정리한 ${lastMonth} 월간 회고가 도착했어요.`,
           category: '회고',
           monthYear: lastMonth, 
         });
+
+        localStorage.setItem(notificationSentKey, 'true');
+        console.log(`월간 회고 알림(${currentMonthYear})을 생성하고, 생성 기록을 저장했습니다.`);
       }
     } catch (error) {
       console.error("월간 회고 알림 생성 실패:", error);

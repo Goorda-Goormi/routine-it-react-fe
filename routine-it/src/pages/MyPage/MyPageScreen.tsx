@@ -29,6 +29,7 @@ import {
   Bell,
   Moon 
 } from 'lucide-react';
+import { getMonthlyAttendanceDashboard, type MonthlyAttendanceDashboardResponse } from '../../api/activity';
 
 type BadgeType = '첫걸음' | '7일 연속' | '루틴 마스터' | '월간 챔피언';
 
@@ -105,10 +106,32 @@ export function MyPageScreen({ onNavigate, isDarkMode, onToggleDarkMode, onToggl
   ];
   
   const [currentDate, setCurrentDate] = useState(new Date());
+  const [attendanceData, setAttendanceData] = useState<MonthlyAttendanceDashboardResponse | null>(null);
+  const [isLoadingCalendar, setIsLoadingCalendar] = useState(true);
 
   const [animatedProgress, setAnimatedProgress] = useState(0);
 
   const targetProgress = user.maxExp ? Math.round(((userTotalScore ?? 0) / user.maxExp) * 100) : 0;
+
+  useEffect(() => {
+    const fetchMonthlyAttendance = async () => {
+      setIsLoadingCalendar(true);
+      const year = currentDate.getFullYear();
+      const month = currentDate.getMonth() + 1;
+      
+      try {
+        const data = await getMonthlyAttendanceDashboard(year, month);
+        setAttendanceData(data);
+      } catch (error) {
+        console.error("월별 출석 데이터 로딩 실패:", error);
+        setAttendanceData(null); // 에러 발생 시 초기화
+      } finally {
+        setIsLoadingCalendar(false);
+      }
+    };
+
+    fetchMonthlyAttendance();
+  }, [currentDate]);
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -121,35 +144,18 @@ export function MyPageScreen({ onNavigate, isDarkMode, onToggleDarkMode, onToggl
   const getCalendarData = (date: Date) => {
     const year = date.getFullYear();
     const month = date.getMonth();
-    
-    // 해당 월의 첫 날
     const firstDayOfMonth = new Date(year, month, 1);
-    // 해당 월의 마지막 날
     const lastDayOfMonth = new Date(year, month + 1, 0);
-    
-    // 첫 날의 요일 (0: 일요일, 1: 월요일, ...)
     const firstDayOfWeek = firstDayOfMonth.getDay();
-    // 해당 월의 총 날짜 수
     const numDays = lastDayOfMonth.getDate();
-    
     const daysArray = [];
-    
-    // 요일 시작을 맞추기 위해 빈 칸 추가
     for (let i = 0; i < firstDayOfWeek; i++) {
       daysArray.push(null);
     }
-    
-    // 해당 월의 날짜 추가
     for (let i = 1; i <= numDays; i++) {
       daysArray.push(i);
     }
-    
-    return {
-      year,
-      month: month + 1,
-      days: daysArray,
-      today: new Date().getDate(),
-    };
+    return { year, month: month + 1, days: daysArray, today: new Date().getDate() };
   };
 
   const calendarData = getCalendarData(currentDate);
@@ -161,8 +167,7 @@ export function MyPageScreen({ onNavigate, isDarkMode, onToggleDarkMode, onToggl
   const handleNextMonth = () => {
     setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 1));
   };
-
-  // onNavigate 함수 호출 시 onSave 함수를 props로 전달
+  
   const handleEditProfile = () => {
     onNavigate('profile-edit', { initialUserInfo: user, isDarkMode, onToggleDarkMode });
   };
@@ -314,15 +319,16 @@ export function MyPageScreen({ onNavigate, isDarkMode, onToggleDarkMode, onToggl
                   return <div key={i} className="h-8 w-8"></div>;
                 }
 
+                const dayString = `${calendarData.year}-${String(calendarData.month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+                const dayData = attendanceData?.calendar.find(d => d.date === dayString);
+                const hasAttended = dayData ? dayData.attended : false;
+
                 const today = new Date();
                 today.setHours(0, 0, 0, 0); // 시간, 분, 초, 밀리초를 0으로 설정
                 const dateInLoop = new Date(calendarData.year, calendarData.month - 1, day);
                 
                 const isToday = dateInLoop.getTime() === today.getTime();
                 const isPast = dateInLoop < today;
-
-                const dayString = `${calendarData.year}-${String(calendarData.month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-                const hasAttended = attendanceDates.includes(dayString);
 
                 let dayClassName = 'text-muted-foreground'; // 미래 날짜 기본값
                 if (isToday) {
