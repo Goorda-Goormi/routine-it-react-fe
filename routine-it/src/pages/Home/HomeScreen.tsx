@@ -38,6 +38,15 @@ interface HomeScreenProps {
   userTotalScore: number | null;
 }
 
+interface AuthPhoto {
+  userActivityId: number; 
+  personalRoutineName: string | null; 
+  groupName: string | null; 
+  imageUrl: string;
+  activityDate: string;
+  isPublic: boolean;
+}
+
 interface VerificationPhoto {
   userActivityId: number; 
   personalRoutineName: string | null; 
@@ -72,15 +81,13 @@ export function HomeScreen({
   })
   .sort((a, b) => (a.time || '99:99').localeCompare(b.time || '99:99'));
 
+  const [verificationPhotos, setVerificationPhotos] = useState<AuthPhoto[]>([]);
   const [myVerificationPhotos, setMyVerificationPhotos] = useState<VerificationPhoto[]>([]);
 
   useEffect(() => {
     const fetchMyPhotos = async () => {
       try {
-        // userId 없이 호출하여 내 사진을 가져옵니다.
         const photosData = await getUserAuthPhotos();
-        console.log("서버에서 받은 사진 데이터:", photosData);
-        // API 응답 구조에 맞게 activityInfos에서 데이터를 추출합니다.
         setMyVerificationPhotos(photosData || []);
       } catch (error) {
         console.error("내 인증 사진 로딩 실패:", error);
@@ -91,8 +98,8 @@ export function HomeScreen({
   }, []);
 
   const photosWithImages = myVerificationPhotos.filter(photo => photo.imageUrl);
-  const publicVerificationPhotos = photosWithImages.filter(photo => !photo.isPublic);
-  const publicPhotosCount = publicVerificationPhotos.length;
+  //const publicVerificationPhotos = photosWithImages.filter(photo => !photo.isPublic);
+  const publicPhotosCount = photosWithImages.filter(photo => photo.isPublic).length;
   const totalPhotosCount = photosWithImages.length;
 
   const [selectedPhotoIndex, setSelectedPhotoIndex] = useState<number | null>(null);
@@ -120,7 +127,7 @@ export function HomeScreen({
   };
 
   const handleNextPhoto = () => {
-    if (selectedPhotoIndex !== null && selectedPhotoIndex < publicVerificationPhotos.length - 1) {
+    if (selectedPhotoIndex !== null && selectedPhotoIndex < photosWithImages.length - 1) {
       setSelectedPhotoIndex(selectedPhotoIndex + 1);
     }
   };
@@ -140,7 +147,6 @@ export function HomeScreen({
   };
 
   const completedRoutines = allTodayRoutines.filter(routine => routine.completed).length;
-
   const totalRoutines = allTodayRoutines.length;
   const completionRate = totalRoutines > 0 ? Math.round((completedRoutines / totalRoutines) * 100) : 0;
 
@@ -374,26 +380,24 @@ export function HomeScreen({
           </CardTitle>
         </CardHeader>
         <CardContent className="pt-0">
-          {publicVerificationPhotos.length > 0 ? (
+          {/* ▼▼▼ [수정] photosWithImages를 사용하여 모든 사진을 표시합니다. ▼▼▼ */}
+          {photosWithImages.length > 0 ? (
             <div className="grid grid-cols-3 gap-3">
-              {publicVerificationPhotos.map((photo, index) => (
-                <div
-                  key={photo.userActivityId}
-                  className="space-y-2 cursor-pointer"
-                >
+              {photosWithImages.map((photo, index) => (
+                <div key={photo.userActivityId} className="space-y-2 cursor-pointer">
                   <div className="relative rounded-lg overflow-hidden aspect-square group">
                     <ImageWithFallback
-                      src={photo.imageUrl}
+                      src={photo.imageUrl!}
                       alt={photo.groupName || photo.personalRoutineName || '인증샷'}
                       className="w-full h-full object-cover cursor-pointer"
                       onClick={() => handlePhotoClick(index)}
                     />
-                  <Button
+                    <Button
                       variant="destructive"
                       size="icon"
                       className="absolute top-1 right-1 h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity"
                       onClick={(e) => {
-                        e.stopPropagation(); 
+                        e.stopPropagation();
                         handleDeletePhoto(photo.userActivityId);
                       }}
                     >
@@ -429,7 +433,7 @@ export function HomeScreen({
       </Card>
 
       {/* 갤러리 모달 */}
-            {selectedPhotoIndex !== null && publicVerificationPhotos[selectedPhotoIndex] &&(
+            {selectedPhotoIndex !== null && photosWithImages[selectedPhotoIndex] &&(
               <div 
                 className="fixed inset-0 z-50 flex items-center justify-center bg-black/80"
                 onClick={handleCloseGallery}
@@ -451,8 +455,8 @@ export function HomeScreen({
                   {/* 사진 */}
                   <div className="relative p-4">
                     <img 
-                      src={publicVerificationPhotos[selectedPhotoIndex].imageUrl} 
-                      alt={publicVerificationPhotos[selectedPhotoIndex].groupName || publicVerificationPhotos[selectedPhotoIndex].personalRoutineName || '인증샷'} 
+                      src={photosWithImages[selectedPhotoIndex].imageUrl} 
+                      alt={photosWithImages[selectedPhotoIndex].groupName || photosWithImages[selectedPhotoIndex].personalRoutineName || '인증샷'} 
                       className="max-w-full max-h-[70vh] object-contain rounded-lg"
                     />
 
@@ -463,12 +467,14 @@ export function HomeScreen({
                         className="h-auto p-1 rounded-full text-white hover:bg-white/20 hover:text-white"
                         //onClick={() => handleTogglePublicStatus(publicVerificationPhotos[selectedPhotoIndex].userActivityId, selectedPhotoIndex)}
                       >
-                        {!publicVerificationPhotos[selectedPhotoIndex].isPublic ? (
+                        {photosWithImages[selectedPhotoIndex].isPublic ? (
+                          // isPublic: true => '공개'로 표시
                           <div className="flex items-center gap-1.5 bg-black/40 px-2 py-1 rounded-full">
                             <Eye className="h-4 w-4" />
                             <span className="text-xs">공개</span>
                           </div>
                         ) : (
+                          // isPublic: false => '비공개'로 표시
                           <div className="flex items-center gap-1.5 bg-black/40 px-2 py-1 rounded-full">
                             <EyeOff className="h-4 w-4" />
                             <span className="text-xs">비공개</span>
@@ -480,7 +486,7 @@ export function HomeScreen({
 
                   {/* 사진 설명 (사진 하단 중앙) */}
                   <div className="w-full text-center pb-4 text-white text-lg font-semibold">
-                    <span>{publicVerificationPhotos[selectedPhotoIndex].groupName || publicVerificationPhotos[selectedPhotoIndex].personalRoutineName}</span>
+                    <span>{photosWithImages[selectedPhotoIndex].groupName || photosWithImages[selectedPhotoIndex].personalRoutineName}</span>
                   </div>
 
                   <div className="absolute inset-y-0 flex items-center justify-between w-full px-6">
@@ -501,7 +507,7 @@ export function HomeScreen({
                       size="icon"
                       className="text-white opacity-80 rounded-full hover:bg-black/50  hover:text-white hover:border-none"
                       onClick={handleNextPhoto} 
-                      disabled={selectedPhotoIndex === publicVerificationPhotos.length - 1}
+                      disabled={selectedPhotoIndex === photosWithImages.length - 1}
                     >
                       <ChevronRight className="h-6 w-6" />
                     </Button>
