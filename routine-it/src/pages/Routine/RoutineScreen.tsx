@@ -1,10 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
  import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card';
  import { Button } from '../../components/ui/button';
  import { Badge } from '../../components/ui/badge';
  import { Progress } from '../../components/ui/progress';
  import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../components/ui/tabs';
- import { Plus, Target, CheckCircle, Clock, Calendar, TrendingUp, Filter, Camera, Users } from 'lucide-react';
+ import { Plus, Target, CheckCircle, Clock, Calendar, TrendingUp, Filter, Camera, Users, Sparkles } from 'lucide-react';
  import type { Routine, Group } from '../../interfaces';
  import type { AuthMessage } from '../../interfaces';
  import { GroupRoutineDialog } from '../../pages/Group/GroupChat/GroupRoutineDialog';
@@ -49,6 +49,8 @@ import React, { useState } from 'react';
 
  export function RoutineScreen({ onNavigate, allRoutines, recommendedRoutines, onTogglePersonalRoutine, onAddRecommendedRoutine, onOpenAttendanceModal, onOpenStreakModal, onOpenBadgeModal, initialUserInfo, participatingGroups, allGroups }: RoutineScreenProps) {
    const [activeTab, setActiveTab] = useState('personal');
+   const [displayedRecommendations, setDisplayedRecommendations] = useState<RecommendedRoutine[]>([]);
+   const [randomizedRecommendations, setRandomizedRecommendations] = useState<RecommendedRoutine[]>([]);
    const todayDay = getTodayDayOfWeek();
    const todayRoutines = allRoutines.filter(routine => {
      if (routine.frequency && Array.isArray(routine.frequency)) {
@@ -77,6 +79,12 @@ import React, { useState } from 'react';
 
     const existingRoutineNames = new Set(allRoutines.map(r => r.name));
     const filteredRecommendedRoutines = recommendedRoutines.filter(r => !existingRoutineNames.has(r.name));
+
+    useEffect(() => {
+     const existingRoutineNames = new Set(allRoutines.map(r => r.name));
+     const filtered = recommendedRoutines.filter(r => !existingRoutineNames.has(r.name));
+     setDisplayedRecommendations(filtered.slice(0, 3));
+   }, [allRoutines, recommendedRoutines]);
 
    const getCategoryEmoji = (category: string) => {
      switch (category) {
@@ -249,34 +257,59 @@ import React, { useState } from 'react';
            <CardContent className="p-4">
              <div className="flex items-center space-x-3 mb-3">
                <div className="flex items-center justify-center w-10 h-10 rounded-full bg-progress-card-icon-bg">
-                 <Target className="h-5 w-5 text-white" />
+                 <Sparkles className="h-5 w-5 text-white" />
                </div>
                <div className="flex-1">
                  <div className="flex items-center justify-between">
-                   <span className="text-sm font-medium text-progress-card-text">오늘의 진행률</span>
-                   <span className="text-sm text-progress-card-subtext dark:opacity-90">
-                     {getCompletedCount(todayRoutines)}/{todayRoutines.length} 완료
-                   </span>
+                   <span className="text-sm font-medium text-progress-card-text">이런 루틴은 어떠세요?</span>
                  </div>
-                 <Progress value={getCompletionRate(todayRoutines)} className="h-2 mt-2" />
                </div>
              </div>
-             <div className="text-xs text-progress-card-subtext dark:opacity-90">
-               {getCompletionRate(todayRoutines)}% 달성 • 조금만 더 힘내세요!
-             </div>
+             
+             {displayedRecommendations.length > 0 && (
+              <>
+                <div className="border-t border-amber-300/50 dark:border-white/20 my-4"></div>
+                <div>
+                  <div className="grid grid-cols-3 gap-2">
+                    {displayedRecommendations.map((routine) => (
+                      <Card key={routine.id} className="bg-card ">
+                        <CardContent className="p-3 pb-4! text-center flex flex-col items-center justify-between h-full">
+                          <div className='flex flex-col items-center'>
+                            <span className="text-2xl mt-1 mb-1.5">{getCategoryEmoji(routine.category)}</span>
+                            <p className="text-xs font-semibold text-card-foreground leading-tight h-6">
+                              {routine.name}
+                            </p>
+                          </div>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="mt-1 text-foreground border-border hover:bg-accent hover:text-foreground "
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                onAddRecommendedRoutine(routine);
+                                setActiveTab('personal');
+                                }}
+                          >
+                            <Plus className="h-4 w-4 icon-secondary" />
+                            추가
+                        </Button>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+                </div>
+              </>
+             )}
            </CardContent>
          </Card>
        </div>
        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4 flex flex-col items-center">
-         <TabsList className="grid w-full h-auto grid-cols-3">
+         <TabsList className="grid w-full h-auto grid-cols-2">
            <TabsTrigger className="flex-1" value="personal" >
              개인
            </TabsTrigger>
            <TabsTrigger className="flex-1" value="group">
              그룹
-           </TabsTrigger>
-           <TabsTrigger className="flex-1" value="recommended">
-             추천
            </TabsTrigger>
          </TabsList>
          <TabsContent value="personal" className="mt-4 w-full">
@@ -319,28 +352,6 @@ import React, { useState } from 'react';
                     <p>새로운 그룹 루틴에 만들거나 참여해보세요!</p>
                   </div>
                 )}
-               </div>
-             </CardContent>
-           </Card>
-         </TabsContent>
-         <TabsContent value="recommended" className="mt-4 w-full">
-           <Card className="dark:card-shadow">
-             <CardHeader>
-               <CardTitle className="flex items-center space-x-2 text-base text-card-foreground">
-                 <TrendingUp className="h-4 w-4 icon-accent" />
-                 <span>추천 루틴</span>
-               </CardTitle>
-             </CardHeader>
-             <CardContent className="pt-0">
-               <div className="space-y-0">
-                  {filteredRecommendedRoutines.length > 0 ? (
-                    filteredRecommendedRoutines.map((routine, index) => renderRecommendedCard(routine, index, index === filteredRecommendedRoutines.length - 1))
-                  ) : (
-                    <div className="py-8 text-center text-sm text-muted-foreground">
-                      <p>더 이상의 추천 루틴이 없어요.</p>
-                      <p>새로운 루틴을 만들어보세요!</p>
-                    </div>
-                 )}
                </div>
              </CardContent>
            </Card>
