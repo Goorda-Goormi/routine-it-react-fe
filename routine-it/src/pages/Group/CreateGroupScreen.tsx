@@ -67,6 +67,8 @@ export function CreateGroupScreen({ onBack, onCreateGroup, myid }: CreateGroupSc
     alarmTime: '09:00',
     maxMembers: 30,
     authDays: [] as string[],
+    //isAlarm:true,
+    alarm:true,
   });
 
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
@@ -148,9 +150,12 @@ export function CreateGroupScreen({ onBack, onCreateGroup, myid }: CreateGroupSc
         authDays,
         category: formData.category,
         maxMembers: parseInt(formData.maxMembers.toString(), 10),
+        //isAlarm: true,
+        alarm:true, 
       };
 
       const createdGroup = await createGroup(payload);
+      console.log('🚀 Payload createGroup API:', payload);
       console.log('✅ 그룹 생성 성공:', createdGroup);
 
       onCreateGroup(createdGroup);
