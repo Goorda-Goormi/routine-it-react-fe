@@ -37,6 +37,25 @@ const getCategoryEmoji = (categoryId: string) => {
   }
 };
 
+const formatAuthDays = (authDays: string): string => {
+  if (authDays.length !== 7) return '정보 없음';
+
+  const daysOfWeek = ['일', '월', '화', '수', '목', '금', '토'];
+  const activeDays: string[] = [];
+
+  for (let i = 0; i < 7; i++) {
+    if (authDays[i] === '1') {
+      activeDays.push(daysOfWeek[i]);
+    }
+  }
+
+  if (activeDays.length === 7) return '매일';
+  if (activeDays.length === 5 && !activeDays.includes('토') && !activeDays.includes('일')) return '주중';
+  if (activeDays.length === 2 && activeDays.includes('토') && activeDays.includes('일')) return '주말';
+  
+  return activeDays.join(', ') || '인증 없음';
+};
+
 const GroupCard = ({ group, onNavigate, onJoinGroup, isJoined, isPending }: { group: Group, onNavigate: any, onJoinGroup: any, isJoined: boolean, isPending: boolean }) => (
   <div className="p-5 rounded-lg hover:bg-accent/50 transition-colors cursor-pointer" onClick={() => onNavigate('group-detail', group)}>
     <div className="flex items-center justify-between mb-1">
@@ -82,6 +101,7 @@ const GroupCard = ({ group, onNavigate, onJoinGroup, isJoined, isPending }: { gr
     <div className="flex items-center justify-between text-xs text-muted-foreground">
       <span>{getCategoryEmoji(group.category)} {getCategoryName(group.category)}</span>
       <span>👥 {group.currentMemberCount}명</span>
+      <span className="truncate">🗓️ {formatAuthDays(group.authDays)}</span>
       <span>⏰ {group.alarmTime.slice(0, 5)}</span>
     </div>
   </div>

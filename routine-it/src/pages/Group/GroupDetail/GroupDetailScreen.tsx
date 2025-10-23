@@ -36,6 +36,7 @@ interface GroupDetailScreenProps {
     onRefreshMembers: () => void;
 }
 
+
 export function GroupDetailScreen({
     groupId,
     groups,
@@ -61,11 +62,11 @@ export function GroupDetailScreen({
     const [memberProfiles, setMemberProfiles] = useState<Record<number, string>>({});
     // 새 상태: 오늘 루틴을 인증한 멤버를 추적합니다. (채팅 + 리더 승인)
     const [todayCertifiedMembers, setTodayCertifiedMembers] = useState<Set<string>>(new Set());
-
+    
     const group = groups.find((g) => g.groupId === groupId);
     const isLeader = group?.leaderName === currentUser.nickname;
     
-const toKst = useCallback((dateString: string) => {
+    const toKst = useCallback((dateString: string) => {
         const utcDate = new Date(dateString);
         const kstOffset = 9 * 60 * 60 * 1000;
         return new Date(utcDate.getTime() + kstOffset);

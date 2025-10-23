@@ -37,7 +37,26 @@ interface GroupDetailHeaderProps {
   onGroupJoined: () => void;
   onRefreshMembers: () => void;
 }
+  const formatAuthDays = (authDays: string): string => {
+    if (authDays.length !== 7) return '정보 없음';
 
+    const daysOfWeek = ['일', '월', '화', '수', '목', '금', '토'];
+    const activeDays: string[] = [];
+
+    for (let i = 0; i < 7; i++) {
+      if (authDays[i] === '1') {
+        activeDays.push(daysOfWeek[i]);
+      }
+    }
+
+    if (activeDays.length === 7) return '매일';
+    // 주중 (월~금)만 활성화된 경우
+    if (activeDays.length === 5 && !activeDays.includes('일') && !activeDays.includes('토')) return '주중'; 
+    // 주말 (토, 일)만 활성화된 경우
+    if (activeDays.length === 2 && activeDays.includes('일') && activeDays.includes('토')) return '주말'; 
+    
+    return activeDays.join(', ') || '인증 없음';
+  };
 export const GroupDetailHeader = ({
   group,
   isJoined,
@@ -235,6 +254,10 @@ export const GroupDetailHeader = ({
                 <div className="text-center">
                   <Badge variant={group.groupType === 'REQUIRED' ? 'destructive' : 'secondary'}>{group.groupType === "REQUIRED" ? "의무참여":"자유참여"}</Badge>
                   <div className="text-xs text-muted-foreground mt-1">그룹 유형</div>
+                </div>
+                <div className="text-center">
+                  <div className="font-bold text-card-foreground text-sm truncate">{group.authDays ? formatAuthDays(group.authDays) : 'N/A'}</div>
+                  <div className="text-xs text-muted-foreground">인증 요일</div>
                 </div>
                 <div className="text-center">
                   <div className="font-bold text-card-foreground">{group.alarmTime ? group.alarmTime.slice(0, 5) : ''}</div>
