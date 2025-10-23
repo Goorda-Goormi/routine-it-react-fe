@@ -35,6 +35,7 @@ interface GroupDetailHeaderProps {
   onGroupDeleted: () => void; 
   myid : number;
   onGroupJoined: () => void;
+  onRefreshMembers: () => void;
 }
 
 export const GroupDetailHeader = ({
@@ -51,6 +52,7 @@ export const GroupDetailHeader = ({
   onGroupDeleted,
   myid,
   onGroupJoined,
+  onRefreshMembers,
 }: GroupDetailHeaderProps) => {
   const myIdAsNumber = typeof myid === 'string' ? parseInt(myid, 10) : myid;
   const myGroupMemberInfo = groupMembers.find(
@@ -61,18 +63,16 @@ export const GroupDetailHeader = ({
   const [showAlarmStatusBadge, setShowAlarmStatusBadge] = React.useState(false);
   const [alarmStatusMessage, setAlarmStatusMessage] = React.useState('');
   console.log('--- GroupDetailHeader Variables ---');
-  console.log('GroupDetailHeader: isJoined:', isJoined);
-  console.log('GroupDetailHeader: isLeader:', isLeader);
-  console.log('GroupDetailHeader: myid:', myid, `(${typeof myid})`);
   console.log('GroupDetailHeader: group:', group);
   console.log('GroupDetailHeader: groupMembers:', groupMembers);
   console.log('-----------------------------------');
 
    React.useEffect(() => {
    if (myGroupMemberInfo) {
-      setIsAlarmOn(myGroupMemberInfo.alarm);
-    }
+      setIsAlarmOn(myGroupMemberInfo.isAlarm);
+   }
   }, [myGroupMemberInfo]);
+
   const handleMenuClick = async (action: string) => {
     switch (action) {
       case 'edit':
@@ -121,8 +121,10 @@ export const GroupDetailHeader = ({
      try {
       await updateGroupMemberAlarm(group.groupId, newAlarmState); 
        setIsAlarmOn(newAlarmState); 
-      setAlarmStatusMessage(`알림 ${newAlarmState ? '켜짐' : '꺼짐'} ✅`);
+      setAlarmStatusMessage(`알림 ${newAlarmState ? '꺼짐' : '켜짐'} ✅`);
       setShowAlarmStatusBadge(true);
+
+      onRefreshMembers();
 
       // 3초 후에 배지를 숨깁니다.
        setTimeout(() => {
@@ -157,13 +159,14 @@ export const GroupDetailHeader = ({
               size="sm" 
                onClick={handleToggleAlarm}
                className="hover:bg-accent p-1"
-              title={isAlarmOn ? "알림 끄기" : "알림 켜기"}
+              title={isAlarmOn ? "알림 켜기" : "알림 끄기"}
             >
               {isAlarmOn ?
+               (
+                <Bell className="h-5 w-5 text-card-foreground" />
+              ) : 
               (
                 <BellOff className="h-5 w-5 text-muted-foreground" />
-              ) :  (
-                <Bell className="h-5 w-5 text-card-foreground" />
               )}
              </Button>
           )}

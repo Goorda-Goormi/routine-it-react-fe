@@ -360,7 +360,7 @@ const toKst = useCallback((dateString: string) => {
             groupId: groupId,
             leaderId: myid,
             targetMemberId: authRequest.targetGroupMemberId,
-            approved: true,
+            //approved: true,
             isApproved:true,
             imageUrl: authRequest.imageUrl,
             activityDate: new Date().toISOString().split('T')[0],
