@@ -529,6 +529,15 @@ const handleAuthSubmit = async (data: { description: string; image: File | null;
         imageUrl: imageKey,
         isPublic: data.isPublic,
       };
+
+      const response = await createGroupActivity(activityData);
+      const newActivityId = response?.data?.userActivityId || response?.userActivityId || response?.data?.activityId || response?.activityId;
+
+      if (!newActivityId) {
+        console.error("활동 생성 응답에서 ID를 받지 못했습니다:", response);
+        throw new Error("활동 생성은 되었으나 ID를 받지 못해 완료 처리에 실패했습니다.");
+      }
+
       await createGroupActivity(activityData);
       await updateRankingScore(myUserId, group.groupId, 1);
 
@@ -558,7 +567,7 @@ const handleAuthSubmit = async (data: { description: string; image: File | null;
       });
 
       alert('인증이 성공적으로 제출되었습니다.');
-      onGroupRoutineComplete?.();
+      onGroupRoutineComplete?.(group.groupId, newActivityId);
       console.log("인증 제출 완료:", activityData);
     } catch (error) {
       alert('인증 제출에 실패했습니다.');
