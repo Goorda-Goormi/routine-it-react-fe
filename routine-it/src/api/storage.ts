@@ -31,9 +31,6 @@ function toForm(data: Record<string, string>) {
 // ✅ 1. 인증 헤더를 추가하는 헬퍼 함수 (재사용을 위함)
 async function fetchWithAuth(url: string, options: RequestInit) {
     const accessToken = localStorage.getItem('accessToken');
-    
-    // ✅ 이 부분을 추가해서 accessToken 값을 확인하세요.
-    console.log("현재 accessToken:", accessToken);
 
     const headers = new Headers(options.headers);
     if (accessToken) {
