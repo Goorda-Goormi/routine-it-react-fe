@@ -256,7 +256,7 @@ export const GroupDetailHeader = ({
                   <div className="text-xs text-muted-foreground mt-1">그룹 유형</div>
                 </div>
                 <div className="text-center">
-                  <div className="font-bold text-card-foreground text-sm truncate">{group.authDays ? formatAuthDays(group.authDays) : 'N/A'}</div>
+                  <div className="font-bold text-card-foreground ">{group.authDays ? formatAuthDays(group.authDays) : 'N/A'}</div>
                   <div className="text-xs text-muted-foreground">인증 요일</div>
                 </div>
                 <div className="text-center">
