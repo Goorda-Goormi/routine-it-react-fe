@@ -208,7 +208,7 @@ export function MyPageScreen({ onNavigate, isDarkMode, onToggleDarkMode, onToggl
     },
     { 
       label: '최대 연속', 
-      value: (user.maxStreakDays ?? 0).toLocaleString(), 
+      value: (attendanceData?.summary.longestStreak ?? 0).toLocaleString(),
       unit: '일',
       icon: Flame,
       bgColor: 'bg-yellow-500/40 dark: bg-yellow-500/20',

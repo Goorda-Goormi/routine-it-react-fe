@@ -47,7 +47,7 @@ import type { PersonalRoutineResponse, PersonalRoutineCreatePayload, PersonalRou
 import { createGroup, getAllGroups,getJoinedGroups,getGroupMembers, requestJoinGroup, updateGroupMemberAlarm } from "./api/group";
 import { updateRankingScore, getPersonalRankings, getUserTotalScore, getGlobalGroupRanking } from "./api/ranking";
 import { getMonthlyReview } from './api/review';
-import type { IPersonalRankingResponse, UserTotalScoreResponse } from './interfaces';
+import type { IPersonalRankingResponse, UserTotalScoreResponse, IPersonalRankingData } from './interfaces';
 import type { GlobalGroupRankingData } from "./pages/Ranking/RankingScreen";import { toggleDarkMode as toggleDarkModeAPI, toggleAlarm as toggleAlarmAPI } from './api/setting';
 import { getNotifications, markNotificationAsRead } from "./api/notification";
 import type { NotificationApiResponse, NotificationType } from "./interfaces";
@@ -57,6 +57,27 @@ const BASE_URL = import.meta.env.VITE_API_BASE_URL;
 interface NavigationState {
   screen: string;
   params?: any;
+}
+
+type PersonalRankingPaginationObject = {
+  content: IPersonalRankingData[];
+  last: boolean;
+  empty: boolean;
+  first: boolean;
+  number: number;
+  numberOfElements: number;
+  pageable: any; 
+  size: number;
+  sort: any; 
+  totalElements: number;
+  totalPages: number;
+}
+
+// 2. 랭킹 API가 페이지네이션으로 응답할 때의 전체 응답 타입입니다.
+type PaginatedPersonalRankingResponse = {
+  success: boolean;
+  message: string;
+  data: PersonalRankingPaginationObject;
 }
 
 const getLocalDateString = (date: Date): string => {
@@ -1681,27 +1702,51 @@ const fetchRankingData = async () => {
 
 // 사용자 총 점수를 가져오는 별도의 함수 (필요한 곳에서 재사용 가능)
 const fetchUserTotalScore = async () => {
-  if (!isLoggedIn) return;
-  setLoadingUserTotalScore(true);
-  try {
-    const response = await getPersonalRankings(UserInfo.id as number);
+  if (!isLoggedIn || !UserInfo) {
+    console.log("fetchUserTotalScore: Canceled (no login or UserInfo)");
+    return;
+  }
   
-    if (response.success && Array.isArray(response.data) && response.data.length > 0) {
-        // 랭킹 데이터의 첫 번째 항목(내 랭킹)에서 totalScore를 가져옵니다.
-        const myMonthlyScore = response.data[0].totalScore;
-        setUserTotalScore(myMonthlyScore);
-        console.log("이번 달 개인 점수 (개인 랭킹 기반):", myMonthlyScore);
+  setLoadingUserTotalScore(true);
+  
+  try {
+    let allRankings: IPersonalRankingData[] = [];
+    let page = 0;
+    let hasMore = true;
+    const pageSize = 50;
+    let foundScore: number | null = null;
+
+    while (hasMore) {
+      const response = await getPersonalRankings(undefined, undefined, page, pageSize);
+      
+      const paginatedResponse = response as any as PaginatedPersonalRankingResponse;
+
+      if (paginatedResponse && paginatedResponse.data && paginatedResponse.data.content) {
+        allRankings = [...allRankings, ...paginatedResponse.data.content];
+       
+        if (paginatedResponse.data.last) { 
+          hasMore = false; 
+        } else {
+          page++; 
+        }
       } else {
-        // 랭킹 데이터가 아직 없으면 0점으로 처리합니다.
-        setUserTotalScore(0);
+        hasMore = false; 
       }
-    } catch (error) {
-      console.error("월별 사용자 점수 데이터를 불러오는데 실패했습니다.", error);
-      setUserTotalScore(null);
-    } finally {
-      setLoadingUserTotalScore(false);
     }
-  };
+    const myTotalScore = allRankings
+      .filter(entry => entry.userId === UserInfo.id) 
+      .reduce((sum, entry) => sum + entry.totalScore, 0); 
+    
+    setUserTotalScore(myTotalScore);
+    console.log("이번 달 개인 점수 (전체 랭킹 합산):", myTotalScore);
+    
+  } catch (error) {
+    console.error("월별 사용자 점수 데이터를 불러오는데 실패했습니다.", error);
+    setUserTotalScore(null); 
+  } finally {
+    setLoadingUserTotalScore(false);
+  }
+};
 
 const handleRankingTabClick = () => {
   // 탭 클릭 시 랭킹 데이터만 새로고침
