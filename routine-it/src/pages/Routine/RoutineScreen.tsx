@@ -53,7 +53,9 @@ import React, { useState, useEffect } from 'react';
    const [displayedRecommendations, setDisplayedRecommendations] = useState<RecommendedRoutine[]>([]);
    const [randomizedRecommendations, setRandomizedRecommendations] = useState<RecommendedRoutine[]>([]);
    const [personalFilter, setPersonalFilter] = useState('all');
+   const [dayFilter, setDayFilter] = useState('all');
    const [groupFilter, setGroupFilter] = useState('all');
+   const [groupCategoryFilter, setGroupCategoryFilter] = useState('all');
    const todayDay = getTodayDayOfWeek();
    const todayRoutines = allRoutines.filter(routine => {
      if (routine.frequency && Array.isArray(routine.frequency)) {
@@ -75,11 +77,16 @@ import React, { useState, useEffect } from 'react';
    const personalRoutines = allRoutines
     .filter(routine => !routine.isGroupRoutine)
     .filter(routine => personalFilter === 'all' || routine.category === personalFilter)
+    .filter(routine => {
+      if (dayFilter === 'all') return true;
+      return routine.frequency && Array.isArray(routine.frequency) && routine.frequency.includes(dayFilter);
+    })
     .sort((a, b) => (a.time || '99:99').localeCompare(b.time || '99:99'));
 
    const groupRoutines = allRoutines
     .filter(routine => routine.isGroupRoutine)
     .filter(routine => groupFilter === 'all' || routine.type === groupFilter)
+    .filter(routine => groupCategoryFilter === 'all' || routine.category === groupCategoryFilter)
     .sort((a, b) => (a.time || '99:99').localeCompare(b.time || '99:99'));
 
     useEffect(() => {
@@ -321,26 +328,44 @@ import React, { useState, useEffect } from 'react';
                  <User className="h-4 w-4 icon-accent" />
                  <span>개인 루틴</span>
                </CardTitle>
-               <Select value={personalFilter} onValueChange={setPersonalFilter}>
-                <SelectTrigger className="w-[100px] h-8 text-xs">
-                  <SelectValue placeholder="필터" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">전체</SelectItem>
-                  <SelectItem value="health">🏥 건강</SelectItem>
-                  <SelectItem value="exercise">💪 운동</SelectItem>
-                  <SelectItem value="study">📚 학습</SelectItem>
-                  <SelectItem value="lifestyle">🏠 생활</SelectItem>
-                  <SelectItem value="hobby">🎨 취미</SelectItem>
-                </SelectContent>
-               </Select>
+               <div className="flex items-center space-x-2">
+                 {/* 요일 필터 Select */}
+                 <Select value={dayFilter} onValueChange={setDayFilter}>
+                  <SelectTrigger className="w-[100px] h-8 text-xs">
+                    <SelectValue placeholder="요일" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">요일</SelectItem>
+                    <SelectItem value="월">월</SelectItem>
+                    <SelectItem value="화">화</SelectItem>
+                    <SelectItem value="수">수</SelectItem>
+                    <SelectItem value="목">목</SelectItem>
+                    <SelectItem value="금">금</SelectItem>
+                    <SelectItem value="토">토</SelectItem>
+                    <SelectItem value="일">일</SelectItem>
+                  </SelectContent>
+                 </Select>
+
+                <Select value={personalFilter} onValueChange={setPersonalFilter}>
+                  <SelectTrigger className="w-[100px] h-8 text-xs">
+                    <SelectValue placeholder="필터" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">카테고리</SelectItem>
+                    <SelectItem value="health">🏥 건강</SelectItem>
+                    <SelectItem value="exercise">💪 운동</SelectItem>
+                    <SelectItem value="study">📚 학습</SelectItem>
+                    <SelectItem value="lifestyle">🏠 생활</SelectItem>
+                    <SelectItem value="hobby">🎨 취미</SelectItem>
+                  </SelectContent>
+                </Select>
+               </div>
              </CardHeader>
              <CardContent className="pt-0">
                <div className="space-y-0">
                  {personalRoutines.length > 0 ? (
                    personalRoutines.map((routine, index) => renderRoutineCard(routine, index, index === personalRoutines.length - 1))
                  ) : (
-                   // ▼▼▼ [수정] 개인 루틴이 없을 때 표시할 문구를 조건부로 변경합니다. ▼▼▼
                    <div className="py-8 text-center text-sm text-muted-foreground">
                      {personalFilter === 'all' ? (
                        <>
@@ -364,16 +389,34 @@ import React, { useState, useEffect } from 'react';
                  <GroupIcon className="h-4 w-4 icon-accent" />
                  <span>그룹 루틴</span>
                </CardTitle>
-               <Select value={groupFilter} onValueChange={setGroupFilter}>
-                <SelectTrigger className="w-[100px] h-8 text-xs">
-                  <SelectValue placeholder="필터" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">전체</SelectItem>
-                  <SelectItem value="자유참여">자유참여</SelectItem>
-                  <SelectItem value="의무참여">의무참여</SelectItem>
-                </SelectContent>
-               </Select>
+               <div className="flex items-center space-x-2">
+                 {/* 카테고리 필터 Select */}
+                 <Select value={groupCategoryFilter} onValueChange={setGroupCategoryFilter}>
+                  <SelectTrigger className="w-[100px] h-8 text-xs">
+                    <SelectValue placeholder="카테고리" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">카테고리</SelectItem>
+                    <SelectItem value="health">🏥 건강</SelectItem>
+                    <SelectItem value="exercise">💪 운동</SelectItem>
+                    <SelectItem value="study">📚 학습</SelectItem>
+                    <SelectItem value="lifestyle">🏠 생활</SelectItem>
+                    <SelectItem value="hobby">🎨 취미</SelectItem>
+                  </SelectContent>
+                 </Select>
+
+                 {/* 기존 유형 필터 Select */}
+                 <Select value={groupFilter} onValueChange={setGroupFilter}>
+                  <SelectTrigger className="w-[100px] h-8 text-xs">
+                    <SelectValue placeholder="유형" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">그룹 유형</SelectItem>
+                    <SelectItem value="자유참여">자유참여</SelectItem>
+                    <SelectItem value="의무참여">의무참여</SelectItem>
+                  </SelectContent>
+                 </Select>
+               </div>
              </CardHeader>
              <CardContent className="pt-0">
                <div className="space-y-0">

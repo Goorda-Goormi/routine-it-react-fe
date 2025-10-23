@@ -187,7 +187,7 @@ const transformGroupToRoutine = (group: Group): Routine => {
     // 2. 헬퍼 함수 및 타입 변환
     time: convertAlarmTimeToTimeString(group.alarmTime),
     frequency: convertAuthDaysToFrequency(group.authDays),
-    type: group.groupType === 'REQUIRED' ? '의무참여' : '자율참여',
+    type: group.groupType === 'REQUIRED' ? '의무참여' : '자유참여',
 
     // 3. Routine 객체에 필요하지만 Group 객체에 없는 필드 (기본값 설정)
     completed: false, 
