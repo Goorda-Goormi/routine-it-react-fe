@@ -538,7 +538,7 @@ const handleAuthSubmit = async (data: { description: string; image: File | null;
         throw new Error("활동 생성은 되었으나 ID를 받지 못해 완료 처리에 실패했습니다.");
       }
 
-      await createGroupActivity(activityData);
+      //await createGroupActivity(activityData);
       await updateRankingScore(myUserId, group.groupId, 1);
 
       let messageText: string;
