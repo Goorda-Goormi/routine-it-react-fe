@@ -19,7 +19,7 @@ import { getGroupTop3Ranking } from '../../../api/ranking';
 import type { GlobalGroupRankingData } from '../../Ranking/RankingScreen';
 import { fetchChatHistory } from '../../../api/chat';
 import { getUserProfile } from '../../../api/user';
-import { getNotificationsByType, NotificationType } from '../../../api/notification';
+import { getNotificationsByType, markNotificationAsRead } from '../../../api/notification';
 import { presignGet } from '../../../api/storage';
 interface GroupDetailScreenProps {
     groupId: number;
@@ -178,11 +178,12 @@ export function GroupDetailScreen({
     if (!group) return;
     try {
         const notifications = await getNotificationsByType('GROUP_TODAY_AUTH_REQUEST');
+        const unreadNotifications = notifications.filter(n => !n.read);
         const chatHistory = await fetchChatHistory(groupId, 500);
         const chatMessages = chatHistory.data?.content || [];
 
         const authRequestList = await Promise.all( // Promise.all을 사용하여 비동기 처리
-            notifications
+            unreadNotifications
                 .filter(notification => notification.groupName === group.groupName && notification.receiverName === currentUser.nickname)
                 .map(async notification => { // async 키워드를 추가
                     const memberInfo = groupMembers.find(member => member.memberName === notification.senderName);
@@ -382,6 +383,8 @@ export function GroupDetailScreen({
             newSet.add(authRequest.nickname);
             return newSet;
         });
+
+        await markNotificationAsRead(notificationId, true);
         
         setAuthRequests(prev => prev.filter(auth => auth.id !== notificationId));
         setPendingAuthCount(prev => prev - 1);
@@ -419,6 +422,7 @@ export function GroupDetailScreen({
         await approveAuthRequest(groupId, payload);
         console.log(`알림 ID ${notificationId}에 대한 루틴 인증을 거절했습니다.`);
         
+        await markNotificationAsRead(notificationId, true);
         // UI 상태 업데이트 로직은 그대로 유지
         setAuthRequests(prev => prev.filter(auth => auth.id !== notificationId));
         setPendingAuthCount(prev => prev - 1);
