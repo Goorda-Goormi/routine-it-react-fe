@@ -57,3 +57,61 @@ export const fetchChatHistoryByPage = async (
     throw error;
   }
 };
+
+
+// 특정 메시지의 모든 이모지 리액션을 조회
+export const fetchMessageReactions = async (messageId: number): Promise<object> => {
+  try {
+    const response = await apiFetch(`/api/chat/messages/${messageId}/reactions`);
+    return response;
+    } catch (error) {
+    console.error(`메시지 ${messageId}의 리액션 조회 오류:`, error);
+    throw error;
+  }
+};
+
+ // 채팅 메시지에 이모지 리액션을 추가
+export const addMessageReaction = async (messageId: number, emoji: string): Promise<object> => {
+  try {
+    const response = await apiFetch(`/api/chat/messages/${messageId}/reactions`, {
+      method: 'POST',
+      headers: {
+      'Content-Type': 'application/json',
+      },
+    body: JSON.stringify({ messageId, emoji }),
+    });
+  return response;
+  } catch (error) {
+    console.error(`메시지 ${messageId}에 리액션 '${emoji}' 추가 오류:`, error);
+    throw error;
+  }
+  };
+
+
+// 특정 메시지의 이모지별 리액션 요약 정보를 조회
+
+export const fetchReactionSummary = async (messageId: number): Promise<object> => {
+  try {
+    const response = await apiFetch(`/api/chat/messages/${messageId}/reactions/summary`);
+    return response;
+  } catch (error) {
+    console.error(`메시지 ${messageId}의 리액션 요약 조회 오류:`, error);
+    throw error;
+  }
+};
+
+
+ // 채팅 메시지에서 이모지 리액션을 제거
+export const removeMessageReaction = async (messageId: number, emoji: string): Promise<object> => {
+  try {
+     // URL의 {emoji} 부분은 인코딩되어야 할 수 있습니다 (예: 슬래시 같은 특수 문자 방지)
+    const encodedEmoji = encodeURIComponent(emoji);
+    const response = await apiFetch(`/api/chat/messages/${messageId}/reactions/${encodedEmoji}`, {
+       method: 'DELETE',
+    });
+    return response;
+  } catch (error) {
+    console.error(`메시지 ${messageId}에서 리액션 '${emoji}' 제거 오류:`, error);
+    throw error;
+  }
+};

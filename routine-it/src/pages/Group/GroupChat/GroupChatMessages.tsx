@@ -5,7 +5,7 @@ import { Button } from '../../../components/ui/button';
 import { Smile, CheckCircle, Clock } from 'lucide-react';
 import type { Message, Group } from './GroupChatScreen';
 import type { UserProfile } from '../../../interfaces';
-import { presignGet } from '../../../api/storage'; // S3 URL을 가져오는 API import
+import { presignGet } from '../../../api/storage'; 
 
 interface GroupChatMessagesProps {
     messages: Message[];
@@ -16,14 +16,14 @@ interface GroupChatMessagesProps {
     memberProfiles: Record<number, string>;
     onScrollTop: () => void; 
     onScroll:() => void;
+    onReactionClick: (messageId: number | null, emoji: string) => void;
 }
 
 export const GroupChatMessages = forwardRef<HTMLDivElement, GroupChatMessagesProps>(
-    ({ messages, myUserId, getUserInfo, group, memberProfiles, onScrollTop, onScroll }, ref) => {
-        const [localReactions, setLocalReactions] = useState<{ [key: string]: { [emoji: string]: number } }>({});
-        const [hoveredMessageKey, setHoveredMessageKey] = useState<string | null>(null);
+    ({ messages, myUserId, getUserInfo, group, memberProfiles, onScrollTop, onScroll,onReactionClick }, ref) => {
+       const [hoveredMessageKey, setHoveredMessageKey] = useState<string | null>(null);
         
-        // 이미지 URL을 관리하기 위한 로컬 상태 추가
+
         const [imageUrls, setImageUrls] = useState<Record<string, string>>({});
 
         const emojis = ['😀', '😂', '👍', '❤️', '👏', '💪', '🎉', '🔥', '🤔', '😊', '😭', '😎', '👌', '🙏', '🤯'];
@@ -44,7 +44,7 @@ export const GroupChatMessages = forwardRef<HTMLDivElement, GroupChatMessagesPro
             }
         }, [ref, onScrollTop, onScroll]);
 
-        // ✅ 이미지 로딩 로직 추가
+
         useEffect(() => {
             messages.forEach(async (msg) => {
                 const messageKey = `${msg.senderNickname}-${msg.sentAt}-${msg.message || ''}-${msg.imageUrl || ''}-${msg.albumImages ? msg.albumImages.join(',') : ''}`;
@@ -61,28 +61,28 @@ export const GroupChatMessages = forwardRef<HTMLDivElement, GroupChatMessagesPro
                 
                 // 앨범 이미지가 있고, blob이 아니며, 아직 URL을 가져오지 않은 경우
                 if (msg.albumImages && msg.albumImages.length > 0) {
-                     const albumUrls: string[] = [];
-                     for (const albumKey of msg.albumImages) {
-                         if (!albumKey.startsWith('blob:') && !imageUrls[albumKey]) {
-                             try {
-                                 const { url } = await presignGet(albumKey);
-                                 albumUrls.push(url);
-                             } catch (error) {
-                                 console.error(`S3 앨범 이미지 로드 실패: ${albumKey}`, error);
-                             }
-                         } else {
+                    const albumUrls: string[] = [];
+                    for (const albumKey of msg.albumImages) {
+                        if (!albumKey.startsWith('blob:') && !imageUrls[albumKey]) {
+                            try {
+                                const { url } = await presignGet(albumKey);
+                                albumUrls.push(url);
+                            } catch (error) {
+                                console.error(`S3 앨범 이미지 로드 실패: ${albumKey}`, error);
+                            }
+                        } else {
                             albumUrls.push(albumKey);
-                         }
-                     }
-                     setImageUrls(prev => {
-                         const newUrls = { ...prev };
-                         msg.albumImages?.forEach((key, index) => {
-                             if (albumUrls[index]) {
-                                 newUrls[key] = albumUrls[index];
-                             }
-                         });
-                         return newUrls;
-                     });
+                        }
+                    }
+                    setImageUrls(prev => {
+                        const newUrls = { ...prev };
+                        msg.albumImages?.forEach((key, index) => {
+                            if (albumUrls[index]) {
+                                newUrls[key] = albumUrls[index];
+                            }
+                        });
+                        return newUrls;
+                    });
                 }
             });
         }, [messages, imageUrls]);
@@ -146,32 +146,11 @@ export const GroupChatMessages = forwardRef<HTMLDivElement, GroupChatMessagesPro
 
             if (isDifferent) renderedDates.add(dateKey);
             return isDifferent;
+ 
         };
-
         const renderedDates = new Set<string>();
-
-        const handleLocalReactionClick = (messageKey: string, emoji: string) => {
-            setLocalReactions(prev => {
-                const newReactions = { ...prev };
-                if (!newReactions[messageKey]) {
-                    newReactions[messageKey] = {};
-                }
-                const currentCount = newReactions[messageKey][emoji] || 0;
-
-                if (currentCount > 0) {
-                     newReactions[messageKey][emoji] = currentCount - 1;
-                     if (newReactions[messageKey][emoji] === 0) {
-                         delete newReactions[messageKey][emoji];
-                         if (Object.keys(newReactions[messageKey]).length === 0) {
-                             delete newReactions[messageKey];
-                         }
-                     }
-                 } else {
-                     newReactions[messageKey][emoji] = 1;
-                 }
-
-                return newReactions;
-            });
+        const handleReactionButtonClick = (msg: Message, emoji: string) => {
+            onReactionClick(msg.id, emoji); 
         };
 
         return (
@@ -185,10 +164,9 @@ export const GroupChatMessages = forwardRef<HTMLDivElement, GroupChatMessagesPro
                     }
 
                     const showDateSeparator = isDifferentDay(msg, messages, index, renderedDates);
-                    const reactionsToDisplay = localReactions[messageKey] || {};
+                    const reactionsToDisplay = msg.reactions || {}; 
                     const profileImageUrl = memberProfiles[msg.userId] || null;
 
-                    // ✅ 표시할 이미지 URL 결정: 낙관적 업데이트 URL이 있으면 그걸 사용하고, 없으면 S3에서 로드한 URL을 사용
                     const displayImageUrl = msg.imageUrl?.startsWith('blob:') ? msg.imageUrl : imageUrls[messageKey] || msg.imageUrl;
                     const displayAlbumUrls = msg.albumImages?.map(albumKey => imageUrls[albumKey] || albumKey) || [];
 
@@ -234,15 +212,14 @@ export const GroupChatMessages = forwardRef<HTMLDivElement, GroupChatMessagesPro
                                                 {!msg.isMe && (
                                                     <div className="flex items-center space-x-1 mb-1">
                                                         <span className="text-xs text-muted-foreground">{getUserInfo(msg)?.nickname}</span>
-                                                        
                                                     </div>
                                                 )}
                                                 <div
                                                     className={`rounded-lg px-3 py-2 max-w-full break-words ${
                                                         msg.messageType === 'NOTICE'
                                                             ? (group.groupType === 'REQUIRED'
-                                                                ? 'bg-[var(--notice-required-bg)] border border-[var(--notice-required-border)] text-[var(--notice-required-text)]'
-                                                                : 'bg-[var(--notice-optional-bg)] border border-[var(--notice-optional-border)] text-[var(--notice-optional-text)]')
+                                                                    ? 'bg-[var(--notice-required-bg)] border border-[var(--notice-required-border)] text-[var(--notice-required-text)]'
+                                                                    : 'bg-[var(--notice-optional-bg)] border border-[var(--notice-optional-border)] text-[var(--notice-optional-text)]')
                                                             : msg.isMe
                                                                 ? 'bg-chart-5 text-primary'
                                                                 : 'bg-muted text-foreground'
@@ -264,12 +241,11 @@ export const GroupChatMessages = forwardRef<HTMLDivElement, GroupChatMessagesPro
                                                                 )}
                                                             </div>
                                                             {msg.message && <span className="text-sm">{msg.message}</span>}
-                                                            {/* ✅ 수정된 이미지 로딩 로직 적용 */}
                                                             {displayImageUrl && <img src={displayImageUrl} alt="전송 이미지" className="max-w-[200px] h-auto rounded-md" />}
                                                         </div>
                                                     ) : (
                                                         <>
-                                                           {msg.imageUrl && displayImageUrl ? (
+                                                            {msg.imageUrl && displayImageUrl ? (
                                                                 <img src={displayImageUrl} alt="전송 이미지" className="max-w-[200px] h-auto rounded-md" />
                                                             ) : msg.albumImages && msg.albumImages.length > 0 ? (
                                                                 <div className="grid grid-cols-2 gap-2 max-w-[200px]">
@@ -308,7 +284,7 @@ export const GroupChatMessages = forwardRef<HTMLDivElement, GroupChatMessagesPro
                                                             variant="ghost"
                                                             size="sm"
                                                             className="text-lg p-1 h-8 w-8 hover:bg-muted"
-                                                            onClick={() => handleLocalReactionClick(messageKey, emoji)}
+                                                            onClick={() => handleReactionButtonClick(msg, emoji)}
                                                         >
                                                             {emoji}
                                                         </Button>
@@ -319,11 +295,19 @@ export const GroupChatMessages = forwardRef<HTMLDivElement, GroupChatMessagesPro
                                     </div>
                                     {Object.keys(reactionsToDisplay).length > 0 && (
                                         <div className={`absolute -bottom-2.5 ${msg.isMe ? 'right-2' : 'left-10'} flex space-x-0.5 rounded-full bg-background border px-1 py-0.5`}>
-                                            {Object.entries(reactionsToDisplay).map(([emoji, count]) => (
-                                                <span key={emoji} className="text-xs">
-                                                    {emoji} {count}
-                                                </span>
-                                            ))}
+                                           {Object.entries(reactionsToDisplay).map(([emoji, reactionData]) => {
+                                                const iReacted = reactionData.userIds.includes(myUserId);
+                                                return (
+                                                    <span
+                                                    key={emoji}
+                                                    className={`text-xs px-1 rounded-full flex items-center gap-1 transition-colors duration-200
+                                                        ${iReacted ? 'bg-pink-100 text-pink-600' : 'bg-transparent text-foreground'}
+                                                    `}
+                                                    >
+                                                    {emoji} {reactionData.count}
+                                                    </span>
+                                                );
+                                                })}
                                         </div>
                                     )}
                                 </div>

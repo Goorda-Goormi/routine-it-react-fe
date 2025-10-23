@@ -14,13 +14,19 @@ import { leaveGroup } from '../../../api/chat';
 import { updateRankingScore } from '../../../api/ranking'; 
 import { createGroupActivity } from '../../../api/activity';
 import type { Group, UserProfile, GroupMemberResponse } from '../../../interfaces';
-import { fetchChatHistory } from '../../../api/chat';
+import { fetchChatHistory, fetchMessageReactions, addMessageReaction, removeMessageReaction } from '../../../api/chat';
 import { requestAuthApproval, getGroupMembers, deleteGroup,leaveGroupSelf } from '../../../api/group';
 import { getUserProfile } from '../../../api/user';
 import { presignGet, presignGroupRoomPut, uploadFileToS3, getContentTyp,presignProofShotPut,getContentType } from '../../../api/storage';
 
 export const BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://15.164.98.221:8080";
 const WS_CONNECTION_URL = `${BASE_URL}/ws`;
+
+export interface ReactionData {
+  emoji: string;      
+  count: number;     
+  userIds: number[]; 
+}
 
 export interface Message {
   id: number | null;
@@ -32,7 +38,9 @@ export interface Message {
   messageType: 'TALK' | 'AUTH' | 'NOTICE' | 'IMAGE' | 'ALBUM' | 'ONLINE' | 'OFFLINE' | 'MEMBER_JOIN' | 'MEMBER_LEAVE';
   sentAt: string | null;
   isMe: boolean;
-  reactions?: { [key: string]: number };
+  
+  reactions?: Record<string, ReactionData>; 
+  
   albumImages?: string[];
 }
 
@@ -68,7 +76,7 @@ export function GroupChatScreen({ group, groupmembers, onBack, onLeaveGroup, use
   const keyOf = (m: Message) =>
     `${m.messageType}:${m.userId}:${m.sentAt ?? ''}:${m.message ?? ''}:${m.imageUrl ?? ''}:${JSON.stringify(m.albumImages ?? [])}`;
 
-  // 스크롤 하단 유지 상태 갱신
+
   const handleScroll = () => {
     if (messagesEndRef.current) {
       const { scrollTop, scrollHeight, clientHeight } = messagesEndRef.current;
@@ -149,15 +157,27 @@ export function GroupChatScreen({ group, groupmembers, onBack, onLeaveGroup, use
         );
       }
 
-      const updatedHistory = messagesFromServer.map((msg) => ({
-        ...msg,
-        isMe:
-          msg.messageType === "MEMBER_JOIN" || msg.messageType === "MEMBER_LEAVE"
-            ? false
-            : msg.userId === myUserId,
-      }));
+const updatedHistory = messagesFromServer.map((msg) => {
+  let reactionMap: Record<string, ReactionData> = {}; // 초기화
 
-      // ✅ 기존 state와 합쳐서 저장
+  if (Array.isArray(msg.reactions)) {
+    reactionMap = (msg.reactions as ReactionData[]).reduce((acc, current) => {
+      acc[current.emoji] = current;
+      return acc;
+    }, {} as Record<string, ReactionData>);
+  }
+
+  return {
+    ...msg,
+    isMe:
+      msg.messageType === "MEMBER_JOIN" ||
+      msg.messageType === "MEMBER_LEAVE"
+        ? false 
+        : msg.userId === myUserId,
+    reactions: reactionMap,
+  };
+});
+
       setMessages((prev) => {
         const newOnes = updatedHistory.filter(
           (newMsg) =>
@@ -171,7 +191,6 @@ export function GroupChatScreen({ group, groupmembers, onBack, onLeaveGroup, use
       });
     } catch (error) {
       console.error("채팅 기록 로딩 실패:", error);
-      // setMessages([]);  // ❌ 이거 지워야 기록 안 날아감
     } finally {
       setIsLoadingHistory(false);
     }
@@ -397,11 +416,10 @@ const handleSendImage = async (file: File) => {
        // 케이스 3: 멤버가 2명 이상 & 내가 멤버 (리더 아님) -> 그룹 탈퇴
       if (!window.confirm("정말로 이 채팅에서 나가시겠습니까? (그룹 탈퇴)")) return;
        try {
-            // ⚠️ 수정된 로직: 리더 권한이 필요 없는 자발적 탈퇴 API 호출
             await leaveGroupSelf(groupId); 
             
             alert("성공적으로 탈퇴했습니다.");
-            onLeaveGroup(groupId); // 그룹 탈퇴 성공 콜백
+            onLeaveGroup(groupId); 
             
         } catch (error) {
             console.error("그룹 탈퇴 오류:", error);
@@ -413,23 +431,63 @@ const handleSendImage = async (file: File) => {
     }
   };
 
-  const handleReactionClick = (messageKey: string, emoji: string) => {
-    setMessages((prevMessages) =>
-      prevMessages.map((msg) => {
-        if (`${msg.senderNickname}-${msg.sentAt}-${msg.message}` === messageKey) {
-          const newReactions = { ...msg.reactions };
-          if (newReactions[emoji]) {
-            newReactions[emoji]--;
-            if (newReactions[emoji] === 0) delete newReactions[emoji];
-          } else {
-            newReactions[emoji] = 1;
-          }
-          return { ...msg, reactions: newReactions };
-        }
-        return msg;
-      })
-    );
-  };
+ const handleReactionClick = async (messageId: number | null, emoji: string) => {
+  if (!messageId) {
+    console.error("메시지 ID가 없어 리액션 처리를 할 수 없습니다.");
+    return;
+  }
+
+  try {
+    const targetMessage = messages.find((m) => m.id === messageId);
+    if (!targetMessage) return;
+
+    //현재 reactions 복사 
+    const currentReactions: Record<string, ReactionData> = { ...(targetMessage.reactions || {}) };
+
+    const existing: ReactionData | undefined = currentReactions[emoji];
+    const userAlreadyReacted = existing?.userIds?.includes(myUserId) ?? false;
+
+    //낙관적 UI 업데이트용 복제
+    const updatedReactions: Record<string, ReactionData> = { ...currentReactions };
+
+    if (userAlreadyReacted) {
+      const newUserIds = existing!.userIds.filter((id) => id !== myUserId);
+      const newCount = Math.max((existing!.count || 1) - 1, 0);
+
+      if (newCount <= 0) {
+        delete updatedReactions[emoji];
+      } else {
+        updatedReactions[emoji] = { emoji, count: newCount, userIds: newUserIds };
+      }
+
+      setMessages((prev) =>
+        prev.map((m) => (m.id === messageId ? { ...m, reactions: updatedReactions } : m))
+      );
+
+
+      await removeMessageReaction(messageId, emoji);
+      console.log(`✅ 메시지 ${messageId}에서 리액션 '${emoji}' 제거 성공`);
+    } else {
+
+      const newUserIds = [...(existing?.userIds || []), myUserId];
+      const newCount = (existing?.count || 0) + 1;
+
+      updatedReactions[emoji] = { emoji, count: newCount, userIds: newUserIds };
+
+      // UI 먼저 반영
+      setMessages((prev) =>
+        prev.map((m) => (m.id === messageId ? { ...m, reactions: updatedReactions } : m))
+      );
+
+
+      await addMessageReaction(messageId, emoji);
+      console.log(`✅ 메시지 ${messageId}에 리액션 '${emoji}' 추가 성공`);
+    }
+  } catch (error) {
+    console.error(`리액션 처리 중 오류 발생 (메시지 ${messageId}, 이모지 ${emoji}):`, error);
+    alert("리액션 처리 중 오류가 발생했습니다. 다시 시도해주세요.");
+  }
+};
 
   const getUserInfoFromMsg = (msg: Message): UserProfile | undefined => {
     if (msg.senderNickname === myNickname) {
@@ -462,7 +520,7 @@ const handleAuthSubmit = async (data: { description: string; image: File | null;
       const { uploadUrl, key } = await presignProofShotPut(group.groupId, myUserId, data.image);
       const contentType = getContentType(data.image.name, data.image.type);
       await uploadFileToS3(uploadUrl, data.image, contentType);
-      imageKey = key; // ✅ presigned key만 저장
+      imageKey = key; 
     }
 
       const activityData = {
@@ -579,6 +637,7 @@ const handleAuthSubmit = async (data: { description: string; image: File | null;
         ref={messagesEndRef}
         onScrollTop={loadMoreChatHistory}
         onScroll={handleScroll}
+        onReactionClick={handleReactionClick}
       />
 
       <GroupChatInput
