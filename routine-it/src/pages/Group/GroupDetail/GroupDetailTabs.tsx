@@ -114,7 +114,7 @@ export const GroupDetailTabs = ({
                     <CardHeader className="pb-3">
                         <CardTitle className="flex items-center space-x-2 text-base text-card-foreground">
                             <Trophy className="h-4 w-4 icon-accent" />
-                            <span>주간 순위</span>
+                            <span>월간 순위</span>
                         </CardTitle>
                     </CardHeader>
                     <CardContent className="pt-0">
