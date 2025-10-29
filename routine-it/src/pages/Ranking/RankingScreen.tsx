@@ -171,8 +171,11 @@ export function RankingScreen({
         currentRank: index + 1,
         profileImageUrl: userProfiles[user.userId] || user.profileImageUrl || undefined,
       }));
+
+      
   }, [rawPersonalRankings, userProfiles]);
 
+ // console.log("Merged Personal Rankings:", mergedPersonalRankings);
   const getRankIcon = (rank: number) => {
     switch (rank) {
       case 1:
@@ -199,6 +202,7 @@ export function RankingScreen({
   
   const groupRankings = groupRankingData?.data?.rankings || [];
   const myGroupIds = groups.map(group => group.groupId);
+  //console.log("groupRankings:", groupRankings);
 
   return (
     <div className="h-full p-4">

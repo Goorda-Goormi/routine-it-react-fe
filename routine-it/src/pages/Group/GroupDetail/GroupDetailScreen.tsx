@@ -15,7 +15,7 @@ import {
     approveAuthRequest,
     type AuthApprovalPayload,
 } from '../../../api/group';
-import { getGroupTop3Ranking } from '../../../api/ranking';
+import { getGroupTop3Ranking,updateRankingScore } from '../../../api/ranking';
 import type { GlobalGroupRankingData } from '../../Ranking/RankingScreen';
 import { fetchChatHistory } from '../../../api/chat';
 import { getUserProfile } from '../../../api/user';
@@ -389,6 +389,18 @@ export function GroupDetailScreen({
         setAuthRequests(prev => prev.filter(auth => auth.id !== notificationId));
         setPendingAuthCount(prev => prev - 1);
         alert("루틴 인증을 승인했습니다.");
+
+        const targetMember = groupMembers.find(m => m.groupMemberId === authRequest.targetGroupMemberId);
+        if (targetMember?.userId) {
+            try {
+
+                await updateRankingScore(targetMember.userId, groupId, 1);
+                console.log(`사용자 ${targetMember.userId}의 랭킹 점수를 성공적으로 업데이트했습니다.`);
+            } catch (rankingError) {
+                console.error("랭킹 점수 업데이트 실패:", rankingError);
+                // 랭킹 업데이트 실패는 루틴 승인의 흐름을 막지 않도록 처리 (선택 사항)
+            }
+        }
     } catch (error) {
         console.error("루틴 인증 승인 처리에 실패했습니다:", error);
         alert("루틴 인증 승인 처리에 실패했습니다.");

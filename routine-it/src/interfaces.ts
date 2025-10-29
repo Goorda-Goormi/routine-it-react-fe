@@ -179,7 +179,19 @@ export interface IPersonalRankingData {
 export interface IPersonalRankingResponse {
   success: boolean;
   message: string;
-  data: IPersonalRankingData[];
+  data: {
+    totalElements: number;
+    totalPages: number;
+    pageable: any; 
+    size: number;
+    content: IPersonalRankingData[]; 
+    number: number;
+    sort: any;
+    numberOfElements: number;
+    first: boolean;
+    last: boolean;
+    empty: boolean;
+  };
 }
 
 // 사용자 총 점수 조회 시 필요한 로직 
