@@ -365,7 +365,7 @@ export function GroupDetailScreen({
         await approveAuthRequest(groupId, payload);
         console.log(`알림 ID ${notificationId}에 대한 루틴 인증을 승인했습니다.`);
         
-        const activityPayload = {
+        /*const activityPayload = {
             groupId: groupId,
             description: authRequest.message || '', 
             imageUrl: authRequest.s3Key, 
@@ -380,7 +380,7 @@ export function GroupDetailScreen({
             const newSet = new Set(prev);
             newSet.add(authRequest.nickname);
             return newSet;
-        });
+        });*/
 
         await markNotificationAsRead(notificationId, true);
         
