@@ -144,9 +144,9 @@ export async function getGlobalGroupRanking(
  * 현재 로그인한 사용자의 총 점수를 조회합니다.
  * @returns 모든 그룹의 활동 점수를 합산한 총 점수
  */
-export async function getUserTotalScore(): Promise<UserTotalScoreResponse> {
+export async function getUserTotalScore(userId: number): Promise<UserTotalScoreResponse> {
   try {
-    const responseData = await apiFetch("/api/rankings/me/total-score");
+    const responseData = await apiFetch(`/api/rankings/me/total-score?userId=${userId}`);
     return responseData as UserTotalScoreResponse;
   } catch (error) {
     console.error("사용자 총 점수 조회 실패:", error);

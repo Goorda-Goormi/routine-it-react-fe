@@ -1739,20 +1739,24 @@ const fetchUserTotalScore = async () => {
   setLoadingUserTotalScore(true);
   
   try {
+    // 1. RankingScreen처럼 모든 페이지의 랭킹 데이터를 가져옵니다.
     let allRankings: IPersonalRankingData[] = [];
     let page = 0;
     let hasMore = true;
-    const pageSize = 50;
-    let foundScore: number | null = null;
+    const pageSize = 50; // 랭킹 스크린과 동일하게 설정
 
     while (hasMore) {
+      // 2. getPersonalRankings를 호출합니다. (userId는 undefined)
       const response = await getPersonalRankings(undefined, undefined, page, pageSize);
       
+      // 3. App.tsx에 정의된 PaginatedPersonalRankingResponse 타입으로 캐스팅합니다.
       const paginatedResponse = response as any as PaginatedPersonalRankingResponse;
 
       if (paginatedResponse && paginatedResponse.data && paginatedResponse.data.content) {
+        // `paginatedResponse`를 사용하도록 수정
         allRankings = [...allRankings, ...paginatedResponse.data.content];
-       
+        
+        // `paginatedResponse`를 사용하도록 수정
         if (paginatedResponse.data.last) { 
           hasMore = false; 
         } else {
@@ -1762,6 +1766,8 @@ const fetchUserTotalScore = async () => {
         hasMore = false; 
       }
     }
+    
+    // 4. 모든 데이터를 가져온 후, 내 ID로 필터링하고 합산합니다.
     const myTotalScore = allRankings
       .filter(entry => entry.userId === UserInfo.id) 
       .reduce((sum, entry) => sum + entry.totalScore, 0); 
