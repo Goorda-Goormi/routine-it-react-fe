@@ -28,23 +28,15 @@ export interface GlobalGroupRankingData {
   success: boolean;
   message: string;
   data: {
-    content: IGroupRankingItem[];
-    empty: boolean;
-    first: boolean;
-    last: boolean;
-    number: number;
-    numberOfElements: number;
-    pageable: any; 
-    size: number;
-    sort: any; 
-    totalElements: number;
-    totalPages: number;
+    rankings: IGroupRankingItem[];
+    monthYear: string;
+    totalGroups: number;
+    updatedAt: string;
   };
 }
 
 interface RankingScreenProps {
   groups: Group[];
-  // 💡 personalRankingData prop을 제거하고, 컴포넌트 내부에서 직접 관리합니다.
   groupRankingData: GlobalGroupRankingData | null;
   userTotalScore: number | null;
   loadingGroupRanking: boolean;
@@ -68,8 +60,7 @@ export function RankingScreen({
   loadingUserTotalScore,
   myid,
 }: RankingScreenProps) {
-  console.log('내가 속한 그룹 ID들:', groups.map(group => group.groupId));
-  // 💡 personalRankingData 상태를 컴포넌트 내부에서 관리하도록 변경합니다.
+
   const [personalRankingData, setPersonalRankingData] = useState<IPersonalRankingResponse | null>(null);
   const [loadingPersonalRanking, setLoadingPersonalRanking] = useState(true);
 
@@ -206,7 +197,7 @@ export function RankingScreen({
   return CATEGORY_MAP[upperCaseCategory] || category;
 };
   
-  const groupRankings = groupRankingData?.data?.content || [];
+  const groupRankings = groupRankingData?.data?.rankings || [];
   const myGroupIds = groups.map(group => group.groupId);
 
   return (

@@ -107,7 +107,6 @@ export const getGroupTop3Ranking = async (
   }
 };
 
-// 그룹별 전체 랭킹 조회
 export async function getGlobalGroupRanking(
     monthYear?: string,
     category?: string,
@@ -134,7 +133,6 @@ export async function getGlobalGroupRanking(
             method: "GET",
         });
 
-        // ✅ 수정된 부분: response 객체 전체를 반환합니다.
         return response as GlobalGroupRankingData;
     } catch (error) {
         console.error("그룹별 전체 랭킹 조회 실패:", error);
