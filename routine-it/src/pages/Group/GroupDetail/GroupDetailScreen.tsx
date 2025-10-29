@@ -21,6 +21,7 @@ import { fetchChatHistory } from '../../../api/chat';
 import { getUserProfile } from '../../../api/user';
 import { getNotificationsByType, markNotificationAsRead } from '../../../api/notification';
 import { presignGet } from '../../../api/storage';
+import { createGroupActivity } from '../../../api/activity';
 interface GroupDetailScreenProps {
     groupId: number;
     groups: any[];
@@ -196,10 +197,11 @@ export function GroupDetailScreen({
                     );
 
                     let signedImageUrl = null;
-                    if (matchingMessage?.imageUrl) {
+                    const originalImageUrlKey = matchingMessage?.imageUrl || null;
+                    if (originalImageUrlKey) {
                         try {
-                            // ✅ 여기서 presignGet을 호출하여 이미지를 가져옵니다.
-                            const resp = await presignGet(matchingMessage.imageUrl, "inline");
+                            //presignGet을 호출
+                            const resp = await presignGet(originalImageUrlKey, "inline");
                             signedImageUrl = resp.url;
                             console.log("모달용 presign 발급 성공", signedImageUrl);
                         } catch (err) {
@@ -212,11 +214,12 @@ export function GroupDetailScreen({
                     return {
                         id: notification.id, 
                         nickname: notification.senderName,
-                        imageUrl: signedImageUrl, // presigned URL로 업데이트
+                        imageUrl: signedImageUrl, 
                         message: notification.content,
                         targetUserId: memberInfo?.userId || null,
                         targetGroupMemberId: memberInfo?.groupMemberId || null,
                         chatMsgId: chatMsgId,
+                        s3Key: originalImageUrlKey,
                     };
                 })
         );
@@ -309,22 +312,7 @@ export function GroupDetailScreen({
     };
 
 
-    const fetchMemberProfiles = async () => {
-        const profiles: Record<number, string> = {};
-        await Promise.all(groupMembers.map(async (member) => {
-            if (member.userId) {
-                try {
-                    const profileData = await getUserProfile(member.userId);
-                    profiles[member.userId] = profileData.profileImageUrl;
-                } catch (error) {
-                    console.error(`Failed to fetch profile for user ${member.userId}:`, error);
-                    profiles[member.userId] = '';
-                }
-            }
-        }));
-        setMemberProfiles(profiles);
-    };
-
+    
     const handleOpenApprovalModal = async () => {
         try {
             const pendingMembers = await getPendingMembersByGroupId(groupId);
@@ -364,7 +352,7 @@ export function GroupDetailScreen({
             targetMemberId: authRequest.targetGroupMemberId,
             //approved: true,
             isApproved:true,
-            imageUrl: authRequest.imageUrl,
+            imageUrl: authRequest.s3Key,
             activityDate: new Date().toISOString().split('T')[0],
             // 찾은 chatMsgId를 페이로드에 포함시킵니다.
             chatMsgId: authRequest.chatMsgId, 
@@ -377,7 +365,17 @@ export function GroupDetailScreen({
         await approveAuthRequest(groupId, payload);
         console.log(`알림 ID ${notificationId}에 대한 루틴 인증을 승인했습니다.`);
         
-        // UI 상태 업데이트 로직은 그대로 유지
+        const activityPayload = {
+            groupId: groupId,
+            description: authRequest.message || '', 
+            imageUrl: authRequest.s3Key, 
+            //isPublic: true, 
+            activityType: 'GROUP_AUTH_COMPLETE' as const, 
+        };
+
+        await createGroupActivity(activityPayload);
+        console.log("활동 레코드 생성");
+        // UI 상태 업데이트 
         setTodayCertifiedMembers(prev => {
             const newSet = new Set(prev);
             newSet.add(authRequest.nickname);
@@ -390,7 +388,7 @@ export function GroupDetailScreen({
         setPendingAuthCount(prev => prev - 1);
         alert("루틴 인증을 승인했습니다.");
 
-        const targetMember = groupMembers.find(m => m.groupMemberId === authRequest.targetGroupMemberId);
+        /*const targetMember = groupMembers.find(m => m.groupMemberId === authRequest.targetGroupMemberId);
         if (targetMember?.userId) {
             try {
 
@@ -401,6 +399,7 @@ export function GroupDetailScreen({
                 // 랭킹 업데이트 실패는 루틴 승인의 흐름을 막지 않도록 처리 (선택 사항)
             }
         }
+        */
     } catch (error) {
         console.error("루틴 인증 승인 처리에 실패했습니다:", error);
         alert("루틴 인증 승인 처리에 실패했습니다.");

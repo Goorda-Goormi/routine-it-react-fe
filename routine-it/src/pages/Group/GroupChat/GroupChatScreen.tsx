@@ -393,9 +393,9 @@ const handleSendImage = async (file: File) => {
     const isGroupLeader = myMemberInfo?.role === 'LEADER';
 
      const groupId = group.groupId;
-    const myMemberId = myMemberInfo?.groupMemberId;
-    const groupLeaderInfo = groupmembers.find(m => m.role === 'LEADER');
-    const leaderMemberId = groupLeaderInfo?.groupMemberId;
+//    const myMemberId = myMemberInfo?.groupMemberId;
+  //  const groupLeaderInfo = groupmembers.find(m => m.role === 'LEADER');
+  //  const leaderMemberId = groupLeaderInfo?.groupMemberId;
 
     if (memberCount === 1) {
        // 케이스 1: 멤버가 1명 (나 혼자) -> 그룹 삭제
@@ -528,18 +528,8 @@ const handleAuthSubmit = async (data: { description: string; image: File | null;
         description: data.description,
         imageUrl: imageKey,
         isPublic: data.isPublic,
+        activityType: 'GROUP_AUTH_COMPLETE' as const,
       };
-
-      const response = await createGroupActivity(activityData);
-      const newActivityId = response?.data?.userActivityId || response?.userActivityId || response?.data?.activityId || response?.activityId;
-
-      if (!newActivityId) {
-        console.error("활동 생성 응답에서 ID를 받지 못했습니다:", response);
-        throw new Error("활동 생성은 되었으나 ID를 받지 못해 완료 처리에 실패했습니다.");
-      }
-
-      //await createGroupActivity(activityData);
-
       let messageText: string;
       let messageType: 'NOTICE';
 
@@ -554,6 +544,16 @@ const handleAuthSubmit = async (data: { description: string; image: File | null;
           messageText = `${myNickname}님이 루틴을 인증했습니다: ${data.description}`;
           messageType = 'NOTICE';
           await updateRankingScore(myUserId, group.groupId, 1);
+
+          const response = await createGroupActivity(activityData);
+          const newActivityId = response?.data?.userActivityId || response?.userActivityId || response?.data?.activityId || response?.activityId;
+
+          if (!newActivityId) {
+            console.error("활동 생성 응답에서 ID를 받지 못했습니다:", response);
+            throw new Error("활동 생성은 되었으나 ID를 받지 못해 완료 처리에 실패했습니다.");
+          }
+          onGroupRoutineComplete?.(group.groupId, newActivityId);
+
       }
 
       const msgBody = {
@@ -569,8 +569,10 @@ const handleAuthSubmit = async (data: { description: string; image: File | null;
       });
 
       alert('인증이 성공적으로 제출되었습니다.');
-      onGroupRoutineComplete?.(group.groupId, newActivityId);
+      
       console.log("인증 제출 완료:", activityData);
+
+      console.log("✅ groupType 확인:", group.groupType);
     } catch (error) {
       alert('인증 제출에 실패했습니다.');
       console.error("🚨 최종 에러 핸들링:", error);

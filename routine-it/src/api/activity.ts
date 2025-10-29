@@ -67,7 +67,8 @@ export const createGroupActivity = async (data: {
   groupId: number;
   description: string;
   imageUrl: string | null;
-  isPublic: boolean;
+  isPublic?: boolean;
+  activityType: 'GROUP_AUTH_COMPLETE';
 }) => {
   const today = new Date();
   const formattedDate =
@@ -78,7 +79,7 @@ export const createGroupActivity = async (data: {
     ('0' + today.getDate()).slice(-2);
 
   const requestBody = {
-    activityType: 'GROUP_AUTH_COMPLETE',
+    activityType: data.activityType,
     groupId: data.groupId,
     imageUrl: data.imageUrl,
     isPublic: data.isPublic,
