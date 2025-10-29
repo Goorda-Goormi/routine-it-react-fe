@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
+import { EventSourcePolyfill } from 'event-source-polyfill';
 import { TopNavBar } from "./components/TopNavBar";
 import { BottomTabNav } from "./components/BottomTabNav";
 import { LoginScreen } from "./pages/Login/LoginScreen";
@@ -50,6 +51,7 @@ import { getMonthlyReview } from './api/review';
 import type { IPersonalRankingResponse, UserTotalScoreResponse, IPersonalRankingData } from './interfaces';
 import type { GlobalGroupRankingData } from "./pages/Ranking/RankingScreen";import { toggleDarkMode as toggleDarkModeAPI, toggleAlarm as toggleAlarmAPI } from './api/setting';
 import { getNotifications, markNotificationAsRead } from "./api/notification";
+import { notificationService } from "./api/sse";
 import type { NotificationApiResponse, NotificationType } from "./interfaces";
 import { User, Bell, Camera, Clock } from 'lucide-react'
 const BASE_URL = import.meta.env.VITE_API_BASE_URL;
@@ -342,7 +344,9 @@ export default function App() {
   const [remindersSent0minToday, setRemindersSent0minToday] = useState<Record<number, boolean>>({});
 
   const [currentDate, setCurrentDate] = useState(new Date().toDateString());
-
+  
+  const eventSourceRef = useRef<EventSourcePolyfill | null>(null);
+  
   useEffect(() => {
     // 10분마다 현재 날짜를 확인합니다.
     const checkDateTimer = setInterval(() => {
@@ -1196,7 +1200,6 @@ const handleToggleRoutinePublic = async (routine: Routine) => {
         });
       } else {
          console.error("활동 생성 응답에서 ID를 받지 못했습니다:", response);
-         // ⭐️ 폴백(Fallback): 만약의 경우를 대비해 서버에서 다시 불러옵니다.
          await fetchUserActivities();
       }
       // 완료 횟수 1 증가
@@ -1270,7 +1273,6 @@ const handleGroupRoutineCompletion = (groupId: number, activityId: number) => {
     handleOpenAttendanceModal();
 
   };
-
 
   const handleAddRecommendedRoutine = async (recommendedRoutine: RecommendedRoutine) => {
     if (!UserInfo) {
@@ -1556,6 +1558,33 @@ const handleGroupRoutineCompletion = (groupId: number, activityId: number) => {
       clearInterval(timer);
     };
   }, []); 
+
+  useEffect(() => {
+    if (isLoggedIn && UserInfo) {
+      notificationService.connect({
+        onOpen: () => {
+          console.log("✅ SSE 연결이 성공적으로 수립되었습니다. (from App.tsx)");
+        },
+        onNotification: (apiNotif: NotificationApiResponse) => { // 햄의 interface에 맞게 타입 지정
+          console.log("🔔 SSE 'notification' 이벤트 수신:", apiNotif);
+          const newNotification = transformNotification(apiNotif);
+          setNotifications(prevNotifications => [newNotification, ...prevNotifications]);
+        },
+        onError: (error: any) => {
+          console.error("SSE 연결 오류 발생:", error);
+          if (error.status === 401 || error.status === 403) {
+            console.error("SSE 인증 실패. 연결이 종료되었습니다.");
+          }
+        }
+      });
+
+    } else {
+      notificationService.disconnect();
+    }
+    return () => {
+      notificationService.disconnect();
+    };
+  }, [isLoggedIn, UserInfo]);
 
    //7.그룹 관련 =============================================================
   
