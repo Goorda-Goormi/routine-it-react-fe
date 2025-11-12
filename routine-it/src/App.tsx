@@ -56,8 +56,20 @@ import type { NotificationApiResponse, NotificationType } from "./interfaces";
 import { User, Bell, Camera, Clock } from 'lucide-react'
 import { Provider } from 'react-redux';
 import { useSelector, useDispatch } from 'react-redux';
-import { store, type RootState, type AppDispatch } from './store/store';
+import { type RootState, type AppDispatch } from './store/store';
 import { login, logout } from './store/authSlice';
+import { 
+  openLoginModal,
+  closeLoginModal,
+  openAttendanceModal,
+  closeAttendanceModal,
+  openStreakModal,
+  closeStreakModal,
+  openBadgeModal,
+  closeBadgeModal,
+  openReviewModal,
+  closeReviewModal,
+ } from './store/uiSlice';
 const BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
 interface NavigationState {
@@ -284,22 +296,24 @@ export default function App() {
   
   const { isLoggedIn, userId } = useSelector((state: RootState) => state.auth);
   const dispatch = useDispatch<AppDispatch>();
-  const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
   const [isNewUser, setIsNewUser] = useState(false);
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [activeTab, setActiveTab] = useState("home");
-  //const [pendingAuthMessages, setPendingAuthMessages] = useState<PendingAuthMap>({});
   const [navigationStack, setNavigationStack] = useState<NavigationState[]>([]);
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [completedActivityIds, setCompletedActivityIds] = useState({
     personal: new Map<number, number>(),
     group: new Map<number, number>(),
   });
-  const [isAttendanceModalOpen, setAttendanceModalOpen] = useState(false);
-  const [isStreakModalOpen, setStreakModalOpen] = useState(false);
-  const [isBadgeModalOpen, setBadgeModalOpen] = useState(false);
-  const [badgeName, setBadgeName] = useState('');
-  const [badgeImage, setBadgeImage] = useState('');
+  const {
+    isLoginModalOpen,
+    isAttendanceModalOpen,
+    isStreakModalOpen,
+    isBadgeModalOpen,
+    isReviewModalOpen,
+    badgeName,
+    badgeImage,
+  } = useSelector((state: RootState) => state.ui);
   const [pendingBadges, setPendingBadges] = useState<{ name: string; image: string; }[]>([]);
   const [lastCompletionDate, setLastCompletionDate] = useState<string | null>(() => {
     if (typeof window !== 'undefined') {
@@ -333,7 +347,7 @@ export default function App() {
   });
   
   const [streakDays, setStreakDays] = useState(0);
-  const [UserInfo, setUserInfo] = useState<UserProfile | null>(null); // 초기 상태를 null로 변경
+  const [UserInfo, setUserInfo] = useState<UserProfile | null>(null); 
   const [isLoading, setIsLoading] = useState<boolean>(false);
 
   const [personalRoutines, setPersonalRoutines] = useState<Routine[]>([])
@@ -342,7 +356,6 @@ export default function App() {
  const [myGroups, setMyGroups] = useState<Group[]>([]);
   const [isLoadingGroups, setIsLoadingGroups] = useState(true);
 
-  //const [groupRoutines, setGroupRoutines] = useState<Routine[]>([]);
   const [error, setError] = useState<string | null>(null);
 
   const [remindersSentToday, setRemindersSentToday] = useState<Record<number, boolean>>({});
@@ -368,7 +381,6 @@ export default function App() {
     return () => clearInterval(checkDateTimer);
   }, [currentDate]);
   
-  const [isReviewModalOpen, setReviewModalOpen] = useState(false);
   const [reviewModalContent, setReviewModalContent] = useState({ content: '', monthYear: '' });
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const addNotification = (notification: Omit<Notification, 'id' | 'date' | 'read'>) => {
@@ -639,7 +651,7 @@ export default function App() {
       
       if (isNew) {
         setIsNewUser(true);
-        setIsLoginModalOpen(true);
+        dispatch(openLoginModal());
         return; 
       }
 
@@ -671,7 +683,7 @@ useEffect(() => {
             userId: String(UserInfo.id), 
         }));
         
-        setIsLoginModalOpen(false);
+        dispatch(openLoginModal());
       
     }
 }, [UserInfo, isLoggedIn, dispatch]);
@@ -773,20 +785,24 @@ useEffect(() => {
 
   const handleLogin = (isNew: boolean) => {
     setIsNewUser(isNew);
-    if (isNew) {
-      setIsLoginModalOpen(true); 
-      
-    } else {
-      isLoggedIn;
-      setIsLoginModalOpen(false);
-    }
+    dispatch(openLoginModal());
   };
   
-  const handleLoginSuccess = (token: string) => {
+  const handleLoginSuccess = async(token: string, nickname: string) => {
     localStorage.setItem('accessToken', token);
-    isLoggedIn;
-    setIsLoginModalOpen(false);
-  };
+    await fetchUserInfo();
+    try {
+      await fetchUserInfo();
+
+      dispatch(closeLoginModal());
+      setIsNewUser(false);
+
+    } catch (error) {
+        console.error("로그인 성공 후 사용자 정보 로딩 실패:", error);
+        localStorage.removeItem('accessToken');
+        dispatch(logout()); 
+    }
+};
 
   // 닉네임 설정 완료 후 호출될 함수
   const handleNicknameSetupComplete = async (nickname: string) => {
@@ -796,7 +812,7 @@ useEffect(() => {
       setUserInfo(updatedUserInfo);
       isLoggedIn;
       setIsNewUser(false);
-      setIsLoginModalOpen(false);
+      dispatch(openLoginModal()); 
       alert('회원가입이 완료되었습니다.');
 
     } catch (error) {
@@ -804,10 +820,6 @@ useEffect(() => {
     alert((error as Error).message);
   }
 };
-
-  // const handleLoginComplete = async (nickname: string) => {
-  //   await handleNicknameSetupComplete(nickname);
-  // };
 
   const handleLogout = async() => {
     try {
@@ -1249,9 +1261,9 @@ const handleToggleRoutinePublic = async (routine: Routine) => {
         });
       
       // 배지 획득 모달 띄우기
-      setBadgeName(badgeName);
-      setBadgeImage(badgeInfo[badgeName].image);
-      setBadgeModalOpen(true);
+      badgeName;
+      badgeImage;
+      dispatch(openBadgeModal());
     }
 
     // 4. 출석 모달 띄우기 (배지 획득 여부와 관계없이 항상 실행)
@@ -1292,9 +1304,9 @@ const handleGroupRoutineCompletion = (groupId: number, activityId: number) => {
         localStorage.setItem('earnedBadges', JSON.stringify(newEarned));
         return newEarned;
       });
-      setBadgeName(badgeName);
-      setBadgeImage(badgeInfo[badgeName].image);
-      setBadgeModalOpen(true);
+      badgeName;
+      badgeImage;
+      dispatch(openBadgeModal());
 
       handleGroupMembersRefresh();
     console.log("✅ 그룹 멤버 데이터 새로고침 완료.");
@@ -1474,7 +1486,7 @@ const handleGroupRoutineCompletion = (groupId: number, activityId: number) => {
             monthYear: response.data.monthYear,
           });
           // 모달 열기
-          setReviewModalOpen(true);
+          dispatch(openReviewModal());
         } else {
           // API 호출은 성공했으나, 응답 데이터가 실패일 경우
           alert("회고 내용을 불러오는 데 실패했습니다: " + response.message);
@@ -2173,7 +2185,7 @@ const navigateTo = (screen: string, params?: any, options?: { replace?: boolean 
     
     // 루틴 완료 시 호출
     if (lastCompletionDate !== today) {
-    setAttendanceModalOpen(true);
+    dispatch(openAttendanceModal());
     setLastCompletionDate(today);
     localStorage.setItem('lastCompletionDate', today);
     }
@@ -2181,12 +2193,12 @@ const navigateTo = (screen: string, params?: any, options?: { replace?: boolean 
 
   const handleOpenStreakModal = (streakDays: number) => {
     // 특정 누적일 달성 시 호출
-    setStreakModalOpen(true);
+    dispatch(openStreakModal());
   };
   
   const handleOpenBadgeModal = (badgeName: string, badgeImage: string) => {
     // 배지 획득 시 호출
-    setBadgeModalOpen(true);
+    dispatch(openBadgeModal());
   };
 
   const handleNextModalSequence = (currentStreak: number, currentAttendance: number) => {
@@ -2194,7 +2206,7 @@ const navigateTo = (screen: string, params?: any, options?: { replace?: boolean 
     // 1. 스트릭 모달 조건 검사 (누적 출석 모달)
     const streakMilestones = [7, 30, 90, 180, 365];
     if (streakMilestones.includes(currentStreak)) {
-        setStreakModalOpen(true);
+        dispatch(openStreakModal());
     } 
     // 2. 배지 모달 조건 검사 (성취 배지 모달)
     else {
@@ -2234,9 +2246,9 @@ const navigateTo = (screen: string, params?: any, options?: { replace?: boolean 
       // 3. 첫 번째 획득 배지 모달 띄우기
       const firstBadge = badgesToShow.shift();
       if (firstBadge) {
-        setBadgeName(firstBadge.name);
-        setBadgeImage(firstBadge.image);
-        setBadgeModalOpen(true);
+        badgeName;
+        badgeImage;
+        dispatch(openBadgeModal());
         // 남은 배지가 있다면 대기열에 추가
         setPendingBadges(badgesToShow);
       }
@@ -2244,7 +2256,7 @@ const navigateTo = (screen: string, params?: any, options?: { replace?: boolean 
   };
 
   const handleCloseAttendanceModal = async () => {
-    setAttendanceModalOpen(false);
+    dispatch(openAttendanceModal());
     
     const todayString = getLocalDateString(new Date()); 
 
@@ -2288,18 +2300,18 @@ const navigateTo = (screen: string, params?: any, options?: { replace?: boolean 
 };
 
   const handleCloseStreakModal = () => {
-    setStreakModalOpen(false);
+    dispatch(openStreakModal());
     checkAndShowAllBadges(streakDays, attendanceCount);
   };
 
   const handleCloseBadgeModal = () => {
-    setBadgeModalOpen(false);
+    dispatch(openBadgeModal());
     if (pendingBadges.length > 0) {
         const nextBadge = pendingBadges.shift();
         if (nextBadge) {
-          setBadgeName(nextBadge.name);
-          setBadgeImage(nextBadge.image);
-          setBadgeModalOpen(true);
+          badgeName;
+          badgeImage;
+          dispatch(openBadgeModal());
           setPendingBadges(pendingBadges);
         }
     }
@@ -2353,30 +2365,30 @@ const navigateTo = (screen: string, params?: any, options?: { replace?: boolean 
         </div>
         <LoginModal
           isOpen={isLoginModalOpen}
-          onClose={() => setIsLoginModalOpen(false)}
+          onClose={() => dispatch(closeLoginModal())}
         />
 
         <AttendanceModal
           isOpen={isAttendanceModalOpen}
-          onClose={handleCloseAttendanceModal}
+          onClose={() => dispatch(closeAttendanceModal())}
         />
 
         <StreakModal
           isOpen={isStreakModalOpen}
-          onClose={handleCloseStreakModal}
+          onClose={() => dispatch(closeStreakModal())}
           streakDays={streakDays}
         />
 
         <AchievementBadgeModal
           isOpen={isBadgeModalOpen}
-          onClose={handleCloseBadgeModal}
-          badgeName={badgeName}
-          badgeImage={badgeImage}
+          onClose={() => dispatch(closeBadgeModal())}
+          badgeName={badgeName || ''} 
+          badgeImage={badgeImage || ''}
         />
 
         <MonthlyReviewModal
           isOpen={isReviewModalOpen}
-          onClose={() => setReviewModalOpen(false)}
+          onClose={() => dispatch(closeReviewModal())}
           reviewContent={reviewModalContent.content}
           monthYear={reviewModalContent.monthYear}
         />
