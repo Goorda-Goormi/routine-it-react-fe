@@ -400,6 +400,7 @@ export function GroupDetailScreen({
             }
         }
         */
+       await fetchGroupData();
     } catch (error) {
         console.error("루틴 인증 승인 처리에 실패했습니다:", error);
         alert("루틴 인증 승인 처리에 실패했습니다.");
