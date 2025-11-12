@@ -576,7 +576,7 @@ export default function App() {
     const token = localStorage.getItem('accessToken');
     if (!token) {
       console.error("인증 토큰이 없습니다.");
-      setIsLoading(false); // 로딩 상태 해제
+      setIsLoading(false); 
       return;
     }
       
@@ -586,10 +586,14 @@ export default function App() {
         ...prevUserInfo,
         ...userInfoData,
       }));
+      dispatch(login({
+        nickname: userInfoData.nickname, 
+        userId: String(userInfoData.id), 
+      }));
     } catch (error) {
       console.error("사용자 정보 조회 에러:", error);
       localStorage.removeItem('accessToken');
-      isLoggedIn;
+      dispatch(logout());
       setUserInfo(null);
     } finally {
       setIsLoading(false);
@@ -675,18 +679,18 @@ useEffect(() => {
   checkAuthAndFetchUser();
 }, []);
 
-useEffect(() => {
-    if (UserInfo && !isLoggedIn) {
+// useEffect(() => {
+//     if (UserInfo && !isLoggedIn) {
         
-        dispatch(login({
-            nickname: UserInfo.nickname, 
-            userId: String(UserInfo.id), 
-        }));
+//         dispatch(login({
+//             nickname: UserInfo.nickname, 
+//             userId: String(UserInfo.id), 
+//         }));
         
-        dispatch(openLoginModal());
+//         dispatch(openLoginModal());
       
-    }
-}, [UserInfo, isLoggedIn, dispatch]);
+//     }
+// }, [UserInfo, isLoggedIn, dispatch]);
 
 
 useEffect(() => {
@@ -808,18 +812,28 @@ useEffect(() => {
   const handleNicknameSetupComplete = async (nickname: string) => {
     try { 
       const updatedUserInfo = await completeSignup(nickname);
-
+        
+      // 1. 로컬 상태 업데이트
       setUserInfo(updatedUserInfo);
-      isLoggedIn;
+
+      // 2. Redux 로그인 
+      dispatch(login({ 
+        nickname: updatedUserInfo.nickname, 
+        userId: String(updatedUserInfo.id) 
+      }));
+
+      // 3. 플래그 및 모달 닫기
       setIsNewUser(false);
-      dispatch(openLoginModal()); 
+      dispatch(closeLoginModal()); 
+        
       alert('회원가입이 완료되었습니다.');
 
     } catch (error) {
-    console.error("회원가입 에러:", error);
-    alert((error as Error).message);
-  }
-};
+        console.error("회원가입 에러:", error);
+        alert((error as Error).message);
+        dispatch(logout());
+    }
+  };
 
   const handleLogout = async() => {
     try {
