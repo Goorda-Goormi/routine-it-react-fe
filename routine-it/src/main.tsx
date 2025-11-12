@@ -5,9 +5,14 @@ import App from './App.tsx'
 
 import "./styles/globals.css"
 
+import { Provider } from 'react-redux';
+import { store } from './store/store';
+
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    <App />
+    <Provider store={store}> 
+      <App />
+    </Provider>
   </StrictMode>,
 )

@@ -1,12 +1,15 @@
 import React from 'react';
 import { Button } from '../../components/ui/button';
 import { Card, CardContent } from '../../components/ui/card';
+import { useSelector } from 'react-redux';
+import { type RootState } from '../../store/store';
 
 interface LoginScreenProps {
   onLogin: () => void;
 }
 
 export function LoginScreen({ onLogin }: LoginScreenProps) {
+  const { isLoggedIn, nickname } = useSelector((state: RootState) => state.auth);
   return (
     <div className="h-full w-full bg-gradient-to-br from-green-400 via-green-500 to-green-600 flex flex-col justify-center">
       {/* 메인 콘텐츠 영역 */}

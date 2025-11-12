@@ -54,11 +54,20 @@ import { getNotifications, markNotificationAsRead } from "./api/notification";
 import { notificationService } from "./api/sse";
 import type { NotificationApiResponse, NotificationType } from "./interfaces";
 import { User, Bell, Camera, Clock } from 'lucide-react'
+import { Provider } from 'react-redux';
+import { useSelector, useDispatch } from 'react-redux';
+import { store, type RootState, type AppDispatch } from './store/store';
+import { login, logout } from './store/authSlice';
 const BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
 interface NavigationState {
   screen: string;
   params?: any;
+}
+
+interface UserLoginData {
+  userId: string;
+  nickname: string;
 }
 
 type PersonalRankingPaginationObject = {
@@ -75,7 +84,7 @@ type PersonalRankingPaginationObject = {
   totalPages: number;
 }
 
-// 2. 랭킹 API가 페이지네이션으로 응답할 때의 전체 응답 타입입니다.
+// 랭킹 API가 페이지네이션으로 응답할 때의 전체 응답 타입입니다.
 type PaginatedPersonalRankingResponse = {
   success: boolean;
   message: string;
@@ -115,13 +124,11 @@ const loadCompletedRoutinesFromLocal = (): { personal: Map<number, number>, grou
     
     const data = JSON.parse(stored);
     
-    // 날짜가 오늘이 아니면 무시 (어제 데이터를 사용하지 않음)
     if (data.date !== today) {
       localStorage.removeItem('completedRoutines');
       return null;
     }
     
-    // 데이터가 너무 오래되었으면 무시 (24시간 이상)
     if (Date.now() - data.timestamp > 24 * 60 * 60 * 1000) {
       localStorage.removeItem('completedRoutines');
       return null;
@@ -130,7 +137,6 @@ const loadCompletedRoutinesFromLocal = (): { personal: Map<number, number>, grou
     const personalMap = new Map<number, number>(data.personal || []);
     const groupMap = new Map<number, number>(data.group || []);
     
-    //console.log('로컬 스토리지에서 완료 루틴을 복원했습니다:', { personalMap, groupMap });
     return { personal: personalMap, group: groupMap };
   } catch (error) {
     console.error('로컬 스토리지에서 완료 루틴 로드 실패:', error);
@@ -200,19 +206,16 @@ const convertAuthDaysToFrequency = (authDays: string): string[] => {
 const transformGroupToRoutine = (group: Group): Routine => {
   
   return {
-    // 1. Group 객체에서 직접 매핑되는 필드
     id: group.groupId,
     name: group.groupName,
     description: group.description,
     category: group.category,
-    isGroupRoutine: true, // 이 루틴이 그룹에서 왔음을 명시
+    isGroupRoutine: true, 
 
-    // 2. 헬퍼 함수 및 타입 변환
     time: convertAlarmTimeToTimeString(group.alarmTime),
     frequency: convertAuthDaysToFrequency(group.authDays),
     type: group.groupType === 'REQUIRED' ? '의무참여' : '자유참여',
 
-    // 3. Routine 객체에 필요하지만 Group 객체에 없는 필드 (기본값 설정)
     completed: false, 
     streak: 0,
     goal: '30',
@@ -278,7 +281,9 @@ type BadgeType = '첫걸음' | '7일 연속' | '루틴 마스터' | '월간 챔�
 export default function App() {
   
   //1. 상태관리 변수===================================================
-  const [isLoggedIn, setIsLoggedIn] = useState<boolean>(false);
+  
+  const { isLoggedIn, userId } = useSelector((state: RootState) => state.auth);
+  const dispatch = useDispatch<AppDispatch>();
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
   const [isNewUser, setIsNewUser] = useState(false);
   const [notifications, setNotifications] = useState<Notification[]>([]);
@@ -572,7 +577,7 @@ export default function App() {
     } catch (error) {
       console.error("사용자 정보 조회 에러:", error);
       localStorage.removeItem('accessToken');
-      setIsLoggedIn(false);
+      isLoggedIn;
       setUserInfo(null);
     } finally {
       setIsLoading(false);
@@ -620,30 +625,56 @@ export default function App() {
   //4.useEffect  =============================================================
 
   //웹 페이지 로드 시 로그인 상태 확인
-  useEffect(() => {
   const checkAuthAndFetchUser = async () => {
-    const params = new URLSearchParams(window.location.search);
-    const token = params.get('accessToken');
-    const isNew = params.get('isNewUser') === 'true';
+  const params = new URLSearchParams(window.location.search);
+  const token = params.get('accessToken');
+  const isNew = params.get('isNewUser') === 'true';
+  let shouldFetchUser = false;
+
+  try {
     if (token) {
       localStorage.setItem('accessToken', token);
       window.history.replaceState({}, document.title, window.location.pathname);
-    setIsLoggedIn(true);
-
-    if (isNew) {
+      shouldFetchUser = true; 
+      
+      if (isNew) {
         setIsNewUser(true);
         setIsLoginModalOpen(true);
-      } else {
-        await fetchUserInfo();
+        return; 
       }
+
     } else if (localStorage.getItem('accessToken')) {
-      setIsLoggedIn(true);
+      shouldFetchUser = true; 
+    }
+
+    if (shouldFetchUser) {
       await fetchUserInfo();
     }
-  };
 
+  } catch (error) {
+    console.error("인증 또는 사용자 정보 로딩 실패. 로그아웃 처리:", error);
+    localStorage.removeItem('accessToken');
+    dispatch(logout()); 
+    setUserInfo(null);
+  }
+};
+
+useEffect(() => {
   checkAuthAndFetchUser();
 }, []);
+
+useEffect(() => {
+    if (UserInfo && !isLoggedIn) {
+        
+        dispatch(login({
+            nickname: UserInfo.nickname, 
+            userId: String(UserInfo.id), 
+        }));
+        
+        setIsLoginModalOpen(false);
+      
+    }
+}, [UserInfo, isLoggedIn, dispatch]);
 
 
 useEffect(() => {
@@ -746,14 +777,14 @@ useEffect(() => {
       setIsLoginModalOpen(true); 
       
     } else {
-      setIsLoggedIn(true);
+      isLoggedIn;
       setIsLoginModalOpen(false);
     }
   };
   
   const handleLoginSuccess = (token: string) => {
     localStorage.setItem('accessToken', token);
-    setIsLoggedIn(true);
+    isLoggedIn;
     setIsLoginModalOpen(false);
   };
 
@@ -763,7 +794,7 @@ useEffect(() => {
       const updatedUserInfo = await completeSignup(nickname);
 
       setUserInfo(updatedUserInfo);
-      setIsLoggedIn(true);
+      isLoggedIn;
       setIsNewUser(false);
       setIsLoginModalOpen(false);
       alert('회원가입이 완료되었습니다.');
@@ -774,9 +805,9 @@ useEffect(() => {
   }
 };
 
-  const handleLoginComplete = async (nickname: string) => {
-    await handleNicknameSetupComplete(nickname);
-  };
+  // const handleLoginComplete = async (nickname: string) => {
+  //   await handleNicknameSetupComplete(nickname);
+  // };
 
   const handleLogout = async() => {
     try {
@@ -801,7 +832,7 @@ useEffect(() => {
         
         console.log('✅ Local tokens cleared');
         
-        setIsLoggedIn(false);
+        isLoggedIn;
         setUserInfo(null);
         window.location.href = '/login';
     }
@@ -814,7 +845,7 @@ useEffect(() => {
       try {
         await deleteAccount();
 
-        setIsLoggedIn(false);
+        isLoggedIn;
         setActiveTab("home");
         setNavigationStack([]);
         setUserInfo({
@@ -1808,7 +1839,7 @@ const handleRankingTabClick = () => {
         navigateTo("help");
         break;
       case "logout":
-        setIsLoggedIn(false);
+        isLoggedIn;
         setActiveTab("home");
         setNavigationStack([]);
         break;
@@ -2275,82 +2306,80 @@ const navigateTo = (screen: string, params?: any, options?: { replace?: boolean 
   };
   //====================================================================
   return (
-    <div
-      className={`min-h-screen w-full bg-[var(--root-background)] flex items-center justify-center `}
-    >
-    
-      <div className="min-w-[360px] w-full max-w-none md:max-w-[1000px] lg:max-w-[1280px] h-[850px] bg-background flex flex-col overflow-hidden rounded-lg shadow-2xl border border-border/50">
-        {!isLoggedIn ? (
-          <div className="w-full h-full">{renderScreen()}</div>
-        ) : (
-          <>
-            {(!currentScreen || currentScreen.screen === 'user-home') && UserInfo && (
-              <TopNavBar
-                onSearch={handleSearch}
-                onNotificationClick={handleNotificationClick}
-                onProfileMenuClick={handleProfileMenuClick}
-                userInfo={UserInfo}
-                notifications={notifications}
-                showBackButton={currentScreen?.screen === 'user-home'}
-                onBackClick={navigateBack} 
-                //pendingAuthMessages={pendingAuthMessages}
-              />
-            )}
-
-            <main className="flex-1 bg-background flex flex-col overflow-hidden">
-              <div className="flex-1 overflow-auto " ref={scrollContainerRef}> 
-                {renderScreen()}
-              </div>
-
-               {!currentScreen && (
-              <div className="bg-background border-t border-border">
-                <BottomTabNav
-                  activeTab={activeTab}
-                  onTabChange={(tabName: string) => {
-                    if (tabName === 'ranking' && personalRankingData === null && !isLoading) {
-                      handleRankingTabClick();
-                    }
-                    setActiveTab(tabName);
-                }}
-              />
-            </div>
+      <div
+        className={`min-h-screen w-full bg-[var(--root-background)] flex items-center justify-center `}
+      >
+      
+        <div className="min-w-[360px] w-full max-w-none md:max-w-[1000px] lg:max-w-[1280px] h-[850px] bg-background flex flex-col overflow-hidden rounded-lg shadow-2xl border border-border/50">
+          {!isLoggedIn ? (
+            <div className="w-full h-full">{renderScreen()}</div>
+          ) : (
+            <>
+              {(!currentScreen || currentScreen.screen === 'user-home') && UserInfo && (
+                <TopNavBar
+                  onSearch={handleSearch}
+                  onNotificationClick={handleNotificationClick}
+                  onProfileMenuClick={handleProfileMenuClick}
+                  userInfo={UserInfo}
+                  notifications={notifications}
+                  showBackButton={currentScreen?.screen === 'user-home'}
+                  onBackClick={navigateBack} 
+                  //pendingAuthMessages={pendingAuthMessages}
+                />
               )}
-            </main>
-          </>
-          
-        )}
+
+              <main className="flex-1 bg-background flex flex-col overflow-hidden">
+                <div className="flex-1 overflow-auto " ref={scrollContainerRef}> 
+                  {renderScreen()}
+                </div>
+
+                {!currentScreen && (
+                <div className="bg-background border-t border-border">
+                  <BottomTabNav
+                    activeTab={activeTab}
+                    onTabChange={(tabName: string) => {
+                      if (tabName === 'ranking' && personalRankingData === null && !isLoading) {
+                        handleRankingTabClick();
+                      }
+                      setActiveTab(tabName);
+                  }}
+                />
+              </div>
+                )}
+              </main>
+            </>
+            
+          )}
+        </div>
+        <LoginModal
+          isOpen={isLoginModalOpen}
+          onClose={() => setIsLoginModalOpen(false)}
+        />
+
+        <AttendanceModal
+          isOpen={isAttendanceModalOpen}
+          onClose={handleCloseAttendanceModal}
+        />
+
+        <StreakModal
+          isOpen={isStreakModalOpen}
+          onClose={handleCloseStreakModal}
+          streakDays={streakDays}
+        />
+
+        <AchievementBadgeModal
+          isOpen={isBadgeModalOpen}
+          onClose={handleCloseBadgeModal}
+          badgeName={badgeName}
+          badgeImage={badgeImage}
+        />
+
+        <MonthlyReviewModal
+          isOpen={isReviewModalOpen}
+          onClose={() => setReviewModalOpen(false)}
+          reviewContent={reviewModalContent.content}
+          monthYear={reviewModalContent.monthYear}
+        />
       </div>
-      <LoginModal // 새로 추가된 로그인 모달
-        isOpen={isLoginModalOpen}
-        onClose={() => setIsLoginModalOpen(false)}
-        //onComplete={handleNicknameSetupComplete}
-        onComplete={handleLoginComplete}
-      />
-
-      <AttendanceModal
-        isOpen={isAttendanceModalOpen}
-        onClose={handleCloseAttendanceModal}
-      />
-
-      <StreakModal
-        isOpen={isStreakModalOpen}
-        onClose={handleCloseStreakModal}
-        streakDays={streakDays}
-      />
-
-      <AchievementBadgeModal
-        isOpen={isBadgeModalOpen}
-        onClose={handleCloseBadgeModal}
-        badgeName={badgeName}
-        badgeImage={badgeImage}
-      />
-
-      <MonthlyReviewModal
-        isOpen={isReviewModalOpen}
-        onClose={() => setReviewModalOpen(false)}
-        reviewContent={reviewModalContent.content}
-        monthYear={reviewModalContent.monthYear}
-      />
-    </div>
   );
 }

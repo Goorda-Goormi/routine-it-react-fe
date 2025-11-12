@@ -5,17 +5,26 @@ import { Input } from '../ui/input'; // Input 컴포넌트 추가
 import { Card, CardContent } from '../ui/card';
 import { CircleCheckBig, XCircle } from 'lucide-react'; // 아이콘 추가
 import { checkNicknameAvailability, completeSignup } from '../../api/auth';
+import { useDispatch } from 'react-redux';
+import { type AppDispatch } from '../../store/store';
+import { login } from '../../store/authSlice';
+
+interface LoginSuccessPayload {
+  userId: string;
+  nickname: string;
+}
 
 interface LoginModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onComplete: (nickname: string) => void; 
 }
 
-export function LoginModal({ isOpen, onClose, onComplete }: LoginModalProps) {
+export function LoginModal({ isOpen, onClose }: LoginModalProps) {
   const [nickname, setNickname] = useState('');
   const [isChecking, setIsChecking] = useState(false);
   const [isNicknameAvailable, setIsNicknameAvailable] = useState<boolean | null>(null);
+
+  const dispatch = useDispatch<AppDispatch>();
 
   // 닉네임 중복 확인 함수
   const handleCheckNickname = async () => {
@@ -44,9 +53,21 @@ export function LoginModal({ isOpen, onClose, onComplete }: LoginModalProps) {
       alert('닉네임 중복 확인을 완료해주세요.');
       return;
     }
+  try {
+        const userData = (await completeSignup(nickname)) as unknown as LoginSuccessPayload;
 
-    onComplete(nickname);
-  };
+        dispatch(login({ 
+        userId: userData.userId, 
+        nickname: userData.nickname 
+      }));
+
+        onClose();
+        
+      } catch (error) {
+        console.error('회원가입 완료 중 오류 발생:', error);
+        alert('회원가입 중 문제가 발생했습니다. 다시 시도해 주세요.');
+      }
+    };
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
