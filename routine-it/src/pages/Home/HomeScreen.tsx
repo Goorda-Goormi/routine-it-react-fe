@@ -9,6 +9,7 @@ import { ImageWithFallback } from '../../components/figma/ImageWithFallback';
 import { getStreakInfo, getStreakMessage } from '../../components/utils/streakUtils';
 import type { Routine, Group, Member, GroupMemberResponse } from '../../interfaces';
 import { getUserAuthPhotos } from '../../api/activity';
+import { deleteStorageObject } from '../../api/storage';
 
 const getTodayDayOfWeek = () => {
   const dayOfWeek = ['일', '월', '화', '수', '목', '금', '토'];
@@ -54,6 +55,7 @@ interface VerificationPhoto {
   imageUrl: string | null;
   activityDate: string;
   isPublic: boolean;
+  s3Key: string | null;
 }
 
 export function HomeScreen({
@@ -133,15 +135,33 @@ export function HomeScreen({
   };
 
   const handleDeletePhoto = async (photoId: number) => {
-    if (window.confirm("정말로 이 인증 사진을 삭제하시겠습니까?\n(API 준비 전으로, 현재는 화면에서만 사라집니다)")) {
+    const photoToDelete = photosWithImages.find(p => p.userActivityId === photoId);
+
+    if (!photoToDelete) {
+      console.error("삭제할 사진을 찾을 수 없습니다:", photoId);
+      return;
+    }
+
+    if (!photoToDelete.s3Key) {
+      console.error("삭제할 S3 Key가 누락되었습니다:", photoToDelete);
+      alert("사진을 삭제할 수 없습니다. S3 키 정보가 누락되었습니다.");
+      return;
+    }
+    
+    if (window.confirm("정말로 이 인증 사진을 삭제하시겠습니까?")) {
       try {
-        alert("삭제 API가 준비되면 실제 데이터가 삭제됩니다.");
-        console.log(`[임시] 삭제 API 호출 시뮬레이션: ${photoId}번 사진`);
+        await deleteStorageObject(photoToDelete.s3Key); 
+
         setMyVerificationPhotos(prevPhotos =>
           prevPhotos.filter(p => p.userActivityId !== photoId)
         );
+        
+        alert("인증 사진이 성공적으로 삭제되었습니다.");
+        console.log(`[실제] S3 객체 삭제 완료: ${photoToDelete.s3Key}`);
+        
       } catch (error) {
         console.error("사진 삭제 처리 중 에러:", error);
+        alert("사진 삭제에 실패했습니다.");
       }
     }
   };
@@ -380,24 +400,22 @@ export function HomeScreen({
           </CardTitle>
         </CardHeader>
         <CardContent className="pt-0">
-          {/* ▼▼▼ [수정] photosWithImages를 사용하여 모든 사진을 표시합니다. ▼▼▼ */}
           {photosWithImages.length > 0 ? (
             <div className="grid grid-cols-3 gap-3">
               {photosWithImages.map((photo, index) => (
-                <div key={photo.userActivityId} className="space-y-2 cursor-pointer">
+                <div key={photo.userActivityId} className="space-y-2 cursor-pointer" onClick={() => handlePhotoClick(index)}>
                   <div className="relative rounded-lg overflow-hidden aspect-square group">
                     <ImageWithFallback
                       src={photo.imageUrl!}
                       alt={photo.groupName || photo.personalRoutineName || '인증샷'}
                       className="w-full h-full object-cover cursor-pointer"
-                      onClick={() => handlePhotoClick(index)}
                     />
                     <Button
                       variant="destructive"
                       size="icon"
-                      className="absolute top-1 right-1 h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity"
+                      className="absolute top-1 right-1 h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity z-10"
                       onClick={(e) => {
-                        e.stopPropagation();
+                        e.stopPropagation(); 
                         handleDeletePhoto(photo.userActivityId);
                       }}
                     >
@@ -405,7 +423,7 @@ export function HomeScreen({
                     </Button>
                     <div 
                       className="absolute inset-0 bg-black/20 opacity-0 hover:opacity-100 transition-opacity flex items-end cursor-pointer"
-                      onClick={() => handlePhotoClick(index)}
+                      //onClick={() => handlePhotoClick(index)}
                     >
                       <div className="p-2">
                         <span className="text-xs text-white bg-black/50 px-2 py-1 rounded">

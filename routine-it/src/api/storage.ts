@@ -113,3 +113,28 @@ export async function presignGet(key: string, as: "inline" | "download" = "inlin
     if (!resp.ok) throw new Error(`presign-get 실패: ${resp.status} ${await resp.text()}`);
     return resp.json();
 }
+
+/**
+ * S3 객체 키를 받아 해당 객체를 삭제합니다.
+ * @param key S3 객체 키 (예: public/users/1/profile/xxx.jpg)
+ */
+export async function deleteStorageObject(key: string): Promise<void> {
+    const params = new URLSearchParams({ key });
+    
+    // fetchWithAuth 헬퍼 함수를 사용하여 인증 헤더를 포함하여 호출
+    const resp = await fetchWithAuth(
+        `${API_BASE}/api/storage/delete?${params.toString()}`, {
+        method: "DELETE",
+    });
+    
+    // 응답 상태 코드가 204 (No Content)면 성공
+    if (resp.status === 204) {
+        return;
+    }
+    
+    // 그 외 오류 처리 (400, 403, 500 등)
+    if (!resp.ok) {
+        const errorText = await resp.text();
+        throw new Error(`S3 객체 삭제 실패: ${resp.status} ${errorText}`);
+    }
+}
