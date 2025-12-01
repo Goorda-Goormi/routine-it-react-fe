@@ -1,3 +1,9 @@
+import { useMemo, useCallback } from "react";
+import { 
+  useQuery, 
+  useMutation, 
+  useQueryClient 
+} from '@tanstack/react-query';
 import React, { useState, useEffect, useRef } from "react";
 import { EventSourcePolyfill } from 'event-source-polyfill';
 import { TopNavBar } from "./components/TopNavBar";
@@ -294,6 +300,37 @@ export default function App() {
   
   //1. 상태관리 변수===================================================
   
+  const queryClient = useQueryClient(); 
+
+  const invalidatePersonalRoutines = () => {
+    queryClient.invalidateQueries({ queryKey: ['personalRoutines'] });
+  };
+
+  const createRoutineMutation = useMutation({
+    mutationFn: createPersonalRoutine, 
+    onSuccess: invalidatePersonalRoutines, 
+  });
+
+  const updateRoutineMutation = useMutation({
+    mutationFn: ({ routineId, payload }: { routineId: number, payload: PersonalRoutineUpdatePayload }) => 
+      updatePersonalRoutine(routineId, payload),
+    onSuccess: invalidatePersonalRoutines,
+  });
+
+  const deleteRoutineMutation = useMutation({
+    mutationFn: deletePersonalRoutine,
+    onSuccess: invalidatePersonalRoutines,
+  });
+
+  const togglePublicMutation = useMutation({
+    mutationFn: toggleRoutinePublic,
+    onSuccess: invalidatePersonalRoutines,
+  });
+
+  const toggleAlarmMutation = useMutation({
+    mutationFn: toggleRoutineAlarm,
+    onSuccess: invalidatePersonalRoutines,
+  });
   const { isLoggedIn, userId } = useSelector((state: RootState) => state.auth);
   const dispatch = useDispatch<AppDispatch>();
   const [isNewUser, setIsNewUser] = useState(false);
@@ -350,7 +387,7 @@ export default function App() {
   const [UserInfo, setUserInfo] = useState<UserProfile | null>(null); 
   const [isLoading, setIsLoading] = useState<boolean>(false);
 
-  const [personalRoutines, setPersonalRoutines] = useState<Routine[]>([])
+  //const [personalRoutines, setPersonalRoutines] = useState<Routine[]>([])
 
  const [groups, setGroups] = useState<Group[]>([]);
  const [myGroups, setMyGroups] = useState<Group[]>([]);
@@ -708,7 +745,7 @@ useEffect(() => {
       // 그 다음 서버에서 최신 데이터를 가져와 동기화
       await Promise.all([
         fetchUserActivities(),
-        fetchPersonalRoutines(),
+        //fetchPersonalRoutines(),
         fetchUserTotalScore(),
         fetchTotalAttendance(),
         fetchGroupData(),
@@ -870,6 +907,7 @@ useEffect(() => {
     if (isConfirmed) {
       try {
         await deleteAccount();
+        queryClient.clear();
 
         isLoggedIn;
         setActiveTab("home");
@@ -888,7 +926,7 @@ useEffect(() => {
           maxStreakDays: 0,
           streakDays: 0
         });
-        setPersonalRoutines([]);
+        //setPersonalRoutines([]);
         setGroups([]);
         //setPendingAuthMessages({});
         setLastCompletionDate(null);
@@ -980,14 +1018,14 @@ useEffect(() => {
   // }, [isLoggedIn, UserInfo]); 
 
 
-  useEffect(() => {
-    setPersonalRoutines(prevRoutines =>
-      prevRoutines.map(routine => ({
-        ...routine,
-        completed: completedActivityIds.personal.has(routine.id),
-      }))
-    );
-  }, [completedActivityIds]);
+  // useEffect(() => {
+  //   setPersonalRoutines(prevRoutines =>
+  //     prevRoutines.map(routine => ({
+  //       ...routine,
+  //       completed: completedActivityIds.personal.has(routine.id),
+  //     }))
+  //   );
+  // }, [completedActivityIds]);
 
   const handleCreateRoutine = async (newRoutineData: Omit<Routine, 'id' | 'completed' | 'streak'>) => {
     if (!UserInfo) return;
@@ -1007,8 +1045,8 @@ useEffect(() => {
     };
 
     try {
-      await createPersonalRoutine(payload);
-      await fetchPersonalRoutines(); // 성공 후 목록 새로고침
+      await createRoutineMutation.mutateAsync(payload);
+      //await fetchPersonalRoutines(); // 성공 후 목록 새로고침
       navigateBack();
     } catch (error) {
       console.error("루틴 생성 실패:", error);
@@ -1048,8 +1086,11 @@ useEffect(() => {
         isPublic: updatedRoutine.isPublic,
       };
       try {
-        await updatePersonalRoutine(updatedRoutine.id, payload);
-        await fetchPersonalRoutines(); // 성공 후 목록 새로고침
+        await updateRoutineMutation.mutateAsync({ 
+          routineId: updatedRoutine.id, 
+          payload: payload 
+        });
+        //await fetchPersonalRoutines(); // 성공 후 목록 새로고침
       } catch (error) {
         console.error("루틴 수정 실패:", error);
         alert("루틴 수정에 실패했습니다.");
@@ -1064,31 +1105,51 @@ useEffect(() => {
     fetchRankingData();
   };
 
-  const fetchPersonalRoutines = async () => {
-    if (!UserInfo) return;
-    try {
-      const routinesFromServer = await getPersonalRoutinesByUser(UserInfo.id as number);
+  const { 
+  data: fetchedPersonalRoutines = [], 
+  isLoading: isPersonalRoutinesLoading 
+} = useQuery({
+  queryKey: ['personalRoutines', userId], 
+  queryFn: () => {
+    if (!userId) return Promise.resolve([]); 
+    return getPersonalRoutinesByUser(Number(userId));
+  },
+  enabled: isLoggedIn && !!userId, 
+});
 
-      // ▼▼▼ [진단용 로그 1] 서버에서 막 받아온 원본 데이터를 확인합니다. ▼▼▼
-      console.log("1. [fetchPersonalRoutines] 서버에서 받은 개인 루틴:", routinesFromServer);
+const personalRoutines = useMemo(() => {
+  return fetchedPersonalRoutines.map((pr: PersonalRoutineResponse) => {
+    const routine = transformPersonalRoutine(pr); 
+    routine.completed = completedActivityIds.personal.has(routine.id);
+    return routine;
+  });
+}, [fetchedPersonalRoutines, completedActivityIds.personal, transformPersonalRoutine]);
 
-      const transformedRoutines = (routinesFromServer || []).map(apiRoutine => {
-        const isCompleted = completedActivityIds.personal.has(apiRoutine.routineId);
-        const transformed = transformPersonalRoutine(apiRoutine);
-        return {
-          ...transformed,
-          completed: isCompleted,
-        };
-      });
+  // const fetchPersonalRoutines = async () => {
+  //   if (!UserInfo) return;
+  //   try {
+  //     const routinesFromServer = await getPersonalRoutinesByUser(UserInfo.id as number);
 
-      // ▼▼▼ [진단용 로그 2] 최종적으로 상태를 업데이트할 데이터를 확인합니다. ▼▼▼
-      console.log("2. [fetchPersonalRoutines] 상태를 업데이트할 최종 루틴 목록:", transformedRoutines);
+  //     // ▼▼▼ [진단용 로그 1] 서버에서 막 받아온 원본 데이터를 확인합니다. ▼▼▼
+  //     console.log("1. [fetchPersonalRoutines] 서버에서 받은 개인 루틴:", routinesFromServer);
 
-      setPersonalRoutines(transformedRoutines);
-    } catch (error) {
-      console.error("개인 루틴 목록 로딩 실패:", error);
-    }
-  };
+  //     const transformedRoutines = (routinesFromServer || []).map(apiRoutine => {
+  //       const isCompleted = completedActivityIds.personal.has(apiRoutine.routineId);
+  //       const transformed = transformPersonalRoutine(apiRoutine);
+  //       return {
+  //         ...transformed,
+  //         completed: isCompleted,
+  //       };
+  //     });
+
+  //     // ▼▼▼ [진단용 로그 2] 최종적으로 상태를 업데이트할 데이터를 확인합니다. ▼▼▼
+  //     console.log("2. [fetchPersonalRoutines] 상태를 업데이트할 최종 루틴 목록:", transformedRoutines);
+
+  //     setPersonalRoutines(transformedRoutines);
+  //   } catch (error) {
+  //     console.error("개인 루틴 목록 로딩 실패:", error);
+  //   }
+  // };
 
   const getGroupRoutinesWithOverrides = (): Routine[] => {
   return myGroups.map(group => {
@@ -1127,20 +1188,21 @@ const handleToggleRoutinePublic = async (routine: Routine) => {
     // B. 개인 루틴일 경우 -> 기존 API 호출 로직
     else {
       try {
-        const updatedRoutineFromServer = await toggleRoutinePublic(routine.id);
-        const transformedRoutine = transformPersonalRoutine(updatedRoutineFromServer);
+        await togglePublicMutation.mutateAsync(routine.id);
+        //const updatedRoutineFromServer = await toggleRoutinePublic(routine.id);
+        //const transformedRoutine = transformPersonalRoutine(updatedRoutineFromServer);
 
-        setPersonalRoutines(prevRoutines =>
-          prevRoutines.map(r => (r.id === routine.id ? transformedRoutine : r))
-        );
+        // setPersonalRoutines(prevRoutines =>
+        //   prevRoutines.map(r => (r.id === routine.id ? transformedRoutine : r))
+        // );
 
-        setNavigationStack(prevStack =>
-          prevStack.map(navItem =>
-            navItem.screen === 'routine-detail' && navItem.params.id === routine.id
-              ? { ...navItem, params: transformedRoutine }
-              : navItem
-          )
-        );
+        // setNavigationStack(prevStack =>
+        //   prevStack.map(navItem =>
+        //     navItem.screen === 'routine-detail' && navItem.params.id === routine.id
+        //       ? { ...navItem, params: transformedRoutine }
+        //       : navItem
+        //   )
+        // );
       } catch (error) {
         console.error("루틴 공개 여부 변경 실패:", error);
         alert("설정 변경에 실패했습니다.");
@@ -1186,20 +1248,21 @@ const handleToggleRoutinePublic = async (routine: Routine) => {
     // B. 개인 루틴일 경우 -> 기존 API 호출 로직
     else {
       try {
-        const updatedRoutineFromServer = await toggleRoutineAlarm(routine.id);
-        const transformedRoutine = transformPersonalRoutine(updatedRoutineFromServer);
+        await toggleAlarmMutation.mutateAsync(routine.id);
+        // const updatedRoutineFromServer = await toggleRoutineAlarm(routine.id);
+        // const transformedRoutine = transformPersonalRoutine(updatedRoutineFromServer);
         
-        setPersonalRoutines(prevRoutines =>
-          prevRoutines.map(r => (r.id === routine.id ? transformedRoutine : r))
-        );
+        // setPersonalRoutines(prevRoutines =>
+        //   prevRoutines.map(r => (r.id === routine.id ? transformedRoutine : r))
+        // );
 
-        setNavigationStack(prevStack =>
-          prevStack.map(navItem =>
-            navItem.screen === 'routine-detail' && navItem.params.id === routine.id
-              ? { ...navItem, params: transformedRoutine }
-              : navItem
-          )
-        );
+        // setNavigationStack(prevStack =>
+        //   prevStack.map(navItem =>
+        //     navItem.screen === 'routine-detail' && navItem.params.id === routine.id
+        //       ? { ...navItem, params: transformedRoutine }
+        //       : navItem
+        //   )
+        // );
       } catch (error) {
         console.error("루틴 알림 설정 변경 실패:", error);
         alert("설정 변경에 실패했습니다.");
@@ -1207,10 +1270,15 @@ const handleToggleRoutinePublic = async (routine: Routine) => {
     }
   };
 
+  const createActivityMutation = useMutation({
+    mutationFn: createPersonalActivity,
+  });
 
+  const updateActivityMutation = useMutation({
+    mutationFn: (args: { userActivityId: number, status: 'NOT_COMPLETED' }) => 
+      updateActivity(args.userActivityId, args.status),
+  });
   const handleTogglePersonalRoutineCompletion = async (routineId: number) => {
-  console.log('현재 완료된 루틴 Map:', completedActivityIds.personal);
-  console.log(`이 루틴은 완료 상태인가? ->`, completedActivityIds.personal.has(routineId));
     const isCompleted = completedActivityIds.personal.has(routineId);
 
     try {
@@ -1218,17 +1286,15 @@ const handleToggleRoutinePublic = async (routine: Routine) => {
       // --- 루틴 취소 로직 ---
       const userActivityId = completedActivityIds.personal.get(routineId);
       if (userActivityId) {
-        await updateActivity(userActivityId, 'NOT_COMPLETED');
-        
+        // useMutation 호출
+        await updateActivityMutation.mutateAsync({ userActivityId, status: 'NOT_COMPLETED' });
+
+        // 로컬 상태 업데이트
         setCompletedActivityIds(prev => {
           const newPersonalMap = new Map(prev.personal);
-          newPersonalMap.delete(routineId); // 맵에서 해당 루틴 ID 제거
-          const newState = { ...prev, personal: newPersonalMap };
-          
-          // 로컬 스토리지에 백업
-          saveCompletedRoutinesToLocal(newPersonalMap, prev.group);
-          
-          return newState;
+          newPersonalMap.delete(routineId);
+          // saveCompletedRoutinesToLocal(...)
+          return { ...prev, personal: newPersonalMap };
         });
 
         // 완료 횟수 1 감소
@@ -1239,51 +1305,29 @@ const handleToggleRoutinePublic = async (routine: Routine) => {
         });
       }
     } else {
-      const response = await createPersonalActivity(routineId);
-
-      const newActivity = response?.data || response;
-      const newActivityId = newActivity?.userActivityId;
-
-      if (newActivityId) {
-        setCompletedActivityIds(prev => {
-          const newPersonalMap = new Map(prev.personal);
-          newPersonalMap.set(routineId, newActivityId); // 맵에 (루틴 ID, 새 활동 ID) 추가
-          const newState = { ...prev, personal: newPersonalMap };
-          
-          // 로컬 스토리지에 백업
-          saveCompletedRoutinesToLocal(newPersonalMap, prev.group);
-          
-          return newState;
-        });
-      } else {
-         console.error("활동 생성 응답에서 ID를 받지 못했습니다:", response);
-         await fetchUserActivities();
+      const response = await createActivityMutation.mutateAsync(routineId);
+      const activityId = response?.userActivityId 
+                       || response?.data?.userActivityId 
+                       || response?.data?.userActivityId;
+      if (!activityId) { 
+          // 201 코드가 떴더라도, 클라이언트가 응답 본문에서 활동 ID를 못 찾았을 때만 이 오류가 발생합니다.
+          console.error("활동 ID를 서버 응답에서 찾을 수 없습니다:", response);
+          throw new Error("활동 생성에 실패했습니다 (활동 ID 없음).");
       }
-      // 완료 횟수 1 증가
-      const newRoutineCount = routineCompletionCount + 1;
-      setRoutineCompletionCount(newRoutineCount);
-      localStorage.setItem('routineCompletionCount', String(newRoutineCount));
+      // const newActivity = response?.data || response;
+      // const newActivityId = newActivity?.userActivityId;
 
-      if (newRoutineCount >= 100 && !earnedBadges.includes('루틴 마스터')) {
-        const badgeName: BadgeType = '루틴 마스터';
-        
-        // 상태와 로컬스토리지에 배지 정보 저장
-        setEarnedBadges(prev => {
-          const newEarned = [...prev, badgeName];
-          localStorage.setItem('earnedBadges', JSON.stringify(newEarned));
-          return newEarned;
-        });
-      
-      // 배지 획득 모달 띄우기
-      badgeName;
-      badgeImage;
-      dispatch(openBadgeModal());
+      setCompletedActivityIds(prev => {
+        const newPersonalMap = new Map(prev.personal);
+        // 응답 데이터에서 활동 ID 추출 (API 응답 형태에 따라 .data.activityId 등으로 수정)
+        //const activityId = response.data.activityId; 
+        newPersonalMap.set(routineId, activityId);
+        // saveCompletedRoutinesToLocal(...)
+        return { ...prev, personal: newPersonalMap };
+      });
+
+      handleOpenAttendanceModal(); 
     }
-
-    // 4. 출석 모달 띄우기 (배지 획득 여부와 관계없이 항상 실행)
-    handleOpenAttendanceModal();
-  } 
-
   } catch (error) {
     alert("루틴 상태 변경에 실패했습니다.");
     console.error("개인 루틴 완료/취소 처리 실패:", error);
@@ -1356,7 +1400,7 @@ const handleGroupRoutineCompletion = (groupId: number, activityId: number) => {
       await createPersonalRoutine(payload);
       
       // 4. 성공 시, 전체 루틴 목록을 다시 불러와 화면을 갱신합니다.
-      await fetchPersonalRoutines();
+      //await fetchPersonalRoutines();
       
       console.log(`'${recommendedRoutine.name}' 루틴이 추가되었습니다.`);
 
@@ -1383,8 +1427,8 @@ const handleGroupRoutineCompletion = (groupId: number, activityId: number) => {
       );
     } else {
       try {
-        await deletePersonalRoutine(routineId);
-        await fetchPersonalRoutines(); // 성공 후 목록 새로고침
+        await deleteRoutineMutation.mutateAsync(routineId)
+        //await fetchPersonalRoutines(); // 성공 후 목록 새로고침
         navigateBack();
       } catch (error) {
         console.error("루틴 삭제 실패:", error);
